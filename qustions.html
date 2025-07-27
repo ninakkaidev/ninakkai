@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>നിനക്കായി-ForYou | Find Your Match</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: url('images/friends-with-skatebooard.jpg') no-repeat top center fixed;
+  background-size: cover;
+  overflow-x: hidden;
+  min-height: 100vh;
+  position: relative;
+  background-attachment: fixed;
+}
+
+/* Proper color overlay */
+body::before {
+  content: '';
+  position: fixed; /* Use fixed to cover the entire viewport */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh; /* Full screen */
+  background: rgba(0, 0, 0, 0.5); /* Black with 50% transparency */
+  z-index: 0;
+  pointer-events: none; /* Allows clicks to pass through */
+}
+
+/* Optional: Ensure your page content is above the overlay */
+main, header, section, div {
+  position: relative;
+  z-index: 1;
+}
+
+
+    .intro-container {
+      max-width: 800px;
+      margin: 200px auto;
+      padding: 30px;
+      text-align: center;
+      color: rgb(234, 230, 230);
+    }
+
+    .intro-text {
+      font-size: 2.7rem;
+      font-weight: 700;
+      margin-bottom: 30px;
+      text-shadow: 2px 2px 4px rgb(255, 255, 255);
+      opacity: 0;
+      transform: translateX(-100%);
+      animation: slideIn 1s forwards;
+    }
+
+    .sub-text {
+      font-size: 1.5rem;
+      margin-bottom: 40px;
+      opacity: 0;
+      transform: translateX(100%);
+      animation: slideIn 1s forwards 0.5s;
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.2rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      opacity: 0;
+      animation: fadeIn 1s forwards 1s;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-start:hover {
+      background: linear-gradient(135deg, #76b6f5 0%, #ff5275 100%);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .qa-container {
+      max-width: 650px;
+      margin: 200px auto;
+      background: rgba(255, 255, 255, 0.112);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+      display: none;
+    }
+
+    .question-box {
+      text-align: center;
+      min-height: 220px;
+    }
+
+    .question {
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 30px;
+    }
+
+    .answers button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 14px 20px;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 10px;
+      background: rgba(248, 230, 239, 0.8);
+      color: #000000;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .answers button:hover {
+      background: #53a8e5;
+      color: #fff;
+      transform: translateX(5px);
+    }
+
+    .progress-container {
+      background: #f1f1f1;
+      height: 10px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+    }
+
+    .progress-bar {
+      height: 10px;
+      background: #62aee7;
+      border-radius: 10px;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+
+    .final-screen {
+      display: none;
+      text-align: center;
+      animation: fadeIn 1s ease;
+    }
+
+    .final-screen h2 {
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 2.5rem;
+    }
+
+    .final-screen p {
+      font-size: 1.2rem;
+      margin-bottom: 30px;
+      color: #ffffff;
+    }
+
+    .btn-start-over {
+      margin-top: 20px;
+      background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
+      color: #fff;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 50px;
+      transition: all 0.3s ease;
+      font-size: 1.1rem;
+    }
+
+    .btn-start-over:hover {
+      background: linear-gradient(135deg, #76b6f5 0%, #ff5275 100%);
+      transform: scale(1.05);
+    }
+
+    @keyframes slideIn {
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .intro-container {
+        margin: 250px auto;
+        padding: 20px;
+      }
+      
+      .intro-text {
+        font-size: 2rem;
+      }
+      
+      .sub-text {
+        font-size: 1.2rem;
+      }
+      
+      .qa-container {
+        margin: 250px auto;
+        padding: 20px;
+      }
+      
+      .question {
+        font-size: 1.3rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .intro-text {
+        font-size: 1.8rem;
+      }
+      
+      .sub-text {
+        font-size: 1rem;
+      }
+      
+      .btn-start {
+        padding: 12px 30px;
+        font-size: 1rem;
+      }
+      
+      .question {
+        font-size: 1.1rem;
+      }
+      
+      .answers button {
+        font-size: 1rem;
+        padding: 10px 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="intro-container" id="intro-container">
+  <div class="intro-text">You're Just a Few Steps Away...</div>
+  <div class="sub-text">Discover your perfect match with our personality-based compatibility quiz</div>
+  <button class="btn-start" id="btn-start">Begin Your Journey</button>
+</div>
+
+<div class="qa-container animate__animated animate__fadeIn" id="qa-container">
+  <div id="qa-content">
+    <div class="progress-container">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="question-box" id="question-box">
+      <div class="question" id="question">Loading question...</div>
+      <div class="answers" id="answers"></div>
+    </div>
+  </div>
+
+  <div class="final-screen" id="final-screen">
+    <h2>🎉 Match Found!</h2>
+    <p>Based on your answers, we've discovered people who connect deeply with your energy.</p>
+    <p>Get ready to meet your potential matches!</p>
+    <button class="btn-start-over" onclick="location.href='explore.html'">Meet Your Partner</button>
+  </div>
+</div>
+
+<script>
+  const questions = [
+    { question: "What's your ideal first date?", answers: ["Romantic dinner", "Amusement park", "Netflix night", "Nature hike"] },
+    { question: "How do you spend your weekends?", answers: ["Reading", "Clubbing", "Gaming", "Exploring"] },
+    { question: "What type of music do you love?", answers: ["Pop", "Jazz", "Rock", "Classical"] },
+    { question: "What matters most in love?", answers: ["Trust", "Excitement", "Communication", "Chemistry"] },
+    { question: "Dream vacation?", answers: ["Maldives", "Paris", "Himalayas", "Tokyo"] },
+    { question: "Favorite way to relax?", answers: ["Spa day", "Long walk", "Movies", "Cooking"] },
+    { question: "Biggest turn-on in a partner?", answers: ["Humor", "Kindness", "Intelligence", "Style"] },
+    { question: "How do you handle conflict?", answers: ["Talk it out", "Stay calm", "Need space", "Avoid it"] },
+    { question: "Your idea of fun?", answers: ["Board games", "Adventure sports", "Karaoke", "Candlelight dinner"] },
+    { question: "What do you look for first?", answers: ["Eyes", "Voice", "Vibe", "Confidence"] }
+  ];
+
+  const animationList = [
+    "animate__fadeInUp", "animate__fadeInDown", "animate__zoomIn",
+    "animate__slideInLeft", "animate__slideInRight", "animate__bounceIn",
+    "animate__flipInX", "animate__lightSpeedInLeft", "animate__backInUp", "animate__fadeInTopLeft"
+  ];
+
+  let current = 0;
+  let selectedAnswers = [];
+
+  // Initialize the page
+  window.onload = () => {
+    document.getElementById('btn-start').addEventListener('click', startQuiz);
+  };
+
+  function startQuiz() {
+    document.getElementById('intro-container').style.display = 'none';
+    document.getElementById('qa-container').style.display = 'block';
+    loadQuestion(current);
+  }
+
+  function loadQuestion(index) {
+    const questionEl = document.getElementById('question');
+    const answersBox = document.getElementById('answers');
+    const progressBar = document.getElementById('progress-bar');
+    const questionBox = document.getElementById('question-box');
+
+    if (index < questions.length) {
+      // Apply animation
+      questionBox.className = `question-box animate__animated ${animationList[index % animationList.length]}`;
+
+      // Set question
+      questionEl.innerText = questions[index].question;
+      answersBox.innerHTML = '';
+
+      questions[index].answers.forEach(answer => {
+        const btn = document.createElement('button');
+        btn.textContent = answer;
+        btn.onclick = () => {
+          selectedAnswers.push(answer);
+          nextQuestion();
+        };
+        answersBox.appendChild(btn);
+      });
+
+      progressBar.style.width = `${(index / questions.length) * 100}%`;
+    } else {
+      showFinalScreen();
+    }
+  }
+
+  function nextQuestion() {
+    current++;
+    loadQuestion(current);
+  }
+
+  function showFinalScreen() {
+    document.getElementById('qa-content').style.display = 'none';
+    document.getElementById('final-screen').style.display = 'block';
+    document.getElementById('progress-bar').style.width = `100%`;
+
+    // 🎉 Confetti celebration
+    confetti({
+      particleCount: 200,
+      spread: 90,
+      origin: { y: 0.6 }
+    });
+    
+    setTimeout(() => {
+      confetti({
+        particleCount: 100,
+        angle: 60,
+        spread: 70,
+        origin: { x: 0 }
+      });
+      
+      confetti({
+        particleCount: 100,
+        angle: 120,
+        spread: 70,
+        origin: { x: 1 }
+      });
+    }, 300);
+  }
+
+  function restart() {
+    current = 0;
+    selectedAnswers = [];
+    document.getElementById('qa-content').style.display = 'block';
+    document.getElementById('final-screen').style.display = 'none';
+    document.getElementById('intro-container').style.display = 'none';
+    document.getElementById('qa-container').style.display = 'block';
+    loadQuestion(current);
+  }
+</script>
+
+</body>
+</html>

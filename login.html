@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>നിനക്കായി-ForYou|Auth Page</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+         body {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-image: url('images/playful-young-couple-walking-holding-hands.jpg');
+        background-size: cover;
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        position: relative;
+        padding: 20px;
+    }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            position: relative;
+            z-index: 1;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .welcome-text {
+            color: white;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        .toggle-buttons {
+            display: flex;
+            margin-bottom: 0;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 5px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            background: rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+        }
+
+        .form-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+            transition: all 0.3s ease;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            margin-top: 0;
+        }
+
+        .form-container.active {
+            max-height: 1000px;
+            opacity: 1;
+            margin-top: 2rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .form {
+            display: none;
+        }
+
+        .form.active {
+            display: block;
+        }
+
+        /* Signup form specific styles */
+        .signup-steps {
+            display: flex;
+            width: 100%;
+            transition: transform 0.5s ease;
+            flex-direction: column;
+        }
+
+        .signup-step {
+            width: 100%;
+            padding: 0;
+            display: none;
+        }
+
+        .signup-step.active {
+            display: block;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            gap: 10px;
+        }
+
+        @media (min-width: 769px) {
+            .step-indicator {
+                display: none;
+            }
+        }
+
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .step-dot.active {
+            background: white;
+            transform: scale(1.2);
+        }
+
+        .form-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1.5rem;
+        }
+
+        @media (min-width: 769px) {
+            .form-nav {
+                display: flex;
+            }
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form h2 {
+            color: white;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 15px;
+            outline: none;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+
+        .input-group input::placeholder, .input-group select option:first-child {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .input-group select option {
+            color: #333;
+        }
+
+        .input-group input:focus {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 30px;
+            background: linear-gradient(45deg, #4e54c8, #8f94fb);
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.2);
+            margin: 0 10px;
+        }
+
+        .social-login {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 1rem;
+        }
+
+        .social-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .social-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .google-btn {
+            color: #4285F4;
+        }
+
+        .apple-btn {
+            color: #000;
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .switch-form {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-block;
+            transition: color 0.3s ease;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .switch-form:hover {
+            color: white;
+            text-decoration: underline;
+        }
+
+        .forgot-link {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-block;
+            margin-top: 10px;
+            transition: color 0.3s ease;
+        }
+
+        .forgot-link:hover {
+            color: white;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1.5rem;
+                width: 100%;
+            }
+            
+            .form-container {
+                padding: 1.5rem;
+            }
+            
+            .form-container.active {
+                margin-top: 1.5rem;
+            }
+            
+            .toggle-btn {
+                padding: 10px;
+                font-size: 14px;
+            }
+            
+            .welcome-text {
+                font-size: 1.3rem;
+            }
+            
+            .signup-step {
+                padding: 0 5px;
+            }
+        }
+          @media (max-width: 780px) {
+    body {
+        background-image: url('images/romantic-young-couple-love.jpg'); /* replace with your mobile-friendly image path */
+        background-size: cover;
+        background-position: right center; /* focuses on the right side */
+        background-repeat: no-repeat;
+        background-attachment: scroll;
+        min-height: 100vh;
+    }
+
+    body::before {
+        background-color: rgba(0, 0, 0, 0.6); /* slightly darker for readability */
+    }
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="welcome-text">Welcome to Our Community</div>
+        
+        <div class="toggle-buttons">
+            <button class="toggle-btn active" id="loginBtn">Login</button>
+            <button class="toggle-btn" id="signupBtn">Sign Up</button>
+        </div>
+
+        <div class="form-container" id="formContainer">
+            <!-- Login Form -->
+            <div class="form active" id="loginForm">
+                <h2>Welcome Back</h2>
+                <form>
+                    <div class="input-group">
+                        <input type="email" placeholder="Email" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Login</button>
+                    <a href="#" class="forgot-link">Forgot password?</a>
+                    
+                    <div class="divider">or continue with</div>
+                    
+                    <div class="social-login">
+                        <button type="button" class="social-btn google-btn">
+                            <i class="fab fa-google"></i>
+                        </button>
+                        <button type="button" class="social-btn apple-btn">
+                            <i class="fab fa-apple"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="switch-form" id="showSignup">
+                        New user? Create an account
+                    </div>
+                </form>
+            </div>
+
+            <!-- Signup Form -->
+            <div class="form" id="signupForm">
+                <h2>Create Account</h2>
+                <div class="step-indicator">
+                    <div class="step-dot active" data-step="1"></div>
+                    <div class="step-dot" data-step="2"></div>
+                    <div class="step-dot" data-step="3"></div>
+                </div>
+                
+                <div class="signup-steps" id="signupSteps">
+                    <!-- Step 1 -->
+                    <div class="signup-step active" data-step="1">
+                        <div class="input-group">
+                            <input type="text" placeholder="Full Name" required id="fullName">
+                        </div>
+                        <div class="input-group">
+                            <input type="email" placeholder="Email" required id="email">
+                        </div>
+                        <div class="form-nav">
+                            <div></div> <!-- Empty div for spacing -->
+                            <button type="button" class="nav-btn next-step">Next</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2 -->
+                    <div class="signup-step" data-step="2">
+                        <div class="input-group">
+                            <input type="number" placeholder="Age" min="13" max="120" required id="age">
+                        </div>
+                        <div class="input-group">
+                            <select required id="gender">
+                                <option value="" disabled selected>Select Gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                                <option value="prefer-not-to-say">Prefer not to say</option>
+                            </select>
+                        </div>
+                        <div class="form-nav">
+                            <button type="button" class="nav-btn prev-step">Back</button>
+                            <button type="button" class="nav-btn next-step">Next</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 3 -->
+                    <div class="signup-step" data-step="3">
+                        <div class="input-group">
+                            <input type="password" placeholder="Password" required id="password">
+                        </div>
+                        <div class="input-group">
+                            <input type="password" placeholder="Confirm Password" required id="confirmPassword">
+                        </div>
+                        <button type="submit" class="submit-btn">Sign Up</button>
+                        <div class="form-nav">
+                            <button type="button" class="nav-btn prev-step">Back</button>
+                            <div></div> <!-- Empty div for spacing -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="divider">or sign up with</div>
+                
+                <div class="social-login">
+                    <button type="button" class="social-btn google-btn">
+                        <i class="fab fa-google"></i>
+                    </button>
+                    <button type="button" class="social-btn apple-btn">
+                        <i class="fab fa-apple"></i>
+                    </button>
+                </div>
+                
+                <div class="switch-form" id="showLogin">
+                    Already have an account? Sign in
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginBtn = document.getElementById('loginBtn');
+            const signupBtn = document.getElementById('signupBtn');
+            const loginForm = document.getElementById('loginForm');
+            const signupForm = document.getElementById('signupForm');
+            const formContainer = document.getElementById('formContainer');
+            const showLogin = document.getElementById('showLogin');
+            const showSignup = document.getElementById('showSignup');
+            const signupSteps = document.getElementById('signupSteps');
+            const stepDots = document.querySelectorAll('.step-dot');
+            const nextButtons = document.querySelectorAll('.next-step');
+            const prevButtons = document.querySelectorAll('.prev-step');
+            const signupStepElements = document.querySelectorAll('.signup-step');
+            
+            let currentStep = 1;
+            const totalSteps = 3;
+            const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+            // Function to show login form
+            function showLoginForm() {
+                loginBtn.classList.add('active');
+                signupBtn.classList.remove('active');
+                loginForm.classList.add('active');
+                signupForm.classList.remove('active');
+                formContainer.classList.add('active');
+                resetSignupForm();
+            }
+
+            // Function to show signup form
+            function showSignupForm() {
+                signupBtn.classList.add('active');
+                loginBtn.classList.remove('active');
+                signupForm.classList.add('active');
+                loginForm.classList.remove('active');
+                formContainer.classList.add('active');
+                goToStep(1);
+            }
+
+            // Reset signup form to first step
+            function resetSignupForm() {
+                currentStep = 1;
+                updateStepIndicator();
+                updateStepVisibility();
+            }
+
+            // Go to specific step
+            function goToStep(step) {
+                currentStep = step;
+                updateStepIndicator();
+                updateStepVisibility();
+            }
+
+            // Update step visibility based on current step
+            function updateStepVisibility() {
+                signupStepElements.forEach(step => {
+                    step.classList.remove('active');
+                    if (parseInt(step.getAttribute('data-step')) === currentStep) {
+                        step.classList.add('active');
+                    }
+                });
+            }
+
+            // Update step indicator dots
+            function updateStepIndicator() {
+                stepDots.forEach((dot, index) => {
+                    if (index < currentStep) {
+                        dot.classList.add('active');
+                    } else {
+                        dot.classList.remove('active');
+                    }
+                });
+            }
+
+            // Toggle button events
+            loginBtn.addEventListener('click', showLoginForm);
+            signupBtn.addEventListener('click', showSignupForm);
+
+            // Switch form links
+            showLogin.addEventListener('click', showLoginForm);
+            showSignup.addEventListener('click', showSignupForm);
+
+            // Next step buttons
+            nextButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    if (currentStep < totalSteps) {
+                        goToStep(currentStep + 1);
+                    }
+                });
+            });
+
+            // Previous step buttons
+            prevButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    if (currentStep > 1) {
+                        goToStep(currentStep - 1);
+                    }
+                });
+            });
+
+            // Step indicator dots navigation
+            stepDots.forEach(dot => {
+                dot.addEventListener('click', () => {
+                    const step = parseInt(dot.getAttribute('data-step'));
+                    if (step <= currentStep) { // Only allow going back, not forward
+                        goToStep(step);
+                    }
+                });
+            });
+
+            // Simple form validation
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    // Here you would typically handle form submission
+                    alert('Form submitted! (This is a demo)');
+                });
+            });
+
+            // Show form container when any toggle button is clicked
+            [loginBtn, signupBtn].forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (!formContainer.classList.contains('active')) {
+                        formContainer.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
