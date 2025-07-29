@@ -125,8 +125,8 @@ body {
             <!-- Logo + Title -->
             <div class="flex items-center space-x-2">
                 <i class="fas fa-heart text-red-500 text-2xl"></i>
-                <h1 class="text-xl font-bold bg-gradient-to-r from-red-500 to-blue-700 bg-clip-text text-transparent">
-                    നിനക്കായി-ForYou
+                <h1 class="text-xl font-bold bg-gradient-to-r from-red-400 to-blue-600 bg-clip-text text-transparent">
+                    Ninakkayi-ForYou
                 </h1>
             </div>
 
@@ -151,6 +151,67 @@ body {
 
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-6 mt-16">
+        <!-- Most Matched Suggestions Section -->
+        <div id="matches-section" class="mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Most Matched Suggestions</h2>
+                <button class="text-pink-500 text-sm font-medium">See All</button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Match Suggestion 1 -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden relative discovery-card">
+                    <div class="match-percentage">92%</div>
+                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80" alt="Profile" class="w-full h-48 md:h-64 object-cover">
+                    <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <h3 class="text-white font-bold">Emma, 26</h3>
+                                <p class="text-gray-300 text-sm">Artist • 4 miles away</p>
+                            </div>
+                            <button class="bg-pink-500 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:bg-pink-600 transition">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Match Suggestion 2 -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden relative discovery-card">
+                    <div class="match-percentage">88%</div>
+                    <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80" alt="Profile" class="w-full h-48 md:h-64 object-cover">
+                    <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <h3 class="text-white font-bold">Michael, 29</h3>
+                                <p class="text-gray-300 text-sm">Doctor • 3 miles away</p>
+                            </div>
+                            <button class="bg-pink-500 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:bg-pink-600 transition">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Match Suggestion 3 -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden relative discovery-card">
+                    <div class="match-percentage">85%</div>
+                    <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80" alt="Profile" class="w-full h-48 md:h-64 object-cover">
+                    <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <h3 class="text-white font-bold">Sophia, 24</h3>
+                                <p class="text-gray-300 text-sm">Teacher • 6 miles away</p>
+                            </div>
+                            <button class="bg-pink-500 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:bg-pink-600 transition">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
         <!-- Discovery Section -->
         <div class="mb-6">
             <div class="flex justify-between items-center mb-4">
@@ -291,86 +352,21 @@ body {
             </div>
         </div>
 
-        <!-- Most Matched Suggestions Section -->
-        <div id="matches-section" class="mb-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Most Matched Suggestions</h2>
-                <button class="text-pink-500 text-sm font-medium">See All</button>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <!-- Match Suggestion 1 -->
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden relative discovery-card">
-                    <div class="match-percentage">92%</div>
-                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80" alt="Profile" class="w-full h-48 md:h-64 object-cover">
-                    <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-                        <div class="flex justify-between items-end">
-                            <div>
-                                <h3 class="text-white font-bold">Emma, 26</h3>
-                                <p class="text-gray-300 text-sm">Artist • 4 miles away</p>
-                            </div>
-                            <button class="bg-pink-500 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:bg-pink-600 transition">
-                                <i class="fas fa-heart"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Match Suggestion 2 -->
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden relative discovery-card">
-                    <div class="match-percentage">88%</div>
-                    <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80" alt="Profile" class="w-full h-48 md:h-64 object-cover">
-                    <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-                        <div class="flex justify-between items-end">
-                            <div>
-                                <h3 class="text-white font-bold">Michael, 29</h3>
-                                <p class="text-gray-300 text-sm">Doctor • 3 miles away</p>
-                            </div>
-                            <button class="bg-pink-500 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:bg-pink-600 transition">
-                                <i class="fas fa-heart"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Match Suggestion 3 -->
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden relative discovery-card">
-                    <div class="match-percentage">85%</div>
-                    <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80" alt="Profile" class="w-full h-48 md:h-64 object-cover">
-                    <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-                        <div class="flex justify-between items-end">
-                            <div>
-                                <h3 class="text-white font-bold">Sophia, 24</h3>
-                                <p class="text-gray-300 text-sm">Teacher • 6 miles away</p>
-                            </div>
-                            <button class="bg-pink-500 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:bg-pink-600 transition">
-                                <i class="fas fa-heart"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
+        
 
     <!-- Bottom Navigation -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg z-10">
         <div class="container mx-auto px-4">
             <div class="flex justify-around py-3">
-                <a href="index.html" class="text-gray-500 hover:text-pink-500 flex flex-col items-center">
-                    <i class="fas fa-home text-xl"></i>
-                    <span class="text-xs mt-1">Home</span>
+                <a href="chat.html" class="text-gray-500 hover:text-pink-500 flex flex-col items-center">
+                    <i class="fas fa-comments text-xl"></i> <!-- Chat icon -->
+                    <span class="text-xs mt-1">Chat</span>
                 </a>
 
                 <a href="#" class="text-pink-500 flex flex-col items-center">
                     <i class="fas fa-compass text-xl"></i>
                     <span class="text-xs mt-1">Explore</span>
                 </a>
-                <a href="#matches-section" class="text-gray-500 hover:text-pink-500 flex flex-col items-center">
-                    <i class="fas fa-heart text-xl"></i>
-                    <span class="text-xs mt-1">Matches</span>
-                </a>
-
                 <a href="profile.html" class="text-gray-500 hover:text-pink-500 flex flex-col items-center">
                     <i class="fas fa-user text-xl"></i>
                     <span class="text-xs mt-1">Profile</span>

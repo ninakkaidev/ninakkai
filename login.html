@@ -14,19 +14,22 @@
             font-family: 'Poppins', sans-serif;
         }
 
-         body {
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-image: url('images/playful-young-couple-walking-holding-hands.jpg');
-        background-size: cover;
-        background-position: center center;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-        position: relative;
-        padding: 20px;
-    }
+        body {
+            min-height: 100vh; /* Full screen height */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+
+            /* Background styles */
+            background-image: url('images/playful-young-couple-walking-holding-hands.jpg');
+            background-position: center top;  /* Top aligned horizontally centered */
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;  /* Parallax effect */
+
+            position: relative; /* Allows stacking content with z-index */
+        }
 
         body::before {
             content: '';
@@ -358,20 +361,36 @@
                 padding: 0 5px;
             }
         }
-          @media (max-width: 780px) {
-    body {
-        background-image: url('images/romantic-young-couple-love.jpg'); /* replace with your mobile-friendly image path */
-        background-size: cover;
-        background-position: right center; /* focuses on the right side */
-        background-repeat: no-repeat;
-        background-attachment: scroll;
-        min-height: 100vh;
-    }
+        @media (max-width: 780px) {
+  body {
+    position: relative;
+    background-image: url('images/playful-young-couple-walking-holding-hands.jpg');
+    background-size: cover; /* Fill full screen, stretching top-bottom */
+    background-position: 58% 55%; /* 50% horizontal, 50% vertical — perfect center */
+    background-repeat: no-repeat;
+    background-attachment: scroll;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+  }
 
-    body::before {
-        background-color: rgba(0, 0, 0, 0.6); /* slightly darker for readability */
-    }
+  body::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 0;
+  }
+
+  main, header, footer, .content {
+    position: relative;
+    z-index: 1;
+  }
 }
+
 
     </style>
 </head>
