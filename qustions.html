@@ -1,3 +1,4 @@
+</html>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,205 +40,267 @@ main, header, section, div {
   z-index: 1;
 }
 
+.intro-container {
+  max-width: 800px;
+  margin: 200px auto;
+  padding: 30px;
+  text-align: center;
+  color: rgb(234, 230, 230);
+}
 
-    .intro-container {
-      max-width: 800px;
-      margin: 200px auto;
-      padding: 30px;
-      text-align: center;
-      color: rgb(234, 230, 230);
-    }
+.intro-text {
+  font-size: 2.7rem;
+  font-weight: 700;
+  margin-bottom: 30px;
+  text-shadow: 2px 2px 4px rgb(255, 255, 255);
+  opacity: 0;
+  transform: translateX(-100%);
+  animation: slideIn 1s forwards;
+}
 
-    .intro-text {
-      font-size: 2.7rem;
-      font-weight: 700;
-      margin-bottom: 30px;
-      text-shadow: 2px 2px 4px rgb(255, 255, 255);
-      opacity: 0;
-      transform: translateX(-100%);
-      animation: slideIn 1s forwards;
-    }
+.sub-text {
+  font-size: 1.5rem;
+  margin-bottom: 40px;
+  opacity: 0;
+  transform: translateX(100%);
+  animation: slideIn 1s forwards 0.5s;
+}
 
-    .sub-text {
-      font-size: 1.5rem;
-      margin-bottom: 40px;
-      opacity: 0;
-      transform: translateX(100%);
-      animation: slideIn 1s forwards 0.5s;
-    }
+.btn-start {
+  background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
+  color: white;
+  border: none;
+  padding: 15px 40px;
+  font-size: 1.2rem;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0;
+  animation: fadeIn 1s forwards 1s;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
 
-    .btn-start {
-      background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
-      color: white;
-      border: none;
-      padding: 15px 40px;
-      font-size: 1.2rem;
-      border-radius: 50px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      opacity: 0;
-      animation: fadeIn 1s forwards 1s;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    }
+.btn-start:hover {
+  background: linear-gradient(135deg, #76b6f5 0%, #ff5275 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
 
-    .btn-start:hover {
-      background: linear-gradient(135deg, #76b6f5 0%, #ff5275 100%);
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-    }
+.qa-container {
+  max-width: 650px;
+  margin: 200px auto;
+  background: rgba(255, 255, 255, 0.112);
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  display: none;
+}
 
-    .qa-container {
-      max-width: 650px;
-      margin: 200px auto;
-      background: rgba(255, 255, 255, 0.112);
-      padding: 40px;
-      border-radius: 20px;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
-      display: none;
-    }
+.question-box {
+  text-align: center;
+  min-height: 220px;
+}
 
-    .question-box {
-      text-align: center;
-      min-height: 220px;
-    }
+.section-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 15px;
+  text-align: center;
+}
 
-    .question {
-      font-size: 1.6rem;
-      font-weight: 600;
-      color: #ffffff;
-      margin-bottom: 30px;
-    }
+.section-description {
+  font-size: 1.1rem;
+  color: #e0e0e0;
+  margin-bottom: 30px;
+  text-align: center;
+  font-style: italic;
+}
 
-    .answers button {
-      display: block;
-      width: 100%;
-      margin: 10px 0;
-      padding: 14px 20px;
-      font-size: 1.1rem;
-      border: none;
-      border-radius: 10px;
-      background: rgba(248, 230, 239, 0.8);
-      color: #000000;
-      font-weight: 500;
-      transition: all 0.3s ease;
-    }
+.question {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 30px;
+}
 
-    .answers button:hover {
-      background: #53a8e5;
-      color: #fff;
-      transform: translateX(5px);
-    }
+.answers button {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: 14px 20px;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 10px;
+  background: rgba(248, 230, 239, 0.8);
+  color: #000000;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
 
-    .progress-container {
-      background: #f1f1f1;
-      height: 10px;
-      border-radius: 10px;
-      margin-bottom: 30px;
-    }
+.answers button:hover {
+  background: #53a8e5;
+  color: #fff;
+  transform: translateX(5px);
+}
 
-    .progress-bar {
-      height: 10px;
-      background: #62aee7;
-      border-radius: 10px;
-      width: 0%;
-      transition: width 0.5s ease;
-    }
+.progress-container {
+  background: #f1f1f1;
+  height: 10px;
+  border-radius: 10px;
+  margin-bottom: 30px;
+}
 
-    .final-screen {
-      display: none;
-      text-align: center;
-      animation: fadeIn 1s ease;
-    }
+.progress-bar {
+  height: 10px;
+  background: #62aee7;
+  border-radius: 10px;
+  width: 0%;
+  transition: width 0.5s ease;
+}
 
-    .final-screen h2 {
-      color: #ffffff;
-      font-weight: 700;
-      font-size: 2.5rem;
-    }
+.final-screen {
+  display: none;
+  text-align: center;
+  animation: fadeIn 1s ease;
+}
 
-    .final-screen p {
-      font-size: 1.2rem;
-      margin-bottom: 30px;
-      color: #ffffff;
-    }
+.final-screen h2 {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 2.5rem;
+}
 
-    .btn-start-over {
-      margin-top: 20px;
-      background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
-      color: #fff;
-      padding: 12px 30px;
-      border: none;
-      border-radius: 50px;
-      transition: all 0.3s ease;
-      font-size: 1.1rem;
-    }
+.final-screen p {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+  color: #ffffff;
+}
 
-    .btn-start-over:hover {
-      background: linear-gradient(135deg, #76b6f5 0%, #ff5275 100%);
-      transform: scale(1.05);
-    }
+.btn-start-over {
+  margin-top: 20px;
+  background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
+  color: #fff;
+  padding: 12px 30px;
+  border: none;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+  font-size: 1.1rem;
+}
 
-    @keyframes slideIn {
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
+.btn-start-over:hover {
+  background: linear-gradient(135deg, #76b6f5 0%, #ff5275 100%);
+  transform: scale(1.05);
+}
 
-    @keyframes fadeIn {
-      to {
-        opacity: 1;
-      }
-    }
+.optional-section {
+  margin-top: 30px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+}
 
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-      .intro-container {
-        margin: 250px auto;
-        padding: 20px;
-      }
-      
-      .intro-text {
-        font-size: 2rem;
-      }
-      
-      .sub-text {
-        font-size: 1.2rem;
-      }
-      
-      .qa-container {
-        margin: 250px auto;
-        padding: 20px;
-      }
-      
-      .question {
-        font-size: 1.3rem;
-      }
-    }
+.optional-section p {
+  font-size: 1rem;
+  color: #e0e0e0;
+  margin-bottom: 20px;
+  text-align: center;
+}
 
-    @media (max-width: 480px) {
-      .intro-text {
-        font-size: 1.8rem;
-      }
-      
-      .sub-text {
-        font-size: 1rem;
-      }
-      
-      .btn-start {
-        padding: 12px 30px;
-        font-size: 1rem;
-      }
-      
-      .question {
-        font-size: 1.1rem;
-      }
-      
-      .answers button {
-        font-size: 1rem;
-        padding: 10px 15px;
-      }
-    }
+.btn-optional {
+  background: linear-gradient(135deg, #76b6f5 0%, #62e7a1 100%);
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  font-size: 1rem;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 0 10px;
+}
+
+.btn-optional:hover {
+  background: linear-gradient(135deg, #62e7a1 0%, #76b6f5 100%);
+  transform: translateY(-2px);
+}
+
+@keyframes slideIn {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .intro-container {
+    margin: 250px auto;
+    padding: 20px;
+  }
+  
+  .intro-text {
+    font-size: 2rem;
+  }
+  
+  .sub-text {
+    font-size: 1.2rem;
+  }
+  
+  .qa-container {
+    margin: 250px auto;
+    padding: 20px;
+  }
+  
+  .question {
+    font-size: 1.3rem;
+  }
+  
+  .section-title {
+    font-size: 1.5rem;
+  }
+  
+  .section-description {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .intro-text {
+    font-size: 1.8rem;
+  }
+  
+  .sub-text {
+    font-size: 1rem;
+  }
+  
+  .btn-start {
+    padding: 12px 30px;
+    font-size: 1rem;
+  }
+  
+  .question {
+    font-size: 1.1rem;
+  }
+  
+  .answers button {
+    font-size: 1rem;
+    padding: 10px 15px;
+  }
+  
+  .section-title {
+    font-size: 1.3rem;
+  }
+  
+  .section-description {
+    font-size: 0.9rem;
+  }
+}
   </style>
 </head>
 <body>
@@ -254,9 +317,20 @@ main, header, section, div {
       <div class="progress-bar" id="progress-bar"></div>
     </div>
 
+    <div id="section-info">
+      <div class="section-title" id="section-title"></div>
+      <div class="section-description" id="section-description"></div>
+    </div>
+
     <div class="question-box" id="question-box">
       <div class="question" id="question">Loading question...</div>
       <div class="answers" id="answers"></div>
+    </div>
+    
+    <div class="optional-section" id="optional-section" style="display: none;">
+      <p>Want to refine your matches with deeper questions?</p>
+      <button class="btn-optional" id="btn-yes">Yes, Continue</button>
+      <button class="btn-optional" id="btn-no">No, Skip</button>
     </div>
   </div>
 
@@ -269,17 +343,212 @@ main, header, section, div {
 </div>
 
 <script>
-  const questions = [
-    { question: "What's your ideal first date?", answers: ["Romantic dinner", "Amusement park", "Netflix night", "Nature hike"] },
-    { question: "How do you spend your weekends?", answers: ["Reading", "Clubbing", "Gaming", "Exploring"] },
-    { question: "What type of music do you love?", answers: ["Pop", "Jazz", "Rock", "Classical"] },
-    { question: "What matters most in love?", answers: ["Trust", "Excitement", "Communication", "Chemistry"] },
-    { question: "Dream vacation?", answers: ["Maldives", "Paris", "Himalayas", "Tokyo"] },
-    { question: "Favorite way to relax?", answers: ["Spa day", "Long walk", "Movies", "Cooking"] },
-    { question: "Biggest turn-on in a partner?", answers: ["Humor", "Kindness", "Intelligence", "Style"] },
-    { question: "How do you handle conflict?", answers: ["Talk it out", "Stay calm", "Need space", "Avoid it"] },
-    { question: "Your idea of fun?", answers: ["Board games", "Adventure sports", "Karaoke", "Candlelight dinner"] },
-    { question: "What do you look for first?", answers: ["Eyes", "Voice", "Vibe", "Confidence"] }
+  const sections = [
+    {
+      title: "Are You Ready for Love?",
+      description: "These questions help us understand whether you're emotionally ready for a committed relationship (Keeper) or still figuring things out (Seeker). Your match results will be filtered accordingly.",
+      questions: [
+        { 
+          question: "What feels most true about you right now?", 
+          answers: [
+            "I'm at a stage in life where I'm looking for something stable and deep.",
+            "I'm open to connections, but not sure what I'm looking for yet.",
+            "I believe relationships should unfold naturally, no pressure or plans."
+          ],
+          types: ["🟢 Keeper", "🔵 Seeker", "🔵 Seeker"]
+        },
+        { 
+          question: "Imagine meeting someone amazing. What are you secretly hoping for?", 
+          answers: [
+            "That we slowly build something real and lasting together.",
+            "That we vibe well and just see where things go.",
+            "That it's fun, exciting, and doesn't need to get too serious."
+          ],
+          types: ["🟢 Keeper", "🔵 Seeker", "🔵 Seeker"]
+        },
+        { 
+          question: "You start to really like someone, and they suddenly stop texting for a few days. What do you feel?", 
+          answers: [
+            "Worried — I care deeply and wonder what went wrong.",
+            "Detached — I liked them, but I move on quickly.",
+            "Confused — I don't want to chase, but I still think about them."
+          ],
+          types: ["🟢 Keeper", "🔵 Seeker", "🔵 Seeker"]
+        }
+      ]
+    },
+    {
+      title: "What Kind of Partner Are You Emotionally?",
+      description: "These 10 questions reveal your emotional personality — the way you love, feel, and respond in relationships. This helps us match you with people who emotionally connect with you.",
+      questions: [
+        { 
+          question: "When you're falling in love, you usually feel...", 
+          answers: [
+            "Safe and calm inside",
+            "Excited and full of butterflies",
+            "Like I've found someone truly rare",
+            "Scared of being too vulnerable"
+          ],
+          types: ["👂 Listener", "💘 Romantic", "🌙 Dreamer", "🛡️ Protector"]
+        },
+        { 
+          question: "What kind of emotional support feels most comforting to you?", 
+          answers: [
+            "Someone silently sitting with me through pain",
+            "Someone helping me fix the situation",
+            "Someone saying exactly the right words",
+            "Someone holding me tight without speaking"
+          ],
+          types: ["🌿 Nurturer", "🛡️ Protector", "👂 Listener", "💘 Romantic"]
+        },
+        { 
+          question: "In a disagreement with someone you care about, you...", 
+          answers: [
+            "Try to stay calm and really listen",
+            "Express your emotions openly",
+            "Try to solve it quickly and move on",
+            "Take it personally and overthink it"
+          ],
+          types: ["👂 Listener", "💘 Romantic", "🛡️ Protector", "🌙 Dreamer"]
+        },
+        { 
+          question: "How do you want others to describe you?", 
+          answers: [
+            "Kind and soft",
+            "Strong and independent",
+            "Perfect and without flaws",
+            "Honest and growing"
+          ],
+          types: ["🌿 Nurturer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
+        },
+        { 
+          question: "What do you crave most in a relationship?", 
+          answers: [
+            "Peace and emotional safety",
+            "Excitement and mystery",
+            "Growth and learning together",
+            "Feeling truly known and accepted"
+          ],
+          types: ["🌿 Nurturer", "💘 Romantic", "🌟 Idealist", "🌙 Dreamer"]
+        },
+        { 
+          question: "What makes you feel emotionally alive in love?", 
+          answers: [
+            "Deep, late-night emotional conversations",
+            "Intense physical closeness and passion",
+            "When someone notices the little things",
+            "Solving life's problems together"
+          ],
+          types: ["🌙 Dreamer", "💘 Romantic", "🌿 Nurturer", "🛡️ Protector"]
+        },
+        { 
+          question: "When you feel deeply hurt, you usually...", 
+          answers: [
+            "Cry or let it out",
+            "Get silent and withdraw",
+            "Keep busy to avoid it",
+            "Talk it out with someone trusted"
+          ],
+          types: ["🌙 Dreamer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
+        },
+        { 
+          question: "What does financial stability mean to you in a relationship?", 
+          answers: [
+            "Freedom to spend and still save together",
+            "Clear roles — one earns, one manages",
+            "Always discuss big spending decisions",
+            "Having separate money but shared goals"
+          ],
+          types: ["🛡️ Protector", "👂 Listener", "🌿 Nurturer", "🌟 Idealist"]
+        },
+        { 
+          question: "How do you usually show someone that you love them?", 
+          answers: [
+            "I check in on their feelings often",
+            "I protect them and help solve their problems",
+            "I write, say, or express how much I care",
+            "I give them space but make sure I'm always there"
+          ],
+          types: ["🌿 Nurturer", "🛡️ Protector", "💘 Romantic", "👂 Listener"]
+        },
+        { 
+          question: "Your partner has a serious conflict with your family. You...", 
+          answers: [
+            "Support your partner but stay neutral",
+            "Try to fix the situation without taking sides",
+            "Defend your family — they raised me",
+            "Fully support my partner, even if it causes tension"
+          ],
+          types: ["👂 Listener", "🌿 Nurturer", "🛡️ Protector", "🌙 Dreamer"]
+        }
+      ]
+    },
+    {
+      title: "Want Deeper Matches? (Optional)",
+      description: "These 6 extra questions help us detect emotional maturity, depth, and hidden traits. They refine your results — but only if you choose to answer them.",
+      questions: [
+        { 
+          question: "You see your partner being emotionally close to a friend. You feel…", 
+          answers: [
+            "Curious and ask openly",
+            "Completely fine",
+            "A little jealous but trust them",
+            "Insecure and silent"
+          ],
+          types: ["🌿 Nurturer", "👂 Listener", "💘 Romantic", "🛡️ Protector"]
+        },
+        { 
+          question: "Arrange these in order of importance in a relationship:", 
+          answers: [
+            "Trust",
+            "Emotional connection",
+            "Shared goals",
+            "Physical intimacy"
+          ],
+          types: ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "💘 Romantic"]
+        },
+        { 
+          question: "How do you handle emotional overwhelm?", 
+          answers: [
+            "Talk it out immediately",
+            "Need space to calm down",
+            "Write or reflect privately",
+            "Look for distraction or activity"
+          ],
+          types: ["👂 Listener", "🛡️ Protector", "🌙 Dreamer", "🌟 Idealist"]
+        },
+        { 
+          question: "What's your biggest fear in love?", 
+          answers: [
+            "Being misunderstood",
+            "Losing emotional connection",
+            "Getting hurt or rejected",
+            "Not being able to protect the person I love"
+          ],
+          types: ["🌟 Idealist", "👂 Listener", "🌙 Dreamer", "🛡️ Protector"]
+        },
+        { 
+          question: "What do you quietly need most in a relationship?", 
+          answers: [
+            "To feel safe and protected",
+            "To be emotionally understood",
+            "To give and receive open affection",
+            "To be accepted without pressure"
+          ],
+          types: ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "👂 Listener"]
+        },
+        { 
+          question: "Which quality do you most admire in a partner?", 
+          answers: [
+            "Loyalty",
+            "Compassion",
+            "Passion",
+            "Wisdom"
+          ],
+          types: ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "🌟 Idealist"]
+        }
+      ]
+    }
   ];
 
   const animationList = [
@@ -288,59 +557,123 @@ main, header, section, div {
     "animate__flipInX", "animate__lightSpeedInLeft", "animate__backInUp", "animate__fadeInTopLeft"
   ];
 
-  let current = 0;
+  let currentSection = 0;
+  let currentQuestion = 0;
   let selectedAnswers = [];
+  let personalityTypes = [];
+  let isOptional = false;
 
   // Initialize the page
   window.onload = () => {
     document.getElementById('btn-start').addEventListener('click', startQuiz);
+    document.getElementById('btn-yes').addEventListener('click', startOptionalQuestions);
+    document.getElementById('btn-no').addEventListener('click', skipOptionalQuestions);
   };
 
   function startQuiz() {
     document.getElementById('intro-container').style.display = 'none';
     document.getElementById('qa-container').style.display = 'block';
-    loadQuestion(current);
+    loadSection(currentSection);
   }
 
-  function loadQuestion(index) {
+  function loadSection(sectionIndex) {
+    const section = sections[sectionIndex];
+    document.getElementById('section-title').textContent = section.title;
+    document.getElementById('section-description').textContent = section.description;
+    loadQuestion(sectionIndex, 0);
+  }
+
+  function loadQuestion(sectionIndex, questionIndex) {
     const questionEl = document.getElementById('question');
     const answersBox = document.getElementById('answers');
     const progressBar = document.getElementById('progress-bar');
     const questionBox = document.getElementById('question-box');
+    const section = sections[sectionIndex];
 
-    if (index < questions.length) {
-      // Apply animation
-      questionBox.className = `question-box animate__animated ${animationList[index % animationList.length]}`;
+    // Apply animation
+    questionBox.className = `question-box animate__animated ${animationList[(sectionIndex + questionIndex) % animationList.length]}`;
 
-      // Set question
-      questionEl.innerText = questions[index].question;
-      answersBox.innerHTML = '';
+    // Set question
+    questionEl.innerText = section.questions[questionIndex].question;
+    answersBox.innerHTML = '';
 
-      questions[index].answers.forEach(answer => {
-        const btn = document.createElement('button');
-        btn.textContent = answer;
-        btn.onclick = () => {
-          selectedAnswers.push(answer);
-          nextQuestion();
-        };
-        answersBox.appendChild(btn);
-      });
+    section.questions[questionIndex].answers.forEach((answer, i) => {
+      const btn = document.createElement('button');
+      btn.textContent = answer;
+      btn.onclick = () => {
+        // Store both answer and type
+        selectedAnswers.push({
+          answer: answer,
+          type: section.questions[questionIndex].types[i]
+        });
+        nextQuestion(sectionIndex, questionIndex);
+      };
+      answersBox.appendChild(btn);
+    });
 
-      progressBar.style.width = `${(index / questions.length) * 100}%`;
+    // Calculate progress across all sections
+    let totalQuestions = 0;
+    let answeredQuestions = 0;
+    
+    for (let i = 0; i < sections.length; i++) {
+      totalQuestions += sections[i].questions.length;
+      if (i < sectionIndex) {
+        answeredQuestions += sections[i].questions.length;
+      } else if (i === sectionIndex) {
+        answeredQuestions += questionIndex;
+      }
+    }
+    
+    progressBar.style.width = `${(answeredQuestions / totalQuestions) * 100}%`;
+  }
+
+  function nextQuestion(sectionIndex, questionIndex) {
+    const section = sections[sectionIndex];
+    
+    if (questionIndex + 1 < section.questions.length) {
+      // More questions in this section
+      loadQuestion(sectionIndex, questionIndex + 1);
     } else {
-      showFinalScreen();
+      // End of section
+      if (sectionIndex === 0) {
+        // After Keeper/Seeker section, move to Emotional Personality
+        currentSection = 1;
+        loadSection(currentSection);
+      } else if (sectionIndex === 1) {
+        // After Emotional Personality, show optional section prompt
+        document.getElementById('optional-section').style.display = 'block';
+        document.getElementById('question-box').style.display = 'none';
+        isOptional = true;
+      } else if (sectionIndex === 2) {
+        // After optional section, show results
+        showFinalScreen();
+      }
     }
   }
 
-  function nextQuestion() {
-    current++;
-    loadQuestion(current);
+  function startOptionalQuestions() {
+    document.getElementById('optional-section').style.display = 'none';
+    document.getElementById('question-box').style.display = 'block';
+    currentSection = 2;
+    loadSection(currentSection);
+  }
+
+  function skipOptionalQuestions() {
+    showFinalScreen();
   }
 
   function showFinalScreen() {
     document.getElementById('qa-content').style.display = 'none';
     document.getElementById('final-screen').style.display = 'block';
     document.getElementById('progress-bar').style.width = `100%`;
+
+    // Analyze results
+    const typeCounts = {};
+    selectedAnswers.forEach(item => {
+      if (item.type) {
+        typeCounts[item.type] = (typeCounts[item.type] || 0) + 1;
+      }
+    });
 
     // 🎉 Confetti celebration
     confetti({
@@ -367,13 +700,18 @@ main, header, section, div {
   }
 
   function restart() {
-    current = 0;
+    currentSection = 0;
+    currentQuestion = 0;
     selectedAnswers = [];
+    personalityTypes = [];
+    isOptional = false;
     document.getElementById('qa-content').style.display = 'block';
     document.getElementById('final-screen').style.display = 'none';
+    document.getElementById('optional-section').style.display = 'none';
+    document.getElementById('question-box').style.display = 'block';
     document.getElementById('intro-container').style.display = 'none';
     document.getElementById('qa-container').style.display = 'block';
-    loadQuestion(current);
+    loadSection(currentSection);
   }
 </script>
 
