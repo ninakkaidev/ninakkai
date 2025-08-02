@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ninakkayi-ForYou | My Profile</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Custom styles */
+        body {
+            padding-bottom: 70px; /* Space for bottom navigation */
+            position: relative;
+            overflow-x: hidden;
+            transition: background-color 0.3s ease;
+        }
+        
+        .profile-pic-upload {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.5);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: hsl(0, 0%, 0%);
+            cursor: pointer;
+        }
+        
+        .photo-slider {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+        
+        .photo-slider::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .notification-item.unread {
+            background-color: #f3f4f6;
+        }
+        
+        .settings-option:hover {
+            background-color: #f9fafb;
+        }
+        
+        .chat-message.sent {
+            background-color: #404150;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 0;
+        }
+        
+        .chat-message.received {
+            background-color: #f3f4f6;
+            margin-right: auto;
+            border-bottom-left-radius: 0;
+        }
+        
+        .edit-field {
+            display: none;
+        }
+        
+        .edit-mode .view-field {
+            display: none;
+        }
+        
+        .edit-mode .edit-field {
+            display: block;
+        }
+        
+        /* Background animation */
+        .bg-circles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(31, 113, 212, 0.812);
+            animation: move 15s infinite linear;
+        }
+        
+        @keyframes move {
+            0% {
+                transform: translateY(0) translateX(0);
+            }
+            25% {
+                transform: translateY(-50px) translateX(50px);
+            }
+            50% {
+                transform: translateY(0) translateX(100px);
+            }
+            75% {
+                transform: translateY(50px) translateX(50px);
+            }
+            100% {
+                transform: translateY(0) translateX(0);
+            }
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .photo-slider {
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .circle {
+                animation-duration: 20s;
+            }
+            
+            .chat-message {
+                max-width: 80% !important;
+            }
+        }
+        
+        /* Dark mode styles */
+        .dark body {
+            background-color: #111827;
+            color: #f3f4f6;
+        }
+        
+        .dark .bg-white {
+            background-color: #1f2937 !important;
+            color: #f3f4f6;
+        }
+        
+        .dark .text-gray-800 {
+            color: #f3f4f6 !important;
+        }
+        
+        .dark .bg-gray-100 {
+            background-color: #111827 !important;
+        }
+        
+        .dark .bg-gray-50 {
+            background-color: #374151 !important;
+        }
+        
+        .dark .text-gray-500 {
+            color: #9ca3af !important;
+        }
+        
+        .dark .border-gray-200 {
+            border-color: #374151 !important;
+        }
+        
+        .dark .notification-item.unread {
+            background-color: #374151 !important;
+        }
+        
+        .dark .chat-message.received {
+            background-color: #374151 !important;
+        }
+        
+        /* Settings Modal Styles */
+        #settingsModal {
+            transition: opacity 0.3s ease;
+        }
+        
+        #settingsModal .settings-option {
+            transition: background-color 0.2s ease;
+        }
+        
+        .dark #settingsModal .settings-option:hover {
+            background-color: #374151 !important;
+        }
+        
+        /* Language Selector Styles */
+        .language-selector {
+            position: relative;
+        }
+        
+        .language-options {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            width: 150px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            display: none;
+        }
+        
+        .dark .language-options {
+            background-color: #1f2937;
+            border-color: #374151;
+        }
+        
+        .language-options.active {
+            display: block;
+        }
+        
+        .language-option {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+        }
+        
+        .language-option:hover {
+            background-color: #f9fafb;
+        }
+        
+        .dark .language-option:hover {
+            background-color: #374151;
+        }
+        
+        .language-option.selected {
+            color: #ec4899;
+            font-weight: 500;
+        }
+        
+        /* Change Password Modal */
+        #changePasswordModal {
+            transition: all 0.3s ease;
+        }
+        
+        /* Confirmation Dialog */
+        .confirmation-dialog {
+            transition: all 0.3s ease;
+        }
+        
+        .dark .confirmation-dialog div {
+            background-color: #1f2937;
+            color: #f3f4f6;
+        }
+
+        /* Updated Toggle Styles */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .toggle-label {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            background-color: #d1d5db;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .toggle-label:hover {
+            background-color: #9ca3af;
+        }
+
+        .toggle-label.peer-checked {
+            background-color: #ec4899;
+        }
+
+        .toggle-label.peer-checked:hover {
+            background-color: #db2777;
+        }
+
+        .toggle-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            transform: translateX(0);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .toggle-label.peer-checked .toggle-knob {
+            transform: translateX(20px);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .toggle-status {
+            min-width: 30px;
+            transition: color 0.3s ease;
+        }
+
+        .dark .toggle-label {
+            background-color: #4b5563;
+        }
+
+        .dark .toggle-label:hover {
+            background-color: #6b7280;
+        }
+
+        .dark .toggle-label.peer-checked {
+            background-color: #ec4899;
+        }
+
+        .dark .toggle-label.peer-checked:hover {
+            background-color: #db2777;
+        }
+
+        .toggle-label:focus-within {
+            outline: 2px solid #ec4899;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <!-- Background Animation -->
+    <div class="bg-circles" id="bgCircles"></div>
+    
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="explore.html" class="text-gray-600 hover:text-pink-500">
+                <i class="fas fa-arrow-left text-xl"></i>
+            </a>
+            <h1 class="text-xl font-bold text-neutral-900">My Profile</h1>
+            <button id="settingsBtn" class="text-gray-600 hover:text-pink-500">
+                <i class="fas fa-cog text-xl"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-4">
+        <!-- Profile Header -->
+        <div class="bg-gradient-to-r from-indigo-100 via-white to-pink-100 rounded-xl shadow-md p-6 mb-6 relative">
+            <div class="flex flex-col md:flex-row items-center md:items-start">
+                <!-- Profile Picture -->
+                <div class="relative mb-4 md:mb-0 md:mr-6">
+                    <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-pink-200 relative">
+                        <img id="profileImage" src="https://randomuser.me/api/portraits/women/44.jpg" alt="Profile" class="w-full h-full object-cover">
+                        <div class="profile-pic-upload">
+                            <i class="fas fa-camera text-sm"></i>
+                            <input type="file" id="profileUpload" accept="image/*" class="hidden">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Profile Info -->
+                <div class="flex-grow text-center md:text-left">
+                    <div class="mb-4">
+                        <h2 class="text-2xl font-bold flex items-center justify-center md:justify-start">
+                            <span id="nameView" class="view-field">Sarah Johnson</span>
+                            <input id="nameEdit" type="text" value="Sarah Johnson" class="edit-field w-full border rounded px-2 py-1">
+                            <span id="ageView" class="view-field ml-2 text-gray-600">, 27</span>
+                            <input id="ageEdit" type="number" value="27" class="edit-field w-16 border rounded px-2 py-1 ml-2">
+                            <button id="editProfileBtn" class="ml-2 text-pink-500 hover:text-pink-600">
+                                <i class="fas fa-pencil-alt text-sm"></i>
+                            </button>
+                        </h2>
+                        <div class="text-gray-600 mb-2">
+                            <span id="locationView" class="view-field">New York, NY</span>
+                            <input id="locationEdit" type="text" value="New York, NY" class="edit-field w-full border rounded px-2 py-1">
+                        </div>
+                        <div class="flex justify-center md:justify-start space-x-2">
+                            <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">Photographer</span>
+                            <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">Coffee Lover</span>
+                            <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">Traveler</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bio -->
+            <div class="mt-6">
+                <h3 class="font-semibold mb-2">About Me</h3>
+                <p id="bioView" class="view-field text-gray-700">
+                    Adventure seeker and coffee enthusiast! 📷 I love capturing moments and exploring new places.
+                    Looking for someone to share spontaneous trips and deep conversations with.
+                    Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
+                </p>
+                <textarea id="bioEdit" class="edit-field w-full border rounded px-3 py-2 h-24">
+Adventure seeker and coffee enthusiast! 📷 I love capturing moments and exploring new places.
+Looking for someone to share spontaneous trips and deep conversations with.
+Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
+                </textarea>
+            </div>
+            
+            <!-- Edit Buttons (shown only in edit mode) -->
+            <div id="editButtons" class="edit-field flex justify-end space-x-2 mt-4">
+                <button id="cancelEditBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100">Cancel</button>
+                <button id="saveProfileBtn" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600">Save Changes</button>
+            </div>
+        </div>
+        
+        <!-- Photo Gallery -->
+        <div class="bg-gradient-to-r from-indigo-100 via-white to-pink-100 rounded-xl shadow-md p-6 mb-6 relative">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">My Photos</h2>
+                <button id="addPhotoBtn" class="text-pink-500 text-sm font-medium flex items-center">
+                    <i class="fas fa-plus mr-1"></i> Add Photo
+                </button>
+                <input type="file" id="photoUpload" accept="image/*" class="hidden" multiple>
+            </div>
+            
+            <div class="photo-slider flex overflow-x-auto pb-2 -mx-2" style="scroll-snap-type: x mandatory;">
+                <div class="flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative" style="scroll-snap-align: start;">
+                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80" class="w-full h-full object-cover">
+                    <button class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                </div>
+                <div class="flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative" style="scroll-snap-align: start;">
+                    <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80" class="w-full h-full object-cover">
+                    <button class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                </div>
+                <div class="flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative" style="scroll-snap-align: start;">
+                    <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80" class="w-full h-full object-cover">
+                    <button class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                </div>
+                <div class="flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative" style="scroll-snap-align: start;">
+                    <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80" class="w-full h-full object-cover">
+                    <button class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="bg-gradient-to-r from-indigo-100 via-white to-pink-100 rounded-xl shadow-md p-6 mb-6 relative">
+            <div class="flex border-b">
+                <button class="tab-btn flex-1 py-3 font-medium text-center border-b-2 border-pink-500 text-pink-500" data-tab="connections">
+                    Connections (24)
+                </button>
+                <button class="tab-btn flex-1 py-3 font-medium text-center border-b-2 border-transparent text-gray-500 hover:text-pink-500" data-tab="chats">
+                    Chats
+                </button>
+                <button class="tab-btn flex-1 py-3 font-medium text-center border-b-2 border-transparent text-gray-500 hover:text-pink-500" data-tab="notifications">
+                    Notifications
+                </button>
+            </div>
+            
+            <!-- Tab Contents -->
+            <div class="p-4">
+                <!-- Connections Tab -->
+                <div id="connections" class="tab-content active">
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <!-- Connection 1 -->
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <div class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-2">
+                                <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Alex" class="w-full h-full object-cover">
+                            </div>
+                            <h3 class="font-medium">Alex</h3>
+                            <p class="text-gray-500 text-sm">Photographer</p>
+                            <div class="flex justify-center space-x-2 mt-2">
+                                <button class="text-blue-500 hover:text-blue-600">
+                                    <i class="fas fa-comment"></i>
+                                </button>
+                                <button class="text-pink-500 hover:text-pink-600">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Connection 2 -->
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <div class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-2">
+                                <img src="https://randomuser.me/api/portraits/women/65.jpg" alt="Sophia" class="w-full h-full object-cover">
+                            </div>
+                            <h3 class="font-medium">Sophia</h3>
+                            <p class="text-gray-500 text-sm">Designer</p>
+                            <div class="flex justify-center space-x-2 mt-2">
+                                <button class="text-blue-500 hover:text-blue-600">
+                                    <i class="fas fa-comment"></i>
+                                </button>
+                                <button class="text-pink-500 hover:text-pink-600">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Connection 3 -->
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <div class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-2">
+                                <img src="https://randomuser.me/api/portraits/men/75.jpg" alt="James" class="w-full h-full object-cover">
+                            </div>
+                            <h3 class="font-medium">James</h3>
+                            <p class="text-gray-500 text-sm">Engineer</p>
+                            <div class="flex justify-center space-x-2 mt-2">
+                                <button class="text-blue-500 hover:text-blue-600">
+                                    <i class="fas fa-comment"></i>
+                                </button>
+                                <button class="text-pink-500 hover:text-pink-600">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Connection 4 -->
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <div class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-2">
+                                <img src="https://randomuser.me/api/portraits/women/33.jpg" alt="Emma" class="w-full h-full object-cover">
+                            </div>
+                            <h3 class="font-medium">Emma</h3>
+                            <p class="text-gray-500 text-sm">Writer</p>
+                            <div class="flex justify-center space-x-2 mt-2">
+                                <button class="text-blue-500 hover:text-blue-600">
+                                    <i class="fas fa-comment"></i>
+                                </button>
+                                <button class="text-pink-500 hover:text-pink-600">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button class="text-pink-500 font-medium">View All Connections</button>
+                    </div>
+                </div>
+                
+                <!-- Chats Tab -->
+                <div id="chats" class="tab-content">
+                    <!-- Chat list -->
+                    <div class="space-y-3">
+                        <!-- Chat 1 -->
+                        <div class="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
+                            <div class="w-12 h-12 rounded-full overflow-hidden mr-3">
+                                <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Alex" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between">
+                                    <h3 class="font-medium">Alex</h3>
+                                    <span class="text-xs text-gray-500">2h ago</span>
+                                </div>
+                                <p class="text-sm text-gray-500 truncate">Hey! How about that coffee this weekend?</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Chat 2 -->
+                        <div class="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
+                            <div class="w-12 h-12 rounded-full overflow-hidden mr-3">
+                                <img src="https://randomuser.me/api/portraits/women/65.jpg" alt="Sophia" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between">
+                                    <h3 class="font-medium">Sophia</h3>
+                                    <span class="text-xs text-gray-500">1d ago</span>
+                                </div>
+                                <p class="text-sm text-gray-500 truncate">Loved your new photos from the trip!</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Chat 3 -->
+                        <div class="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
+                            <div class="w-12 h-12 rounded-full overflow-hidden mr-3">
+                                <img src="https://randomuser.me/api/portraits/men/75.jpg" alt="James" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between">
+                                    <h3 class="font-medium">James</h3>
+                                    <span class="text-xs text-gray-500">3d ago</span>
+                                </div>
+                                <p class="text-sm text-gray-500 truncate">Are you free for hiking this Saturday?</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat view (hidden by default) -->
+                    <div id="chatView" class="hidden">
+                        <div class="flex items-center border-b pb-3 mb-3">
+                            <button id="backToChats" class="mr-2 text-gray-600">
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                            <div class="w-10 h-10 rounded-full overflow-hidden mr-3">
+                                <img id="chatUserImage" src="" alt="" class="w-full h-full object-cover">
+                            </div>
+                            <div>
+                                <h3 id="chatUserName" class="font-medium"></h3>
+                                <p id="chatUserStatus" class="text-xs text-gray-500">Online</p>
+                            </div>
+                        </div>
+                        
+                        <div id="chatMessages" class="h-64 overflow-y-auto mb-3 space-y-2">
+                            <!-- Messages will be loaded here -->
+                        </div>
+                        
+                        <div class="flex">
+                            <input type="text" placeholder="Type a message..." class="flex-grow border rounded-l-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500">
+                            <button class="bg-pink-500 text-white px-4 py-2 rounded-r-lg hover:bg-pink-600">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notifications Tab -->
+                <div id="notifications" class="tab-content">
+                    <div class="space-y-3">
+                        <!-- Notification 1 -->
+                        <div class="notification-item unread p-3 rounded-lg cursor-pointer">
+                            <div class="flex items-start">
+                                <div class="w-10 h-10 rounded-full overflow-hidden mr-3">
+                                    <img src="https://randomuser.me/api/portraits/men/22.jpg" alt="Michael" class="w-full h-full object-cover">
+                                </div>
+                                <div class="flex-grow">
+                                    <p class="text-sm">
+                                        <span class="font-medium">Michael</span> liked your profile
+                                        <span class="text-xs text-gray-500 ml-2">10m ago</span>
+                                    </p>
+                                </div>
+                                <div class="w-2 h-2 bg-pink-500 rounded-full mt-1"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Notification 2 -->
+                        <div class="notification-item p-3 rounded-lg cursor-pointer">
+                            <div class="flex items-start">
+                                <div class="w-10 h-10 rounded-full overflow-hidden mr-3">
+                                    <img src="https://randomuser.me/api/portraits/women/33.jpg" alt="Emma" class="w-full h-full object-cover">
+                                </div>
+                                <div class="flex-grow">
+                                    <p class="text-sm">
+                                        <span class="font-medium">Emma</span> sent you a message
+                                        <span class="text-xs text-gray-500 ml-2">2h ago</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Notification 3 -->
+                        <div class="notification-item p-3 rounded-lg cursor-pointer">
+                            <div class="flex items-start">
+                                <div class="w-10 h-10 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center mr-3">
+                                    <i class="fas fa-heart"></i>
+                                </div>
+                                <div class="flex-grow">
+                                    <p class="text-sm">
+                                        <span class="font-medium">Spark</span> You have 5 new matches today!
+                                        <span class="text-xs text-gray-500 ml-2">5h ago</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Notification 4 -->
+                        <div class="notification-item p-3 rounded-lg cursor-pointer">
+                            <div class="flex items-start">
+                                <div class="w-10 h-10 rounded-full overflow-hidden mr-3">
+                                    <img src="https://randomuser.me/api/portraits/men/75.jpg" alt="James" class="w-full h-full object-cover">
+                                </div>
+                                <div class="flex-grow">
+                                    <p class="text-sm">
+                                        <span class="font-medium">James</span> commented on your photo
+                                        <span class="text-xs text-gray-500 ml-2">1d ago</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button class="text-pink-500 font-medium">Clear All Notifications</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden">
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto dark:bg-gray-800">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold dark:text-white">Settings</h2>
+                <button id="closeSettings" class="text-gray-500 hover:text-gray-700 dark:text-gray-300">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- Account Settings -->
+                <div class="settings-option p-3 rounded-lg dark:bg-gray-700">
+                    <h3 class="font-medium mb-2 dark:text-white">Account</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center dark:text-gray-300">
+                            <span>Email</span>
+                            <span class="text-gray-500 dark:text-gray-400">sarah.johnson@example.com</span>
+                        </div>
+                        <div class="flex justify-between items-center dark:text-gray-300">
+                            <span>Phone</span>
+                            <span class="text-gray-500 dark:text-gray-400">+1 (555) 123-4567</span>
+                        </div>
+                        <button class="w-full text-left text-pink-500 font-medium mt-2 dark:text-pink-400">Change Password</button>
+                    </div>
+                </div>
+                
+                <!-- Notification Settings -->
+                <div class="settings-option p-3 rounded-lg dark:bg-gray-700">
+                    <h3 class="font-medium mb-2 dark:text-white">Notifications</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center dark:text-gray-300">
+                            <span>New matches</span>
+                            <div class="toggle-container">
+                                <input type="checkbox" id="newMatchesToggle" class="sr-only peer" checked>
+                                <label for="newMatchesToggle" class="toggle-label relative inline-block w-11 h-6 bg-gray-200 rounded-full cursor-pointer peer-checked:bg-pink-500 transition-colors duration-300">
+                                    <span class="toggle-knob absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm transform peer-checked:translate-x-5 transition-transform duration-300"></span>
+                                </label>
+                                <span class="toggle-status text-sm text-gray-500 ml-2 dark:text-gray-400"></span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center dark:text-gray-300">
+                            <span>Messages</span>
+                            <div class="toggle-container">
+                                <input type="checkbox" id="messagesToggle" class="sr-only peer" checked>
+                                <label for="messagesToggle" class="toggle-label relative inline-block w-11 h-6 bg-gray-200 rounded-full cursor-pointer peer-checked:bg-pink-500 transition-colors duration-300">
+                                    <span class="toggle-knob absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm transform peer-checked:translate-x-5 transition-transform duration-300"></span>
+                                </label>
+                                <span class="toggle-status text-sm text-gray-500 ml-2 dark:text-gray-400"></span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center dark:text-gray-300">
+                            <span>Profile likes</span>
+                            <div class="toggle-container">
+                                <input type="checkbox" id="profileLikesToggle" class="sr-only peer" checked>
+                                <label for="profileLikesToggle" class="toggle-label relative inline-block w-11 h-6 bg-gray-200 rounded-full cursor-pointer peer-checked:bg-pink-500 transition-colors duration-300">
+                                    <span class="toggle-knob absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm transform peer-checked:translate-x-5 transition-transform duration-300"></span>
+                                </label>
+                                <span class="toggle-status text-sm text-gray-500 ml-2 dark:text-gray-400"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- App Settings -->
+                <div class="settings-option p-3 rounded-lg dark:bg-gray-700">
+                    <h3 class="font-medium mb-2 dark:text-white">App Settings</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center dark:text-gray-300">
+                            <span>Dark Mode</span>
+                            <div class="toggle-container">
+                                <input type="checkbox" id="darkModeToggle" class="sr-only peer">
+                                <label for="darkModeToggle" class="toggle-label relative inline-block w-11 h-6 bg-gray-200 rounded-full cursor-pointer peer-checked:bg-pink-500 transition-colors duration-300">
+                                    <span class="toggle-knob absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm transform peer-checked:translate-x-5 transition-transform duration-300"></span>
+                                </label>
+                                <span class="toggle-status text-sm text-gray-500 ml-2 dark:text-gray-400"></span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center dark:text-gray-300">
+                            <span>Language</span>
+                            <div class="language-selector relative">
+                                <span class="text-gray-500 cursor-pointer flex items-center dark:text-gray-400">
+                                    English <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                                </span>
+                                <div class="language-options hidden absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg shadow-lg z-10">
+                                    <div class="language-option selected px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="en">English</div>
+                                    <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="es">Español</div>
+                                    <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="fr">Français</div>
+                                    <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="de">Deutsch</div>
+                                    <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="ja">日本語</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Danger Zone -->
+                <div class="settings-option p-3 rounded-lg border border-red-100 dark:border-red-900 dark:bg-gray-700">
+                    <h3 class="font-medium mb-2 text-red-500 dark:text-red-400">Danger Zone</h3>
+                    <div class="space-y-3">
+                        <button class="w-full text-left text-red-500 dark:text-red-400">Delete Account</button>
+                        <button class="w-full text-left text-red-500 dark:text-red-400">Log Out</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg z-10 dark:bg-gray-800">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-around py-3">
+                <a href="explore.html" class="text-gray-500 hover:text-pink-500 flex flex-col items-center dark:text-gray-400">
+                    <i class="fas fa-compass text-xl"></i>
+                    <span class="text-xs mt-1">Explore</span>
+                </a>
+                <a href="explore.html#matches-section" class="text-gray-500 hover:text-pink-500 flex flex-col items-center dark:text-gray-400">
+                    <i class="fas fa-heart text-xl"></i>
+                    <span class="text-xs mt-1">Matches</span>
+                </a>
+                <a href="#" class="text-pink-500 flex flex-col items-center dark:text-pink-400">
+                    <i class="fas fa-user text-xl"></i>
+                    <span class="text-xs mt-1">Profile</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Create background circles
+            const bgCircles = document.getElementById('bgCircles');
+            const colors = ['rgba(236, 72, 153, 0.1)', 'rgba(236, 72, 153, 0.08)', 'rgba(236, 72, 153, 0.06)'];
+            
+            for (let i = 0; i < 15; i++) {
+                const circle = document.createElement('div');
+                circle.className = 'circle';
+                
+                // Random size between 50px and 200px
+                const size = Math.random() * 150 + 50;
+                circle.style.width = `${size}px`;
+                circle.style.height = `${size}px`;
+                
+                // Random position
+                circle.style.left = `${Math.random() * 100}%`;
+                circle.style.top = `${Math.random() * 100}%`;
+                
+                // Random color
+                circle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                
+                // Random animation duration and delay
+                const duration = Math.random() * 20 + 10;
+                const delay = Math.random() * 5;
+                circle.style.animationDuration = `${duration}s`;
+                circle.style.animationDelay = `${delay}s`;
+                
+                bgCircles.appendChild(circle);
+            }
+            
+            // Tab functionality
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Remove active class from all buttons and contents
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('border-pink-500', 'text-pink-500');
+                        btn.classList.add('border-transparent', 'text-gray-500');
+                    });
+                    
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    
+                    // Add active class to clicked button and corresponding content
+                    button.classList.remove('border-transparent', 'text-gray-500');
+                    button.classList.add('border-pink-500', 'text-pink-500');
+                    
+                    const tabId = button.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Chat functionality
+            const chatItems = document.querySelectorAll('#chats .flex.items-center.p-3');
+            const chatList = document.querySelector('#chats > div:first-child');
+            const chatView = document.getElementById('chatView');
+            const backToChats = document.getElementById('backToChats');
+            
+            chatItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const userName = item.querySelector('h3').textContent;
+                    const userImage = item.querySelector('img').src;
+                    
+                    document.getElementById('chatUserName').textContent = userName;
+                    document.getElementById('chatUserImage').src = userImage;
+                    
+                    // Load chat messages (simulated)
+                    const chatMessages = document.getElementById('chatMessages');
+                    chatMessages.innerHTML = '';
+                    
+                    // Sample messages
+                    const messages = [
+                        { text: "Hey there! How are you?", sent: false, time: "10:30 AM" },
+                        { text: "I'm good, thanks! How about you?", sent: true, time: "10:32 AM" },
+                        { text: "Doing well! Want to grab coffee this weekend?", sent: false, time: "10:33 AM" },
+                        { text: "That sounds great! How about Saturday at 2pm?", sent: true, time: "10:35 AM" },
+                        { text: "Perfect! See you then at Central Perk", sent: false, time: "10:36 AM" }
+                    ];
+                    
+                    messages.forEach(msg => {
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = `chat-message rounded-lg px-3 py-2 max-w-xs ${msg.sent ? 'sent' : 'received'}`;
+                        messageDiv.innerHTML = `
+                            <p>${msg.text}</p>
+                            <p class="text-xs opacity-70 mt-1 text-right">${msg.time}</p>
+                        `;
+                        chatMessages.appendChild(messageDiv);
+                    });
+                    
+                    // Scroll to bottom
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    // Show chat view
+                    chatList.classList.add('hidden');
+                    chatView.classList.remove('hidden');
+                });
+            });
+            
+            backToChats.addEventListener('click', () => {
+                chatList.classList.remove('hidden');
+                chatView.classList.add('hidden');
+            });
+            
+            // Profile edit functionality
+            const editProfileBtn = document.getElementById('editProfileBtn');
+            const cancelEditBtn = document.getElementById('cancelEditBtn');
+            const saveProfileBtn = document.getElementById('saveProfileBtn');
+            const profileSection = document.querySelector('.bg-white.rounded-xl.shadow-sm.p-6');
+            
+            editProfileBtn.addEventListener('click', () => {
+                profileSection.classList.add('edit-mode');
+            });
+            
+            cancelEditBtn.addEventListener('click', () => {
+                profileSection.classList.remove('edit-mode');
+            });
+            
+            saveProfileBtn.addEventListener('click', () => {
+                // Update view fields with edited values
+                document.getElementById('nameView').textContent = document.getElementById('nameEdit').value;
+                document.getElementById('ageView').textContent = ', ' + document.getElementById('ageEdit').value;
+                document.getElementById('locationView').textContent = document.getElementById('locationEdit').value;
+                document.getElementById('bioView').textContent = document.getElementById('bioEdit').value;
+                
+                profileSection.classList.remove('edit-mode');
+                
+                showNotification('Profile updated successfully');
+            });
+            
+            // Profile picture upload
+            const profileUpload = document.getElementById('profileUpload');
+            const profileImage = document.getElementById('profileImage');
+            
+            profileUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        profileImage.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Photo upload
+            const addPhotoBtn = document.getElementById('addPhotoBtn');
+            const photoUpload = document.getElementById('photoUpload');
+            const photoSlider = document.querySelector('.photo-slider');
+            
+            addPhotoBtn.addEventListener('click', () => {
+                photoUpload.click();
+            });
+            
+            photoUpload.addEventListener('change', (e) => {
+                const files = e.target.files;
+                if (files.length > 0) {
+                    Array.from(files).forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const photoDiv = document.createElement('div');
+                            photoDiv.className = 'flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative';
+                            photoDiv.style.scrollSnapAlign = 'start';
+                            photoDiv.innerHTML = `
+                                <img src="${event.target.result}" class="w-full h-full object-cover">
+                                <button class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
+                                    <i class="fas fa-times text-xs"></i>
+                                </button>
+                            `;
+                            photoSlider.appendChild(photoDiv);
+                            
+                            // Add delete functionality
+                            photoDiv.querySelector('button').addEventListener('click', () => {
+                                photoDiv.remove();
+                            });
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
+            });
+            
+            // Delete photo functionality
+            document.querySelectorAll('.photo-slider button').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    this.parentElement.remove();
+                });
+            });
+            
+            // Notification functionality
+            document.querySelectorAll('.notification-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    this.classList.remove('unread');
+                    this.querySelector('.rounded-full')?.remove();
+                });
+            });
+            
+            // Settings modal
+            const settingsBtn = document.getElementById('settingsBtn');
+            const settingsModal = document.getElementById('settingsModal');
+            const closeSettings = document.getElementById('closeSettings');
+            
+            settingsBtn.addEventListener('click', () => {
+                settingsModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            closeSettings.addEventListener('click', () => {
+                settingsModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+            
+            // Close modal when clicking outside
+            settingsModal.addEventListener('click', (e) => {
+                if (e.target === settingsModal) {
+                    settingsModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // Updated Toggle switches functionality
+            function updateToggleStatus(toggle) {
+                const status = toggle.parentElement.querySelector('.toggle-status');
+                if (status) {
+                    status.textContent = toggle.checked ? 'On' : 'Off';
+                    status.classList.toggle('text-pink-500', toggle.checked);
+                    status.classList.toggle('text-gray-500', !toggle.checked);
+                }
+            }
+
+            document.querySelectorAll('.toggle-container input[type="checkbox"]').forEach(toggle => {
+                // Initialize status text
+                updateToggleStatus(toggle);
+
+                toggle.addEventListener('change', function() {
+                    const settingName = this.closest('.flex').querySelector('span').textContent;
+                    updateToggleStatus(this);
+                    showNotification(`${settingName} ${this.checked ? 'enabled' : 'disabled'}`);
+                });
+            });
+
+            // Dark mode toggle
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            
+            // Check for saved user preference or use system preference
+            if (localStorage.getItem('darkMode') === 'enabled' ||
+                (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                darkModeToggle.checked = true;
+                updateToggleStatus(darkModeToggle);
+            }
+            
+            darkModeToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('darkMode', 'enabled');
+                    showNotification('Dark mode enabled');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('darkMode', 'disabled');
+                    showNotification('Dark mode disabled');
+                }
+                updateToggleStatus(this);
+            });
+            
+            // Language selector functionality
+            const languageSelectors = document.querySelectorAll('.language-selector');
+            
+            languageSelectors.forEach(selector => {
+                const toggle = selector.querySelector('span');
+                const options = selector.querySelector('.language-options');
+                
+                toggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    options.classList.toggle('hidden');
+                });
+                
+                selector.querySelectorAll('.language-option').forEach(option => {
+                    option.addEventListener('click', function() {
+                        const lang = this.getAttribute('data-lang');
+                        
+                        // Update selected language
+                        selector.querySelectorAll('.language-option').forEach(opt => {
+                            opt.classList.remove('selected');
+                        });
+                        this.classList.add('selected');
+                        
+                        // Update display
+                        toggle.innerHTML = `${this.textContent} <i class="fas fa-chevron-down ml-1 text-xs"></i>`;
+                        options.classList.add('hidden');
+                        
+                        showNotification(`Language changed to ${this.textContent}`);
+                    });
+                });
+            });
+            
+            // Close language selector when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.language-selector')) {
+                    document.querySelectorAll('.language-options').forEach(options => {
+                        options.classList.add('hidden');
+                    });
+                }
+            });
+            
+            // Change Password functionality
+            const changePasswordBtn = document.querySelector('.settings-option button:text("Change Password")');
+            const changePasswordModal = document.createElement('div');
+            changePasswordModal.id = 'changePasswordModal';
+            changePasswordModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center hidden';
+            changePasswordModal.innerHTML = `
+                <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 dark:bg-gray-800">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold dark:text-white">Change Password</h3>
+                        <button class="close-password-modal text-gray-500 hover:text-gray-700 dark:text-gray-300">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Current Password</label>
+                            <input type="password" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">New Password</label>
+                            <input type="password" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Confirm New Password</label>
+                            <input type="password" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                        <button class="w-full bg-pink-500 text-white py-2 rounded-lg hover:bg-pink-600 mt-2">
+                            Update Password
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(changePasswordModal);
+            
+            changePasswordBtn.addEventListener('click', () => {
+                changePasswordModal.classList.remove('hidden');
+            });
+            
+            changePasswordModal.querySelector('.close-password-modal').addEventListener('click', () => {
+                changePasswordModal.classList.add('hidden');
+            });
+            
+            changePasswordModal.querySelector('button:not(.close-password-modal)').addEventListener('click', () => {
+                changePasswordModal.classList.add('hidden');
+                showNotification('Password changed successfully');
+            });
+            
+            // Log Out functionality
+            const logoutBtn = document.querySelector('.settings-option button:text("Log Out")');
+            logoutBtn.addEventListener('click', () => {
+                const confirmation = createConfirmationDialog(
+                    'Log Out',
+                    'Are you sure you want to log out?',
+                    'Log Out',
+                    'Cancel'
+                );
+                
+                confirmation.querySelector('.confirm-btn').addEventListener('click', () => {
+                    showNotification('Logged out successfully');
+                    confirmation.remove();
+                    settingsModal.classList.add('hidden');
+                });
+                
+                confirmation.querySelector('.cancel-btn').addEventListener('click', () => {
+                    confirmation.remove();
+                });
+            });
+            
+            // Delete Account functionality
+            const deleteAccountBtn = document.querySelector('.settings-option button:text("Delete Account")');
+            deleteAccountBtn.addEventListener('click', () => {
+                const confirmation = createConfirmationDialog(
+                    'Delete Account',
+                    'This will permanently delete your account and all data. This action cannot be undone.',
+                    'Delete',
+                    'Cancel',
+                    'text-red-500'
+                );
+                
+                confirmation.querySelector('.confirm-btn').addEventListener('click', () => {
+                    showNotification('Account deleted successfully');
+                    confirmation.remove();
+                    settingsModal.classList.add('hidden');
+                });
+                
+                confirmation.querySelector('.cancel-btn').addEventListener('click', () => {
+                    confirmation.remove();
+                });
+            });
+            
+            // Helper function to create confirmation dialogs
+            function createConfirmationDialog(title, message, confirmText, cancelText, confirmColor = 'text-pink-500') {
+                const dialog = document.createElement('div');
+                dialog.className = 'confirmation-dialog fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center';
+                dialog.innerHTML = `
+                    <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 dark:bg-gray-800">
+                        <h3 class="text-lg font-bold mb-2 dark:text-white">${title}</h3>
+                        <p class="text-gray-600 mb-6 dark:text-gray-300">${message}</p>
+                        <div class="flex justify-end space-x-3">
+                            <button class="cancel-btn px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
+                                ${cancelText}
+                            </button>
+                            <button class="confirm-btn px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 ${confirmColor}">
+                                ${confirmText}
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(dialog);
+                return dialog;
+            }
+            
+            // Notification function
+            function showNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-30 flex items-center dark:bg-gray-700';
+                notification.innerHTML = `
+                    <span>${message}</span>
+                    <button class="ml-3 text-white opacity-70 hover:opacity-100">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                document.body.appendChild(notification);
+                
+                // Auto-remove after 3 seconds
+                const autoRemove = setTimeout(() => {
+                    notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 300);
+                }, 3000);
+                
+                // Manual close
+                notification.querySelector('button').addEventListener('click', () => {
+                    clearTimeout(autoRemove);
+                    notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 300);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>നിനക്കായി-ForYou | Personal chat</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+:root {
+  /* Primary Colors */
+  --primary: #6c5ce7;
+  --primary-dark: #5649c0;
+  --primary-light: #a29bfe;
+  --primary-gradient: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
+  --button-gradient: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
+  --button-hover-gradient: linear-gradient(135deg, #e84868 0%, #5e9edb 100%);
+
+  /* Accent & Secondary Colors */
+  --secondary: #00b894;
+  --secondary-dark: #00997e;
+
+  /* Gradient Styles */
+  --gradient-blue-red: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
+
+  /* UI Background Colors */
+  --light: #2d3436;
+  --light-gray: #636e72;
+  --gray: #b2bec3;
+  --dark: #f5f6fa;
+  --bg-dark: #1e272e;
+  --card-dark: #2d3436;
+
+  /* Chat Message Backgrounds */
+  --message-sent: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
+  --message-received: #3c4852;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--dark);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Navbar */
+.navbar {
+  background-color: var(--card-dark);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  padding: 0.75rem 1rem;
+  position: relative;
+  z-index: 10;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.navbar-brand {
+  font-weight: 700;
+  background:  linear-gradient(135deg, #ff5275 0%, #76b6f5 100%) ;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 1.25rem;
+}
+
+.nav-link {
+  color: var(--gray) !important;
+  font-weight: 500;
+  padding: 0.5rem 1rem !important;
+  position: relative;
+}
+
+.nav-link.active {
+  color: var(--primary-light) !important;
+}
+
+.nav-link .badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 0.6rem;
+  padding: 0.25em 0.4em;
+  background: var(--button-gradient);
+}
+
+.profile-pic-nav {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--light-gray);
+}
+
+/* Main Chat Container */
+.chat-container {
+  height: calc(100vh - 56px);
+  overflow: hidden;
+  position: relative;
+  background-color: var(--bg-dark);
+}
+
+.conversations-col, .chat-area {
+  background-color: var(--card-dark);
+  border-radius: 8px;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* Conversations List */
+.conversations-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  background-color: var(--card-dark);
+}
+
+.conversations-back-btn {
+  display: none;
+  margin-right: 0.5rem;
+  color: var(--gray);
+}
+
+.conversations-header h2 {
+  font-weight: 700;
+  font-size: 1.25rem;
+  margin: 0;
+  flex: 1;
+  text-align: center;
+  color: var(--dark);
+}
+
+.btn-new-chat {
+  background: var(--button-gradient);
+  color: white;
+  border-radius: 6px;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-new-chat:hover {
+  background: var(--button-hover-gradient);
+  transform: translateY(-1px);
+}
+
+.search-conversations {
+  padding: 0.75rem 1rem;
+  position: relative;
+}
+
+.search-conversations input {
+  width: 100%;
+  padding: 0.5rem 1rem 0.5rem 2.25rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background-color: rgba(255,255,255,0.05);
+  font-size: 0.875rem;
+  color: var(--dark);
+}
+
+.search-conversations input::placeholder {
+  color: var(--gray);
+}
+
+.search-conversations i {
+  position: absolute;
+  left: 1.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray);
+  font-size: 0.875rem;
+}
+
+.conversations-list {
+  overflow-y: auto;
+  height: calc(100% - 110px);
+}
+
+.conversation {
+  display: flex;
+  padding: 0.875rem 1rem;
+  transition: all 0.2s;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  position: relative;
+}
+
+.conversation:hover {
+  background-color: rgba(255,255,255,0.05);
+  cursor: pointer;
+}
+
+.conversation.active {
+  background-color: rgba(108, 92, 231, 0.1);
+}
+
+.conversation-pic {
+  position: relative;
+  margin-right: 0.875rem;
+}
+
+.conversation-pic img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--light-gray);
+}
+
+.online-status {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  background-color: var(--secondary);
+  border-radius: 50%;
+  border: 2px solid var(--card-dark);
+}
+
+.conversation-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.conversation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.125rem;
+}
+
+.conversation-header h5 {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--dark);
+}
+
+.conversation-header .time {
+  font-size: 0.75rem;
+  color: var(--gray);
+  white-space: nowrap;
+  margin-left: 0.5rem;
+}
+
+.last-message {
+  font-size: 0.8125rem;
+  color: var(--gray);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unread-count {
+  background: var(--button-gradient);
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: bold;
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Chat Area */
+.chat-area {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  background-color: var(--card-dark);
+}
+
+.chat-area.active {
+  transform: translateX(0);
+}
+
+.chat-header {
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--card-dark);
+}
+
+.chat-back-btn {
+  margin-right: 0.5rem;
+  display: none;
+  color: var(--gray);
+}
+
+.chat-partner {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.chat-partner img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 0.875rem;
+  border: 2px solid var(--light-gray);
+}
+
+.chat-partner-info h4 {
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 0 0 0.125rem 0;
+  color: var(--dark);
+}
+
+.status {
+  font-size: 0.75rem;
+  color: var(--secondary);
+  margin: 0;
+}
+
+.chat-actions .btn {
+  background: transparent;
+  border: none;
+  color: var(--gray);
+  font-size: 1rem;
+  margin-left: 0.5rem;
+  padding: 0.375rem;
+}
+
+.chat-actions .btn:hover {
+  color: var(--primary-light);
+}
+
+.messages-container {
+  flex: 1;
+  padding: 1rem 1.25rem;
+  overflow-y: auto;
+  background-color: var(--bg-dark);
+}
+
+.date-divider {
+  text-align: center;
+  margin: 1rem 0;
+  position: relative;
+}
+
+.date-divider span {
+  background-color: var(--card-dark);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  color: var(--gray);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.message {
+  max-width: 75%;
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+.message.received {
+  margin-right: auto;
+}
+
+.message.sent {
+  margin-left: auto;
+}
+
+.message-content {
+  padding: 0.625rem 0.875rem;
+  border-radius: 12px;
+  position: relative;
+  word-wrap: break-word;
+  line-height: 1.4;
+}
+
+.message.received .message-content {
+  background-color: var(--message-received);
+  border-top-left-radius: 4px;
+  color: var(--dark);
+}
+
+.message.sent .message-content {
+  background: var(--message-sent);
+  color: white;
+  border-top-right-radius: 4px;
+}
+
+.message-time {
+  display: block;
+  font-size: 0.6875rem;
+  margin-top: 0.25rem;
+  opacity: 0.8;
+  text-align: right;
+}
+
+.message.sent .message-time {
+  color: rgba(255,255,255,0.8);
+}
+
+.message.received .message-time {
+  color: rgba(255,255,255,0.6);
+}
+
+.message-image img {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.message-audio audio {
+  width: 100%;
+  border-radius: 20px;
+}
+
+.message-actions {
+  position: absolute;
+  top: -20px;
+  right: 10px;
+  display: flex;
+  gap: 0.125rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+  background-color: var(--card-dark);
+  border-radius: 12px;
+  padding: 0.125rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.message:hover .message-actions {
+  opacity: 1;
+}
+
+.message-actions button {
+  background: transparent;
+  border: none;
+  color: var(--gray);
+  font-size: 0.75rem;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.message-actions button:hover {
+  background-color: rgba(255,255,255,0.1);
+  color: var(--primary-light);
+}
+
+/* Message Input */
+.message-input-container {
+  padding: 0.875rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  background-color: var(--card-dark);
+}
+
+.message-input {
+  display: flex;
+  align-items: center;
+  background-color: rgba(255,255,255,0.05);
+  border-radius: 6px;
+  padding: 0.375rem 0.75rem;
+}
+
+.message-input input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 0.5rem;
+  outline: none;
+  font-size: 0.9375rem;
+  color: var(--dark);
+}
+
+.message-input input::placeholder {
+  color: var(--gray);
+}
+
+.input-actions {
+  display: flex;
+  margin-right: 0.5rem;
+}
+
+.input-actions button, .btn-send {
+  background: transparent;
+  border: none;
+  color: var(--gray);
+  font-size: 1rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.input-actions button:hover {
+  color: var(--primary-light);
+  background-color: rgba(108, 92, 231, 0.1);
+}
+
+.btn-send {
+  background: var(--button-gradient);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-send:hover {
+  background: var(--button-hover-gradient);
+  transform: translateY(-1px);
+}
+
+/* Emoji Picker */
+.emoji-picker {
+  position: absolute;
+  bottom: 60px;
+  right: 20px;
+  width: 280px;
+  background-color: var(--card-dark);
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  padding: 0.75rem;
+  z-index: 1000;
+  display: none;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.emoji-categories {
+  display: flex;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.emoji-categories button {
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  color: var(--gray);
+  padding: 0.375rem;
+  border-radius: 4px;
+}
+
+.emoji-categories button.active {
+  color: var(--primary-light);
+}
+
+.emoji-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 28px);
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+}
+
+.emoji-container span {
+  font-size: 1.25rem;
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.2s;
+  color: var(--dark);
+}
+
+.emoji-container span:hover {
+  transform: scale(1.2);
+}
+
+/* Attachment Menu */
+.attachment-menu {
+  position: absolute;
+  bottom: 60px;
+  left: 20px;
+  width: 180px;
+  background-color: var(--card-dark);
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  padding: 0.75rem;
+  z-index: 1000;
+  display: none;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.attachment-option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 4px;
+  color: var(--dark);
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.attachment-option:hover {
+  background-color: rgba(255,255,255,0.1);
+  color: var(--primary-light);
+}
+
+.attachment-option i {
+  margin-right: 0.5rem;
+  font-size: 0.9375rem;
+}
+
+/* Profile Sidebar */
+.profile-sidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--card-dark);
+  z-index: 100;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+  border-left: 1px solid rgba(255,255,255,0.1);
+}
+
+.profile-sidebar.active {
+  transform: translateX(0);
+}
+
+.sidebar-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--card-dark);
+}
+
+.sidebar-header h4 {
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 0;
+  color: var(--dark);
+}
+
+.btn-close-sidebar {
+  background: transparent;
+  border: none;
+  color: var(--gray);
+  font-size: 1rem;
+}
+
+.sidebar-profile {
+  padding: 1.25rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar-profile img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--light-gray);
+  margin-bottom: 0.75rem;
+}
+
+.sidebar-profile h3 {
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin-bottom: 0.25rem;
+  color: var(--dark);
+}
+
+.personality {
+  color: var(--gray);
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+.compatibility {
+  margin: 0.75rem 0;
+}
+
+.compatibility-score {
+  width: 50px;
+  height: 50px;
+  background: var(--button-gradient);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 0 auto 0.25rem;
+}
+
+.sidebar-section {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar-section h5 {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  margin-bottom: 0.75rem;
+  color: var(--dark);
+}
+
+.detail {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--dark);
+}
+
+.detail i {
+  color: var(--gray);
+  margin-right: 0.5rem;
+  width: 18px;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.interests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.interest {
+  background-color: rgba(255,255,255,0.1);
+  color: var(--dark);
+  padding: 0.25rem 0.625rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+}
+
+.sidebar-actions {
+  padding: 1rem 1.25rem;
+}
+
+.sidebar-actions .btn {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: var(--button-gradient);
+  border: none;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--button-hover-gradient);
+  transform: translateY(-1px);
+}
+
+.btn-outline-danger {
+  background: transparent;
+  border: 1px solid #dc3545;
+  color: #dc3545;
+}
+
+.btn-outline-danger:hover {
+  background: rgba(220, 53, 69, 0.1);
+}
+
+/* Responsive Styles */
+@media (max-width: 992px) {
+  .conversations-col {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+  }
+  
+  .conversations-col.hidden {
+    transform: translateX(-100%);
+  }
+  
+  .chat-area-col {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  
+  .profile-sidebar {
+    width: 100%;
+  }
+  
+  .chat-back-btn, .conversations-back-btn {
+    display: block;
+  }
+  
+  .conversations-header h2 {
+    text-align: left;
+    margin-left: 0.5rem;
+    color: var(--dark);
+  }
+}
+
+@media (min-width: 992px) {
+  .conversations-col {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+  }
+  
+  .conversations-col.hidden {
+    transform: translateX(-100%);
+  }
+  
+  .chat-area-col {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  
+  .profile-sidebar {
+    width: 100%;
+  }
+  
+  .chat-back-btn {
+    display: block;
+  }
+  
+  .conversations-header h2 {
+    text-align: left;
+    margin-left: 0.5rem;
+    color: var(--dark);
+  }
+}
+
+@media (max-width: 576px) {
+  .message {
+    max-width: 85%;
+  }
+  
+  .chat-header {
+    padding: 0.75rem;
+  }
+  
+  .messages-container {
+    padding: 0.75rem;
+  }
+  
+  .emoji-picker {
+    width: 260px;
+    right: 10px;
+  }
+  
+  .attachment-menu {
+    width: 160px;
+    left: 10px;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--dark);
+}
+  </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <span>നിനക്കായി-ForYou</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="explore.html">
+                            <i class="fas fa-search me-1"></i> Explore
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="index.html">
+                          <i class="fas fa-sign-out-alt me-1"></i> Logout
+                      </a>
+                  </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="chat.html">
+                            <i class="fas fa-comment me-1"></i> Messages <span class="badge">5</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="profile.html">
+                            <img src="https://randomuser.me/api/portraits/women/44.jpg" class="profile-pic-nav" alt="Profile" style="width: 32px; height: 32px; border-radius: 50%;">
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- Chat Container -->
+    <div class="chat-container" id="chpage">
+        <div class="container h-100">
+            <div class="row h-100">
+                <!-- Conversations List -->
+                <div class="col-lg-4 h-100 conversations-col">
+                    <div class="conversations-header">
+                        <button class="btn btn-back conversations-back-btn" style="display: none;"><i class="fas fa-arrow-left"></i></button>
+                        <h2>Messages</h2>
+                        <button class="btn btn-new-chat"><i class="fas fa-plus me-1"></i> New Chat</button>
+                    </div>
+                    
+                    <div class="search-conversations">
+                        <input type="text" placeholder="Search conversations...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    
+                    <div class="conversations-list">
+                        <!-- Conversation 1 -->
+                        <div class="conversation active" data-chat="1">
+                            <div class="conversation-pic">
+                                <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="Profile">
+                                <span class="online-status"></span>
+                            </div>
+                            <div class="conversation-info">
+                                <div class="conversation-header">
+                                    <h5>Sarah M.</h5>
+                                    <span class="time">2 min ago</span>
+                                </div>
+                                <p class="last-message">Hey! How was your weekend?</p>
+                                <span class="unread-count">3</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Conversation 2 -->
+                        <div class="conversation" data-chat="2">
+                            <div class="conversation-pic">
+                                <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Profile">
+                            </div>
+                            <div class="conversation-info">
+                                <div class="conversation-header">
+                                    <h5>Emily T.</h5>
+                                    <span class="time">1 hour ago</span>
+                                </div>
+                                <p class="last-message">I found this book you might like...</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Conversation 3 -->
+                        <div class="conversation" data-chat="3">
+                            <div class="conversation-pic">
+                                <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Profile">
+                                <span class="online-status"></span>
+                            </div>
+                            <div class="conversation-info">
+                                <div class="conversation-header">
+                                    <h5>Jessica L.</h5>
+                                    <span class="time">3 hours ago</span>
+                                </div>
+                                <p class="last-message">Let's meet at the coffee shop on Saturday</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Conversation 4 -->
+                        <div class="conversation" data-chat="4">
+                            <div class="conversation-pic">
+                                <img src="https://randomuser.me/api/portraits/women/12.jpg" alt="Profile">
+                            </div>
+                            <div class="conversation-info">
+                                <div class="conversation-header">
+                                    <h5>Mia K.</h5>
+                                    <span class="time">Yesterday</span>
+                                </div>
+                                <p class="last-message">Thanks for the great time yesterday!</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Conversation 5 -->
+                        <div class="conversation" data-chat="5">
+                            <div class="conversation-pic">
+                                <img src="https://randomuser.me/api/portraits/women/23.jpg" alt="Profile">
+                            </div>
+                            <div class="conversation-info">
+                                <div class="conversation-header">
+                                    <h5>Olivia R.</h5>
+                                    <span class="time">2 days ago</span>
+                                </div>
+                                <p class="last-message">Are you free this weekend?</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chat Area -->
+                <div class="col-lg-8 h-100 chat-area-col">
+                    <div class="chat-area">
+                        <!-- Chat Header -->
+                        <div class="chat-header">
+                            <button class="btn btn-back chat-back-btn"><i class="fas fa-arrow-left"></i></button>
+                            <div class="chat-partner">
+                                <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="Profile">
+                                <div class="chat-partner-info">
+                                    <h4>Sarah M.</h4>
+                                    <p class="status">Online</p>
+                                </div>
+                            </div>
+                            <div class="chat-actions">
+                                <button class="btn btn-call"><i class="fas fa-phone"></i></button>
+                                <button class="btn btn-video"><i class="fas fa-video"></i></button>
+                                <button class="btn btn-more"><i class="fas fa-ellipsis-h"></i></button>
+                            </div>
+                        </div>
+                        
+                        <!-- Messages -->
+                        <div class="messages-container">
+                            <!-- Date Divider -->
+                            <div class="date-divider">
+                                <span>Today</span>
+                            </div>
+                            
+                            <!-- Received Message -->
+                            <div class="message received">
+                                <div class="message-content">
+                                    <p>Hey there! How was your weekend?</p>
+                                    <span class="message-time">10:30 AM</span>
+                                    <div class="message-actions">
+                                        <button title="Reply"><i class="fas fa-reply"></i></button>
+                                        <button title="React"><i class="far fa-smile"></i></button>
+                                        <button title="More"><i class="fas fa-ellipsis-h"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Sent Message -->
+                            <div class="message sent">
+                                <div class="message-content">
+                                    <p>It was great! Went hiking up at Blue Mountain. The views were amazing.</p>
+                                    <span class="message-time">10:32 AM</span>
+                                    <div class="message-actions">
+                                        <button title="Reply"><i class="fas fa-reply"></i></button>
+                                        <button title="React"><i class="far fa-smile"></i></button>
+                                        <button title="More"><i class="fas fa-ellipsis-h"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Received Message -->
+                            <div class="message received">
+                                <div class="message-content">
+                                    <p>That sounds wonderful! I love hiking too. We should go together sometime.</p>
+                                    <span class="message-time">10:33 AM</span>
+                                    <div class="message-actions">
+                                        <button title="Reply"><i class="fas fa-reply"></i></button>
+                                        <button title="React"><i class="far fa-smile"></i></button>
+                                        <button title="More"><i class="fas fa-ellipsis-h"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Sent Message with Image -->
+                            <div class="message sent">
+                                <div class="message-content">
+                                    <div class="message-image">
+                                        <img src="https://images.unsplash.com/photo-1517649763962-0c623066013b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="Hiking">
+                                    </div>
+                                    <p>Here's a photo from the hike. I'd love to go together!</p>
+                                    <span class="message-time">10:35 AM</span>
+                                    <div class="message-actions">
+                                        <button title="Reply"><i class="fas fa-reply"></i></button>
+                                        <button title="React"><i class="far fa-smile"></i></button>
+                                        <button title="More"><i class="fas fa-ellipsis-h"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Received Message -->
+                            <div class="message received">
+                                <div class="message-content">
+                                    <p>Wow, that looks breathtaking! How about this Saturday?</p>
+                                    <span class="message-time">10:36 AM</span>
+                                    <div class="message-actions">
+                                        <button title="Reply"><i class="fas fa-reply"></i></button>
+                                        <button title="React"><i class="far fa-smile"></i></button>
+                                        <button title="More"><i class="fas fa-ellipsis-h"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Sent Message -->
+                            <div class="message sent">
+                                <div class="message-content">
+                                    <p>Saturday works perfectly for me! I know a great trail we could do.</p>
+                                    <span class="message-time">10:37 AM</span>
+                                    <div class="message-actions">
+                                        <button title="Reply"><i class="fas fa-reply"></i></button>
+                                        <button title="React"><i class="far fa-smile"></i></button>
+                                        <button title="More"><i class="fas fa-ellipsis-h"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Message Input -->
+                        <div class="message-input-container">
+                            <div class="message-input">
+                                <div class="input-actions">
+                                    <button class="btn btn-emoji"><i class="far fa-smile"></i></button>
+                                    <button class="btn btn-attach"><i class="fas fa-paperclip"></i></button>
+                                </div>
+                                <input type="text" placeholder="Type a message...">
+                                <button class="btn btn-send"><i class="fas fa-paper-plane"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Profile Sidebar -->
+                    <div class="profile-sidebar">
+                        <div class="sidebar-header">
+                            <h4>Profile</h4>
+                            <button class="btn btn-close-sidebar"><i class="fas fa-times"></i></button>
+                        </div>
+                        
+                        <div class="sidebar-profile">
+                            <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="Profile">
+                            <h3>Sarah M.</h3>
+                            <p class="personality">The Nurturer</p>
+                            <div class="compatibility">
+                                <div class="compatibility-score">92%</div>
+                                <p>Compatibility</p>
+                            </div>
+                        </div>
+                        
+                        <div class="sidebar-section">
+                            <h5>About</h5>
+                            <p>Artist and animal lover. Enjoy quiet evenings with good music and meaningful conversations. Passionate about environmental conservation and outdoor activities.</p>
+                        </div>
+                        
+                        <div class="sidebar-section">
+                            <h5>Details</h5>
+                            <div class="detail">
+                                <i class="fas fa-birthday-cake"></i>
+                                <span>26 years old</span>
+                            </div>
+                            <div class="detail">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>5 miles away</span>
+                            </div>
+                            <div class="detail">
+                                <i class="fas fa-language"></i>
+                                <span>English, French</span>
+                            </div>
+                            <div class="detail">
+                                <i class="fas fa-heart"></i>
+                                <span>Single</span>
+                            </div>
+                        </div>
+                        
+                        <div class="sidebar-section">
+                            <h5>Interests</h5>
+                            <div class="interests">
+                                <span class="interest">Art</span>
+                                <span class="interest">Music</span>
+                                <span class="interest">Animals</span>
+                                <span class="interest">Hiking</span>
+                                <span class="interest">Reading</span>
+                                <span class="interest">Photography</span>
+                                <span class="interest">Yoga</span>
+                                <span class="interest">Travel</span>
+                            </div>
+                        </div>
+                        
+                        <div class="sidebar-actions">
+                            <button class="btn btn-primary"><i class="fas fa-heart me-2"></i> Like</button>
+                            <button class="btn btn-outline-danger"><i class="fas fa-ban me-2"></i> Block</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emoji Picker (hidden by default) -->
+    <div class="emoji-picker">
+        <div class="emoji-categories">
+            <button class="active"><i class="far fa-smile"></i></button>
+            <button><i class="far fa-laugh-squint"></i></button>
+            <button><i class="far fa-kiss-wink-heart"></i></button>
+            <button><i class="far fa-surprise"></i></button>
+        </div>
+        <div class="emoji-container">
+            <!-- Emojis will be inserted here by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Attachment Menu (hidden by default) -->
+    <div class="attachment-menu">
+        <button class="attachment-option">
+            <i class="fas fa-camera"></i>
+            <span>Photo</span>
+        </button>
+        <button class="attachment-option">
+            <i class="fas fa-video"></i>
+            <span>Video</span>
+        </button>
+        <button class="attachment-option">
+            <i class="fas fa-file"></i>
+            <span>Document</span>
+        </button>
+        <button class="attachment-option">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>Location</span>
+        </button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Initialize Bootstrap dropdowns
+      var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'))
+      var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+        return new bootstrap.Dropdown(dropdownToggleEl)
+      });
+
+      // Toggle Emoji Picker
+      const emojiBtn = document.querySelector('.btn-emoji');
+      const emojiPicker = document.querySelector('.emoji-picker');
+      
+      emojiBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        emojiPicker.style.display = emojiPicker.style.display === 'block' ? 'none' : 'block';
+        if (emojiPicker.style.display === 'block') {
+          document.querySelector('.attachment-menu').style.display = 'none';
+        }
+      });
+      
+      // Toggle Attachment Menu
+      const attachBtn = document.querySelector('.btn-attach');
+      const attachMenu = document.querySelector('.attachment-menu');
+      
+      attachBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        attachMenu.style.display = attachMenu.style.display === 'block' ? 'none' : 'block';
+        if (attachMenu.style.display === 'block') {
+          emojiPicker.style.display = 'none';
+        }
+      });
+      
+      // Close menus when clicking elsewhere
+      document.addEventListener('click', () => {
+        emojiPicker.style.display = 'none';
+        attachMenu.style.display = 'none';
+      });
+      
+      // Prevent clicks inside menus from closing them
+      emojiPicker.addEventListener('click', (e) => e.stopPropagation());
+      attachMenu.addEventListener('click', (e) => e.stopPropagation());
+      
+      // Add emojis to picker
+      const emojiContainer = document.querySelector('.emoji-container');
+      if (emojiContainer) {
+        const emojis = ['😊','😂','😍','😘','😎','🤔','😢','❤️','🔥','🎉','👍','🙌','😁','😆','😅','🤣','🥰','😇','🥳','😋','😜','🤪','🤩','🥺','😭','😤','😡','🤯','😳','🥶','😱','🤗','🤭','🤫','🤔','😏','😒','🙄','😬','🤥','😌','😔','😴','🤤','😷','🤧','🤮','🥴','🤠','🥳','😈','👻','💩','🤡','👽','👾','🤖','🎃'];
+        emojis.forEach(e => {
+          const span = document.createElement('span');
+          span.textContent = e;
+          span.title = e;
+          emojiContainer.appendChild(span);
+        });
+      }
+      
+      // Insert emoji into input
+      document.querySelectorAll('.emoji-container span').forEach(emoji => {
+        emoji.addEventListener('click', () => {
+          const input = document.querySelector('.message-input input');
+          input.value += emoji.textContent;
+          input.focus();
+        });
+      });
+      
+      // Toggle profile sidebar
+      const moreBtn = document.querySelector('.btn-more');
+      const sidebar = document.querySelector('.profile-sidebar');
+      const closeSidebar = document.querySelector('.btn-close-sidebar');
+      
+      moreBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+      });
+      
+      closeSidebar.addEventListener('click', () => {
+        sidebar.classList.remove('active');
+      });
+      
+      // Send message on Enter key
+      const messageInput = document.querySelector('.message-input input');
+      messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && messageInput.value.trim() !== '') {
+          // In a real app, this would send the message
+          console.log('Message sent:', messageInput.value);
+          messageInput.value = '';
+        }
+      });
+      
+      // Send message on button click
+      const sendBtn = document.querySelector('.btn-send');
+      sendBtn.addEventListener('click', () => {
+        if (messageInput.value.trim() !== '') {
+          // In a real app, this would send the message
+          console.log('Message sent:', messageInput.value);
+          messageInput.value = '';
+        }
+      });
+      
+      // Responsive behavior - toggle between views on small screens
+      const conversationsCol = document.querySelector('.conversations-col');
+      const chatArea = document.querySelector('.chat-area');
+      const chatBackBtn = document.querySelector('.chat-back-btn');
+      const conversationsBackBtn = document.querySelector('.conversations-back-btn');
+      
+      // Show back buttons on small screens
+      if (window.innerWidth <= 992) {
+        chatBackBtn.style.display = 'block';
+        conversationsBackBtn.style.display = 'block';
+      } else {
+        chatBackBtn.style.display = 'block';
+        conversationsBackBtn.style.display = 'none';
+        chatArea.classList.remove('active');
+      }
+      
+      // Handle window resize
+      window.addEventListener('resize', () => {
+        if (window.innerWidth <= 992) {
+          chatBackBtn.style.display = 'block';
+          conversationsBackBtn.style.display = 'block';
+        } else {
+          chatBackBtn.style.display = 'block';
+          conversationsBackBtn.style.display = 'none';
+        }
+      });
+      
+      // Click conversation to open chat
+      document.querySelectorAll('.conversation').forEach(conv => {
+        conv.addEventListener('click', function() {
+          if (window.innerWidth <= 992) {
+            conversationsCol.classList.add('hidden');
+            chatArea.classList.add('active');
+          } else {
+            conversationsCol.classList.add('hidden');
+            chatArea.classList.add('active');
+          }
+          document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
+          this.classList.add('active');
+        });
+      });
+      
+      // Back button in chat area
+      chatBackBtn.addEventListener('click', () => {
+        chatArea.classList.remove('active');
+        conversationsCol.classList.remove('hidden');
+      });
+      
+      // Back button in conversations list (for profile view)
+      conversationsBackBtn.addEventListener('click', () => {
+        sidebar.classList.remove('active');
+      });
+      document.addEventListener("DOMContentLoaded", () => {
+      const conversations = document.querySelectorAll(".conversation");
+      const chatArea = document.querySelector(".chat-area");
+      const backBtn = document.querySelector(".chat-back-btn");
+      const conversationsCol = document.querySelector(".conversations-col");
+
+      // When a conversation is clicked
+      conversations.forEach((conv) => {
+        conv.addEventListener("click", () => {
+          conversations.forEach(c => c.classList.remove("active"));
+          conv.classList.add("active");
+
+          // Show chat area
+          chatArea.classList.add("active");
+
+          // For small screens: hide conversations list
+          if (window.innerWidth < 992) {
+            conversationsCol.classList.add("hidden");
+          }
+        });
+      });
+
+    // Back button for mobile
+    backBtn.addEventListener("click", () => {
+      chatArea.classList.remove("active");
+      if (window.innerWidth < 992) {
+        conversationsCol.classList.remove("hidden");
+      }
+    });
+
+    // Optional: Toggle dropdown menu (already handled by Bootstrap)
+  });
+  
+    </script>
+</body>
+</html>
