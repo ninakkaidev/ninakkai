@@ -20,7 +20,6 @@ body {
   background-attachment: fixed;
 }
 
-/* Proper color overlay */
 body::before {
   content: '';
   position: fixed;
@@ -222,41 +221,74 @@ main, header, section, div {
   transform: translateY(-2px);
 }
 
-.arrange-container {
+/* Ranking system styles */
+.rank-container {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.arrange-item {
+.rank-item {
   background: rgba(248, 230, 239, 0.8);
   color: #000;
   padding: 12px;
   border-radius: 8px;
-  cursor: move;
   font-weight: 500;
   transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  text-align: left;
 }
 
-.arrange-item:hover {
+.rank-item:hover {
   background: rgba(248, 230, 239, 0.9);
 }
 
-.arrange-item.dragging {
-  opacity: 0.5;
+.rank-item.selected {
+  background: #53a8e5;
+  color: #fff;
 }
 
-@keyframes slideIn {
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+.rank-number {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: white;
+  color: #53a8e5;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
 }
 
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-  }
+.rank-submit {
+  margin-top: 20px;
+  background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  font-size: 1rem;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: none;
+}
+
+.rank-submit:hover {
+  background: linear-gradient(135deg, #76b6f5 0%, #ff5275 100%);
+  transform: translateY(-2px);
+}
+
+.rank-instructions {
+  font-size: 0.9rem;
+  color: #e0e0e0;
+  margin-bottom: 15px;
+  font-style: italic;
 }
 
 @media (max-width: 768px) {
@@ -327,6 +359,17 @@ main, header, section, div {
     font-size: 0.9rem;
     margin: 5px;
   }
+  
+  .rank-item {
+    padding: 10px;
+    font-size: 0.95rem;
+  }
+  
+  .rank-number {
+    width: 20px;
+    height: 20px;
+    font-size: 0.8rem;
+  }
 }
   </style>
 </head>
@@ -351,6 +394,7 @@ main, header, section, div {
 
     <div class="question-box" id="question-box">
       <div class="question" id="question">Loading question...</div>
+      <div class="rank-instructions" id="rank-instructions"></div>
       <div class="answers" id="answers"></div>
     </div>
     
@@ -390,7 +434,7 @@ main, header, section, div {
         "Physical intimacy"
       ],
       types: ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "💘 Romantic"],
-      isArrangeQuestion: true
+      isRankQuestion: true
     },
     { 
       question: "What kind of emotional support feels most comforting to you?", 
@@ -545,11 +589,9 @@ main, header, section, div {
 
   let currentQuestionIndex = 0;
   let selectedAnswers = [];
-  let personalityTypes = [];
-  let arrangedItems = [];
   let isInOptionalSection = false;
+  let currentRank = 1;
 
-  // Initialize the page
   window.onload = () => {
     document.getElementById('btn-start').addEventListener('click', startQuiz);
     document.getElementById('btn-yes').addEventListener('click', startOptionalQuestions);
@@ -569,31 +611,37 @@ main, header, section, div {
     const answersBox = document.getElementById('answers');
     const progressBar = document.getElementById('progress-bar');
     const questionBox = document.getElementById('question-box');
+    const instructionsEl = document.getElementById('rank-instructions');
     const questions = isInOptionalSection ? optionalQuestions : requiredQuestions;
     
     if (index < questions.length) {
-      // Apply animation
       questionBox.className = `question-box animate__animated ${animationList[index % animationList.length]}`;
-
-      // Set question
       questionEl.innerText = questions[index].question;
       answersBox.innerHTML = '';
+      instructionsEl.textContent = '';
 
-      if (questions[index].isArrangeQuestion) {
-        // Handle arrange question differently
-        answersBox.className = 'arrange-container';
+      if (index === 1 && !isInOptionalSection) {
+        // Special handling for Q2 (ranking question)
+        answersBox.className = 'rank-container';
+        instructionsEl.textContent = "Click to assign ranks (1-4). Click again to unselect.";
+        
+        const submitBtn = document.createElement('button');
+        submitBtn.className = 'rank-submit';
+        submitBtn.textContent = 'Continue';
+        submitBtn.onclick = handleRankSubmit;
+        
         questions[index].answers.forEach((answer, i) => {
           const item = document.createElement('div');
-          item.className = 'arrange-item';
+          item.className = 'rank-item';
           item.textContent = answer;
-          item.draggable = true;
           item.dataset.type = questions[index].types[i];
-          item.addEventListener('dragstart', handleDragStart);
-          item.addEventListener('dragover', handleDragOver);
-          item.addEventListener('drop', handleDrop);
-          item.addEventListener('dragend', handleDragEnd);
+          item.dataset.selected = 'false';
+          item.dataset.rank = '0';
+          item.onclick = () => toggleRankSelection(item);
           answersBox.appendChild(item);
         });
+        
+        answersBox.appendChild(submitBtn);
       } else {
         // Normal question with buttons
         answersBox.className = 'answers';
@@ -620,16 +668,74 @@ main, header, section, div {
         index;
       progressBar.style.width = `${(answeredQuestions / totalQuestions) * 100}%`;
     } else {
-      // No more questions in this section
       if (!isInOptionalSection) {
-        // Show optional section prompt after required questions
         document.getElementById('optional-section').style.display = 'block';
         document.getElementById('question-box').style.display = 'none';
       } else {
-        // All questions answered
         showFinalScreen();
       }
     }
+  }
+
+  function toggleRankSelection(item) {
+    const isSelected = item.dataset.selected === 'true';
+    const submitBtn = document.querySelector('.rank-submit');
+    
+    if (isSelected) {
+      // Unselect the item
+      item.dataset.selected = 'false';
+      item.classList.remove('selected');
+      
+      const rankNumber = item.querySelector('.rank-number');
+      if (rankNumber) {
+        item.removeChild(rankNumber);
+      }
+      
+      const currentRankNum = parseInt(item.dataset.rank);
+      if (currentRankNum === currentRank - 1) {
+        currentRank--;
+      }
+      
+      item.dataset.rank = '0';
+    } else {
+      // Select the item with current rank
+      if (currentRank > 4) return;
+      
+      item.dataset.selected = 'true';
+      item.dataset.rank = currentRank.toString();
+      item.classList.add('selected');
+      
+      let rankNumber = item.querySelector('.rank-number');
+      if (!rankNumber) {
+        rankNumber = document.createElement('div');
+        rankNumber.className = 'rank-number';
+        item.appendChild(rankNumber);
+      }
+      rankNumber.textContent = currentRank;
+      
+      currentRank++;
+    }
+    
+    // Show/hide submit button
+    const rankedItems = document.querySelectorAll('.rank-item[data-rank][data-rank!="0"]');
+    submitBtn.style.display = rankedItems.length > 0 ? 'block' : 'none';
+  }
+  
+  function handleRankSubmit() {
+    const rankItems = document.querySelectorAll('.rank-item');
+    const rankedItems = Array.from(rankItems)
+      .filter(item => item.dataset.rank !== '0')
+      .sort((a, b) => parseInt(a.dataset.rank) - parseInt(b.dataset.rank));
+    
+    if (rankedItems.length > 0) {
+      selectedAnswers.push({
+        answer: "Ranked: " + rankedItems.map(item => `${item.dataset.rank}. ${item.textContent}`).join(", "),
+        type: rankedItems[0].dataset.type
+      });
+    }
+    
+    currentRank = 1;
+    nextQuestion();
   }
 
   function nextQuestion() {
@@ -640,11 +746,9 @@ main, header, section, div {
       loadQuestion(currentQuestionIndex);
     } else {
       if (!isInOptionalSection) {
-        // Show optional section prompt after required questions
         document.getElementById('optional-section').style.display = 'block';
         document.getElementById('question-box').style.display = 'none';
       } else {
-        // All questions answered
         showFinalScreen();
       }
     }
@@ -664,57 +768,6 @@ main, header, section, div {
     showFinalScreen();
   }
 
-  // Drag and drop functions for arrange question
-  let draggedItem = null;
-
-  function handleDragStart(e) {
-    draggedItem = this;
-    this.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', this.innerHTML);
-  }
-
-  function handleDragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  }
-
-  function handleDrop(e) {
-    e.stopPropagation();
-    e.preventDefault();
-    if (draggedItem !== this) {
-      const answersBox = document.getElementById('answers');
-      const items = Array.from(answersBox.children);
-      const draggedIndex = items.indexOf(draggedItem);
-      const targetIndex = items.indexOf(this);
-      
-      if (draggedIndex < targetIndex) {
-        answersBox.insertBefore(draggedItem, this.nextSibling);
-      } else {
-        answersBox.insertBefore(draggedItem, this);
-      }
-    }
-    return false;
-  }
-
-  function handleDragEnd() {
-    this.classList.remove('dragging');
-  }
-
-  function handleArrangeSubmit() {
-    const answersBox = document.getElementById('answers');
-    const items = Array.from(answersBox.children);
-    
-    // The first item is the most important
-    const mostImportant = items[0];
-    selectedAnswers.push({
-      answer: "Arranged: " + items.map(item => item.textContent).join(", "),
-      type: mostImportant.dataset.type
-    });
-    
-    nextQuestion();
-  }
-
   function showFinalScreen() {
     document.getElementById('qa-content').style.display = 'none';
     document.getElementById('final-screen').style.display = 'block';
@@ -728,7 +781,7 @@ main, header, section, div {
       }
     });
 
-    // 🎉 Confetti celebration
+    // Confetti celebration
     confetti({
       particleCount: 200,
       spread: 90,
@@ -755,7 +808,6 @@ main, header, section, div {
   function restart() {
     currentQuestionIndex = 0;
     selectedAnswers = [];
-    personalityTypes = [];
     isInOptionalSection = false;
     document.getElementById('qa-content').style.display = 'block';
     document.getElementById('final-screen').style.display = 'none';
