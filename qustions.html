@@ -1,4 +1,3 @@
-</html>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,17 +23,16 @@ body {
 /* Proper color overlay */
 body::before {
   content: '';
-  position: fixed; /* Use fixed to cover the entire viewport */
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  height: 100vh; /* Full screen */
-  background: rgba(0, 0, 0, 0.5); /* Black with 50% transparency */
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
   z-index: 0;
-  pointer-events: none; /* Allows clicks to pass through */
+  pointer-events: none;
 }
 
-/* Optional: Ensure your page content is above the overlay */
 main, header, section, div {
   position: relative;
   z-index: 1;
@@ -224,6 +222,30 @@ main, header, section, div {
   transform: translateY(-2px);
 }
 
+.arrange-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.arrange-item {
+  background: rgba(248, 230, 239, 0.8);
+  color: #000;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: move;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.arrange-item:hover {
+  background: rgba(248, 230, 239, 0.9);
+}
+
+.arrange-item.dragging {
+  opacity: 0.5;
+}
+
 @keyframes slideIn {
   to {
     opacity: 1;
@@ -237,7 +259,6 @@ main, header, section, div {
   }
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .intro-container {
     margin: 250px auto;
@@ -300,6 +321,12 @@ main, header, section, div {
   .section-description {
     font-size: 0.9rem;
   }
+  
+  .btn-optional {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    margin: 5px;
+  }
 }
   </style>
 </head>
@@ -343,211 +370,170 @@ main, header, section, div {
 </div>
 
 <script>
-  const sections = [
-    {
-      title: "Are You Ready for Love?",
-      description: "These questions help us understand whether you're emotionally ready for a committed relationship (Keeper) or still figuring things out (Seeker). Your match results will be filtered accordingly.",
-      questions: [
-        { 
-          question: "What feels most true about you right now?", 
-          answers: [
-            "I'm at a stage in life where I'm looking for something stable and deep.",
-            "I'm open to connections, but not sure what I'm looking for yet.",
-            "I believe relationships should unfold naturally, no pressure or plans."
-          ],
-          types: ["🟢 Keeper", "🔵 Seeker", "🔵 Seeker"]
-        },
-        { 
-          question: "Imagine meeting someone amazing. What are you secretly hoping for?", 
-          answers: [
-            "That we slowly build something real and lasting together.",
-            "That we vibe well and just see where things go.",
-            "That it's fun, exciting, and doesn't need to get too serious."
-          ],
-          types: ["🟢 Keeper", "🔵 Seeker", "🔵 Seeker"]
-        },
-        { 
-          question: "You start to really like someone, and they suddenly stop texting for a few days. What do you feel?", 
-          answers: [
-            "Worried — I care deeply and wonder what went wrong.",
-            "Detached — I liked them, but I move on quickly.",
-            "Confused — I don't want to chase, but I still think about them."
-          ],
-          types: ["🟢 Keeper", "🔵 Seeker", "🔵 Seeker"]
-        }
-      ]
+  const requiredQuestions = [
+    { 
+      question: "When you're falling in love, you usually feel...", 
+      answers: [
+        "Safe and calm inside",
+        "Excited and full of butterflies",
+        "Like I've found someone truly rare",
+        "Scared of being too vulnerable"
+      ],
+      types: ["👂 Listener", "💘 Romantic", "🌙 Dreamer", "🛡️ Protector"]
     },
-    {
-      title: "What Kind of Partner Are You Emotionally?",
-      description: "These 10 questions reveal your emotional personality — the way you love, feel, and respond in relationships. This helps us match you with people who emotionally connect with you.",
-      questions: [
-        { 
-          question: "When you're falling in love, you usually feel...", 
-          answers: [
-            "Safe and calm inside",
-            "Excited and full of butterflies",
-            "Like I've found someone truly rare",
-            "Scared of being too vulnerable"
-          ],
-          types: ["👂 Listener", "💘 Romantic", "🌙 Dreamer", "🛡️ Protector"]
-        },
-        { 
-          question: "What kind of emotional support feels most comforting to you?", 
-          answers: [
-            "Someone silently sitting with me through pain",
-            "Someone helping me fix the situation",
-            "Someone saying exactly the right words",
-            "Someone holding me tight without speaking"
-          ],
-          types: ["🌿 Nurturer", "🛡️ Protector", "👂 Listener", "💘 Romantic"]
-        },
-        { 
-          question: "In a disagreement with someone you care about, you...", 
-          answers: [
-            "Try to stay calm and really listen",
-            "Express your emotions openly",
-            "Try to solve it quickly and move on",
-            "Take it personally and overthink it"
-          ],
-          types: ["👂 Listener", "💘 Romantic", "🛡️ Protector", "🌙 Dreamer"]
-        },
-        { 
-          question: "How do you want others to describe you?", 
-          answers: [
-            "Kind and soft",
-            "Strong and independent",
-            "Perfect and without flaws",
-            "Honest and growing"
-          ],
-          types: ["🌿 Nurturer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
-        },
-        { 
-          question: "What do you crave most in a relationship?", 
-          answers: [
-            "Peace and emotional safety",
-            "Excitement and mystery",
-            "Growth and learning together",
-            "Feeling truly known and accepted"
-          ],
-          types: ["🌿 Nurturer", "💘 Romantic", "🌟 Idealist", "🌙 Dreamer"]
-        },
-        { 
-          question: "What makes you feel emotionally alive in love?", 
-          answers: [
-            "Deep, late-night emotional conversations",
-            "Intense physical closeness and passion",
-            "When someone notices the little things",
-            "Solving life's problems together"
-          ],
-          types: ["🌙 Dreamer", "💘 Romantic", "🌿 Nurturer", "🛡️ Protector"]
-        },
-        { 
-          question: "When you feel deeply hurt, you usually...", 
-          answers: [
-            "Cry or let it out",
-            "Get silent and withdraw",
-            "Keep busy to avoid it",
-            "Talk it out with someone trusted"
-          ],
-          types: ["🌙 Dreamer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
-        },
-        { 
-          question: "What does financial stability mean to you in a relationship?", 
-          answers: [
-            "Freedom to spend and still save together",
-            "Clear roles — one earns, one manages",
-            "Always discuss big spending decisions",
-            "Having separate money but shared goals"
-          ],
-          types: ["🛡️ Protector", "👂 Listener", "🌿 Nurturer", "🌟 Idealist"]
-        },
-        { 
-          question: "How do you usually show someone that you love them?", 
-          answers: [
-            "I check in on their feelings often",
-            "I protect them and help solve their problems",
-            "I write, say, or express how much I care",
-            "I give them space but make sure I'm always there"
-          ],
-          types: ["🌿 Nurturer", "🛡️ Protector", "💘 Romantic", "👂 Listener"]
-        },
-        { 
-          question: "Your partner has a serious conflict with your family. You...", 
-          answers: [
-            "Support your partner but stay neutral",
-            "Try to fix the situation without taking sides",
-            "Defend your family — they raised me",
-            "Fully support my partner, even if it causes tension"
-          ],
-          types: ["👂 Listener", "🌿 Nurturer", "🛡️ Protector", "🌙 Dreamer"]
-        }
-      ]
+    { 
+      question: "Arrange these in order of importance in a relationship:", 
+      answers: [
+        "Trust",
+        "Emotional connection",
+        "Shared goals",
+        "Physical intimacy"
+      ],
+      types: ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "💘 Romantic"],
+      isArrangeQuestion: true
     },
-    {
-      title: "Want Deeper Matches? (Optional)",
-      description: "These 6 extra questions help us detect emotional maturity, depth, and hidden traits. They refine your results — but only if you choose to answer them.",
-      questions: [
-        { 
-          question: "You see your partner being emotionally close to a friend. You feel…", 
-          answers: [
-            "Curious and ask openly",
-            "Completely fine",
-            "A little jealous but trust them",
-            "Insecure and silent"
-          ],
-          types: ["🌿 Nurturer", "👂 Listener", "💘 Romantic", "🛡️ Protector"]
-        },
-        { 
-          question: "Arrange these in order of importance in a relationship:", 
-          answers: [
-            "Trust",
-            "Emotional connection",
-            "Shared goals",
-            "Physical intimacy"
-          ],
-          types: ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "💘 Romantic"]
-        },
-        { 
-          question: "How do you handle emotional overwhelm?", 
-          answers: [
-            "Talk it out immediately",
-            "Need space to calm down",
-            "Write or reflect privately",
-            "Look for distraction or activity"
-          ],
-          types: ["👂 Listener", "🛡️ Protector", "🌙 Dreamer", "🌟 Idealist"]
-        },
-        { 
-          question: "What's your biggest fear in love?", 
-          answers: [
-            "Being misunderstood",
-            "Losing emotional connection",
-            "Getting hurt or rejected",
-            "Not being able to protect the person I love"
-          ],
-          types: ["🌟 Idealist", "👂 Listener", "🌙 Dreamer", "🛡️ Protector"]
-        },
-        { 
-          question: "What do you quietly need most in a relationship?", 
-          answers: [
-            "To feel safe and protected",
-            "To be emotionally understood",
-            "To give and receive open affection",
-            "To be accepted without pressure"
-          ],
-          types: ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "👂 Listener"]
-        },
-        { 
-          question: "Which quality do you most admire in a partner?", 
-          answers: [
-            "Loyalty",
-            "Compassion",
-            "Passion",
-            "Wisdom"
-          ],
-          types: ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "🌟 Idealist"]
-        }
-      ]
+    { 
+      question: "What kind of emotional support feels most comforting to you?", 
+      answers: [
+        "Someone silently sitting with me through pain",
+        "Someone helping me fix the situation",
+        "Someone saying exactly the right words",
+        "Someone holding me tight without speaking"
+      ],
+      types: ["🌿 Nurturer", "🛡️ Protector", "👂 Listener", "💘 Romantic"]
+    },
+    { 
+      question: "In a disagreement with someone you care about, you...", 
+      answers: [
+        "Try to stay calm and really listen",
+        "Express your emotions openly",
+        "Try to solve it quickly and move on",
+        "Take it personally and overthink it"
+      ],
+      types: ["👂 Listener", "💘 Romantic", "🛡️ Protector", "🌙 Dreamer"]
+    },
+    { 
+      question: "How do you want others to describe you?", 
+      answers: [
+        "Kind and soft",
+        "Strong and independent",
+        "Perfect and without flaws",
+        "Honest and growing"
+      ],
+      types: ["🌿 Nurturer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
+    },
+    { 
+      question: "What do you crave most in a relationship?", 
+      answers: [
+        "Peace and emotional safety",
+        "Excitement and mystery",
+        "Growth and learning together",
+        "Feeling truly known and accepted"
+      ],
+      types: ["🌿 Nurturer", "💘 Romantic", "🌟 Idealist", "🌙 Dreamer"]
+    },
+    { 
+      question: "What makes you feel emotionally alive in love?", 
+      answers: [
+        "Deep, late-night emotional conversations",
+        "Intense physical closeness and passion",
+        "When someone notices the little things",
+        "Solving life's problems together"
+      ],
+      types: ["🌙 Dreamer", "💘 Romantic", "🌿 Nurturer", "🛡️ Protector"]
+    },
+    { 
+      question: "When you feel deeply hurt, you usually...", 
+      answers: [
+        "Cry or let it out",
+        "Get silent and withdraw",
+        "Keep busy to avoid it",
+        "Talk it out with someone trusted"
+      ],
+      types: ["🌙 Dreamer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
+    },
+    { 
+      question: "What does financial stability mean to you in a relationship?", 
+      answers: [
+        "Freedom to spend and still save together",
+        "Clear roles — one earns, one manages",
+        "Always discuss big spending decisions",
+        "Having separate money but shared goals"
+      ],
+      types: ["🛡️ Protector", "👂 Listener", "🌿 Nurturer", "🌟 Idealist"]
+    },
+    { 
+      question: "How do you usually show someone that you love them?", 
+      answers: [
+        "I check in on their feelings often",
+        "I protect them and help solve their problems",
+        "I write, say, or express how much I care",
+        "I give them space but make sure I'm always there"
+      ],
+      types: ["🌿 Nurturer", "🛡️ Protector", "💘 Romantic", "👂 Listener"]
+    }
+  ];
+
+  const optionalQuestions = [
+    { 
+      question: "You see your partner being emotionally close to a friend. You feel…", 
+      answers: [
+        "Curious and ask openly",
+        "Completely fine",
+        "A little jealous but trust them",
+        "Insecure and silent"
+      ],
+      types: ["🌿 Nurturer", "👂 Listener", "💘 Romantic", "🛡️ Protector"]
+    },
+    { 
+      question: "Your partner has a serious conflict with your family. You...", 
+      answers: [
+        "Support your partner but stay neutral",
+        "Try to fix the situation without taking sides",
+        "Defend your family — they raised me",
+        "Fully support my partner, even if it causes tension"
+      ],
+      types: ["👂 Listener", "🌿 Nurturer", "🛡️ Protector", "🌙 Dreamer"]
+    },
+    { 
+      question: "How do you handle emotional overwhelm?", 
+      answers: [
+        "Talk it out immediately",
+        "Need space to calm down",
+        "Write or reflect privately",
+        "Look for distraction or activity"
+      ],
+      types: ["👂 Listener", "🛡️ Protector", "🌙 Dreamer", "🌟 Idealist"]
+    },
+    { 
+      question: "What's your biggest fear in love?", 
+      answers: [
+        "Being misunderstood",
+        "Losing emotional connection",
+        "Getting hurt or rejected",
+        "Not being able to protect the person I love"
+      ],
+      types: ["🌟 Idealist", "👂 Listener", "🌙 Dreamer", "🛡️ Protector"]
+    },
+    { 
+      question: "What do you quietly need most in a relationship?", 
+      answers: [
+        "To feel safe and protected",
+        "To be emotionally understood",
+        "To give and receive open affection",
+        "To be accepted without pressure"
+      ],
+      types: ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "👂 Listener"]
+    },
+    { 
+      question: "Which quality do you most admire in a partner?", 
+      answers: [
+        "Loyalty",
+        "Compassion",
+        "Passion",
+        "Wisdom"
+      ],
+      types: ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "🌟 Idealist"]
     }
   ];
 
@@ -557,11 +543,11 @@ main, header, section, div {
     "animate__flipInX", "animate__lightSpeedInLeft", "animate__backInUp", "animate__fadeInTopLeft"
   ];
 
-  let currentSection = 0;
-  let currentQuestion = 0;
+  let currentQuestionIndex = 0;
   let selectedAnswers = [];
   let personalityTypes = [];
-  let isOptional = false;
+  let arrangedItems = [];
+  let isInOptionalSection = false;
 
   // Initialize the page
   window.onload = () => {
@@ -573,79 +559,92 @@ main, header, section, div {
   function startQuiz() {
     document.getElementById('intro-container').style.display = 'none';
     document.getElementById('qa-container').style.display = 'block';
-    loadSection(currentSection);
+    document.getElementById('section-title').textContent = "What Kind of Partner Are You Emotionally?";
+    document.getElementById('section-description').textContent = "These 10 questions reveal your emotional personality — the way you love, feel, and respond in relationships. This helps us match you with people who emotionally connect with you.";
+    loadQuestion(currentQuestionIndex);
   }
 
-  function loadSection(sectionIndex) {
-    const section = sections[sectionIndex];
-    document.getElementById('section-title').textContent = section.title;
-    document.getElementById('section-description').textContent = section.description;
-    loadQuestion(sectionIndex, 0);
-  }
-
-  function loadQuestion(sectionIndex, questionIndex) {
+  function loadQuestion(index) {
     const questionEl = document.getElementById('question');
     const answersBox = document.getElementById('answers');
     const progressBar = document.getElementById('progress-bar');
     const questionBox = document.getElementById('question-box');
-    const section = sections[sectionIndex];
+    const questions = isInOptionalSection ? optionalQuestions : requiredQuestions;
+    
+    if (index < questions.length) {
+      // Apply animation
+      questionBox.className = `question-box animate__animated ${animationList[index % animationList.length]}`;
 
-    // Apply animation
-    questionBox.className = `question-box animate__animated ${animationList[(sectionIndex + questionIndex) % animationList.length]}`;
+      // Set question
+      questionEl.innerText = questions[index].question;
+      answersBox.innerHTML = '';
 
-    // Set question
-    questionEl.innerText = section.questions[questionIndex].question;
-    answersBox.innerHTML = '';
-
-    section.questions[questionIndex].answers.forEach((answer, i) => {
-      const btn = document.createElement('button');
-      btn.textContent = answer;
-      btn.onclick = () => {
-        // Store both answer and type
-        selectedAnswers.push({
-          answer: answer,
-          type: section.questions[questionIndex].types[i]
+      if (questions[index].isArrangeQuestion) {
+        // Handle arrange question differently
+        answersBox.className = 'arrange-container';
+        questions[index].answers.forEach((answer, i) => {
+          const item = document.createElement('div');
+          item.className = 'arrange-item';
+          item.textContent = answer;
+          item.draggable = true;
+          item.dataset.type = questions[index].types[i];
+          item.addEventListener('dragstart', handleDragStart);
+          item.addEventListener('dragover', handleDragOver);
+          item.addEventListener('drop', handleDrop);
+          item.addEventListener('dragend', handleDragEnd);
+          answersBox.appendChild(item);
         });
-        nextQuestion(sectionIndex, questionIndex);
-      };
-      answersBox.appendChild(btn);
-    });
-
-    // Calculate progress across all sections
-    let totalQuestions = 0;
-    let answeredQuestions = 0;
-    
-    for (let i = 0; i < sections.length; i++) {
-      totalQuestions += sections[i].questions.length;
-      if (i < sectionIndex) {
-        answeredQuestions += sections[i].questions.length;
-      } else if (i === sectionIndex) {
-        answeredQuestions += questionIndex;
+      } else {
+        // Normal question with buttons
+        answersBox.className = 'answers';
+        questions[index].answers.forEach((answer, i) => {
+          const btn = document.createElement('button');
+          btn.textContent = answer;
+          btn.onclick = () => {
+            selectedAnswers.push({
+              answer: answer,
+              type: questions[index].types[i]
+            });
+            nextQuestion();
+          };
+          answersBox.appendChild(btn);
+        });
       }
-    }
-    
-    progressBar.style.width = `${(answeredQuestions / totalQuestions) * 100}%`;
-  }
 
-  function nextQuestion(sectionIndex, questionIndex) {
-    const section = sections[sectionIndex];
-    
-    if (questionIndex + 1 < section.questions.length) {
-      // More questions in this section
-      loadQuestion(sectionIndex, questionIndex + 1);
+      // Calculate progress
+      const totalQuestions = isInOptionalSection ? 
+        requiredQuestions.length + optionalQuestions.length : 
+        requiredQuestions.length;
+      const answeredQuestions = isInOptionalSection ? 
+        requiredQuestions.length + index : 
+        index;
+      progressBar.style.width = `${(answeredQuestions / totalQuestions) * 100}%`;
     } else {
-      // End of section
-      if (sectionIndex === 0) {
-        // After Keeper/Seeker section, move to Emotional Personality
-        currentSection = 1;
-        loadSection(currentSection);
-      } else if (sectionIndex === 1) {
-        // After Emotional Personality, show optional section prompt
+      // No more questions in this section
+      if (!isInOptionalSection) {
+        // Show optional section prompt after required questions
         document.getElementById('optional-section').style.display = 'block';
         document.getElementById('question-box').style.display = 'none';
-        isOptional = true;
-      } else if (sectionIndex === 2) {
-        // After optional section, show results
+      } else {
+        // All questions answered
+        showFinalScreen();
+      }
+    }
+  }
+
+  function nextQuestion() {
+    currentQuestionIndex++;
+    const questions = isInOptionalSection ? optionalQuestions : requiredQuestions;
+    
+    if (currentQuestionIndex < questions.length) {
+      loadQuestion(currentQuestionIndex);
+    } else {
+      if (!isInOptionalSection) {
+        // Show optional section prompt after required questions
+        document.getElementById('optional-section').style.display = 'block';
+        document.getElementById('question-box').style.display = 'none';
+      } else {
+        // All questions answered
         showFinalScreen();
       }
     }
@@ -654,12 +653,66 @@ main, header, section, div {
   function startOptionalQuestions() {
     document.getElementById('optional-section').style.display = 'none';
     document.getElementById('question-box').style.display = 'block';
-    currentSection = 2;
-    loadSection(currentSection);
+    isInOptionalSection = true;
+    currentQuestionIndex = 0;
+    document.getElementById('section-title').textContent = "Want Deeper Matches? (Optional)";
+    document.getElementById('section-description').textContent = "These 6 extra questions help us detect emotional maturity, depth, and hidden traits. They refine your results — but only if you choose to answer them.";
+    loadQuestion(currentQuestionIndex);
   }
 
   function skipOptionalQuestions() {
     showFinalScreen();
+  }
+
+  // Drag and drop functions for arrange question
+  let draggedItem = null;
+
+  function handleDragStart(e) {
+    draggedItem = this;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.innerHTML);
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }
+
+  function handleDrop(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    if (draggedItem !== this) {
+      const answersBox = document.getElementById('answers');
+      const items = Array.from(answersBox.children);
+      const draggedIndex = items.indexOf(draggedItem);
+      const targetIndex = items.indexOf(this);
+      
+      if (draggedIndex < targetIndex) {
+        answersBox.insertBefore(draggedItem, this.nextSibling);
+      } else {
+        answersBox.insertBefore(draggedItem, this);
+      }
+    }
+    return false;
+  }
+
+  function handleDragEnd() {
+    this.classList.remove('dragging');
+  }
+
+  function handleArrangeSubmit() {
+    const answersBox = document.getElementById('answers');
+    const items = Array.from(answersBox.children);
+    
+    // The first item is the most important
+    const mostImportant = items[0];
+    selectedAnswers.push({
+      answer: "Arranged: " + items.map(item => item.textContent).join(", "),
+      type: mostImportant.dataset.type
+    });
+    
+    nextQuestion();
   }
 
   function showFinalScreen() {
@@ -700,18 +753,17 @@ main, header, section, div {
   }
 
   function restart() {
-    currentSection = 0;
-    currentQuestion = 0;
+    currentQuestionIndex = 0;
     selectedAnswers = [];
     personalityTypes = [];
-    isOptional = false;
+    isInOptionalSection = false;
     document.getElementById('qa-content').style.display = 'block';
     document.getElementById('final-screen').style.display = 'none';
     document.getElementById('optional-section').style.display = 'none';
     document.getElementById('question-box').style.display = 'block';
     document.getElementById('intro-container').style.display = 'none';
     document.getElementById('qa-container').style.display = 'block';
-    loadSection(currentSection);
+    startQuiz();
   }
 </script>
 
