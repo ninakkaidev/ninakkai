@@ -276,7 +276,6 @@ main, header, section, div {
   border-radius: 50px;
   cursor: pointer;
   transition: all 0.3s ease;
-  display: none;
 }
 
 .rank-submit:hover {
@@ -623,12 +622,12 @@ main, header, section, div {
       if (index === 1 && !isInOptionalSection) {
         // Special handling for Q2 (ranking question)
         answersBox.className = 'rank-container';
-        instructionsEl.textContent = "Click to assign ranks (1-4). Click again to unselect.";
+        instructionsEl.textContent = "Click to select your most important to least important (1-4). Click again to unselect.";
         
         const submitBtn = document.createElement('button');
         submitBtn.className = 'rank-submit';
         submitBtn.textContent = 'Continue';
-        submitBtn.onclick = handleRankSubmit;
+        submitBtn.onclick = () => handleRankSubmit(questions[index]);
         
         questions[index].answers.forEach((answer, i) => {
           const item = document.createElement('div');
@@ -679,7 +678,6 @@ main, header, section, div {
 
   function toggleRankSelection(item) {
     const isSelected = item.dataset.selected === 'true';
-    const submitBtn = document.querySelector('.rank-submit');
     
     if (isSelected) {
       // Unselect the item
@@ -715,13 +713,9 @@ main, header, section, div {
       
       currentRank++;
     }
-    
-    // Show/hide submit button
-    const rankedItems = document.querySelectorAll('.rank-item[data-rank][data-rank!="0"]');
-    submitBtn.style.display = rankedItems.length > 0 ? 'block' : 'none';
   }
   
-  function handleRankSubmit() {
+  function handleRankSubmit(question) {
     const rankItems = document.querySelectorAll('.rank-item');
     const rankedItems = Array.from(rankItems)
       .filter(item => item.dataset.rank !== '0')
@@ -731,6 +725,12 @@ main, header, section, div {
       selectedAnswers.push({
         answer: "Ranked: " + rankedItems.map(item => `${item.dataset.rank}. ${item.textContent}`).join(", "),
         type: rankedItems[0].dataset.type
+      });
+    } else {
+      // If user didn't rank anything, just select the first option as default
+      selectedAnswers.push({
+        answer: question.answers[0],
+        type: question.types[0]
       });
     }
     
