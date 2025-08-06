@@ -764,9 +764,8 @@
                     const response = await fetch("{{ url_for('auth') }}", {
                         method: 'POST',
                         body: JSON.stringify({
-                            form_type: 'signup',
-                            email: "{{ email if email else session.email }}",
-                            resend: true
+                            form_type: 'resend_verification',
+                            email: "{{ email if email else session.email }}"
                         }),
                         headers: {
                             'Content-Type': 'application/json',
@@ -774,10 +773,11 @@
                         }
                     });
                     
-                    if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
                         showError('Verification code resent successfully!');
                     } else {
-                        showError('Failed to resend verification code. Please try again.');
+                        showError(data.error || 'Failed to resend verification code. Please try again.');
                     }
                 } catch (error) {
                     console.error('Resend error:', error);
@@ -900,7 +900,8 @@
                 
                 if (!document.querySelector('.error-message')) {
                     const container = document.querySelector('.container');
-                    container.insertBefore(errorElement, formContainer);
+                    const welcomeText = document.querySelector('.welcome-text');
+                    container.insertBefore(errorElement, welcomeText.nextSibling);
                 }
                 
                 setTimeout(() => {
@@ -969,6 +970,17 @@
                         const data = await response.json();
                         if (data.error) {
                             showError(data.error);
+                        } else if (data.verification_sent) {
+                            // Show verification section
+                            verificationSection.classList.add('active');
+                            formContainer.classList.remove('active');
+                            authButtons.classList.add('hidden');
+                            
+                            // Update email display
+                            const emailDisplay = verificationSection.querySelector('strong');
+                            if (emailDisplay) {
+                                emailDisplay.textContent = data.email || "{{ email if email else session.email }}";
+                            }
                         }
                         hideLoading();
                         signupSubmitBtn.disabled = false;
@@ -1034,7 +1046,6 @@
             // State variables
             let currentStep = 1;
             const totalSteps = 3;
-            const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
             // Event listeners
             loginBtn.addEventListener('click', showLoginForm);

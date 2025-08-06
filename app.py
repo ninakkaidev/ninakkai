@@ -25,6 +25,13 @@ def auth():
             return handle_signup()
         elif form_type == 'verify_email':
             return handle_email_verification()
+        elif form_type == 'resend_verification':
+            return resend_verification()
+    
+    # Clear any previous verification state if just loading the page
+    if request.method == 'GET' and 'verification_pending' in session:
+        email = session.get('email')
+        return render_template('auth.html', verification_sent=True, email=email)
     
     return render_template('auth.html')
 
@@ -48,7 +55,8 @@ def handle_login():
             if response_data.get('success'):
                 session.permanent = True
                 session['token'] = response_data.get('data', {}).get('token')
-                session['email'] = email  # Store email in session
+                session['email'] = email
+                session['user_id'] = response_data.get('data', {}).get('user_id')
                 return check_quiz_status()
             else:
                 error = response_data.get('error', 'Invalid credentials')
@@ -86,8 +94,8 @@ def handle_signup():
                 session.permanent = True
                 session['email'] = data['email']
                 session['verification_pending'] = True
-                session['signup_data'] = data  # Store signup data for after verification
-                return render_template('auth.html', verification_sent=True, email=data['email'])
+                session['signup_data'] = data
+                return render_template('auth.html', verification_sent=True, email=data['email'], success="Verification email sent! Please check your inbox.")
             else:
                 error = response_data.get('error', 'Signup failed. Please try again.')
                 return render_template('auth.html', error=error)
@@ -102,7 +110,7 @@ def handle_email_verification():
     email = session.get('email')
     
     if not verification_code or not email:
-        return render_template('auth.html', error="Verification code is required")
+        return render_template('auth.html', verification_sent=True, email=email, error="Verification code is required")
     
     try:
         response = requests.post(
@@ -115,10 +123,9 @@ def handle_email_verification():
         if response.status_code == 200:
             response_data = response.json()
             if response_data.get('success'):
-                # Complete the signup process
+                # Login the user after successful verification
                 signup_data = session.get('signup_data')
                 if signup_data:
-                    # Login the user after successful verification
                     login_response = requests.post(
                         f"{API_BASE_URL}/api/login",
                         json={'email': signup_data['email'], 'password': signup_data['password']},
@@ -130,11 +137,12 @@ def handle_email_verification():
                         login_data = login_response.json()
                         if login_data.get('success'):
                             session['token'] = login_data.get('data', {}).get('token')
+                            session['user_id'] = login_data.get('data', {}).get('user_id')
                             session.pop('verification_pending', None)
                             session.pop('signup_data', None)
                             return redirect(url_for('questions'))
                 
-                return render_template('auth.html', error="Verification successful but login failed. Please login manually.")
+                return render_template('auth.html', verification_sent=True, email=email, error="Verification successful but login failed. Please login manually.")
             else:
                 error = response_data.get('error', 'Verification failed. Please try again.')
                 return render_template('auth.html', verification_sent=True, email=email, error=error)
@@ -144,8 +152,30 @@ def handle_email_verification():
     except requests.exceptions.RequestException as e:
         return render_template('auth.html', verification_sent=True, email=email, error="Connection error. Please try again later.")
 
+def resend_verification():
+    email = session.get('email')
+    if not email:
+        return jsonify({'success': False, 'error': 'No email in session'}), 400
+    
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/api/resend-verification",
+            json={'email': email},
+            headers={'Content-Type': 'application/json'},
+            timeout=API_TIMEOUT
+        )
+        
+        if response.status_code == 200:
+            response_data = response.json()
+            return jsonify(response_data)
+        else:
+            return jsonify({'success': False, 'error': 'Failed to resend verification'}), 400
+            
+    except requests.exceptions.RequestException as e:
+        return jsonify({'success': False, 'error': 'Connection error'}), 500
+
 def check_quiz_status():
-    if 'token' not in session:
+    if 'token' not in session or 'user_id' not in session:
         return redirect(url_for('auth'))
     
     try:
@@ -154,7 +184,7 @@ def check_quiz_status():
             'Content-Type': 'application/json'
         }
         response = requests.get(
-            f"{API_BASE_URL}/api/profile",
+            f"{API_BASE_URL}/api/users/{session['user_id']}/quiz-status",
             headers=headers,
             timeout=API_TIMEOUT
         )
@@ -162,8 +192,7 @@ def check_quiz_status():
         if response.status_code == 200:
             response_data = response.json()
             if response_data.get('success'):
-                profile = response_data.get('data', {})
-                if profile.get('quiz_completed', False):
+                if response_data.get('data', {}).get('quiz_completed', False):
                     return redirect(url_for('explore'))
                 else:
                     return redirect(url_for('questions'))
