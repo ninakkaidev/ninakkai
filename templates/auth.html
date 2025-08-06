@@ -20,7 +20,7 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
-            background-image: url("{{ url_for('static', filename='images/ihnatsi-yfull-XOGSjSKQIPE-unsplash.jpg') }}");
+            background-image: url("{{ url_for('static', filename='images/auth-bg.jpg') }}");
             background-position: center bottom;
             background-size: cover;
             background-repeat: no-repeat;
@@ -65,6 +65,16 @@
             padding: 10px;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 5px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .success-message {
+            color: #4CAF50;
+            margin-bottom: 1rem;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            animation: fadeIn 0.3s ease;
         }
 
         .toggle-buttons {
@@ -91,7 +101,7 @@
         }
 
         .toggle-btn.active {
-            background: rgba(255, 255, 255, 0);
+            background: rgba(255, 255, 255, 0.2);
             font-weight: 600;
         }
 
@@ -239,6 +249,22 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
+        .password-strength {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            margin-top: 5px;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            background: #ff4d6d;
+            transition: all 0.3s ease;
+        }
+
         .submit-btn {
             width: 100%;
             padding: 15px;
@@ -256,6 +282,13 @@
         .submit-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .submit-btn:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .divider {
@@ -440,6 +473,10 @@
         <div class="error-message">{{ error }}</div>
         {% endif %}
         
+        {% if success %}
+        <div class="success-message">{{ success }}</div>
+        {% endif %}
+        
         <div class="toggle-buttons">
             <button class="toggle-btn active" id="loginBtn">Login</button>
             <button class="toggle-btn" id="signupBtn">Sign Up</button>
@@ -449,7 +486,7 @@
             <!-- Login Form -->
             <div class="form active" id="loginForm">
                 <h2>Welcome Back</h2>
-                <form method="POST" action="{{ url_for('auth') }}">
+                <form method="POST" action="{{ url_for('auth') }}" id="loginFormElement">
                     <input type="hidden" name="form_type" value="login">
                     <div class="input-group">
                         <input type="email" name="email" placeholder="Email" required>
@@ -457,7 +494,7 @@
                     <div class="input-group">
                         <input type="password" name="password" placeholder="Password" required>
                     </div>
-                    <button type="submit" class="submit-btn" onclick="showLoading()">Login</button>
+                    <button type="submit" class="submit-btn" id="loginSubmitBtn">Login</button>
                     <a href="#" class="forgot-link">Forgot password?</a>
                     
                     <div class="divider">or continue with</div>
@@ -486,7 +523,7 @@
                     <div class="step-dot" data-step="3"></div>
                 </div>
                 
-                <form method="POST" action="{{ url_for('auth') }}">
+                <form method="POST" action="{{ url_for('auth') }}" id="signupFormElement">
                     <input type="hidden" name="form_type" value="signup">
                     <div class="signup-steps" id="signupSteps">
                         <!-- Step 1 -->
@@ -514,6 +551,7 @@
                                     <option value="male">Male</option>
                                     <option value="female">Female</option>
                                     <option value="other">Other</option>
+                                    <option value="prefer-not-to-say">Prefer not to say</option>
                                 </select>
                             </div>
                             <div class="form-nav">
@@ -525,12 +563,15 @@
                         <!-- Step 3 -->
                         <div class="signup-step" data-step="3">
                             <div class="input-group">
-                                <input type="password" name="password" placeholder="Password" required id="password">
+                                <input type="password" name="password" placeholder="Password" required id="password" minlength="8">
+                                <div class="password-strength">
+                                    <div class="password-strength-bar" id="passwordStrengthBar"></div>
+                                </div>
                             </div>
                             <div class="input-group">
                                 <input type="password" name="confirm_password" placeholder="Confirm Password" required id="confirmPassword">
                             </div>
-                            <button type="submit" class="submit-btn" onclick="showLoading()">Sign Up</button>
+                            <button type="submit" class="submit-btn" id="signupSubmitBtn">Sign Up</button>
                             <div class="form-nav">
                                 <button type="button" class="nav-btn prev-step">Back</button>
                                 <div></div>
@@ -559,6 +600,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
             const loginBtn = document.getElementById('loginBtn');
             const signupBtn = document.getElementById('signupBtn');
             const loginForm = document.getElementById('loginForm');
@@ -571,12 +613,213 @@
             const nextButtons = document.querySelectorAll('.next-step');
             const prevButtons = document.querySelectorAll('.prev-step');
             const signupStepElements = document.querySelectorAll('.signup-step');
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            const passwordStrengthBar = document.getElementById('passwordStrengthBar');
+            const loginFormElement = document.getElementById('loginFormElement');
+            const signupFormElement = document.getElementById('signupFormElement');
+            const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+            const signupSubmitBtn = document.getElementById('signupSubmitBtn');
             
+            // State variables
             let currentStep = 1;
             const totalSteps = 3;
             const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
-            // Function to show login form
+            // Password strength checker
+            passwordInput.addEventListener('input', function() {
+                const password = this.value;
+                const strength = calculatePasswordStrength(password);
+                updatePasswordStrengthBar(strength);
+            });
+
+            function calculatePasswordStrength(password) {
+                let strength = 0;
+                
+                // Length check
+                if (password.length >= 8) strength += 1;
+                if (password.length >= 12) strength += 1;
+                
+                // Character variety
+                if (/[A-Z]/.test(password)) strength += 1;
+                if (/[a-z]/.test(password)) strength += 1;
+                if (/[0-9]/.test(password)) strength += 1;
+                if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+                
+                return Math.min(strength, 5);
+            }
+
+            function updatePasswordStrengthBar(strength) {
+                const colors = ['#ff4d6d', '#ff758f', '#ff8fa3', '#ffb3c1', '#4CAF50'];
+                const width = (strength / 5) * 100;
+                passwordStrengthBar.style.width = `${width}%`;
+                passwordStrengthBar.style.background = colors[strength - 1] || colors[0];
+            }
+
+            // Form validation
+            function validateCurrentStep() {
+                if (currentStep === 1) {
+                    const fullName = document.getElementById('fullName').value.trim();
+                    const email = document.getElementById('email').value.trim();
+                    
+                    if (!fullName || !email) {
+                        showError('Please fill in all fields');
+                        return false;
+                    }
+                    
+                    if (!validateEmail(email)) {
+                        showError('Please enter a valid email address');
+                        return false;
+                    }
+                    
+                    return true;
+                } else if (currentStep === 2) {
+                    const age = document.getElementById('age').value;
+                    const gender = document.getElementById('gender').value;
+                    
+                    if (!age || !gender) {
+                        showError('Please fill in all fields');
+                        return false;
+                    }
+                    
+                    if (age < 13 || age > 120) {
+                        showError('Please enter a valid age between 13 and 120');
+                        return false;
+                    }
+                    
+                    return true;
+                }
+                return true;
+            }
+
+            function validateSignupForm() {
+                const password = passwordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+                
+                if (password !== confirmPassword) {
+                    showError('Passwords do not match!');
+                    return false;
+                }
+                
+                if (password.length < 8) {
+                    showError('Password must be at least 8 characters long');
+                    return false;
+                }
+                
+                return true;
+            }
+
+            function validateLoginForm() {
+                const email = loginFormElement.querySelector('input[name="email"]').value.trim();
+                const password = loginFormElement.querySelector('input[name="password"]').value;
+                
+                if (!email || !password) {
+                    showError('Email and password are required');
+                    return false;
+                }
+                
+                if (!validateEmail(email)) {
+                    showError('Please enter a valid email address');
+                    return false;
+                }
+                
+                return true;
+            }
+
+            function validateEmail(email) {
+                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return re.test(email);
+            }
+
+            function showError(message) {
+                const errorElement = document.querySelector('.error-message') || document.createElement('div');
+                errorElement.className = 'error-message';
+                errorElement.textContent = message;
+                
+                if (!document.querySelector('.error-message')) {
+                    const container = document.querySelector('.container');
+                    container.insertBefore(errorElement, formContainer);
+                }
+                
+                setTimeout(() => {
+                    errorElement.style.opacity = '1';
+                }, 10);
+            }
+
+            // Form submission
+            loginFormElement.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                if (!validateLoginForm()) return;
+                
+                showLoading();
+                loginSubmitBtn.disabled = true;
+                
+                try {
+                    const formData = new FormData(this);
+                    const response = await fetch(this.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        const data = await response.json();
+                        if (data.error) {
+                            showError(data.error);
+                        }
+                        hideLoading();
+                        loginSubmitBtn.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    showError('An error occurred. Please try again.');
+                    hideLoading();
+                    loginSubmitBtn.disabled = false;
+                }
+            });
+
+            signupFormElement.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                if (!validateSignupForm()) return;
+                
+                showLoading();
+                signupSubmitBtn.disabled = true;
+                
+                try {
+                    const formData = new FormData(this);
+                    const response = await fetch(this.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        const data = await response.json();
+                        if (data.error) {
+                            showError(data.error);
+                        }
+                        hideLoading();
+                        signupSubmitBtn.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Signup error:', error);
+                    showError('An error occurred. Please try again.');
+                    hideLoading();
+                    signupSubmitBtn.disabled = false;
+                }
+            });
+
+            // Form navigation
             function showLoginForm() {
                 loginBtn.classList.add('active');
                 signupBtn.classList.remove('active');
@@ -586,7 +829,6 @@
                 resetSignupForm();
             }
 
-            // Function to show signup form
             function showSignupForm() {
                 signupBtn.classList.add('active');
                 loginBtn.classList.remove('active');
@@ -596,21 +838,18 @@
                 goToStep(1);
             }
 
-            // Reset signup form to first step
             function resetSignupForm() {
                 currentStep = 1;
                 updateStepIndicator();
                 updateStepVisibility();
             }
 
-            // Go to specific step
             function goToStep(step) {
                 currentStep = step;
                 updateStepIndicator();
                 updateStepVisibility();
             }
 
-            // Update step visibility based on current step
             function updateStepVisibility() {
                 signupStepElements.forEach(step => {
                     step.classList.remove('active');
@@ -620,7 +859,6 @@
                 });
             }
 
-            // Update step indicator dots
             function updateStepIndicator() {
                 stepDots.forEach((dot, index) => {
                     if (index < currentStep) {
@@ -631,15 +869,12 @@
                 });
             }
 
-            // Toggle button events
+            // Event listeners
             loginBtn.addEventListener('click', showLoginForm);
             signupBtn.addEventListener('click', showSignupForm);
-
-            // Switch form links
             showLogin.addEventListener('click', showLoginForm);
             showSignup.addEventListener('click', showSignupForm);
 
-            // Next step buttons
             nextButtons.forEach(button => {
                 button.addEventListener('click', () => {
                     if (validateCurrentStep()) {
@@ -650,7 +885,6 @@
                 });
             });
 
-            // Previous step buttons
             prevButtons.forEach(button => {
                 button.addEventListener('click', () => {
                     if (currentStep > 1) {
@@ -659,7 +893,6 @@
                 });
             });
 
-            // Step indicator dots navigation
             stepDots.forEach(dot => {
                 dot.addEventListener('click', () => {
                     const step = parseInt(dot.getAttribute('data-step'));
@@ -669,71 +902,13 @@
                 });
             });
 
-            // Form validation for each step
-            function validateCurrentStep() {
-                if (currentStep === 1) {
-                    const fullName = document.getElementById('fullName').value;
-                    const email = document.getElementById('email').value;
-                    if (!fullName || !email) {
-                        alert('Please fill in all fields');
-                        return false;
-                    }
-                    if (!validateEmail(email)) {
-                        alert('Please enter a valid email address');
-                        return false;
-                    }
-                } else if (currentStep === 2) {
-                    const age = document.getElementById('age').value;
-                    const gender = document.getElementById('gender').value;
-                    if (!age || !gender) {
-                        alert('Please fill in all fields');
-                        return false;
-                    }
-                }
-                return true;
-            }
-
-            // Email validation
-            function validateEmail(email) {
-                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                return re.test(email);
-            }
-
-            // Password validation on form submit
-            document.querySelectorAll('form').forEach(form => {
-                form.addEventListener('submit', (e) => {
-                    if (form.querySelector('input[name="form_type"]').value === 'signup') {
-                        const password = document.getElementById('password').value;
-                        const confirmPassword = document.getElementById('confirmPassword').value;
-                        
-                        if (password !== confirmPassword) {
-                            e.preventDefault();
-                            alert('Passwords do not match!');
-                            return false;
-                        }
-                        
-                        if (password.length < 8) {
-                            e.preventDefault();
-                            alert('Password must be at least 8 characters long');
-                            return false;
-                        }
-                    }
-                    return true;
-                });
-            });
-
-            // Show form container when any toggle button is clicked
-            [loginBtn, signupBtn].forEach(btn => {
-                btn.addEventListener('click', () => {
-                    if (!formContainer.classList.contains('active')) {
-                        formContainer.classList.add('active');
-                    }
-                });
-            });
-
-            // Show loading spinner
+            // Loading functions
             window.showLoading = function() {
                 document.getElementById('loading').style.display = 'flex';
+            };
+
+            window.hideLoading = function() {
+                document.getElementById('loading').style.display = 'none';
             };
         });
     </script>
