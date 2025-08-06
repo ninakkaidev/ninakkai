@@ -1,10 +1,15 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import requests
 from datetime import timedelta
+import logging
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'  # Change this to a secure random key in production
 app.permanent_session_lifetime = timedelta(days=1)  # Session expires after 1 day
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # API Configuration
 API_BASE_URL = 'https://routinely-positive-rattler.ngrok-free.app'
@@ -27,22 +32,24 @@ def auth():
             return handle_email_verification()
         elif form_type == 'resend_verification':
             return resend_verification()
+        
+        return jsonify({'success': False, 'error': 'Invalid form type'}), 400
     
-    # Clear any previous verification state if just loading the page
-    if request.method == 'GET' and 'verification_pending' in session:
+    # GET request - render template normally
+    if 'verification_pending' in session:
         email = session.get('email')
         return render_template('auth.html', verification_sent=True, email=email)
     
     return render_template('auth.html')
 
 def handle_login():
-    email = request.form.get('email')
-    password = request.form.get('password')
-    
-    if not email or not password:
-        return render_template('auth.html', error="Email and password are required")
-    
     try:
+        email = request.form.get('email')
+        password = request.form.get('password')
+        
+        if not email or not password:
+            return jsonify({'success': False, 'error': 'Email and password are required'}), 400
+        
         response = requests.post(
             f"{API_BASE_URL}/api/login",
             json={'email': email, 'password': password},
@@ -50,37 +57,59 @@ def handle_login():
             timeout=API_TIMEOUT
         )
         
-        if response.status_code == 200:
+        try:
             response_data = response.json()
+        except ValueError:
+            logger.error(f"Invalid JSON response from API: {response.text}")
+            return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
+        
+        if response.status_code == 200:
             if response_data.get('success'):
                 session.permanent = True
                 session['token'] = response_data.get('data', {}).get('token')
                 session['email'] = email
                 session['user_id'] = response_data.get('data', {}).get('user_id')
-                return check_quiz_status()
+                
+                # Check quiz status through API
+                quiz_status = check_quiz_status()
+                if quiz_status.get('quiz_completed', False):
+                    return jsonify({
+                        'success': True,
+                        'redirect': url_for('explore')
+                    })
+                else:
+                    return jsonify({
+                        'success': True,
+                        'redirect': url_for('questions')
+                    })
             else:
                 error = response_data.get('error', 'Invalid credentials')
-                return render_template('auth.html', error=error)
+                return jsonify({'success': False, 'error': error}), 401
         else:
-            return render_template('auth.html', error="Login failed. Please try again.")
+            error = response_data.get('error', 'Login failed. Please try again.')
+            return jsonify({'success': False, 'error': error}), response.status_code
             
     except requests.exceptions.RequestException as e:
-        return render_template('auth.html', error="Connection error. Please try again later.")
+        logger.error(f"Login request failed: {str(e)}")
+        return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
+    except Exception as e:
+        logger.error(f"Unexpected error in login: {str(e)}")
+        return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
 
 def handle_signup():
-    data = {
-        'email': request.form.get('email'),
-        'password': request.form.get('password'),
-        'full_name': request.form.get('full_name'),
-        'age': request.form.get('age', type=int),
-        'gender': request.form.get('gender')
-    }
-    
-    # Basic validation
-    if not all([data['email'], data['password'], data['full_name']]):
-        return render_template('auth.html', error="Please fill all required fields")
-    
     try:
+        data = {
+            'email': request.form.get('email'),
+            'password': request.form.get('password'),
+            'full_name': request.form.get('full_name'),
+            'age': request.form.get('age', type=int),
+            'gender': request.form.get('gender')
+        }
+        
+        # Basic validation
+        if not all([data['email'], data['password'], data['full_name']]):
+            return jsonify({'success': False, 'error': 'Please fill all required fields'}), 400
+        
         response = requests.post(
             f"{API_BASE_URL}/api/signup",
             json=data,
@@ -88,31 +117,46 @@ def handle_signup():
             timeout=API_TIMEOUT
         )
         
-        if response.status_code == 200:
+        try:
             response_data = response.json()
+        except ValueError:
+            logger.error(f"Invalid JSON response from API: {response.text}")
+            return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
+        
+        if response.status_code == 200:
             if response_data.get('success'):
                 session.permanent = True
                 session['email'] = data['email']
                 session['verification_pending'] = True
                 session['signup_data'] = data
-                return render_template('auth.html', verification_sent=True, email=data['email'], success="Verification email sent! Please check your inbox.")
+                return jsonify({
+                    'success': True,
+                    'verification_sent': True,
+                    'email': data['email'],
+                    'message': 'Verification email sent! Please check your inbox.'
+                })
             else:
                 error = response_data.get('error', 'Signup failed. Please try again.')
-                return render_template('auth.html', error=error)
+                return jsonify({'success': False, 'error': error}), 400
         else:
-            return render_template('auth.html', error="Signup failed. Please try again.")
+            error = response_data.get('error', 'Signup failed. Please try again.')
+            return jsonify({'success': False, 'error': error}), response.status_code
             
     except requests.exceptions.RequestException as e:
-        return render_template('auth.html', error="Connection error. Please try again later.")
+        logger.error(f"Signup request failed: {str(e)}")
+        return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
+    except Exception as e:
+        logger.error(f"Unexpected error in signup: {str(e)}")
+        return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
 
 def handle_email_verification():
-    verification_code = request.form.get('verification_code')
-    email = session.get('email')
-    
-    if not verification_code or not email:
-        return render_template('auth.html', verification_sent=True, email=email, error="Verification code is required")
-    
     try:
+        verification_code = request.form.get('verification_code')
+        email = session.get('email')
+        
+        if not verification_code or not email:
+            return jsonify({'success': False, 'error': 'Verification code is required'}), 400
+        
         response = requests.post(
             f"{API_BASE_URL}/api/verify-email",
             json={'email': email, 'verification_code': verification_code},
@@ -120,8 +164,13 @@ def handle_email_verification():
             timeout=API_TIMEOUT
         )
         
-        if response.status_code == 200:
+        try:
             response_data = response.json()
+        except ValueError:
+            logger.error(f"Invalid JSON response from API: {response.text}")
+            return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
+        
+        if response.status_code == 200:
             if response_data.get('success'):
                 # Login the user after successful verification
                 signup_data = session.get('signup_data')
@@ -140,24 +189,36 @@ def handle_email_verification():
                             session['user_id'] = login_data.get('data', {}).get('user_id')
                             session.pop('verification_pending', None)
                             session.pop('signup_data', None)
-                            return redirect(url_for('questions'))
+                            return jsonify({
+                                'success': True,
+                                'redirect': url_for('questions')
+                            })
                 
-                return render_template('auth.html', verification_sent=True, email=email, error="Verification successful but login failed. Please login manually.")
+                return jsonify({
+                    'success': True,
+                    'message': 'Verification successful. Please login manually.',
+                    'redirect': url_for('auth')
+                })
             else:
                 error = response_data.get('error', 'Verification failed. Please try again.')
-                return render_template('auth.html', verification_sent=True, email=email, error=error)
+                return jsonify({'success': False, 'error': error}), 400
         else:
-            return render_template('auth.html', verification_sent=True, email=email, error="Verification failed. Please try again.")
+            error = response_data.get('error', 'Verification failed. Please try again.')
+            return jsonify({'success': False, 'error': error}), response.status_code
             
     except requests.exceptions.RequestException as e:
-        return render_template('auth.html', verification_sent=True, email=email, error="Connection error. Please try again later.")
+        logger.error(f"Verification request failed: {str(e)}")
+        return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
+    except Exception as e:
+        logger.error(f"Unexpected error in verification: {str(e)}")
+        return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
 
 def resend_verification():
-    email = session.get('email')
-    if not email:
-        return jsonify({'success': False, 'error': 'No email in session'}), 400
-    
     try:
+        email = session.get('email')
+        if not email:
+            return jsonify({'success': False, 'error': 'No email in session'}), 400
+        
         response = requests.post(
             f"{API_BASE_URL}/api/resend-verification",
             json={'email': email},
@@ -165,20 +226,30 @@ def resend_verification():
             timeout=API_TIMEOUT
         )
         
-        if response.status_code == 200:
+        try:
             response_data = response.json()
+        except ValueError:
+            logger.error(f"Invalid JSON response from API: {response.text}")
+            return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
+        
+        if response.status_code == 200:
             return jsonify(response_data)
         else:
-            return jsonify({'success': False, 'error': 'Failed to resend verification'}), 400
+            error = response_data.get('error', 'Failed to resend verification')
+            return jsonify({'success': False, 'error': error}), response.status_code
             
     except requests.exceptions.RequestException as e:
+        logger.error(f"Resend verification request failed: {str(e)}")
         return jsonify({'success': False, 'error': 'Connection error'}), 500
+    except Exception as e:
+        logger.error(f"Unexpected error in resend verification: {str(e)}")
+        return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
 
 def check_quiz_status():
-    if 'token' not in session or 'user_id' not in session:
-        return redirect(url_for('auth'))
-    
     try:
+        if 'token' not in session or 'user_id' not in session:
+            return {'quiz_completed': False}
+        
         headers = {
             'Authorization': f"Bearer {session.get('token')}",
             'Content-Type': 'application/json'
@@ -192,15 +263,12 @@ def check_quiz_status():
         if response.status_code == 200:
             response_data = response.json()
             if response_data.get('success'):
-                if response_data.get('data', {}).get('quiz_completed', False):
-                    return redirect(url_for('explore'))
-                else:
-                    return redirect(url_for('questions'))
+                return response_data.get('data', {'quiz_completed': False})
     
-    except requests.exceptions.RequestException:
-        pass
-        
-    return redirect(url_for('questions'))
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Quiz status check failed: {str(e)}")
+    
+    return {'quiz_completed': False}
 
 @app.route('/explore')
 def explore():
@@ -226,7 +294,8 @@ def explore():
         
         return render_template('explore.html', matches=matches)
     
-    except requests.exceptions.RequestException:
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Explore request failed: {str(e)}")
         return render_template('explore.html', matches=[])
 
 @app.route('/chat')
@@ -253,7 +322,8 @@ def chat():
         
         return render_template('chat.html', chats=chats)
     
-    except requests.exceptions.RequestException:
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Chat request failed: {str(e)}")
         return render_template('chat.html', chats=[])
 
 @app.route('/profile')
@@ -280,7 +350,8 @@ def profile():
         
         return render_template('profile.html', profile=profile_data)
     
-    except requests.exceptions.RequestException:
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Profile request failed: {str(e)}")
         return render_template('profile.html', profile={})
 
 @app.route('/questions', methods=['GET', 'POST'])
@@ -308,8 +379,8 @@ def questions():
                 if response_data.get('success'):
                     return redirect(url_for('explore'))
         
-        except requests.exceptions.RequestException:
-            pass
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Quiz submission failed: {str(e)}")
     
     return render_template('questions.html')
 
@@ -326,8 +397,8 @@ def logout():
                 headers=headers,
                 timeout=API_TIMEOUT
             )
-        except requests.exceptions.RequestException:
-            pass
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Logout request failed: {str(e)}")
         
         session.clear()
     
