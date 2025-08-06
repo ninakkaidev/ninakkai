@@ -408,7 +408,7 @@
         </div>
       </div>
 
-      <button class="btn-hero" onclick="location.href='{{ url_for('login') }}'">Join Us</button>
+      <button class="btn-hero" onclick="location.href='{{ url_for('auth') }}'">Join Us</button>
     </nav>
 
     <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
@@ -418,7 +418,7 @@
       <a onclick="showMobilePopup('about')">About</a>
       <a onclick="showMobilePopup('pricing')">Pricing</a>
       <a onclick="showMobilePopup('contact')">Contact</a>
-      <a href="{{ url_for('login') }}" class="join-btn" style="margin-top: 20px;">Join Us</a>
+      <a href="{{ url_for('auth') }}" class="join-btn" style="margin-top: 20px;">Join Us</a>
     </div>
   </header>
 
