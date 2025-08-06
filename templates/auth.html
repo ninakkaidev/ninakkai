@@ -455,6 +455,67 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Verification Section Styles */
+        .verification-section {
+            display: none;
+            text-align: center;
+            color: white;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .verification-section.active {
+            display: block;
+        }
+        
+        .verification-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #4CAF50;
+        }
+        
+        .verification-input {
+            margin: 1.5rem 0;
+        }
+        
+        .verification-input input {
+            width: 100%;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 15px;
+            outline: none;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            text-align: center;
+            letter-spacing: 5px;
+            font-size: 18px;
+        }
+        
+        .verification-input input:focus {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .resend-link {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-block;
+            margin-top: 10px;
+            transition: color 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .resend-link:hover {
+            color: white;
+            text-decoration: underline;
+        }
+
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -477,12 +538,32 @@
         <div class="success-message">{{ success }}</div>
         {% endif %}
         
-        <div class="toggle-buttons">
+        <!-- Verification Section -->
+        <div class="verification-section {% if verification_sent %}active{% endif %}" id="verificationSection">
+            <div class="verification-icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <h2>Verify Your Email</h2>
+            <p>We've sent a verification code to <strong>{{ email if email else session.email }}</strong></p>
+            <p>Please check your inbox and enter the code below:</p>
+            
+            <form method="POST" action="{{ url_for('auth') }}" id="verificationForm">
+                <input type="hidden" name="form_type" value="verify_email">
+                <div class="verification-input">
+                    <input type="text" name="verification_code" placeholder="Enter 6-digit code" maxlength="6" required>
+                </div>
+                <button type="submit" class="submit-btn" id="verifyBtn">Verify Email</button>
+                <div class="resend-link" id="resendLink">Didn't receive code? Resend</div>
+            </form>
+        </div>
+        
+        <!-- Auth Forms Section -->
+        <div class="toggle-buttons {% if verification_sent %}hidden{% endif %}" id="authButtons">
             <button class="toggle-btn active" id="loginBtn">Login</button>
             <button class="toggle-btn" id="signupBtn">Sign Up</button>
         </div>
 
-        <div class="form-container" id="formContainer">
+        <div class="form-container {% if verification_sent %}hidden{% endif %}" id="formContainer">
             <!-- Login Form -->
             <div class="form active" id="loginForm">
                 <h2>Welcome Back</h2>
@@ -620,12 +701,93 @@
             const signupFormElement = document.getElementById('signupFormElement');
             const loginSubmitBtn = document.getElementById('loginSubmitBtn');
             const signupSubmitBtn = document.getElementById('signupSubmitBtn');
+            const verificationSection = document.getElementById('verificationSection');
+            const verificationForm = document.getElementById('verificationForm');
+            const verifyBtn = document.getElementById('verifyBtn');
+            const resendLink = document.getElementById('resendLink');
+            const authButtons = document.getElementById('authButtons');
             
-            // State variables
-            let currentStep = 1;
-            const totalSteps = 3;
-            const isMobile = window.matchMedia("(max-width: 768px)").matches;
-
+            // Show verification section if verification is pending
+            if (verificationSection.classList.contains('active')) {
+                formContainer.classList.remove('active');
+                authButtons.classList.add('hidden');
+            }
+            
+            // Verification form submission
+            verificationForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const verificationCode = this.querySelector('input[name="verification_code"]').value.trim();
+                
+                if (!verificationCode || verificationCode.length !== 6) {
+                    showError('Please enter a valid 6-digit verification code');
+                    return;
+                }
+                
+                showLoading();
+                verifyBtn.disabled = true;
+                
+                try {
+                    const formData = new FormData(this);
+                    const response = await fetch(this.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        const data = await response.json();
+                        if (data.error) {
+                            showError(data.error);
+                        }
+                        hideLoading();
+                        verifyBtn.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Verification error:', error);
+                    showError('An error occurred. Please try again.');
+                    hideLoading();
+                    verifyBtn.disabled = false;
+                }
+            });
+            
+            // Resend verification code
+            resendLink.addEventListener('click', async function() {
+                showLoading();
+                resendLink.textContent = 'Sending...';
+                
+                try {
+                    const response = await fetch("{{ url_for('auth') }}", {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            form_type: 'signup',
+                            email: "{{ email if email else session.email }}",
+                            resend: true
+                        }),
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        showError('Verification code resent successfully!');
+                    } else {
+                        showError('Failed to resend verification code. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('Resend error:', error);
+                    showError('An error occurred. Please try again.');
+                } finally {
+                    hideLoading();
+                    resendLink.textContent = 'Didn\'t receive code? Resend';
+                }
+            });
+            
             // Password strength checker
             passwordInput.addEventListener('input', function() {
                 const password = this.value;
@@ -868,6 +1030,11 @@
                     }
                 });
             }
+
+            // State variables
+            let currentStep = 1;
+            const totalSteps = 3;
+            const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
             // Event listeners
             loginBtn.addEventListener('click', showLoginForm);

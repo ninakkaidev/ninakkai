@@ -23,6 +23,8 @@ def auth():
             return handle_login()
         elif form_type == 'signup':
             return handle_signup()
+        elif form_type == 'verify_email':
+            return handle_email_verification()
     
     return render_template('auth.html')
 
@@ -46,6 +48,7 @@ def handle_login():
             if response_data.get('success'):
                 session.permanent = True
                 session['token'] = response_data.get('data', {}).get('token')
+                session['email'] = email  # Store email in session
                 return check_quiz_status()
             else:
                 error = response_data.get('error', 'Invalid credentials')
@@ -81,8 +84,10 @@ def handle_signup():
             response_data = response.json()
             if response_data.get('success'):
                 session.permanent = True
-                session['token'] = response_data.get('data', {}).get('token')
-                return redirect(url_for('questions'))
+                session['email'] = data['email']
+                session['verification_pending'] = True
+                session['signup_data'] = data  # Store signup data for after verification
+                return render_template('auth.html', verification_sent=True, email=data['email'])
             else:
                 error = response_data.get('error', 'Signup failed. Please try again.')
                 return render_template('auth.html', error=error)
@@ -91,6 +96,53 @@ def handle_signup():
             
     except requests.exceptions.RequestException as e:
         return render_template('auth.html', error="Connection error. Please try again later.")
+
+def handle_email_verification():
+    verification_code = request.form.get('verification_code')
+    email = session.get('email')
+    
+    if not verification_code or not email:
+        return render_template('auth.html', error="Verification code is required")
+    
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/api/verify-email",
+            json={'email': email, 'verification_code': verification_code},
+            headers={'Content-Type': 'application/json'},
+            timeout=API_TIMEOUT
+        )
+        
+        if response.status_code == 200:
+            response_data = response.json()
+            if response_data.get('success'):
+                # Complete the signup process
+                signup_data = session.get('signup_data')
+                if signup_data:
+                    # Login the user after successful verification
+                    login_response = requests.post(
+                        f"{API_BASE_URL}/api/login",
+                        json={'email': signup_data['email'], 'password': signup_data['password']},
+                        headers={'Content-Type': 'application/json'},
+                        timeout=API_TIMEOUT
+                    )
+                    
+                    if login_response.status_code == 200:
+                        login_data = login_response.json()
+                        if login_data.get('success'):
+                            session['token'] = login_data.get('data', {}).get('token')
+                            session.pop('verification_pending', None)
+                            session.pop('signup_data', None)
+                            return redirect(url_for('questions'))
+                
+                return render_template('auth.html', error="Verification successful but login failed. Please login manually.")
+            else:
+                error = response_data.get('error', 'Verification failed. Please try again.')
+                return render_template('auth.html', verification_sent=True, email=email, error=error)
+        else:
+            return render_template('auth.html', verification_sent=True, email=email, error="Verification failed. Please try again.")
+            
+    except requests.exceptions.RequestException as e:
+        return render_template('auth.html', verification_sent=True, email=email, error="Connection error. Please try again later.")
 
 def check_quiz_status():
     if 'token' not in session:
@@ -248,7 +300,7 @@ def logout():
         except requests.exceptions.RequestException:
             pass
         
-        session.pop('token', None)
+        session.clear()
     
     return redirect(url_for('index'))
 
