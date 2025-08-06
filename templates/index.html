@@ -105,7 +105,7 @@
     .hero {
       height: 100vh;
       background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.3)),
-          url('images/photo-playful-man-gives-piggyback-ride-girlfriend.jpg') no-repeat top center/cover;
+          url("{{ url_for('static', filename='images/hero-image.jpg') }}") no-repeat top center/cover;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -128,12 +128,14 @@
       100% { background-position: 100% 50%; }
     }
 
+    /* For screens up to 720px */
     @media (max-width: 720px) {
       .hero {
         background-position: 70% center;
       }
     }
 
+    /* For screens up to 480px */
     @media (max-width: 480px) {
       .hero {
         background-position: 70% center;
@@ -346,7 +348,6 @@
         text-align: left;
       }
     }
-
     .animated-gradient {
       background: linear-gradient(90deg, #ff4e50, #f9d423, #00c9ff, #76b852, #ff4e50);
       background-size: 300% auto;
@@ -363,14 +364,15 @@
   </style>
 </head>
 <body>
+
   <header id="header">
     <div class="logo">
-      <span style="font-size: 2rem; background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; margin-right: 5px;">
-        നിനക്കായി-
-      </span>
-      <span style="font-size: 1.2rem; color: rgb(255, 255, 255); font-weight: 600;">
-        ForYou
-      </span>
+        <span style="font-size: 2rem; background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; margin-right: 5px;">
+            നിനക്കായി-
+        </span>
+        <span style="font-size: 1.2rem; color: rgb(255, 255, 255); font-weight: 600;">
+            ForYou
+        </span>
     </div>
 
     <nav>
@@ -442,7 +444,7 @@
       </div>
       <div class="footer-column">
         <h4>Support</h4>
-        <a href="{{ url_for('questions') }}">Contact | question</a>
+        <a href="{{ url_for('questions') }}">Contact | questions</a>
         <a href="#">FAQs</a>
         <a href="#">Help Center</a>
       </div>
