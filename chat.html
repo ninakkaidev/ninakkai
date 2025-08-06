@@ -479,6 +479,9 @@ body {
   padding: 0.875rem;
   border-top: 1px solid rgba(255,255,255,0.1);
   background-color: var(--card-dark);
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
 }
 
 .message-input {
@@ -831,6 +834,22 @@ body {
     margin-left: 0.5rem;
     color: var(--dark);
   }
+
+  .chat-area {
+    height: 100%;
+  }
+
+  .messages-container {
+    padding-bottom: 80px; /* Ensure space for input field */
+  }
+
+  .message-input-container {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    z-index: 100;
+    background-color: var(--card-dark);
+  }
 }
 
 @media (min-width: 992px) {
@@ -917,7 +936,7 @@ body {
 <body>
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container">
-            <a class="navbar-brand" href="#">
+            <a class="navbar-brand" href="index.html">
                 <span>നിനക്കായി-ForYou</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -926,21 +945,24 @@ body {
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="explore.html"><i class="fas fa-search me-1"></i> Explore</a>
+                        <a class="nav-link" href="explore.html">
+                            <i class="fas fa-search me-1"></i> Explore
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="#chpage"><i class="fas fa-comment me-1"></i> Messages <span class="badge">5</span></a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img src="https://randomuser.me/api/portraits/women/44.jpg" class="profile-pic-nav" alt="Profile">
+                      <a class="nav-link" href="index.html">
+                          <i class="fas fa-sign-out-alt me-1"></i> Logout
+                      </a>
+                  </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="chat.html">
+                            <i class="fas fa-comment me-1"></i> Messages <span class="badge">5</span>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profile</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Settings</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
-                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="profile.html">
+                            <img src="https://randomuser.me/api/portraits/women/44.jpg" class="profile-pic-nav" alt="Profile" style="width: 32px; height: 32px; border-radius: 50%;">
+                        </a>
                     </li>
                 </ul>
             </div>
@@ -1269,6 +1291,9 @@ body {
         return new bootstrap.Dropdown(dropdownToggleEl)
       });
 
+      // Navigation history stack
+      let navigationHistory = ['conversations'];
+
       // Toggle Emoji Picker
       const emojiBtn = document.querySelector('.btn-emoji');
       const emojiPicker = document.querySelector('.emoji-picker');
@@ -1330,11 +1355,22 @@ body {
       const closeSidebar = document.querySelector('.btn-close-sidebar');
       
       moreBtn.addEventListener('click', () => {
-        sidebar.classList.toggle('active');
+        sidebar.classList.add('active');
+        navigationHistory.push('profile');
       });
       
       closeSidebar.addEventListener('click', () => {
         sidebar.classList.remove('active');
+        navigationHistory.pop();
+        // Navigate to previous area
+        const previousArea = navigationHistory[navigationHistory.length - 1];
+        if (previousArea === 'chat') {
+          chatArea.classList.add('active');
+          conversationsCol.classList.add('hidden');
+        } else if (previousArea === 'conversations') {
+          chatArea.classList.remove('active');
+          conversationsCol.classList.remove('hidden');
+        }
       });
       
       // Send message on Enter key
@@ -1390,9 +1426,11 @@ body {
           if (window.innerWidth <= 992) {
             conversationsCol.classList.add('hidden');
             chatArea.classList.add('active');
+            navigationHistory.push('chat');
           } else {
             conversationsCol.classList.add('hidden');
             chatArea.classList.add('active');
+            navigationHistory.push('chat');
           }
           document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
           this.classList.add('active');
@@ -1403,45 +1441,64 @@ body {
       chatBackBtn.addEventListener('click', () => {
         chatArea.classList.remove('active');
         conversationsCol.classList.remove('hidden');
+        navigationHistory.pop();
+        const previousArea = navigationHistory[navigationHistory.length - 1];
+        if (previousArea === 'profile') {
+          sidebar.classList.add('active');
+        }
       });
       
-      // Back button in conversations list (for profile view)
+      // Back button in conversations list
       conversationsBackBtn.addEventListener('click', () => {
-        sidebar.classList.remove('active');
+        navigationHistory.pop();
+        const previousArea = navigationHistory[navigationHistory.length - 1];
+        if (previousArea === 'chat') {
+          chatArea.classList.add('active');
+          conversationsCol.classList.add('hidden');
+        } else if (previousArea === 'profile') {
+          sidebar.classList.add('active');
+          conversationsCol.classList.add('hidden');
+        } else {
+          window.location.href = 'index.html'; // Navigate to home or previous page
+        }
       });
+
       document.addEventListener("DOMContentLoaded", () => {
-      const conversations = document.querySelectorAll(".conversation");
-      const chatArea = document.querySelector(".chat-area");
-      const backBtn = document.querySelector(".chat-back-btn");
-      const conversationsCol = document.querySelector(".conversations-col");
+        const conversations = document.querySelectorAll(".conversation");
+        const chatArea = document.querySelector(".chat-area");
+        const backBtn = document.querySelector(".chat-back-btn");
+        const conversationsCol = document.querySelector(".conversations-col");
 
-      // When a conversation is clicked
-      conversations.forEach((conv) => {
-        conv.addEventListener("click", () => {
-          conversations.forEach(c => c.classList.remove("active"));
-          conv.classList.add("active");
+        // When a conversation is clicked
+        conversations.forEach((conv) => {
+          conv.addEventListener("click", () => {
+            conversations.forEach(c => c.classList.remove("active"));
+            conv.classList.add("active");
 
-          // Show chat area
-          chatArea.classList.add("active");
+            // Show chat area
+            chatArea.classList.add("active");
 
-          // For small screens: hide conversations list
+            // For small screens: hide conversations list
+            if (window.innerWidth < 992) {
+              conversationsCol.classList.add("hidden");
+            }
+            navigationHistory.push('chat');
+          });
+        });
+
+        // Back button for mobile
+        backBtn.addEventListener("click", () => {
+          chatArea.classList.remove("active");
           if (window.innerWidth < 992) {
-            conversationsCol.classList.add("hidden");
+            conversationsCol.classList.remove("hidden");
+          }
+          navigationHistory.pop();
+          const previousArea = navigationHistory[navigationHistory.length - 1];
+          if (previousArea === 'profile') {
+            sidebar.classList.add('active');
           }
         });
       });
-
-    // Back button for mobile
-    backBtn.addEventListener("click", () => {
-      chatArea.classList.remove("active");
-      if (window.innerWidth < 992) {
-        conversationsCol.classList.remove("hidden");
-      }
-    });
-
-    // Optional: Toggle dropdown menu (already handled by Bootstrap)
-  });
-  
     </script>
 </body>
 </html>

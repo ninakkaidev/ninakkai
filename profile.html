@@ -12,6 +12,7 @@
             padding-bottom: 70px; /* Space for bottom navigation */
             position: relative;
             overflow-x: hidden;
+            transition: background-color 0.3s ease;
         }
         
         .profile-pic-upload {
@@ -129,6 +130,191 @@
                 max-width: 80% !important;
             }
         }
+        
+        /* Dark mode styles */
+        .dark body {
+            background-color: #111827;
+            color: #f3f4f6;
+        }
+        
+        .dark .bg-white {
+            background-color: #1f2937 !important;
+            color: #f3f4f6;
+        }
+        
+        .dark .text-gray-800 {
+            color: #f3f4f6 !important;
+        }
+        
+        .dark .bg-gray-100 {
+            background-color: #111827 !important;
+        }
+        
+        .dark .bg-gray-50 {
+            background-color: #374151 !important;
+        }
+        
+        .dark .text-gray-500 {
+            color: #9ca3af !important;
+        }
+        
+        .dark .border-gray-200 {
+            border-color: #374151 !important;
+        }
+        
+        .dark .notification-item.unread {
+            background-color: #374151 !important;
+        }
+        
+        .dark .chat-message.received {
+            background-color: #374151 !important;
+        }
+        
+        /* Settings Modal Styles */
+        #settingsModal {
+            transition: opacity 0.3s ease;
+        }
+        
+        #settingsModal .settings-option {
+            transition: background-color 0.2s ease;
+        }
+        
+        .dark #settingsModal .settings-option:hover {
+            background-color: #374151 !important;
+        }
+        
+        /* Language Selector Styles */
+        .language-selector {
+            position: relative;
+        }
+        
+        .language-options {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            width: 150px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            display: none;
+        }
+        
+        .dark .language-options {
+            background-color: #1f2937;
+            border-color: #374151;
+        }
+        
+        .language-options.active {
+            display: block;
+        }
+        
+        .language-option {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+        }
+        
+        .language-option:hover {
+            background-color: #f9fafb;
+        }
+        
+        .dark .language-option:hover {
+            background-color: #374151;
+        }
+        
+        .language-option.selected {
+            color: #ec4899;
+            font-weight: 500;
+        }
+        
+        /* Change Password Modal */
+        #changePasswordModal {
+            transition: all 0.3s ease;
+        }
+        
+        /* Confirmation Dialog */
+        .confirmation-dialog {
+            transition: all 0.3s ease;
+        }
+        
+        .dark .confirmation-dialog div {
+            background-color: #1f2937;
+            color: #f3f4f6;
+        }
+
+        /* Updated Toggle Styles */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .toggle-label {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            background-color: #d1d5db;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .toggle-label:hover {
+            background-color: #9ca3af;
+        }
+
+        .toggle-label.peer-checked {
+            background-color: #ec4899;
+        }
+
+        .toggle-label.peer-checked:hover {
+            background-color: #db2777;
+        }
+
+        .toggle-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            transform: translateX(0);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .toggle-label.peer-checked .toggle-knob {
+            transform: translateX(20px);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .toggle-status {
+            min-width: 30px;
+            transition: color 0.3s ease;
+        }
+
+        .dark .toggle-label {
+            background-color: #4b5563;
+        }
+
+        .dark .toggle-label:hover {
+            background-color: #6b7280;
+        }
+
+        .dark .toggle-label.peer-checked {
+            background-color: #ec4899;
+        }
+
+        .dark .toggle-label.peer-checked:hover {
+            background-color: #db2777;
+        }
+
+        .toggle-label:focus-within {
+            outline: 2px solid #ec4899;
+            outline-offset: 2px;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -193,13 +379,13 @@
             <div class="mt-6">
                 <h3 class="font-semibold mb-2">About Me</h3>
                 <p id="bioView" class="view-field text-gray-700">
-                    Adventure seeker and coffee enthusiast! 📷 I love capturing moments and exploring new places. 
-                    Looking for someone to share spontaneous trips and deep conversations with. 
+                    Adventure seeker and coffee enthusiast! 📷 I love capturing moments and exploring new places.
+                    Looking for someone to share spontaneous trips and deep conversations with.
                     Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
                 </p>
                 <textarea id="bioEdit" class="edit-field w-full border rounded px-3 py-2 h-24">
-Adventure seeker and coffee enthusiast! 📷 I love capturing moments and exploring new places. 
-Looking for someone to share spontaneous trips and deep conversations with. 
+Adventure seeker and coffee enthusiast! 📷 I love capturing moments and exploring new places.
+Looking for someone to share spontaneous trips and deep conversations with.
 Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
                 </textarea>
             </div>
@@ -492,83 +678,106 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
 
     <!-- Settings Modal -->
     <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden">
-        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto">
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto dark:bg-gray-800">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold">Settings</h2>
-                <button id="closeSettings" class="text-gray-500 hover:text-gray-700">
+                <h2 class="text-xl font-bold dark:text-white">Settings</h2>
+                <button id="closeSettings" class="text-gray-500 hover:text-gray-700 dark:text-gray-300">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
             
             <div class="space-y-4">
                 <!-- Account Settings -->
-                <div class="settings-option p-3 rounded-lg">
-                    <h3 class="font-medium mb-2">Account</h3>
+                <div class="settings-option p-3 rounded-lg dark:bg-gray-700">
+                    <h3 class="font-medium mb-2 dark:text-white">Account</h3>
                     <div class="space-y-3">
-                        <div class="flex justify-between items-center">
+                        <div class="flex justify-between items-center dark:text-gray-300">
                             <span>Email</span>
-                            <span class="text-gray-500">sarah.johnson@example.com</span>
+                            <span class="text-gray-500 dark:text-gray-400">sarah.johnson@example.com</span>
                         </div>
-                        <div class="flex justify-between items-center">
+                        <div class="flex justify-between items-center dark:text-gray-300">
                             <span>Phone</span>
-                            <span class="text-gray-500">+1 (555) 123-4567</span>
+                            <span class="text-gray-500 dark:text-gray-400">+1 (555) 123-4567</span>
                         </div>
-                        <button class="w-full text-left text-pink-500 font-medium mt-2">Change Password</button>
+                        <button class="w-full text-left text-pink-500 font-medium mt-2 dark:text-pink-400">Change Password</button>
                     </div>
                 </div>
                 
                 <!-- Notification Settings -->
-                <div class="settings-option p-3 rounded-lg">
-                    <h3 class="font-medium mb-2">Notifications</h3>
+                <div class="settings-option p-3 rounded-lg dark:bg-gray-700">
+                    <h3 class="font-medium mb-2 dark:text-white">Notifications</h3>
                     <div class="space-y-3">
-                        <div class="flex justify-between items-center">
+                        <div class="flex justify-between items-center dark:text-gray-300">
                             <span>New matches</span>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" value="" class="sr-only peer" checked>
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-pink-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-500"></div>
-                            </label>
+                            <div class="toggle-container">
+                                <input type="checkbox" id="newMatchesToggle" class="sr-only peer" checked>
+                                <label for="newMatchesToggle" class="toggle-label relative inline-block w-11 h-6 bg-gray-200 rounded-full cursor-pointer peer-checked:bg-pink-500 transition-colors duration-300">
+                                    <span class="toggle-knob absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm transform peer-checked:translate-x-5 transition-transform duration-300"></span>
+                                </label>
+                                <span class="toggle-status text-sm text-gray-500 ml-2 dark:text-gray-400"></span>
+                            </div>
                         </div>
-                        <div class="flex justify-between items-center">
+                        <div class="flex justify-between items-center dark:text-gray-300">
                             <span>Messages</span>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" value="" class="sr-only peer" checked>
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-pink-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-500"></div>
-                            </label>
+                            <div class="toggle-container">
+                                <input type="checkbox" id="messagesToggle" class="sr-only peer" checked>
+                                <label for="messagesToggle" class="toggle-label relative inline-block w-11 h-6 bg-gray-200 rounded-full cursor-pointer peer-checked:bg-pink-500 transition-colors duration-300">
+                                    <span class="toggle-knob absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm transform peer-checked:translate-x-5 transition-transform duration-300"></span>
+                                </label>
+                                <span class="toggle-status text-sm text-gray-500 ml-2 dark:text-gray-400"></span>
+                            </div>
                         </div>
-                        <div class="flex justify-between items-center">
+                        <div class="flex justify-between items-center dark:text-gray-300">
                             <span>Profile likes</span>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" value="" class="sr-only peer" checked>
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-pink-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-500"></div>
-                            </label>
+                            <div class="toggle-container">
+                                <input type="checkbox" id="profileLikesToggle" class="sr-only peer" checked>
+                                <label for="profileLikesToggle" class="toggle-label relative inline-block w-11 h-6 bg-gray-200 rounded-full cursor-pointer peer-checked:bg-pink-500 transition-colors duration-300">
+                                    <span class="toggle-knob absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm transform peer-checked:translate-x-5 transition-transform duration-300"></span>
+                                </label>
+                                <span class="toggle-status text-sm text-gray-500 ml-2 dark:text-gray-400"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
                 <!-- App Settings -->
-                <div class="settings-option p-3 rounded-lg">
-                    <h3 class="font-medium mb-2">App Settings</h3>
+                <div class="settings-option p-3 rounded-lg dark:bg-gray-700">
+                    <h3 class="font-medium mb-2 dark:text-white">App Settings</h3>
                     <div class="space-y-3">
-                        <div class="flex justify-between items-center">
+                        <div class="flex justify-between items-center dark:text-gray-300">
                             <span>Dark Mode</span>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" value="" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-pink-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-500"></div>
-                            </label>
+                            <div class="toggle-container">
+                                <input type="checkbox" id="darkModeToggle" class="sr-only peer">
+                                <label for="darkModeToggle" class="toggle-label relative inline-block w-11 h-6 bg-gray-200 rounded-full cursor-pointer peer-checked:bg-pink-500 transition-colors duration-300">
+                                    <span class="toggle-knob absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm transform peer-checked:translate-x-5 transition-transform duration-300"></span>
+                                </label>
+                                <span class="toggle-status text-sm text-gray-500 ml-2 dark:text-gray-400"></span>
+                            </div>
                         </div>
-                        <div class="flex justify-between items-center">
+                        <div class="flex justify-between items-center dark:text-gray-300">
                             <span>Language</span>
-                            <span class="text-gray-500">English</span>
+                            <div class="language-selector relative">
+                                <span class="text-gray-500 cursor-pointer flex items-center dark:text-gray-400">
+                                    English <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                                </span>
+                                <div class="language-options hidden absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg shadow-lg z-10">
+                                    <div class="language-option selected px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="en">English</div>
+                                    <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="es">Español</div>
+                                    <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="fr">Français</div>
+                                    <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="de">Deutsch</div>
+                                    <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="ja">日本語</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Danger Zone -->
-                <div class="settings-option p-3 rounded-lg border border-red-100">
-                    <h3 class="font-medium mb-2 text-red-500">Danger Zone</h3>
+                <div class="settings-option p-3 rounded-lg border border-red-100 dark:border-red-900 dark:bg-gray-700">
+                    <h3 class="font-medium mb-2 text-red-500 dark:text-red-400">Danger Zone</h3>
                     <div class="space-y-3">
-                        <button class="w-full text-left text-red-500">Delete Account</button>
-                        <button class="w-full text-left text-red-500">Log Out</button>
+                        <button class="w-full text-left text-red-500 dark:text-red-400">Delete Account</button>
+                        <button class="w-full text-left text-red-500 dark:text-red-400">Log Out</button>
                     </div>
                 </div>
             </div>
@@ -576,18 +785,18 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
     </div>
 
     <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg z-10">
+    <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg z-10 dark:bg-gray-800">
         <div class="container mx-auto px-4">
             <div class="flex justify-around py-3">
-                <a href="explore.html" class="text-gray-500 hover:text-pink-500 flex flex-col items-center">
+                <a href="explore.html" class="text-gray-500 hover:text-pink-500 flex flex-col items-center dark:text-gray-400">
                     <i class="fas fa-compass text-xl"></i>
                     <span class="text-xs mt-1">Explore</span>
                 </a>
-                    <a href="explore.html#matches-section" class="text-gray-500 hover:text-pink-500 flex flex-col items-center">
+                <a href="explore.html#matches-section" class="text-gray-500 hover:text-pink-500 flex flex-col items-center dark:text-gray-400">
                     <i class="fas fa-heart text-xl"></i>
                     <span class="text-xs mt-1">Matches</span>
-                    </a>
-                <a href="#" class="text-pink-500 flex flex-col items-center">
+                </a>
+                <a href="#" class="text-pink-500 flex flex-col items-center dark:text-pink-400">
                     <i class="fas fa-user text-xl"></i>
                     <span class="text-xs mt-1">Profile</span>
                 </a>
@@ -702,19 +911,6 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
                 chatView.classList.add('hidden');
             });
             
-            // Settings modal
-            const settingsBtn = document.getElementById('settingsBtn');
-            const settingsModal = document.getElementById('settingsModal');
-            const closeSettings = document.getElementById('closeSettings');
-            
-            settingsBtn.addEventListener('click', () => {
-                settingsModal.classList.remove('hidden');
-            });
-            
-            closeSettings.addEventListener('click', () => {
-                settingsModal.classList.add('hidden');
-            });
-            
             // Profile edit functionality
             const editProfileBtn = document.getElementById('editProfileBtn');
             const cancelEditBtn = document.getElementById('cancelEditBtn');
@@ -807,19 +1003,256 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
                 });
             });
             
+            // Settings modal
+            const settingsBtn = document.getElementById('settingsBtn');
+            const settingsModal = document.getElementById('settingsModal');
+            const closeSettings = document.getElementById('closeSettings');
+            
+            settingsBtn.addEventListener('click', () => {
+                settingsModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            closeSettings.addEventListener('click', () => {
+                settingsModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+            
+            // Close modal when clicking outside
+            settingsModal.addEventListener('click', (e) => {
+                if (e.target === settingsModal) {
+                    settingsModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // Updated Toggle switches functionality
+            function updateToggleStatus(toggle) {
+                const status = toggle.parentElement.querySelector('.toggle-status');
+                if (status) {
+                    status.textContent = toggle.checked ? 'On' : 'Off';
+                    status.classList.toggle('text-pink-500', toggle.checked);
+                    status.classList.toggle('text-gray-500', !toggle.checked);
+                }
+            }
+
+            document.querySelectorAll('.toggle-container input[type="checkbox"]').forEach(toggle => {
+                // Initialize status text
+                updateToggleStatus(toggle);
+
+                toggle.addEventListener('change', function() {
+                    const settingName = this.closest('.flex').querySelector('span').textContent;
+                    updateToggleStatus(this);
+                    showNotification(`${settingName} ${this.checked ? 'enabled' : 'disabled'}`);
+                });
+            });
+
+            // Dark mode toggle
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            
+            // Check for saved user preference or use system preference
+            if (localStorage.getItem('darkMode') === 'enabled' ||
+                (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                darkModeToggle.checked = true;
+                updateToggleStatus(darkModeToggle);
+            }
+            
+            darkModeToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('darkMode', 'enabled');
+                    showNotification('Dark mode enabled');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('darkMode', 'disabled');
+                    showNotification('Dark mode disabled');
+                }
+                updateToggleStatus(this);
+            });
+            
+            // Language selector functionality
+            const languageSelectors = document.querySelectorAll('.language-selector');
+            
+            languageSelectors.forEach(selector => {
+                const toggle = selector.querySelector('span');
+                const options = selector.querySelector('.language-options');
+                
+                toggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    options.classList.toggle('hidden');
+                });
+                
+                selector.querySelectorAll('.language-option').forEach(option => {
+                    option.addEventListener('click', function() {
+                        const lang = this.getAttribute('data-lang');
+                        
+                        // Update selected language
+                        selector.querySelectorAll('.language-option').forEach(opt => {
+                            opt.classList.remove('selected');
+                        });
+                        this.classList.add('selected');
+                        
+                        // Update display
+                        toggle.innerHTML = `${this.textContent} <i class="fas fa-chevron-down ml-1 text-xs"></i>`;
+                        options.classList.add('hidden');
+                        
+                        showNotification(`Language changed to ${this.textContent}`);
+                    });
+                });
+            });
+            
+            // Close language selector when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.language-selector')) {
+                    document.querySelectorAll('.language-options').forEach(options => {
+                        options.classList.add('hidden');
+                    });
+                }
+            });
+            
+            // Change Password functionality
+            const changePasswordBtn = document.querySelector('.settings-option button:text("Change Password")');
+            const changePasswordModal = document.createElement('div');
+            changePasswordModal.id = 'changePasswordModal';
+            changePasswordModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center hidden';
+            changePasswordModal.innerHTML = `
+                <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 dark:bg-gray-800">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold dark:text-white">Change Password</h3>
+                        <button class="close-password-modal text-gray-500 hover:text-gray-700 dark:text-gray-300">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Current Password</label>
+                            <input type="password" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">New Password</label>
+                            <input type="password" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Confirm New Password</label>
+                            <input type="password" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                        <button class="w-full bg-pink-500 text-white py-2 rounded-lg hover:bg-pink-600 mt-2">
+                            Update Password
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(changePasswordModal);
+            
+            changePasswordBtn.addEventListener('click', () => {
+                changePasswordModal.classList.remove('hidden');
+            });
+            
+            changePasswordModal.querySelector('.close-password-modal').addEventListener('click', () => {
+                changePasswordModal.classList.add('hidden');
+            });
+            
+            changePasswordModal.querySelector('button:not(.close-password-modal)').addEventListener('click', () => {
+                changePasswordModal.classList.add('hidden');
+                showNotification('Password changed successfully');
+            });
+            
+            // Log Out functionality
+            const logoutBtn = document.querySelector('.settings-option button:text("Log Out")');
+            logoutBtn.addEventListener('click', () => {
+                const confirmation = createConfirmationDialog(
+                    'Log Out',
+                    'Are you sure you want to log out?',
+                    'Log Out',
+                    'Cancel'
+                );
+                
+                confirmation.querySelector('.confirm-btn').addEventListener('click', () => {
+                    showNotification('Logged out successfully');
+                    confirmation.remove();
+                    settingsModal.classList.add('hidden');
+                });
+                
+                confirmation.querySelector('.cancel-btn').addEventListener('click', () => {
+                    confirmation.remove();
+                });
+            });
+            
+            // Delete Account functionality
+            const deleteAccountBtn = document.querySelector('.settings-option button:text("Delete Account")');
+            deleteAccountBtn.addEventListener('click', () => {
+                const confirmation = createConfirmationDialog(
+                    'Delete Account',
+                    'This will permanently delete your account and all data. This action cannot be undone.',
+                    'Delete',
+                    'Cancel',
+                    'text-red-500'
+                );
+                
+                confirmation.querySelector('.confirm-btn').addEventListener('click', () => {
+                    showNotification('Account deleted successfully');
+                    confirmation.remove();
+                    settingsModal.classList.add('hidden');
+                });
+                
+                confirmation.querySelector('.cancel-btn').addEventListener('click', () => {
+                    confirmation.remove();
+                });
+            });
+            
+            // Helper function to create confirmation dialogs
+            function createConfirmationDialog(title, message, confirmText, cancelText, confirmColor = 'text-pink-500') {
+                const dialog = document.createElement('div');
+                dialog.className = 'confirmation-dialog fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center';
+                dialog.innerHTML = `
+                    <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 dark:bg-gray-800">
+                        <h3 class="text-lg font-bold mb-2 dark:text-white">${title}</h3>
+                        <p class="text-gray-600 mb-6 dark:text-gray-300">${message}</p>
+                        <div class="flex justify-end space-x-3">
+                            <button class="cancel-btn px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
+                                ${cancelText}
+                            </button>
+                            <button class="confirm-btn px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 ${confirmColor}">
+                                ${confirmText}
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(dialog);
+                return dialog;
+            }
+            
             // Notification function
             function showNotification(message) {
                 const notification = document.createElement('div');
-                notification.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-30';
-                notification.textContent = message;
+                notification.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-30 flex items-center dark:bg-gray-700';
+                notification.innerHTML = `
+                    <span>${message}</span>
+                    <button class="ml-3 text-white opacity-70 hover:opacity-100">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
                 document.body.appendChild(notification);
                 
-                setTimeout(() => {
+                // Auto-remove after 3 seconds
+                const autoRemove = setTimeout(() => {
                     notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
                     setTimeout(() => {
                         notification.remove();
                     }, 300);
-                }, 2000);
+                }, 3000);
+                
+                // Manual close
+                notification.querySelector('button').addEventListener('click', () => {
+                    clearTimeout(autoRemove);
+                    notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 300);
+                });
             }
         });
     </script>

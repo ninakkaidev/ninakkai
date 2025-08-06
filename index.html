@@ -103,18 +103,32 @@
     }
 
     /* Default (desktop-first) */
-        .hero {
-        height: 100vh;
-        background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.3)),
-            url('images/photo-playful-man-gives-piggyback-ride-girlfriend.jpg') no-repeat top center/cover;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
-        text-align: center;
-        padding: 0 20px;
-        color: white;
-        }
+       .hero {
+    height: 100vh;
+    background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.3)),
+        url('images/photo-playful-man-gives-piggyback-ride-girlfriend.jpg') no-repeat top center/cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 0 20px;
+    color: white;
+}
+
+.hero h1, .hero span {
+    background: linear-gradient(270deg, #ff1f1f, #00ff4c, #f74dcf, #ffe600, #4089ff);
+    background-size: 1000% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: animatedText 10s linear infinite;
+}
+
+@keyframes animatedText {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
 
         /* For screens up to 720px */
         @media (max-width: 720px) {
@@ -336,6 +350,19 @@
         text-align: left;
       }
     }
+    .animated-gradient {
+      background: linear-gradient(90deg, #ff4e50, #f9d423, #00c9ff, #76b852, #ff4e50);
+      background-size: 300% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientMove 3s linear infinite;
+      font-weight: bold;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 100% 50%; }
+    }
   </style>
 </head>
 <body>
@@ -345,24 +372,44 @@
         <span style="font-size: 2rem; background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; margin-right: 5px;">
             നിനക്കായി-
         </span>
-        <span style="font-size: 1.2rem; color: black; font-weight: 600;">
+        <span style="font-size: 1.2rem; color: rgb(255, 255, 255); font-weight: 600;">
             ForYou
         </span>
         </div>
 
     <nav>
       <div class="popup-container">
-        <a onmouseenter="showPopup(event, 'about')" onclick="showPopup(event, 'about')">About</a>
-        <div class="popup" id="about"><p><strong>About Us</strong><br>We help businesses grow with creative tech solutions.</p></div>
-      </div>
-      <div class="popup-container">
-        <a onmouseenter="showPopup(event, 'pricing')" onclick="showPopup(event, 'pricing')">Pricing</a>
-        <div class="popup" id="pricing"><p><strong>Pricing</strong><br>Basic: $9.99<br>Pro: $19.99</p></div>
-      </div>
-      <div class="popup-container">
-        <a onmouseenter="showPopup(event, 'contact')" onclick="showPopup(event, 'contact')">Contact</a>
-        <div class="popup" id="contact"><p><strong>Contact</strong><br>Email: support@example.com</p></div>
-      </div>
+  <a onmouseenter="showPopup(event, 'about')" onclick="showPopup(event, 'about')">About</a>
+  <div class="popup" id="about">
+    <p>
+      <strong>About Us</strong><br>
+      We are a dating platform helping people find real connections.<br>
+      ✅ 100% original and verified profiles<br>
+      ✅ Safe, secure, and privacy-focused<br>
+      ✅ Built for meaningful relationships<br>
+      ✅ Smooth user experience with modern tech
+    </p>
+  </div>
+</div>
+
+<div class="popup-container">
+  <a onmouseenter="showPopup(event, 'pricing')" onclick="showPopup(event, 'pricing')">Pricing</a>
+  <div class="popup" id="pricing">
+    <p>
+      <strong>Pricing</strong><br>
+      Basic: Free Forever 🎉<br>
+      Pro: <span class="animated-gradient">Coming Soon...</span>
+    </p>
+  </div>
+</div>
+
+<div class="popup-container">
+  <a onmouseenter="showPopup(event, 'contact')" onclick="showPopup(event, 'contact')">Contact</a>
+  <div class="popup" id="contact">
+    <p><strong>Contact</strong><br>Email: support@example.com</p>
+  </div>
+</div>
+
       <button class="btn-hero" onclick="location.href='login.html'">Join Us</button>
     </nav>
 

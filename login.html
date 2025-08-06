@@ -22,8 +22,8 @@
             padding: 20px;
 
             /* Background styles */
-            background-image: url('images/playful-young-couple-walking-holding-hands.jpg');
-            background-position: center top;  /* Top aligned horizontally centered */
+            background-image: url('images/ihnatsi-yfull-XOGSjSKQIPE-unsplash.jpg');
+            background-position: center bottom;  /* Top aligned horizontally centered */
             background-size: cover;
             background-repeat: no-repeat;
             background-attachment: fixed;  /* Parallax effect */
@@ -65,7 +65,7 @@
         .toggle-buttons {
             display: flex;
             margin-bottom: 0;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.014);
             backdrop-filter: blur(10px);
             border-radius: 30px;
             padding: 5px;
@@ -86,12 +86,12 @@
         }
 
         .toggle-btn.active {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0);
             font-weight: 600;
         }
 
         .form-container {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.045);
             backdrop-filter: blur(10px);
             border-radius: 15px;
             padding: 2rem;
@@ -361,44 +361,50 @@
                 padding: 0 5px;
             }
         }
-        @media (max-width: 780px) {
-  body {
-    position: relative;
-    background-image: url('images/playful-young-couple-walking-holding-hands.jpg');
-    background-size: cover; /* Fill full screen, stretching top-bottom */
-    background-position: 58% 55%; /* 50% horizontal, 50% vertical — perfect center */
-    background-repeat: no-repeat;
-    background-attachment: scroll;
-    height: 100vh;
-    margin: 0;
-    padding: 0;
-  }
+        .back-button {
+            position: fixed;
+            top: 20px;         /* Distance from top */
+            left: 20px;        /* Distance from left */
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            z-index: 1000;
+            padding: 5px 10px;
+            background-color: rgba(0, 0, 0, 0.585);
+            border-radius: 5px;
 
-  body::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.6);
-    z-index: 0;
-  }
+            /* Gradient Text */
+            background: linear-gradient(90deg, #ff0000, #0000ff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
 
-  main, header, footer, .content {
-    position: relative;
-    z-index: 1;
-  }
-}
-
+        .back-button:hover {
+            background: linear-gradient(90deg, #0000ff, #ff0000);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            opacity: 0.8;
+        }
 
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="welcome-text">Welcome to Our Community</div>
-        
-        <div class="toggle-buttons">
+    <a href="index.html" class="back-button">
+        <i class="fas fa-arrow-left"></i> Back to Home
+    </a>
+
+    <div class="welcome-text">Welcome to Our Community</div>
+    
+    <div class="toggle-buttons">
+        <!-- rest of your existing code -->
             <button class="toggle-btn active" id="loginBtn">Login</button>
             <button class="toggle-btn" id="signupBtn">Sign Up</button>
         </div>
@@ -468,8 +474,6 @@
                                 <option value="" disabled selected>Select Gender</option>
                                 <option value="male">Male</option>
                                 <option value="female">Female</option>
-                                <option value="other">Other</option>
-                                <option value="prefer-not-to-say">Prefer not to say</option>
                             </select>
                         </div>
                         <div class="form-nav">
@@ -511,6 +515,7 @@
             </div>
         </div>
     </div>
+
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
