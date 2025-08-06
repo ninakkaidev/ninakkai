@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>നിനക്കായി-ForYou|Auth Page</title>
+    <title>നിനക്കായി-ForYou | Auth Page</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -15,20 +15,17 @@
         }
 
         body {
-            min-height: 100vh; /* Full screen height */
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
-
-            /* Background styles */
-            background-image: url('images/ihnatsi-yfull-XOGSjSKQIPE-unsplash.jpg');
-            background-position: center bottom;  /* Top aligned horizontally centered */
+            background-image: url("{{ url_for('static', filename='images/ihnatsi-yfull-XOGSjSKQIPE-unsplash.jpg') }}");
+            background-position: center bottom;
             background-size: cover;
             background-repeat: no-repeat;
-            background-attachment: fixed;  /* Parallax effect */
-
-            position: relative; /* Allows stacking content with z-index */
+            background-attachment: fixed;
+            position: relative;
         }
 
         body::before {
@@ -60,6 +57,14 @@
             opacity: 0;
             transform: translateY(20px);
             animation: fadeInUp 0.5s ease forwards;
+        }
+
+        .error-message {
+            color: #ff4d6d;
+            margin-bottom: 1rem;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
         }
 
         .toggle-buttons {
@@ -118,7 +123,6 @@
             display: block;
         }
 
-        /* Signup form specific styles */
         .signup-steps {
             display: flex;
             width: 100%;
@@ -361,10 +365,11 @@
                 padding: 0 5px;
             }
         }
+
         .back-button {
             position: fixed;
-            top: 20px;         /* Distance from top */
-            left: 20px;        /* Distance from left */
+            top: 20px;
+            left: 20px;
             font-size: 16px;
             display: flex;
             align-items: center;
@@ -373,8 +378,6 @@
             padding: 5px 10px;
             background-color: rgba(0, 0, 0, 0.585);
             border-radius: 5px;
-
-            /* Gradient Text */
             background: linear-gradient(90deg, #ff0000, #0000ff);
             background-clip: text;
             -webkit-background-clip: text;
@@ -393,18 +396,51 @@
             opacity: 0.8;
         }
 
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4e54c8;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-    <a href="index.html" class="back-button">
-        <i class="fas fa-arrow-left"></i> Back to Home
-    </a>
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+    </div>
 
-    <div class="welcome-text">Welcome to Our Community</div>
-    
-    <div class="toggle-buttons">
-        <!-- rest of your existing code -->
+    <div class="container">
+        <a href="{{ url_for('index') }}" class="back-button">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+
+        <div class="welcome-text">Welcome to Our Community</div>
+        
+        {% if error %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
+        
+        <div class="toggle-buttons">
             <button class="toggle-btn active" id="loginBtn">Login</button>
             <button class="toggle-btn" id="signupBtn">Sign Up</button>
         </div>
@@ -413,14 +449,15 @@
             <!-- Login Form -->
             <div class="form active" id="loginForm">
                 <h2>Welcome Back</h2>
-                <form>
+                <form method="POST" action="{{ url_for('auth') }}">
+                    <input type="hidden" name="form_type" value="login">
                     <div class="input-group">
-                        <input type="email" placeholder="Email" required>
+                        <input type="email" name="email" placeholder="Email" required>
                     </div>
                     <div class="input-group">
-                        <input type="password" placeholder="Password" required>
+                        <input type="password" name="password" placeholder="Password" required>
                     </div>
-                    <button type="submit" class="submit-btn">Login</button>
+                    <button type="submit" class="submit-btn" onclick="showLoading()">Login</button>
                     <a href="#" class="forgot-link">Forgot password?</a>
                     
                     <div class="divider">or continue with</div>
@@ -449,54 +486,58 @@
                     <div class="step-dot" data-step="3"></div>
                 </div>
                 
-                <div class="signup-steps" id="signupSteps">
-                    <!-- Step 1 -->
-                    <div class="signup-step active" data-step="1">
-                        <div class="input-group">
-                            <input type="text" placeholder="Full Name" required id="fullName">
+                <form method="POST" action="{{ url_for('auth') }}">
+                    <input type="hidden" name="form_type" value="signup">
+                    <div class="signup-steps" id="signupSteps">
+                        <!-- Step 1 -->
+                        <div class="signup-step active" data-step="1">
+                            <div class="input-group">
+                                <input type="text" name="full_name" placeholder="Full Name" required id="fullName">
+                            </div>
+                            <div class="input-group">
+                                <input type="email" name="email" placeholder="Email" required id="email">
+                            </div>
+                            <div class="form-nav">
+                                <div></div>
+                                <button type="button" class="nav-btn next-step">Next</button>
+                            </div>
                         </div>
-                        <div class="input-group">
-                            <input type="email" placeholder="Email" required id="email">
+                        
+                        <!-- Step 2 -->
+                        <div class="signup-step" data-step="2">
+                            <div class="input-group">
+                                <input type="number" name="age" placeholder="Age" min="13" max="120" required id="age">
+                            </div>
+                            <div class="input-group">
+                                <select name="gender" required id="gender">
+                                    <option value="" disabled selected>Select Gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-nav">
+                                <button type="button" class="nav-btn prev-step">Back</button>
+                                <button type="button" class="nav-btn next-step">Next</button>
+                            </div>
                         </div>
-                        <div class="form-nav">
-                            <div></div> <!-- Empty div for spacing -->
-                            <button type="button" class="nav-btn next-step">Next</button>
+                        
+                        <!-- Step 3 -->
+                        <div class="signup-step" data-step="3">
+                            <div class="input-group">
+                                <input type="password" name="password" placeholder="Password" required id="password">
+                            </div>
+                            <div class="input-group">
+                                <input type="password" name="confirm_password" placeholder="Confirm Password" required id="confirmPassword">
+                            </div>
+                            <button type="submit" class="submit-btn" onclick="showLoading()">Sign Up</button>
+                            <div class="form-nav">
+                                <button type="button" class="nav-btn prev-step">Back</button>
+                                <div></div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <!-- Step 2 -->
-                    <div class="signup-step" data-step="2">
-                        <div class="input-group">
-                            <input type="number" placeholder="Age" min="13" max="120" required id="age">
-                        </div>
-                        <div class="input-group">
-                            <select required id="gender">
-                                <option value="" disabled selected>Select Gender</option>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                            </select>
-                        </div>
-                        <div class="form-nav">
-                            <button type="button" class="nav-btn prev-step">Back</button>
-                            <button type="button" class="nav-btn next-step">Next</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Step 3 -->
-                    <div class="signup-step" data-step="3">
-                        <div class="input-group">
-                            <input type="password" placeholder="Password" required id="password">
-                        </div>
-                        <div class="input-group">
-                            <input type="password" placeholder="Confirm Password" required id="confirmPassword">
-                        </div>
-                        <button type="submit" class="submit-btn">Sign Up</button>
-                        <div class="form-nav">
-                            <button type="button" class="nav-btn prev-step">Back</button>
-                            <div></div> <!-- Empty div for spacing -->
-                        </div>
-                    </div>
-                </div>
+                </form>
                 
                 <div class="divider">or sign up with</div>
                 
@@ -515,7 +556,6 @@
             </div>
         </div>
     </div>
-
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -602,8 +642,10 @@
             // Next step buttons
             nextButtons.forEach(button => {
                 button.addEventListener('click', () => {
-                    if (currentStep < totalSteps) {
-                        goToStep(currentStep + 1);
+                    if (validateCurrentStep()) {
+                        if (currentStep < totalSteps) {
+                            goToStep(currentStep + 1);
+                        }
                     }
                 });
             });
@@ -621,18 +663,62 @@
             stepDots.forEach(dot => {
                 dot.addEventListener('click', () => {
                     const step = parseInt(dot.getAttribute('data-step'));
-                    if (step <= currentStep) { // Only allow going back, not forward
+                    if (step <= currentStep) {
                         goToStep(step);
                     }
                 });
             });
 
-            // Simple form validation
+            // Form validation for each step
+            function validateCurrentStep() {
+                if (currentStep === 1) {
+                    const fullName = document.getElementById('fullName').value;
+                    const email = document.getElementById('email').value;
+                    if (!fullName || !email) {
+                        alert('Please fill in all fields');
+                        return false;
+                    }
+                    if (!validateEmail(email)) {
+                        alert('Please enter a valid email address');
+                        return false;
+                    }
+                } else if (currentStep === 2) {
+                    const age = document.getElementById('age').value;
+                    const gender = document.getElementById('gender').value;
+                    if (!age || !gender) {
+                        alert('Please fill in all fields');
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            // Email validation
+            function validateEmail(email) {
+                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return re.test(email);
+            }
+
+            // Password validation on form submit
             document.querySelectorAll('form').forEach(form => {
                 form.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    // Here you would typically handle form submission
-                    alert('Form submitted! (This is a demo)');
+                    if (form.querySelector('input[name="form_type"]').value === 'signup') {
+                        const password = document.getElementById('password').value;
+                        const confirmPassword = document.getElementById('confirmPassword').value;
+                        
+                        if (password !== confirmPassword) {
+                            e.preventDefault();
+                            alert('Passwords do not match!');
+                            return false;
+                        }
+                        
+                        if (password.length < 8) {
+                            e.preventDefault();
+                            alert('Password must be at least 8 characters long');
+                            return false;
+                        }
+                    }
+                    return true;
                 });
             });
 
@@ -644,6 +730,11 @@
                     }
                 });
             });
+
+            // Show loading spinner
+            window.showLoading = function() {
+                document.getElementById('loading').style.display = 'flex';
+            };
         });
     </script>
 </body>
