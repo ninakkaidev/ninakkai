@@ -36,11 +36,13 @@ def auth():
         
         return jsonify({'success': False, 'error': 'Invalid form type'}), 400
     
-    if 'verification_pending' in session:
-        email = session.get('email')
-        return render_template('auth.html', verification_sent=True, email=email)
+    # Check if verification is pending from session
+    verification_pending = session.get('verification_pending', False)
+    email = session.get('email', '')
     
-    return render_template('auth.html')
+    return render_template('auth.html', 
+                         verification_sent=verification_pending,
+                         email=email)
 
 def handle_login():
     try:
@@ -115,8 +117,15 @@ def handle_signup():
             'gender': request.form.get('gender')
         }
         
+        # Validate required fields
         if not all([data['email'], data['password'], data['full_name']]):
             return jsonify({'success': False, 'error': 'Please fill all required fields'}), 400
+        
+        if not validate_email(data['email']):
+            return jsonify({'success': False, 'error': 'Please enter a valid email address'}), 400
+        
+        if len(data['password']) < 8:
+            return jsonify({'success': False, 'error': 'Password must be at least 8 characters'}), 400
         
         response = requests.post(
             urljoin(API_BASE_URL, '/api/signup'),
@@ -137,6 +146,12 @@ def handle_signup():
                 session['email'] = data['email']
                 session['verification_pending'] = True
                 session['signup_data'] = data
+                
+                # Check if verification link was returned
+                verification_link = response_data.get('data', {}).get('verification_link')
+                if verification_link:
+                    logger.info(f"Verification link: {verification_link}")
+                
                 return jsonify({
                     'success': True,
                     'verification_required': True,
@@ -179,43 +194,50 @@ def handle_email_verification():
         
         if response.status_code == 200:
             if response_data.get('success'):
-                # Login the user after successful verification
-                signup_data = session.get('signup_data')
-                if signup_data:
-                    login_response = requests.post(
-                        urljoin(API_BASE_URL, '/api/login'),
-                        json={'email': signup_data['email'], 'password': signup_data['password']},
-                        headers={'Content-Type': 'application/json'},
-                        timeout=API_TIMEOUT
-                    )
+                # Check if user is verified
+                if response_data.get('data', {}).get('verified', False):
+                    # Login the user after successful verification
+                    signup_data = session.get('signup_data')
+                    if signup_data:
+                        login_response = requests.post(
+                            urljoin(API_BASE_URL, '/api/login'),
+                            json={'email': signup_data['email'], 'password': signup_data['password']},
+                            headers={'Content-Type': 'application/json'},
+                            timeout=API_TIMEOUT
+                        )
+                        
+                        if login_response.status_code == 200:
+                            login_data = login_response.json()
+                            if login_data.get('success'):
+                                session['token'] = login_data.get('data', {}).get('token')
+                                session['user_id'] = login_data.get('data', {}).get('user_id')
+                                session.pop('verification_pending', None)
+                                session.pop('signup_data', None)
+                                
+                                quiz_status = check_quiz_status()
+                                if quiz_status.get('quiz_completed', False):
+                                    return jsonify({
+                                        'success': True,
+                                        'redirect': url_for('explore')
+                                    })
+                                else:
+                                    return jsonify({
+                                        'success': True,
+                                        'redirect': url_for('questions')
+                                    })
                     
-                    if login_response.status_code == 200:
-                        login_data = login_response.json()
-                        if login_data.get('success'):
-                            session['token'] = login_data.get('data', {}).get('token')
-                            session['user_id'] = login_data.get('data', {}).get('user_id')
-                            session.pop('verification_pending', None)
-                            session.pop('signup_data', None)
-                            
-                            quiz_status = check_quiz_status()
-                            if quiz_status.get('quiz_completed', False):
-                                return jsonify({
-                                    'success': True,
-                                    'redirect': url_for('explore')
-                                })
-                            else:
-                                return jsonify({
-                                    'success': True,
-                                    'redirect': url_for('questions')
-                                })
-                
-                return jsonify({
-                    'success': True,
-                    'message': 'Verification successful. Please login manually.',
-                    'redirect': url_for('auth')
-                })
+                    return jsonify({
+                        'success': True,
+                        'message': 'Verification successful. Please login.',
+                        'redirect': url_for('auth')
+                    })
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Email not verified yet. Please click the link in your email.'
+                    })
             else:
-                error = response_data.get('error', 'Email not verified yet. Please click the link in your email.')
+                error = response_data.get('error', 'Verification failed. Please try again.')
                 return jsonify({'success': False, 'error': error}), 400
         else:
             error = response_data.get('error', 'Verification failed. Please try again.')
@@ -230,9 +252,9 @@ def handle_email_verification():
 
 def resend_verification():
     try:
-        email = session.get('email')
+        email = request.json.get('email') or session.get('email')
         if not email:
-            return jsonify({'success': False, 'error': 'No email in session'}), 400
+            return jsonify({'success': False, 'error': 'No email provided'}), 400
         
         response = requests.post(
             urljoin(API_BASE_URL, '/api/resend-verification'),
@@ -248,17 +270,30 @@ def resend_verification():
             return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
         
         if response.status_code == 200:
-            return jsonify(response_data)
+            if response_data.get('success'):
+                session['verification_pending'] = True
+                session['email'] = email
+                return jsonify({
+                    'success': True,
+                    'message': 'Verification email resent successfully!'
+                })
+            else:
+                error = response_data.get('error', 'Failed to resend verification')
+                return jsonify({'success': False, 'error': error}), 400
         else:
-            error = response_data.get('error', 'Failed to resend verification email')
+            error = response_data.get('error', 'Failed to resend verification')
             return jsonify({'success': False, 'error': error}), response.status_code
             
     except requests.exceptions.RequestException as e:
         logger.error(f"Resend verification request failed: {str(e)}")
-        return jsonify({'success': False, 'error': 'Connection error'}), 500
+        return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
     except Exception as e:
         logger.error(f"Unexpected error in resend verification: {str(e)}")
         return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
+
+def validate_email(email):
+    import re
+    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
 
 def check_quiz_status():
     try:
