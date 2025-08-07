@@ -65,7 +65,7 @@ def handle_login():
         
         if response.status_code == 200:
             if response_data.get('success'):
-                if response_data.get('data', {}).get('verified', True):  # Check if email is verified
+                if response_data.get('data', {}).get('verified', False):
                     session.permanent = True
                     session['token'] = response_data.get('data', {}).get('token')
                     session['email'] = email
@@ -91,7 +91,7 @@ def handle_login():
                         'success': False,
                         'verification_required': True,
                         'email': email,
-                        'message': 'Please verify your email first'
+                        'message': 'Please verify your email before logging in'
                     })
             else:
                 error = response_data.get('error', 'Invalid credentials')
@@ -170,7 +170,7 @@ def handle_email_verification():
         
         response = requests.post(
             f"{API_BASE_URL}/api/verify-email",
-            json={'email': email, 'verification_code': verification_code},
+            json={'email': email, 'verification_link': verification_code},
             headers={'Content-Type': 'application/json'},
             timeout=API_TIMEOUT
         )
@@ -200,10 +200,19 @@ def handle_email_verification():
                             session['user_id'] = login_data.get('data', {}).get('user_id')
                             session.pop('verification_pending', None)
                             session.pop('signup_data', None)
-                            return jsonify({
-                                'success': True,
-                                'redirect': url_for('questions')
-                            })
+                            
+                            # Check if user has completed quiz
+                            quiz_status = check_quiz_status()
+                            if quiz_status.get('quiz_completed', False):
+                                return jsonify({
+                                    'success': True,
+                                    'redirect': url_for('explore')
+                                })
+                            else:
+                                return jsonify({
+                                    'success': True,
+                                    'redirect': url_for('questions')
+                                })
                 
                 return jsonify({
                     'success': True,
