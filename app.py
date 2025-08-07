@@ -24,9 +24,9 @@ API_TIMEOUT = 10  # seconds
 # Email Configuration
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
-SMTP_USERNAME = 'your-email@gmail.com'  # Replace with your Gmail
-SMTP_PASSWORD = 'your-app-password'     # Replace with your app password
-SENDER_EMAIL = 'your-email@gmail.com'  # Replace with your Gmail
+SMTP_USERNAME = 'ninakkaiforyou@gmail.com'  # Replace with your Gmail
+SMTP_PASSWORD = 'porz cqqt bumr wdgj'     # Replace with your app password
+SENDER_EMAIL = 'ninakkaiforyou@gmail.com'  # Replace with your Gmail
 APP_DOMAIN = 'https://client1-amber.vercel.app'
 
 # Initialize the serializer for generating tokens
