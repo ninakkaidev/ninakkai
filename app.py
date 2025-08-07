@@ -2,10 +2,11 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 import requests
 from datetime import timedelta
 import logging
+from urllib.parse import urljoin
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'  # Change this to a secure random key in production
-app.permanent_session_lifetime = timedelta(days=1)  # Session expires after 1 day
+app.secret_key = 'your_secret_key_here'
+app.permanent_session_lifetime = timedelta(days=1)
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -35,7 +36,6 @@ def auth():
         
         return jsonify({'success': False, 'error': 'Invalid form type'}), 400
     
-    # GET request - render template normally
     if 'verification_pending' in session:
         email = session.get('email')
         return render_template('auth.html', verification_sent=True, email=email)
@@ -51,7 +51,7 @@ def handle_login():
             return jsonify({'success': False, 'error': 'Email and password are required'}), 400
         
         response = requests.post(
-            f"{API_BASE_URL}/api/login",
+            urljoin(API_BASE_URL, '/api/login'),
             json={'email': email, 'password': password},
             headers={'Content-Type': 'application/json'},
             timeout=API_TIMEOUT
@@ -71,7 +71,6 @@ def handle_login():
                     session['email'] = email
                     session['user_id'] = response_data.get('data', {}).get('user_id')
                     
-                    # Check quiz status through API
                     quiz_status = check_quiz_status()
                     if quiz_status.get('quiz_completed', False):
                         return jsonify({
@@ -84,7 +83,6 @@ def handle_login():
                             'redirect': url_for('questions')
                         })
                 else:
-                    # Email not verified - show verification screen
                     session['email'] = email
                     session['verification_pending'] = True
                     return jsonify({
@@ -117,12 +115,11 @@ def handle_signup():
             'gender': request.form.get('gender')
         }
         
-        # Basic validation
         if not all([data['email'], data['password'], data['full_name']]):
             return jsonify({'success': False, 'error': 'Please fill all required fields'}), 400
         
         response = requests.post(
-            f"{API_BASE_URL}/api/signup",
+            urljoin(API_BASE_URL, '/api/signup'),
             json=data,
             headers={'Content-Type': 'application/json'},
             timeout=API_TIMEOUT
@@ -134,7 +131,7 @@ def handle_signup():
             logger.error(f"Invalid JSON response from API: {response.text}")
             return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
         
-        if response.status_code == 200:
+        if response.status_code == 201:  # Note: Changed from 200 to 201 to match API docs
             if response_data.get('success'):
                 session.permanent = True
                 session['email'] = data['email']
@@ -162,15 +159,15 @@ def handle_signup():
 
 def handle_email_verification():
     try:
-        verification_link = request.form.get('verification_link')
         email = session.get('email')
+        if not email:
+            return jsonify({'success': False, 'error': 'No email in session'}), 400
         
-        if not verification_link or not email:
-            return jsonify({'success': False, 'error': 'Verification link is required'}), 400
-        
+        # We don't need the verification_link parameter since Firebase handles the link
+        # We just need to check if the email is verified
         response = requests.post(
-            f"{API_BASE_URL}/api/verify-email",
-            json={'email': email, 'verification_link': verification_link},
+            urljoin(API_BASE_URL, '/api/verify-email'),
+            json={'email': email},
             headers={'Content-Type': 'application/json'},
             timeout=API_TIMEOUT
         )
@@ -187,7 +184,7 @@ def handle_email_verification():
                 signup_data = session.get('signup_data')
                 if signup_data:
                     login_response = requests.post(
-                        f"{API_BASE_URL}/api/login",
+                        urljoin(API_BASE_URL, '/api/login'),
                         json={'email': signup_data['email'], 'password': signup_data['password']},
                         headers={'Content-Type': 'application/json'},
                         timeout=API_TIMEOUT
@@ -201,7 +198,6 @@ def handle_email_verification():
                             session.pop('verification_pending', None)
                             session.pop('signup_data', None)
                             
-                            # Check if user has completed quiz
                             quiz_status = check_quiz_status()
                             if quiz_status.get('quiz_completed', False):
                                 return jsonify({
@@ -240,7 +236,7 @@ def resend_verification():
             return jsonify({'success': False, 'error': 'No email in session'}), 400
         
         response = requests.post(
-            f"{API_BASE_URL}/api/resend-verification",
+            urljoin(API_BASE_URL, '/api/resend-verification'),
             json={'email': email},
             headers={'Content-Type': 'application/json'},
             timeout=API_TIMEOUT
@@ -275,7 +271,7 @@ def check_quiz_status():
             'Content-Type': 'application/json'
         }
         response = requests.get(
-            f"{API_BASE_URL}/api/users/{session['user_id']}/quiz-status",
+            urljoin(API_BASE_URL, f"/api/users/{session['user_id']}/quiz-status"),
             headers=headers,
             timeout=API_TIMEOUT
         )
@@ -301,7 +297,7 @@ def explore():
             'Content-Type': 'application/json'
         }
         response = requests.get(
-            f"{API_BASE_URL}/api/matches",
+            urljoin(API_BASE_URL, '/api/matches'),
             headers=headers,
             timeout=API_TIMEOUT
         )
@@ -329,7 +325,7 @@ def chat():
             'Content-Type': 'application/json'
         }
         response = requests.get(
-            f"{API_BASE_URL}/api/chats",
+            urljoin(API_BASE_URL, '/api/chats'),
             headers=headers,
             timeout=API_TIMEOUT
         )
@@ -357,7 +353,7 @@ def profile():
             'Content-Type': 'application/json'
         }
         response = requests.get(
-            f"{API_BASE_URL}/api/profile",
+            urljoin(API_BASE_URL, '/api/profile'),
             headers=headers,
             timeout=API_TIMEOUT
         )
@@ -388,7 +384,7 @@ def questions():
                 'Content-Type': 'application/json'
             }
             response = requests.post(
-                f"{API_BASE_URL}/api/quiz/submit",
+                urljoin(API_BASE_URL, '/api/quiz/submit'),
                 json={'answers': answers},
                 headers=headers,
                 timeout=API_TIMEOUT
@@ -413,7 +409,7 @@ def logout():
                 'Content-Type': 'application/json'
             }
             requests.post(
-                f"{API_BASE_URL}/api/logout",
+                urljoin(API_BASE_URL, '/api/logout'),
                 headers=headers,
                 timeout=API_TIMEOUT
             )
