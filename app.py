@@ -1,8 +1,13 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, make_response
 import requests
 from datetime import timedelta
 import logging
 from urllib.parse import urljoin
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from itsdangerous import URLSafeTimedSerializer
+import re
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -15,6 +20,95 @@ logger = logging.getLogger(__name__)
 # API Configuration
 API_BASE_URL = 'https://routinely-positive-rattler.ngrok-free.app'
 API_TIMEOUT = 10  # seconds
+
+# Email Configuration
+SMTP_SERVER = 'smtp.gmail.com'
+SMTP_PORT = 587
+SMTP_USERNAME = 'your-email@gmail.com'  # Replace with your Gmail
+SMTP_PASSWORD = 'your-app-password'     # Replace with your app password
+SENDER_EMAIL = 'your-email@gmail.com'  # Replace with your Gmail
+APP_DOMAIN = 'https://client1-amber.vercel.app'
+
+# Initialize the serializer for generating tokens
+serializer = URLSafeTimedSerializer(app.secret_key)
+
+def send_verification_email(email, verification_token):
+    try:
+        verification_link = f"{APP_DOMAIN}/verify-email?token={verification_token}"
+        
+        subject = "Verify Your Email Address"
+        body = f"""
+        <html>
+            <body>
+                <h2>Email Verification</h2>
+                <p>Thank you for signing up! Please click the link below to verify your email address:</p>
+                <p><a href="{verification_link}">Verify Email</a></p>
+                <p>If you didn't request this, please ignore this email.</p>
+            </body>
+        </html>
+        """
+        
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'html'))
+        
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.send_message(msg)
+        
+        logger.info(f"Verification email sent to {email}")
+        return True
+    except Exception as e:
+        logger.error(f"Error sending verification email: {str(e)}")
+        return False
+
+def generate_verification_token(email):
+    return serializer.dumps(email, salt='email-verification')
+
+def verify_token(token, expiration=3600):
+    try:
+        email = serializer.loads(
+            token,
+            salt='email-verification',
+            max_age=expiration
+        )
+        return email
+    except Exception as e:
+        logger.error(f"Token verification failed: {str(e)}")
+        return None
+
+@app.route('/verify-email')
+def verify_email_endpoint():
+    token = request.args.get('token')
+    if not token:
+        return redirect(url_for('auth', error='Invalid verification link'))
+    
+    email = verify_token(token)
+    if not email:
+        return redirect(url_for('auth', error='Invalid or expired verification link'))
+    
+    try:
+        response = requests.post(
+            urljoin(API_BASE_URL, '/api/verify-email'),
+            json={'email': email, 'verified': True},
+            headers={'Content-Type': 'application/json'},
+            timeout=API_TIMEOUT
+        )
+        
+        if response.status_code == 200:
+            response_data = response.json()
+            if response_data.get('success'):
+                resp = make_response(redirect(url_for('auth')))
+                resp.set_cookie('email_verified', '1', max_age=60)
+                return resp
+        
+        return redirect(url_for('auth', error='Verification failed. Please try again.'))
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Verification API request failed: {str(e)}")
+        return redirect(url_for('auth', error='Verification service unavailable. Please try again later.'))
 
 @app.route('/')
 def index():
@@ -36,12 +130,22 @@ def auth():
         
         return jsonify({'success': False, 'error': 'Invalid form type'}), 400
     
-    # Check if verification is pending from session
+    email_verified = request.cookies.get('email_verified') == '1'
     verification_pending = session.get('verification_pending', False)
     email = session.get('email', '')
     
+    if email_verified:
+        verification_success = True
+        resp = make_response(render_template('auth.html', 
+                         verification_sent=verification_pending,
+                         verification_success=verification_success,
+                         email=email))
+        resp.set_cookie('email_verified', '', expires=0)
+        return resp
+    
     return render_template('auth.html', 
                          verification_sent=verification_pending,
+                         verification_success=False,
                          email=email)
 
 def handle_login():
@@ -114,10 +218,10 @@ def handle_signup():
             'password': request.form.get('password'),
             'full_name': request.form.get('full_name'),
             'age': request.form.get('age', type=int),
-            'gender': request.form.get('gender')
+            'gender': request.form.get('gender'),
+            'verified': False
         }
         
-        # Validate required fields
         if not all([data['email'], data['password'], data['full_name']]):
             return jsonify({'success': False, 'error': 'Please fill all required fields'}), 400
         
@@ -142,15 +246,19 @@ def handle_signup():
         
         if response.status_code == 201:
             if response_data.get('success'):
+                verification_token = generate_verification_token(data['email'])
+                email_sent = send_verification_email(data['email'], verification_token)
+                
+                if not email_sent:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Failed to send verification email. Please try again.'
+                    }), 500
+                
                 session.permanent = True
                 session['email'] = data['email']
                 session['verification_pending'] = True
                 session['signup_data'] = data
-                
-                # Check if verification link was returned
-                verification_link = response_data.get('data', {}).get('verification_link')
-                if verification_link:
-                    logger.info(f"Verification link: {verification_link}")
                 
                 return jsonify({
                     'success': True,
@@ -178,9 +286,8 @@ def handle_email_verification():
         if not email:
             return jsonify({'success': False, 'error': 'No email in session'}), 400
         
-        # Check if email is verified
         response = requests.post(
-            urljoin(API_BASE_URL, '/api/verify-email'),
+            urljoin(API_BASE_URL, '/api/verify-email/check'),
             json={'email': email},
             headers={'Content-Type': 'application/json'},
             timeout=API_TIMEOUT
@@ -194,9 +301,7 @@ def handle_email_verification():
         
         if response.status_code == 200:
             if response_data.get('success'):
-                # Check if user is verified
                 if response_data.get('data', {}).get('verified', False):
-                    # Login the user after successful verification
                     signup_data = session.get('signup_data')
                     if signup_data:
                         login_response = requests.post(
@@ -256,43 +361,27 @@ def resend_verification():
         if not email:
             return jsonify({'success': False, 'error': 'No email provided'}), 400
         
-        response = requests.post(
-            urljoin(API_BASE_URL, '/api/resend-verification'),
-            json={'email': email},
-            headers={'Content-Type': 'application/json'},
-            timeout=API_TIMEOUT
-        )
+        verification_token = generate_verification_token(email)
+        email_sent = send_verification_email(email, verification_token)
         
-        try:
-            response_data = response.json()
-        except ValueError:
-            logger.error(f"Invalid JSON response from API: {response.text}")
-            return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
+        if not email_sent:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to resend verification email. Please try again.'
+            }), 500
         
-        if response.status_code == 200:
-            if response_data.get('success'):
-                session['verification_pending'] = True
-                session['email'] = email
-                return jsonify({
-                    'success': True,
-                    'message': 'Verification email resent successfully!'
-                })
-            else:
-                error = response_data.get('error', 'Failed to resend verification')
-                return jsonify({'success': False, 'error': error}), 400
-        else:
-            error = response_data.get('error', 'Failed to resend verification')
-            return jsonify({'success': False, 'error': error}), response.status_code
+        session['verification_pending'] = True
+        session['email'] = email
+        return jsonify({
+            'success': True,
+            'message': 'Verification email resent successfully!'
+        })
             
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Resend verification request failed: {str(e)}")
-        return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
     except Exception as e:
         logger.error(f"Unexpected error in resend verification: {str(e)}")
         return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
 
 def validate_email(email):
-    import re
     return re.match(r"[^@]+@[^@]+\.[^@]+", email)
 
 def check_quiz_status():

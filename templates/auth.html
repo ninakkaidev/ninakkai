@@ -508,6 +508,49 @@
             text-decoration: underline;
         }
 
+        /* Verification Success Styles */
+        .verification-success {
+            text-align: center;
+            color: white;
+            margin-bottom: 1.5rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .verification-success-icon {
+            font-size: 3rem;
+            color: #4CAF50;
+            margin-bottom: 1rem;
+        }
+
+        .verification-success h2 {
+            margin-bottom: 1rem;
+        }
+
+        .verification-success p {
+            margin-bottom: 1.5rem;
+        }
+
+        .continue-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 30px;
+            background: linear-gradient(45deg, #4e54c8, #8f94fb);
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .continue-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
         .hidden {
             display: none !important;
         }
@@ -529,12 +572,30 @@
         <div class="error-message">{{ error }}</div>
         {% endif %}
         
-        {% if success %}
-        <div class="success-message">{{ success }}</div>
+        {% if success or verification_success %}
+        <div class="success-message">
+            {% if verification_success %}
+            Email verified successfully! You can now login.
+            {% else %}
+            {{ success }}
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- Verification Success Section -->
+        {% if verification_success %}
+        <div class="verification-success">
+            <div class="verification-success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2>Email Verified Successfully!</h2>
+            <p>Your email address has been successfully verified. You can now login to your account.</p>
+            <a href="#login" class="continue-btn" id="loginAfterVerify">Continue to Login</a>
+        </div>
         {% endif %}
         
         <!-- Verification Section -->
-        <div class="verification-section {% if verification_sent %}active{% endif %}" id="verificationSection">
+        <div class="verification-section {% if verification_sent and not verification_success %}active{% endif %}" id="verificationSection">
             <div class="verification-icon">
                 <i class="fas fa-envelope"></i>
             </div>
@@ -559,12 +620,12 @@
         </div>
         
         <!-- Auth Forms Section -->
-        <div class="toggle-buttons {% if verification_sent %}hidden{% endif %}" id="authButtons">
+        <div class="toggle-buttons {% if verification_sent and not verification_success %}hidden{% endif %}" id="authButtons">
             <button class="toggle-btn active" id="loginBtn">Login</button>
             <button class="toggle-btn" id="signupBtn">Sign Up</button>
         </div>
 
-        <div class="form-container {% if verification_sent %}hidden{% endif %}" id="formContainer">
+        <div class="form-container {% if verification_sent and not verification_success %}hidden{% endif %}" id="formContainer">
             <!-- Login Form -->
             <div class="form active" id="loginForm">
                 <h2>Welcome Back</h2>
@@ -708,6 +769,7 @@
             const resendLink = document.getElementById('resendLink');
             const authButtons = document.getElementById('authButtons');
             const verificationEmail = document.getElementById('verificationEmail');
+            const loginAfterVerify = document.getElementById('loginAfterVerify');
             
             // Show verification section if verification is pending
             if (verificationSection.classList.contains('active')) {
@@ -968,12 +1030,10 @@
                         }
                     } else {
                         if (data.verification_required) {
-                            // Show verification section
                             verificationSection.classList.add('active');
                             formContainer.classList.remove('active');
                             authButtons.classList.add('hidden');
                             
-                            // Update email display
                             verificationEmail.textContent = data.email;
                             showError(data.message || 'Please verify your email first');
                         } else {
@@ -1012,12 +1072,10 @@
                     
                     if (data.success) {
                         if (data.verification_required) {
-                            // Show verification section
                             verificationSection.classList.add('active');
                             formContainer.classList.remove('active');
                             authButtons.classList.add('hidden');
                             
-                            // Update email display
                             verificationEmail.textContent = data.email;
                             showSuccess(data.message || 'Verification email sent! Please check your inbox.');
                         } else if (data.redirect) {
@@ -1121,6 +1179,15 @@
                     }
                 });
             });
+
+            // Continue to login after verification
+            if (loginAfterVerify) {
+                loginAfterVerify.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showLoginForm();
+                    window.scrollTo(0, 0);
+                });
+            }
 
             // Loading functions
             window.showLoading = function() {
