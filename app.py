@@ -65,22 +65,33 @@ def handle_login():
         
         if response.status_code == 200:
             if response_data.get('success'):
-                session.permanent = True
-                session['token'] = response_data.get('data', {}).get('token')
-                session['email'] = email
-                session['user_id'] = response_data.get('data', {}).get('user_id')
-                
-                # Check quiz status through API
-                quiz_status = check_quiz_status()
-                if quiz_status.get('quiz_completed', False):
-                    return jsonify({
-                        'success': True,
-                        'redirect': url_for('explore')
-                    })
+                if response_data.get('data', {}).get('verified', True):  # Check if email is verified
+                    session.permanent = True
+                    session['token'] = response_data.get('data', {}).get('token')
+                    session['email'] = email
+                    session['user_id'] = response_data.get('data', {}).get('user_id')
+                    
+                    # Check quiz status through API
+                    quiz_status = check_quiz_status()
+                    if quiz_status.get('quiz_completed', False):
+                        return jsonify({
+                            'success': True,
+                            'redirect': url_for('explore')
+                        })
+                    else:
+                        return jsonify({
+                            'success': True,
+                            'redirect': url_for('questions')
+                        })
                 else:
+                    # Email not verified - show verification screen
+                    session['email'] = email
+                    session['verification_pending'] = True
                     return jsonify({
-                        'success': True,
-                        'redirect': url_for('questions')
+                        'success': False,
+                        'verification_required': True,
+                        'email': email,
+                        'message': 'Please verify your email first'
                     })
             else:
                 error = response_data.get('error', 'Invalid credentials')
@@ -131,7 +142,7 @@ def handle_signup():
                 session['signup_data'] = data
                 return jsonify({
                     'success': True,
-                    'verification_sent': True,
+                    'verification_required': True,
                     'email': data['email'],
                     'message': 'Verification email sent! Please check your inbox.'
                 })

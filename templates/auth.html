@@ -544,7 +544,7 @@
                 <i class="fas fa-envelope"></i>
             </div>
             <h2>Verify Your Email</h2>
-            <p>We've sent a verification code to <strong>{{ email if email else session.email }}</strong></p>
+            <p>We've sent a verification code to <strong id="verificationEmail">{{ email if email else session.email }}</strong></p>
             <p>Please check your inbox and enter the code below:</p>
             
             <form method="POST" action="{{ url_for('auth') }}" id="verificationForm">
@@ -706,6 +706,7 @@
             const verifyBtn = document.getElementById('verifyBtn');
             const resendLink = document.getElementById('resendLink');
             const authButtons = document.getElementById('authButtons');
+            const verificationEmail = document.getElementById('verificationEmail');
             
             // Show verification section if verification is pending
             if (verificationSection.classList.contains('active')) {
@@ -733,23 +734,29 @@
                         method: 'POST',
                         body: formData,
                         headers: {
+                            'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
                         }
                     });
                     
-                    if (response.redirected) {
-                        window.location.href = response.url;
-                    } else {
-                        const data = await response.json();
-                        if (data.error) {
-                            showError(data.error);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        if (data.redirect) {
+                            window.location.href = data.redirect;
+                        } else if (data.message) {
+                            showSuccess(data.message);
+                            setTimeout(() => {
+                                window.location.href = "{{ url_for('auth') }}";
+                            }, 2000);
                         }
-                        hideLoading();
-                        verifyBtn.disabled = false;
+                    } else {
+                        showError(data.error || 'Verification failed. Please try again.');
                     }
                 } catch (error) {
                     console.error('Verification error:', error);
                     showError('An error occurred. Please try again.');
+                } finally {
                     hideLoading();
                     verifyBtn.disabled = false;
                 }
@@ -765,7 +772,7 @@
                         method: 'POST',
                         body: JSON.stringify({
                             form_type: 'resend_verification',
-                            email: "{{ email if email else session.email }}"
+                            email: verificationEmail.textContent
                         }),
                         headers: {
                             'Content-Type': 'application/json',
@@ -775,7 +782,7 @@
                     
                     const data = await response.json();
                     if (data.success) {
-                        showError('Verification code resent successfully!');
+                        showSuccess('Verification code resent successfully!');
                     } else {
                         showError(data.error || 'Failed to resend verification code. Please try again.');
                     }
@@ -894,6 +901,12 @@
             }
 
             function showError(message) {
+                // Remove any existing success messages
+                const existingSuccess = document.querySelector('.success-message');
+                if (existingSuccess) {
+                    existingSuccess.remove();
+                }
+                
                 const errorElement = document.querySelector('.error-message') || document.createElement('div');
                 errorElement.className = 'error-message';
                 errorElement.textContent = message;
@@ -906,6 +919,28 @@
                 
                 setTimeout(() => {
                     errorElement.style.opacity = '1';
+                }, 10);
+            }
+
+            function showSuccess(message) {
+                // Remove any existing error messages
+                const existingError = document.querySelector('.error-message');
+                if (existingError) {
+                    existingError.remove();
+                }
+                
+                const successElement = document.querySelector('.success-message') || document.createElement('div');
+                successElement.className = 'success-message';
+                successElement.textContent = message;
+                
+                if (!document.querySelector('.success-message')) {
+                    const container = document.querySelector('.container');
+                    const welcomeText = document.querySelector('.welcome-text');
+                    container.insertBefore(successElement, welcomeText.nextSibling);
+                }
+                
+                setTimeout(() => {
+                    successElement.style.opacity = '1';
                 }, 10);
             }
 
@@ -924,23 +959,35 @@
                         method: 'POST',
                         body: formData,
                         headers: {
+                            'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
                         }
                     });
                     
-                    if (response.redirected) {
-                        window.location.href = response.url;
-                    } else {
-                        const data = await response.json();
-                        if (data.error) {
-                            showError(data.error);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        if (data.redirect) {
+                            window.location.href = data.redirect;
                         }
-                        hideLoading();
-                        loginSubmitBtn.disabled = false;
+                    } else {
+                        if (data.verification_required) {
+                            // Show verification section
+                            verificationSection.classList.add('active');
+                            formContainer.classList.remove('active');
+                            authButtons.classList.add('hidden');
+                            
+                            // Update email display
+                            verificationEmail.textContent = data.email;
+                            showError(data.message || 'Please verify your email first');
+                        } else {
+                            showError(data.error || 'Login failed. Please try again.');
+                        }
                     }
                 } catch (error) {
                     console.error('Login error:', error);
                     showError('An error occurred. Please try again.');
+                } finally {
                     hideLoading();
                     loginSubmitBtn.disabled = false;
                 }
@@ -960,34 +1007,33 @@
                         method: 'POST',
                         body: formData,
                         headers: {
+                            'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
                         }
                     });
                     
-                    if (response.redirected) {
-                        window.location.href = response.url;
-                    } else {
-                        const data = await response.json();
-                        if (data.error) {
-                            showError(data.error);
-                        } else if (data.verification_sent) {
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        if (data.verification_required) {
                             // Show verification section
                             verificationSection.classList.add('active');
                             formContainer.classList.remove('active');
                             authButtons.classList.add('hidden');
                             
                             // Update email display
-                            const emailDisplay = verificationSection.querySelector('strong');
-                            if (emailDisplay) {
-                                emailDisplay.textContent = data.email || "{{ email if email else session.email }}";
-                            }
+                            verificationEmail.textContent = data.email;
+                            showSuccess(data.message || 'Verification email sent! Please check your inbox.');
+                        } else if (data.redirect) {
+                            window.location.href = data.redirect;
                         }
-                        hideLoading();
-                        signupSubmitBtn.disabled = false;
+                    } else {
+                        showError(data.error || 'Signup failed. Please try again.');
                     }
                 } catch (error) {
                     console.error('Signup error:', error);
                     showError('An error occurred. Please try again.');
+                } finally {
                     hideLoading();
                     signupSubmitBtn.disabled = false;
                 }
