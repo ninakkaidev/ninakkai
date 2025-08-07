@@ -162,15 +162,15 @@ def handle_signup():
 
 def handle_email_verification():
     try:
-        verification_code = request.form.get('verification_code')
+        verification_link = request.form.get('verification_link')
         email = session.get('email')
         
-        if not verification_code or not email:
-            return jsonify({'success': False, 'error': 'Verification code is required'}), 400
+        if not verification_link or not email:
+            return jsonify({'success': False, 'error': 'Verification link is required'}), 400
         
         response = requests.post(
             f"{API_BASE_URL}/api/verify-email",
-            json={'email': email, 'verification_link': verification_code},
+            json={'email': email, 'verification_link': verification_link},
             headers={'Content-Type': 'application/json'},
             timeout=API_TIMEOUT
         )
