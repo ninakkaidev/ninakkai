@@ -131,7 +131,7 @@ def handle_signup():
             logger.error(f"Invalid JSON response from API: {response.text}")
             return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
         
-        if response.status_code == 201:  # Note: Changed from 200 to 201 to match API docs
+        if response.status_code == 201:
             if response_data.get('success'):
                 session.permanent = True
                 session['email'] = data['email']
@@ -163,8 +163,7 @@ def handle_email_verification():
         if not email:
             return jsonify({'success': False, 'error': 'No email in session'}), 400
         
-        # We don't need the verification_link parameter since Firebase handles the link
-        # We just need to check if the email is verified
+        # Check if email is verified
         response = requests.post(
             urljoin(API_BASE_URL, '/api/verify-email'),
             json={'email': email},
@@ -216,7 +215,7 @@ def handle_email_verification():
                     'redirect': url_for('auth')
                 })
             else:
-                error = response_data.get('error', 'Verification failed. Please try again.')
+                error = response_data.get('error', 'Email not verified yet. Please click the link in your email.')
                 return jsonify({'success': False, 'error': error}), 400
         else:
             error = response_data.get('error', 'Verification failed. Please try again.')
@@ -251,7 +250,7 @@ def resend_verification():
         if response.status_code == 200:
             return jsonify(response_data)
         else:
-            error = response_data.get('error', 'Failed to resend verification')
+            error = response_data.get('error', 'Failed to resend verification email')
             return jsonify({'success': False, 'error': error}), response.status_code
             
     except requests.exceptions.RequestException as e:
