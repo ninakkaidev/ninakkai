@@ -3,11 +3,6 @@ import requests
 from datetime import timedelta
 import logging
 from urllib.parse import urljoin
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from itsdangerous import URLSafeTimedSerializer
-import re
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -20,109 +15,6 @@ logger = logging.getLogger(__name__)
 # API Configuration
 API_BASE_URL = 'https://routinely-positive-rattler.ngrok-free.app'
 API_TIMEOUT = 10  # seconds
-
-# Email Configuration
-SMTP_SERVER = 'smtp.gmail.com'
-SMTP_PORT = 587
-SMTP_USERNAME = 'ninakkaiforyou@gmail.com'  # Replace with your Gmail
-SMTP_PASSWORD = 'porz cqqt bumr wdgj'     # Replace with your app password
-SENDER_EMAIL = 'ninakkaiforyou@gmail.com'  # Replace with your Gmail
-APP_DOMAIN = 'https://client1-amber.vercel.app'
-
-# Initialize the serializer for generating tokens
-serializer = URLSafeTimedSerializer(app.secret_key)
-
-def send_verification_email(email, verification_token):
-    try:
-        verification_link = f"{APP_DOMAIN}/verify-email?token={verification_token}"
-        
-        subject = "Verify Your Email Address"
-        body = f"""
-        <html>
-            <body>
-                <h2>Email Verification</h2>
-                <p>Thank you for signing up! Please click the link below to verify your email address:</p>
-                <p><a href="{verification_link}">Verify Email</a></p>
-                <p>If you didn't request this, please ignore this email.</p>
-            </body>
-        </html>
-        """
-        
-        msg = MIMEMultipart()
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'html'))
-        
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()
-            server.login(SMTP_USERNAME, SMTP_PASSWORD)
-            server.send_message(msg)
-        
-        logger.info(f"Verification email sent to {email}")
-        return True
-    except Exception as e:
-        logger.error(f"Error sending verification email: {str(e)}")
-        return False
-
-def generate_verification_token(email):
-    return serializer.dumps(email, salt='email-verification')
-
-def verify_token(token, expiration=3600):
-    try:
-        email = serializer.loads(
-            token,
-            salt='email-verification',
-            max_age=expiration
-        )
-        return email
-    except Exception as e:
-        logger.error(f"Token verification failed: {str(e)}")
-        return None
-
-@app.route('/verify-email')
-def verify_email_endpoint():
-    token = request.args.get('token')
-    if not token:
-        return redirect(url_for('auth', error='Invalid verification link'))
-    
-    email = verify_token(token)
-    if not email:
-        return redirect(url_for('auth', error='Invalid or expired verification link'))
-    
-    try:
-        # Update the user's verification status directly
-        response = requests.post(
-            urljoin(API_BASE_URL, '/api/users/verify'),
-            json={'email': email, 'verified': True},
-            headers={'Content-Type': 'application/json'},
-            timeout=API_TIMEOUT
-        )
-        
-        if response.status_code == 200:
-            response_data = response.json()
-            if response_data.get('success'):
-                # Log the user in directly after verification
-                login_response = requests.post(
-                    urljoin(API_BASE_URL, '/api/login'),
-                    json={'email': email, 'password': session.get('signup_data', {}).get('password', '')},
-                    headers={'Content-Type': 'application/json'},
-                    timeout=API_TIMEOUT
-                )
-                
-                if login_response.status_code == 200:
-                    login_data = login_response.json()
-                    if login_data.get('success'):
-                        session['token'] = login_data.get('data', {}).get('token')
-                        session['user_id'] = login_data.get('data', {}).get('user_id')
-                        session.pop('verification_pending', None)
-                        session.pop('signup_data', None)
-                        return redirect(url_for('questions'))
-        
-        return redirect(url_for('auth', error='Verification failed. Please try again.'))
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Verification API request failed: {str(e)}")
-        return redirect(url_for('auth', error='Verification service unavailable. Please try again later.'))
 
 @app.route('/')
 def index():
@@ -183,35 +75,33 @@ def handle_login():
         
         if response.status_code == 200:
             if response_data.get('success'):
-                if response_data.get('data', {}).get('verified', False):
-                    session.permanent = True
-                    session['token'] = response_data.get('data', {}).get('token')
-                    session['email'] = email
-                    session['user_id'] = response_data.get('data', {}).get('user_id')
-                    
-                    quiz_status = check_quiz_status()
-                    if quiz_status.get('quiz_completed', False):
-                        return jsonify({
-                            'success': True,
-                            'redirect': url_for('explore')
-                        })
-                    else:
-                        return jsonify({
-                            'success': True,
-                            'redirect': url_for('questions')
-                        })
-                else:
-                    session['email'] = email
-                    session['verification_pending'] = True
+                session.permanent = True
+                session['token'] = 'firebase_token'  # Replace with actual token if using Firebase auth
+                session['email'] = email
+                session['user_id'] = response_data.get('user', {}).get('uid')
+                
+                if response_data.get('quiz_completed', False):
                     return jsonify({
-                        'success': False,
-                        'verification_required': True,
-                        'email': email,
-                        'message': 'Please verify your email before logging in'
+                        'success': True,
+                        'redirect': url_for('explore')
+                    })
+                else:
+                    return jsonify({
+                        'success': True,
+                        'redirect': url_for('questions')
                     })
             else:
                 error = response_data.get('error', 'Invalid credentials')
                 return jsonify({'success': False, 'error': error}), 401
+        elif response.status_code == 401 and response_data.get('verification_required'):
+            session['email'] = email
+            session['verification_pending'] = True
+            return jsonify({
+                'success': False,
+                'verification_required': True,
+                'email': email,
+                'message': 'Please verify your email before logging in'
+            })
         else:
             error = response_data.get('error', 'Login failed. Please try again.')
             return jsonify({'success': False, 'error': error}), response.status_code
@@ -230,8 +120,7 @@ def handle_signup():
             'password': request.form.get('password'),
             'full_name': request.form.get('full_name'),
             'age': request.form.get('age', type=int),
-            'gender': request.form.get('gender'),
-            'verified': False
+            'gender': request.form.get('gender')
         }
         
         if not all([data['email'], data['password'], data['full_name']]):
@@ -258,15 +147,6 @@ def handle_signup():
         
         if response.status_code == 201:
             if response_data.get('success'):
-                verification_token = generate_verification_token(data['email'])
-                email_sent = send_verification_email(data['email'], verification_token)
-                
-                if not email_sent:
-                    return jsonify({
-                        'success': False,
-                        'error': 'Failed to send verification email. Please try again.'
-                    }), 500
-                
                 session.permanent = True
                 session['email'] = data['email']
                 session['verification_pending'] = True
@@ -298,22 +178,33 @@ def resend_verification():
         if not email:
             return jsonify({'success': False, 'error': 'No email provided'}), 400
         
-        verification_token = generate_verification_token(email)
-        email_sent = send_verification_email(email, verification_token)
+        response = requests.post(
+            urljoin(API_BASE_URL, '/api/resend-verification'),
+            json={'email': email},
+            headers={'Content-Type': 'application/json'},
+            timeout=API_TIMEOUT
+        )
         
-        if not email_sent:
+        try:
+            response_data = response.json()
+        except ValueError:
+            logger.error(f"Invalid JSON response from API: {response.text}")
+            return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
+        
+        if response.status_code == 200:
+            session['verification_pending'] = True
+            session['email'] = email
             return jsonify({
-                'success': False,
-                'error': 'Failed to resend verification email. Please try again.'
-            }), 500
-        
-        session['verification_pending'] = True
-        session['email'] = email
-        return jsonify({
-            'success': True,
-            'message': 'Verification email resent successfully!'
-        })
+                'success': True,
+                'message': 'Verification email resent successfully!'
+            })
+        else:
+            error = response_data.get('error', 'Failed to resend verification email.')
+            return jsonify({'success': False, 'error': error}), response.status_code
             
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Resend verification request failed: {str(e)}")
+        return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
     except Exception as e:
         logger.error(f"Unexpected error in resend verification: {str(e)}")
         return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
@@ -323,15 +214,14 @@ def validate_email(email):
 
 def check_quiz_status():
     try:
-        if 'token' not in session or 'user_id' not in session:
+        if 'user_id' not in session:
             return {'quiz_completed': False}
         
         headers = {
-            'Authorization': f"Bearer {session.get('token')}",
             'Content-Type': 'application/json'
         }
         response = requests.get(
-            urljoin(API_BASE_URL, f"/api/users/{session['user_id']}/quiz-status"),
+            urljoin(API_BASE_URL, f"/api/profile"),
             headers=headers,
             timeout=API_TIMEOUT
         )
@@ -339,21 +229,53 @@ def check_quiz_status():
         if response.status_code == 200:
             response_data = response.json()
             if response_data.get('success'):
-                return response_data.get('data', {'quiz_completed': False})
+                return {'quiz_completed': response_data.get('quiz_completed', False)}
     
     except requests.exceptions.RequestException as e:
         logger.error(f"Quiz status check failed: {str(e)}")
     
     return {'quiz_completed': False}
 
+@app.route('/verify-email')
+def verify_email_endpoint():
+    token = request.args.get('token')
+    if not token:
+        return redirect(url_for('auth', error='Invalid verification link'))
+    
+    try:
+        # Verify the token with the API
+        response = requests.post(
+            urljoin(API_BASE_URL, '/api/verify-email'),
+            json={'token': token},
+            headers={'Content-Type': 'application/json'},
+            timeout=API_TIMEOUT
+        )
+        
+        try:
+            response_data = response.json()
+        except ValueError:
+            logger.error(f"Invalid JSON response from API: {response.text}")
+            return redirect(url_for('auth', error='Invalid response from server'))
+        
+        if response.status_code == 200 and response_data.get('success'):
+            # Set cookie to show verification success message
+            resp = make_response(redirect(url_for('auth')))
+            resp.set_cookie('email_verified', '1', max_age=60)
+            return resp
+        else:
+            error = response_data.get('error', 'Verification failed. Please try again.')
+            return redirect(url_for('auth', error=error))
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Verification API request failed: {str(e)}")
+        return redirect(url_for('auth', error='Verification service unavailable. Please try again later.'))
+
 @app.route('/explore')
 def explore():
-    if 'token' not in session:
+    if 'user_id' not in session:
         return redirect(url_for('auth'))
     
     try:
         headers = {
-            'Authorization': f"Bearer {session.get('token')}",
             'Content-Type': 'application/json'
         }
         response = requests.get(
@@ -366,7 +288,7 @@ def explore():
         if response.status_code == 200:
             response_data = response.json()
             if response_data.get('success'):
-                matches = response_data.get('data', [])
+                matches = response_data.get('matches', [])
         
         return render_template('explore.html', matches=matches)
     
@@ -376,12 +298,11 @@ def explore():
 
 @app.route('/chat')
 def chat():
-    if 'token' not in session:
+    if 'user_id' not in session:
         return redirect(url_for('auth'))
     
     try:
         headers = {
-            'Authorization': f"Bearer {session.get('token')}",
             'Content-Type': 'application/json'
         }
         response = requests.get(
@@ -394,7 +315,7 @@ def chat():
         if response.status_code == 200:
             response_data = response.json()
             if response_data.get('success'):
-                chats = response_data.get('data', [])
+                chats = response_data.get('chats', [])
         
         return render_template('chat.html', chats=chats)
     
@@ -404,12 +325,11 @@ def chat():
 
 @app.route('/profile')
 def profile():
-    if 'token' not in session:
+    if 'user_id' not in session:
         return redirect(url_for('auth'))
     
     try:
         headers = {
-            'Authorization': f"Bearer {session.get('token')}",
             'Content-Type': 'application/json'
         }
         response = requests.get(
@@ -422,7 +342,7 @@ def profile():
         if response.status_code == 200:
             response_data = response.json()
             if response_data.get('success'):
-                profile_data = response_data.get('data', {})
+                profile_data = response_data.get('profile', {})
         
         return render_template('profile.html', profile=profile_data)
     
@@ -432,7 +352,7 @@ def profile():
 
 @app.route('/questions', methods=['GET', 'POST'])
 def questions():
-    if 'token' not in session:
+    if 'user_id' not in session:
         return redirect(url_for('auth'))
     
     if request.method == 'POST':
@@ -440,7 +360,6 @@ def questions():
         
         try:
             headers = {
-                'Authorization': f"Bearer {session.get('token')}",
                 'Content-Type': 'application/json'
             }
             response = requests.post(
@@ -462,10 +381,9 @@ def questions():
 
 @app.route('/logout')
 def logout():
-    if 'token' in session:
+    if 'user_id' in session:
         try:
             headers = {
-                'Authorization': f"Bearer {session.get('token')}",
                 'Content-Type': 'application/json'
             }
             requests.post(
