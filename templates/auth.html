@@ -607,16 +607,11 @@
                 <ol>
                     <li>Check your email inbox (and spam folder)</li>
                     <li>Click on the verification link we sent you</li>
-                    <li>Return to this page after clicking the link</li>
-                    <li>Click the button below to complete verification</li>
+                    <li>You will be automatically redirected to the questions page</li>
                 </ol>
             </div>
             
-            <form method="POST" action="{{ url_for('auth') }}" id="verificationForm">
-                <input type="hidden" name="form_type" value="verify_email">
-                <button type="submit" class="submit-btn" id="verifyBtn">I've Clicked the Verification Link</button>
-                <div class="resend-link" id="resendLink">Didn't receive email? Resend</div>
-            </form>
+            <div class="resend-link" id="resendLink">Didn't receive email? Resend</div>
         </div>
         
         <!-- Auth Forms Section -->
@@ -764,8 +759,6 @@
             const loginSubmitBtn = document.getElementById('loginSubmitBtn');
             const signupSubmitBtn = document.getElementById('signupSubmitBtn');
             const verificationSection = document.getElementById('verificationSection');
-            const verificationForm = document.getElementById('verificationForm');
-            const verifyBtn = document.getElementById('verifyBtn');
             const resendLink = document.getElementById('resendLink');
             const authButtons = document.getElementById('authButtons');
             const verificationEmail = document.getElementById('verificationEmail');
@@ -776,47 +769,6 @@
                 formContainer.classList.remove('active');
                 authButtons.classList.add('hidden');
             }
-            
-            // Verification form submission
-            verificationForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                showLoading();
-                verifyBtn.disabled = true;
-                
-                try {
-                    const formData = new FormData(this);
-                    const response = await fetch(this.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        if (data.redirect) {
-                            window.location.href = data.redirect;
-                        } else if (data.message) {
-                            showSuccess(data.message);
-                            setTimeout(() => {
-                                window.location.href = data.redirect || "{{ url_for('auth') }}";
-                            }, 2000);
-                        }
-                    } else {
-                        showError(data.error || 'Verification failed. Please try again.');
-                    }
-                } catch (error) {
-                    console.error('Verification error:', error);
-                    showError('An error occurred. Please try again.');
-                } finally {
-                    hideLoading();
-                    verifyBtn.disabled = false;
-                }
-            });
             
             // Resend verification email
             resendLink.addEventListener('click', async function() {

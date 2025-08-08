@@ -91,8 +91,9 @@ def verify_email_endpoint():
         return redirect(url_for('auth', error='Invalid or expired verification link'))
     
     try:
+        # Update the user's verification status directly
         response = requests.post(
-            urljoin(API_BASE_URL, '/api/verify-email'),
+            urljoin(API_BASE_URL, '/api/users/verify'),
             json={'email': email, 'verified': True},
             headers={'Content-Type': 'application/json'},
             timeout=API_TIMEOUT
@@ -101,9 +102,22 @@ def verify_email_endpoint():
         if response.status_code == 200:
             response_data = response.json()
             if response_data.get('success'):
-                resp = make_response(redirect(url_for('auth')))
-                resp.set_cookie('email_verified', '1', max_age=60)
-                return resp
+                # Log the user in directly after verification
+                login_response = requests.post(
+                    urljoin(API_BASE_URL, '/api/login'),
+                    json={'email': email, 'password': session.get('signup_data', {}).get('password', '')},
+                    headers={'Content-Type': 'application/json'},
+                    timeout=API_TIMEOUT
+                )
+                
+                if login_response.status_code == 200:
+                    login_data = login_response.json()
+                    if login_data.get('success'):
+                        session['token'] = login_data.get('data', {}).get('token')
+                        session['user_id'] = login_data.get('data', {}).get('user_id')
+                        session.pop('verification_pending', None)
+                        session.pop('signup_data', None)
+                        return redirect(url_for('questions'))
         
         return redirect(url_for('auth', error='Verification failed. Please try again.'))
     except requests.exceptions.RequestException as e:
@@ -123,8 +137,6 @@ def auth():
             return handle_login()
         elif form_type == 'signup':
             return handle_signup()
-        elif form_type == 'verify_email':
-            return handle_email_verification()
         elif form_type == 'resend_verification':
             return resend_verification()
         
@@ -278,81 +290,6 @@ def handle_signup():
         return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
     except Exception as e:
         logger.error(f"Unexpected error in signup: {str(e)}")
-        return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
-
-def handle_email_verification():
-    try:
-        email = session.get('email')
-        if not email:
-            return jsonify({'success': False, 'error': 'No email in session'}), 400
-        
-        response = requests.post(
-            urljoin(API_BASE_URL, '/api/verify-email/check'),
-            json={'email': email},
-            headers={'Content-Type': 'application/json'},
-            timeout=API_TIMEOUT
-        )
-        
-        try:
-            response_data = response.json()
-        except ValueError:
-            logger.error(f"Invalid JSON response from API: {response.text}")
-            return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
-        
-        if response.status_code == 200:
-            if response_data.get('success'):
-                if response_data.get('data', {}).get('verified', False):
-                    signup_data = session.get('signup_data')
-                    if signup_data:
-                        login_response = requests.post(
-                            urljoin(API_BASE_URL, '/api/login'),
-                            json={'email': signup_data['email'], 'password': signup_data['password']},
-                            headers={'Content-Type': 'application/json'},
-                            timeout=API_TIMEOUT
-                        )
-                        
-                        if login_response.status_code == 200:
-                            login_data = login_response.json()
-                            if login_data.get('success'):
-                                session['token'] = login_data.get('data', {}).get('token')
-                                session['user_id'] = login_data.get('data', {}).get('user_id')
-                                session.pop('verification_pending', None)
-                                session.pop('signup_data', None)
-                                
-                                quiz_status = check_quiz_status()
-                                if quiz_status.get('quiz_completed', False):
-                                    return jsonify({
-                                        'success': True,
-                                        'redirect': url_for('explore')
-                                    })
-                                else:
-                                    return jsonify({
-                                        'success': True,
-                                        'redirect': url_for('questions')
-                                    })
-                    
-                    return jsonify({
-                        'success': True,
-                        'message': 'Verification successful. Please login.',
-                        'redirect': url_for('auth')
-                    })
-                else:
-                    return jsonify({
-                        'success': False,
-                        'error': 'Email not verified yet. Please click the link in your email.'
-                    })
-            else:
-                error = response_data.get('error', 'Verification failed. Please try again.')
-                return jsonify({'success': False, 'error': error}), 400
-        else:
-            error = response_data.get('error', 'Verification failed. Please try again.')
-            return jsonify({'success': False, 'error': error}), response.status_code
-            
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Verification request failed: {str(e)}")
-        return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
-    except Exception as e:
-        logger.error(f"Unexpected error in verification: {str(e)}")
         return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
 
 def resend_verification():
