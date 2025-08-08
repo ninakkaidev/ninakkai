@@ -3,6 +3,7 @@ import requests
 from datetime import timedelta
 import logging
 from urllib.parse import urljoin
+import re  # Add this import for email validation
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
