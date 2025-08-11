@@ -407,7 +407,7 @@
     <h2>🎉 Match Found!</h2>
     <p>Based on your answers, we've discovered people who connect deeply with your energy.</p>
     <p>Get ready to meet your potential matches!</p>
-    <button class="btn-start-over" onclick="location.href='{{ url_for('explore') }}'">Meet Your Partner</button>
+    <button class="btn-start-over" id="btn-explore">Meet Your Partner</button>
   </div>
 </div>
 
@@ -594,6 +594,9 @@
     document.getElementById('btn-start').addEventListener('click', startQuiz);
     document.getElementById('btn-yes').addEventListener('click', startOptionalQuestions);
     document.getElementById('btn-no').addEventListener('click', skipOptionalQuestions);
+    document.getElementById('btn-explore').addEventListener('click', () => {
+      window.location.href = '/explore';
+    });
   };
 
   function startQuiz() {
@@ -618,8 +621,8 @@
       answersBox.innerHTML = '';
       instructionsEl.textContent = '';
 
-      if (index === 1 && !isInOptionalSection) {
-        // Special handling for Q2 (ranking question)
+      if (questions[index].isRankQuestion) {
+        // Special handling for ranking question
         answersBox.className = 'rank-container';
         instructionsEl.textContent = "Click to select your most important to least important (1-4). Click again to unselect.";
         
@@ -778,44 +781,53 @@
       type: item.type
     }));
 
-    fetch("{{ url_for('questions') }}", {
+    fetch("/api/quiz/submit", {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ answers: answersToSubmit })
+      body: JSON.stringify({ answers: answersToSubmit }),
+      credentials: 'include'
     })
     .then(response => {
       if (!response.ok) {
-        console.error('Failed to submit answers');
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.success) {
+        // Confetti celebration
+        confetti({
+          particleCount: 200,
+          spread: 90,
+          origin: { y: 0.6 }
+        });
+        
+        setTimeout(() => {
+          confetti({
+            particleCount: 100,
+            angle: 60,
+            spread: 70,
+            origin: { x: 0 }
+          });
+          
+          confetti({
+            particleCount: 100,
+            angle: 120,
+            spread: 70,
+            origin: { x: 1 }
+          });
+        }, 300);
+      } else {
+        console.error('Error:', data.error);
+        alert('Failed to submit quiz: ' + data.error);
       }
     })
     .catch(error => {
       console.error('Error submitting answers:', error);
+      alert('Error submitting quiz. Please try again.');
     });
-
-    // Confetti celebration
-    confetti({
-      particleCount: 200,
-      spread: 90,
-      origin: { y: 0.6 }
-    });
-    
-    setTimeout(() => {
-      confetti({
-        particleCount: 100,
-        angle: 60,
-        spread: 70,
-        origin: { x: 0 }
-      });
-      
-      confetti({
-        particleCount: 100,
-        angle: 120,
-        spread: 70,
-        origin: { x: 1 }
-      });
-    }, 300);
   }
 
   function restart() {
