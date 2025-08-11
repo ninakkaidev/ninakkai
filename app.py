@@ -357,7 +357,9 @@ def questions():
         return redirect(url_for('auth'))
     
     if request.method == 'POST':
-        answers = request.form.getlist('answers[]')
+        data = request.get_json()
+        if not data or 'answers' not in data:
+            return jsonify({'success': False, 'error': 'Missing answers data'}), 400
         
         try:
             headers = {
@@ -365,18 +367,26 @@ def questions():
             }
             response = requests.post(
                 urljoin(API_BASE_URL, '/api/quiz/submit'),
-                json={'answers': answers},
+                json={'answers': data['answers']},
                 headers=headers,
                 timeout=API_TIMEOUT
             )
             
-            if response.status_code == 200:
+            try:
                 response_data = response.json()
-                if response_data.get('success'):
-                    return redirect(url_for('explore'))
-        
+            except ValueError:
+                logger.error(f"Invalid JSON response from API: {response.text}")
+                return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
+            
+            if response.status_code == 200:
+                return jsonify(response_data)
+            else:
+                error = response_data.get('error', 'Quiz submission failed')
+                return jsonify({'success': False, 'error': error}), response.status_code
+                
         except requests.exceptions.RequestException as e:
             logger.error(f"Quiz submission failed: {str(e)}")
+            return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
     
     return render_template('questions.html')
 
