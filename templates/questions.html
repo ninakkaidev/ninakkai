@@ -617,6 +617,23 @@
       selectedAnswers = JSON.parse(savedAnswers);
       sessionStorage.removeItem('quiz_answers'); // Clear after loading
     }
+
+    // Fetch session data to verify user is logged in
+    fetch('/api/check-session', {
+      method: 'GET',
+      credentials: 'include'
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (!data.success) {
+        sessionStorage.setItem('quiz_answers', JSON.stringify(selectedAnswers));
+        window.location.href = '/auth';
+      }
+    })
+    .catch(error => {
+      console.error('Error checking session:', error);
+      window.location.href = '/auth';
+    });
   };
 
   function startQuiz() {
@@ -798,6 +815,7 @@
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-Session-ID': document.cookie.split('; ').find(row => row.startsWith('session_id'))?.split('=')[1] || ''
       },
       body: JSON.stringify({ answers: answersToSubmit }),
       credentials: 'include'
