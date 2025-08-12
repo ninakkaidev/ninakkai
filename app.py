@@ -8,11 +8,14 @@ import os
 from flask_cors import CORS
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24).hex()  # Secure random key
+app.secret_key = 'your-fixed-secret-key-here'  # Fixed secret key for consistent session handling
 app.permanent_session_lifetime = timedelta(days=1)
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Ensure cookies work cross-origin
+app.config['SESSION_COOKIE_SECURE'] = True  # Require HTTPS for cookies
+app.config['SESSION_COOKIE_HTTPONLY'] = True
 
 # Configure CORS
-CORS(app, supports_credentials=True, origins=['https://routinely-positive-rattler.ngrok-free.app'])
+CORS(app, supports_credentials=True, origins=['https://routinely-positive-rattler.ngrok-free.app', 'http://localhost:5000'])
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -240,6 +243,13 @@ def check_quiz_status():
     
     return {'quiz_completed': False}
 
+@app.route('/api/check-quiz-status', methods=['GET'])
+def check_quiz_status_endpoint():
+    logger.debug(f"Session in check_quiz_status: {session}")
+    logger.debug(f"Incoming cookies: {request.cookies}")
+    result = check_quiz_status()
+    return jsonify(result)
+
 @app.route('/api/check-session', methods=['GET'])
 def check_session():
     logger.debug(f"Session in check_session: {session}")
@@ -270,7 +280,7 @@ def verify_email_endpoint():
             return redirect(url_for('auth', error='Invalid response from server'))
         
         if response.status_code == 200 and response_data.get('success'):
-            session.pop('verification_pending', None)  # Clear verification pending
+            session.pop('verification_pending', None)
             resp = make_response(redirect(url_for('auth')))
             resp.set_cookie('email_verified', '1', max_age=60)
             return resp
