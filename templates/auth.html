@@ -600,7 +600,7 @@
                 <i class="fas fa-envelope"></i>
             </div>
             <h2>Verify Your Email</h2>
-            <p>We've sent a verification link to <strong id="verificationEmail">{{ email if email else session.email }}</strong></p>
+            <p>We've sent a verification link to <strong id="verificationEmail">{{ email if email else session.get('email', '') }}</strong></p>
             
             <div class="verification-instructions">
                 <p>To verify your email:</p>
@@ -737,7 +737,7 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             // DOM Elements
             const loginBtn = document.getElementById('loginBtn');
             const signupBtn = document.getElementById('signupBtn');
@@ -763,6 +763,41 @@
             const verificationEmail = document.getElementById('verificationEmail');
             const loginAfterVerify = document.getElementById('loginAfterVerify');
             
+            // Check session on page load
+            async function checkSession() {
+                try {
+                    const response = await fetch('/api/check-session', {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        credentials: 'include'
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        // Check quiz status
+                        const quizResponse = await fetch('{{ url_for("check_quiz_status") }}', {
+                            method: 'GET',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            credentials: 'include'
+                        });
+                        const quizData = await quizResponse.json();
+                        window.location.href = quizData.quiz_completed ? '{{ url_for("explore") }}' : '{{ url_for("questions") }}';
+                    }
+                } catch (error) {
+                    console.error('Session check error:', error);
+                }
+            }
+
+            // Run session check if not in verification mode
+            if (!verificationSection.classList.contains('active')) {
+                await checkSession();
+            }
+
             // Show verification section if verification is pending
             if (verificationSection.classList.contains('active')) {
                 formContainer.classList.remove('active');
@@ -786,7 +821,7 @@
                             form_type: 'resend_verification',
                             email: email
                         }),
-                        credentials: 'include' // Include cookies for session
+                        credentials: 'include'
                     });
                     
                     const data = await response.json();
@@ -798,7 +833,7 @@
                     }
                 } catch (error) {
                     console.error('Resend error:', error);
-                    showError('An error occurred. Please try again.');
+                    showError('An error occurred while resending the verification email. Please try again.');
                 } finally {
                     hideLoading();
                     resendLink.textContent = 'Didn\'t receive email? Resend';
@@ -815,11 +850,9 @@
             function calculatePasswordStrength(password) {
                 let strength = 0;
                 
-                // Length check
                 if (password.length >= 8) strength += 1;
                 if (password.length >= 12) strength += 1;
                 
-                // Character variety
                 if (/[A-Z]/.test(password)) strength += 1;
                 if (/[a-z]/.test(password)) strength += 1;
                 if (/[0-9]/.test(password)) strength += 1;
@@ -842,12 +875,12 @@
                     const email = document.getElementById('email').value.trim();
                     
                     if (!fullName || !email) {
-                        showError('Please fill in all fields');
+                        showError('Please fill in all required fields.');
                         return false;
                     }
                     
                     if (!validateEmail(email)) {
-                        showError('Please enter a valid email address');
+                        showError('Please enter a valid email address.');
                         return false;
                     }
                     
@@ -857,12 +890,12 @@
                     const gender = document.getElementById('gender').value;
                     
                     if (!age || !gender) {
-                        showError('Please fill in all fields');
+                        showError('Please fill in all required fields.');
                         return false;
                     }
                     
                     if (age < 13 || age > 120) {
-                        showError('Please enter a valid age between 13 and 120');
+                        showError('Please enter a valid age between 13 and 120.');
                         return false;
                     }
                     
@@ -876,12 +909,12 @@
                 const confirmPassword = confirmPasswordInput.value;
                 
                 if (password !== confirmPassword) {
-                    showError('Passwords do not match!');
+                    showError('Passwords do not match.');
                     return false;
                 }
                 
                 if (password.length < 8) {
-                    showError('Password must be at least 8 characters long');
+                    showError('Password must be at least 8 characters long.');
                     return false;
                 }
                 
@@ -893,12 +926,12 @@
                 const password = loginFormElement.querySelector('input[name="password"]').value;
                 
                 if (!email || !password) {
-                    showError('Email and password are required');
+                    showError('Email and password are required.');
                     return false;
                 }
                 
                 if (!validateEmail(email)) {
-                    showError('Please enter a valid email address');
+                    showError('Please enter a valid email address.');
                     return false;
                 }
                 
@@ -911,7 +944,6 @@
             }
 
             function showError(message) {
-                // Remove any existing success messages
                 const existingSuccess = document.querySelector('.success-message');
                 if (existingSuccess) {
                     existingSuccess.remove();
@@ -933,7 +965,6 @@
             }
 
             function showSuccess(message) {
-                // Remove any existing error messages
                 const existingError = document.querySelector('.error-message');
                 if (existingError) {
                     existingError.remove();
@@ -972,7 +1003,7 @@
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
                         },
-                        credentials: 'include' // Include cookies for session
+                        credentials: 'include'
                     });
                     
                     const data = await response.json();
@@ -987,15 +1018,15 @@
                             formContainer.classList.remove('active');
                             authButtons.classList.add('hidden');
                             
-                            verificationEmail.textContent = data.email;
-                            showError(data.message || 'Please verify your email first');
+                            verificationEmail.textContent = data.email || '{{ session.get("email", "") }}';
+                            showError(data.message || 'Please verify your email first.');
                         } else {
-                            showError(data.error || 'Login failed. Please try again.');
+                            showError(data.error || 'Login failed. Please check your credentials and try again.');
                         }
                     }
                 } catch (error) {
                     console.error('Login error:', error);
-                    showError('An error occurred. Please try again.');
+                    showError('An error occurred during login. Please try again.');
                 } finally {
                     hideLoading();
                     loginSubmitBtn.disabled = false;
@@ -1019,7 +1050,7 @@
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
                         },
-                        credentials: 'include' // Include cookies for session
+                        credentials: 'include'
                     });
                     
                     const data = await response.json();
@@ -1030,7 +1061,7 @@
                             formContainer.classList.remove('active');
                             authButtons.classList.add('hidden');
                             
-                            verificationEmail.textContent = data.email;
+                            verificationEmail.textContent = data.email || '{{ session.get("email", "") }}';
                             showSuccess(data.message || 'Verification email sent! Please check your inbox.');
                         } else if (data.redirect) {
                             window.location.href = data.redirect;
@@ -1040,7 +1071,7 @@
                     }
                 } catch (error) {
                     console.error('Signup error:', error);
-                    showError('An error occurred. Please try again.');
+                    showError('An error occurred during signup. Please try again.');
                 } finally {
                     hideLoading();
                     signupSubmitBtn.disabled = false;
@@ -1100,6 +1131,7 @@
             // State variables
             let currentStep = 1;
             const totalSteps = 3;
+            const signupStepElements = document.querySelectorAll('.signup-step');
 
             // Event listeners
             loginBtn.addEventListener('click', showLoginForm);

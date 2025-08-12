@@ -5,10 +5,14 @@ import logging
 from urllib.parse import urljoin
 import re
 import os
+from flask_cors import CORS
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24).hex()  # Secure random key
 app.permanent_session_lifetime = timedelta(days=1)
+
+# Configure CORS
+CORS(app, supports_credentials=True, origins=['https://routinely-positive-rattler.ngrok-free.app'])
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -221,6 +225,7 @@ def check_quiz_status():
         headers = {'Content-Type': 'application/json'}
         response = requests.get(
             urljoin(API_BASE_URL, f"/api/profile"),
+            json={'user_id': session.get('user_id')},
             headers=headers,
             timeout=API_TIMEOUT
         )
@@ -265,6 +270,7 @@ def verify_email_endpoint():
             return redirect(url_for('auth', error='Invalid response from server'))
         
         if response.status_code == 200 and response_data.get('success'):
+            session.pop('verification_pending', None)  # Clear verification pending
             resp = make_response(redirect(url_for('auth')))
             resp.set_cookie('email_verified', '1', max_age=60)
             return resp
@@ -286,6 +292,7 @@ def explore():
         headers = {'Content-Type': 'application/json'}
         response = requests.get(
             urljoin(API_BASE_URL, '/api/matches'),
+            json={'user_id': session.get('user_id')},
             headers=headers,
             timeout=API_TIMEOUT
         )
@@ -313,6 +320,7 @@ def chat():
         headers = {'Content-Type': 'application/json'}
         response = requests.get(
             urljoin(API_BASE_URL, '/api/chats'),
+            json={'user_id': session.get('user_id')},
             headers=headers,
             timeout=API_TIMEOUT
         )
@@ -340,6 +348,7 @@ def profile():
         headers = {'Content-Type': 'application/json'}
         response = requests.get(
             urljoin(API_BASE_URL, '/api/profile'),
+            json={'user_id': session.get('user_id')},
             headers=headers,
             timeout=API_TIMEOUT
         )
@@ -375,7 +384,7 @@ def submit_quiz():
     logger.debug(f"Session in submit_quiz: {session}")
     logger.debug(f"Incoming cookies: {request.cookies}")
     if 'user_id' not in session:
-        logger.error("No user_id in session")
+        logger.error("Authentication required - no user_id in session for submit_quiz")
         return jsonify({'success': False, 'error': 'Authentication required'}), 401
     
     data = request.get_json()
@@ -419,6 +428,7 @@ def logout():
             headers = {'Content-Type': 'application/json'}
             response = requests.post(
                 urljoin(API_BASE_URL, '/api/logout'),
+                json={'user_id': session.get('user_id')},
                 headers=headers,
                 timeout=API_TIMEOUT
             )
