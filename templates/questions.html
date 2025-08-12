@@ -1,415 +1,840 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, make_response
-import requests
-from datetime import timedelta
-import logging
-from urllib.parse import urljoin
-import re  # Add this import for email validation
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>നിനക്കായി-ForYou | Personality Quiz</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: url('{{ url_for("static", filename="images/friends-with-skatebooard.jpg") }}') no-repeat top center fixed;
+      background-size: cover;
+      overflow-x: hidden;
+      min-height: 100vh;
+      position: relative;
+      background-attachment: fixed;
+    }
 
-app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'
-app.permanent_session_lifetime = timedelta(days=1)
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 0;
+      pointer-events: none;
+    }
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+    main, header, section, div {
+      position: relative;
+      z-index: 1;
+    }
 
-# API Configuration
-API_BASE_URL = 'https://routinely-positive-rattler.ngrok-free.app'
-API_TIMEOUT = 10  # seconds
+    .intro-container {
+      max-width: 800px;
+      margin: 200px auto;
+      padding: 30px;
+      text-align: center;
+      color: rgb(234, 230, 230);
+    }
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+    .intro-text {
+      font-size: 2.7rem;
+      font-weight: 700;
+      margin-bottom: 30px;
+      text-shadow: 2px 2px 4px rgb(255, 255, 255);
+      opacity: 0;
+      transform: translateX(-100%);
+      animation: slideIn 1s forwards;
+    }
 
-@app.route('/auth', methods=['GET', 'POST'])
-def auth():
-    if request.method == 'POST':
-        form_type = request.form.get('form_type')
-        
-        if form_type == 'login':
-            return handle_login()
-        elif form_type == 'signup':
-            return handle_signup()
-        elif form_type == 'resend_verification':
-            return resend_verification()
-        
-        return jsonify({'success': False, 'error': 'Invalid form type'}), 400
+    .sub-text {
+      font-size: 1.5rem;
+      margin-bottom: 40px;
+      opacity: 0;
+      transform: translateX(100%);
+      animation: slideIn 1s forwards 0.5s;
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.2rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      opacity: 0;
+      animation: fadeIn 1s forwards 1s;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-start:hover {
+      background: linear-gradient(135deg, #76b6f5 0%, #ff5275 100%);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .qa-container {
+      max-width: 650px;
+      margin: 200px auto;
+      background: rgba(255, 255, 255, 0.112);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+      display: none;
+    }
+
+    .question-box {
+      text-align: center;
+      min-height: 220px;
+    }
+
+    .section-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .section-description {
+      font-size: 1.1rem;
+      color: #e0e0e0;
+      margin-bottom: 30px;
+      text-align: center;
+      font-style: italic;
+    }
+
+    .question {
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 30px;
+    }
+
+    .answers button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 14px 20px;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 10px;
+      background: rgba(248, 230, 239, 0.8);
+      color: #000000;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .answers button:hover {
+      background: #53a8e5;
+      color: #fff;
+      transform: translateX(5px);
+    }
+
+    .progress-container {
+      background: #f1f1f1;
+      height: 10px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+    }
+
+    .progress-bar {
+      height: 10px;
+      background: #62aee7;
+      border-radius: 10px;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+
+    .final-screen {
+      display: none;
+      text-align: center;
+      animation: fadeIn 1s ease;
+    }
+
+    .final-screen h2 {
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 2.5rem;
+    }
+
+    .final-screen p {
+      font-size: 1.2rem;
+      margin-bottom: 30px;
+      color: #ffffff;
+    }
+
+    .btn-start-over {
+      margin-top: 20px;
+      background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
+      color: #fff;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 50px;
+      transition: all 0.3s ease;
+      font-size: 1.1rem;
+    }
+
+    .btn-start-over:hover {
+      background: linear-gradient(135deg, #76b6f5 0%, #ff5275 100%);
+      transform: scale(1.05);
+    }
+
+    .optional-section {
+      margin-top: 30px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+    }
+
+    .optional-section p {
+      font-size: 1rem;
+      color: #e0e0e0;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .btn-optional {
+      background: linear-gradient(135deg, #76b6f5 0%, #62e7a1 100%);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      font-size: 1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 0 10px;
+    }
+
+    .btn-optional:hover {
+      background: linear-gradient(135deg, #62e7a1 0%, #76b6f5 100%);
+      transform: translateY(-2px);
+    }
+
+    /* Ranking system styles */
+    .rank-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .rank-item {
+      background: rgba(248, 230, 239, 0.8);
+      color: #000;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      text-align: left;
+    }
+
+    .rank-item:hover {
+      background: rgba(248, 230, 239, 0.9);
+    }
+
+    .rank-item.selected {
+      background: #53a8e5;
+      color: #fff;
+    }
+
+    .rank-number {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: white;
+      color: #53a8e5;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    .rank-submit {
+      margin-top: 20px;
+      background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      font-size: 1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .rank-submit:hover {
+      background: linear-gradient(135deg, #76b6f5 0%, #ff5275 100%);
+      transform: translateY(-2px);
+    }
+
+    .rank-instructions {
+      font-size: 0.9rem;
+      color: #e0e0e0;
+      margin-bottom: 15px;
+      font-style: italic;
+    }
+
+    @media (max-width: 768px) {
+      .intro-container {
+        margin: 250px auto;
+        padding: 20px;
+      }
+      
+      .intro-text {
+        font-size: 2rem;
+      }
+      
+      .sub-text {
+        font-size: 1.2rem;
+      }
+      
+      .qa-container {
+        margin: 250px auto;
+        padding: 20px;
+      }
+      
+      .question {
+        font-size: 1.3rem;
+      }
+      
+      .section-title {
+        font-size: 1.5rem;
+      }
+      
+      .section-description {
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .intro-text {
+        font-size: 1.8rem;
+      }
+      
+      .sub-text {
+        font-size: 1rem;
+      }
+      
+      .btn-start {
+        padding: 12px 30px;
+        font-size: 1rem;
+      }
+      
+      .question {
+        font-size: 1.1rem;
+      }
+      
+      .answers button {
+        font-size: 1rem;
+        padding: 10px 15px;
+      }
+      
+      .section-title {
+        font-size: 1.3rem;
+      }
+      
+      .section-description {
+        font-size: 0.9rem;
+      }
+      
+      .btn-optional {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+        margin: 5px;
+      }
+      
+      .rank-item {
+        padding: 10px;
+        font-size: 0.95rem;
+      }
+      
+      .rank-number {
+        width: 20px;
+        height: 20px;
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="intro-container" id="intro-container">
+  <div class="intro-text">You're Just a Few Steps Away...</div>
+  <div class="sub-text">Discover your perfect match with our personality-based compatibility quiz</div>
+  <button class="btn-start" id="btn-start">Begin Your Journey</button>
+</div>
+
+<div class="qa-container animate__animated animate__fadeIn" id="qa-container">
+  <div id="qa-content">
+    <div class="progress-container">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div id="section-info">
+      <div class="section-title" id="section-title"></div>
+      <div class="section-description" id="section-description"></div>
+    </div>
+
+    <div class="question-box" id="question-box">
+      <div class="question" id="question">Loading question...</div>
+      <div class="rank-instructions" id="rank-instructions"></div>
+      <div class="answers" id="answers"></div>
+    </div>
     
-    email_verified = request.cookies.get('email_verified') == '1'
-    verification_pending = session.get('verification_pending', False)
-    email = session.get('email', '')
-    
-    if email_verified:
-        verification_success = True
-        resp = make_response(render_template('auth.html', 
-                         verification_sent=verification_pending,
-                         verification_success=verification_success,
-                         email=email))
-        resp.set_cookie('email_verified', '', expires=0)
-        return resp
-    
-    return render_template('auth.html', 
-                         verification_sent=verification_pending,
-                         verification_success=False,
-                         email=email)
+    <div class="optional-section" id="optional-section" style="display: none;">
+      <p>Want to refine your matches with deeper questions?</p>
+      <button class="btn-optional" id="btn-yes">Yes, Continue</button>
+      <button class="btn-optional" id="btn-no">No, Skip</button>
+    </div>
+  </div>
 
-def handle_login():
-    try:
-        email = request.form.get('email')
-        password = request.form.get('password')
-        
-        if not email or not password:
-            return jsonify({'success': False, 'error': 'Email and password are required'}), 400
-        
-        response = requests.post(
-            urljoin(API_BASE_URL, '/api/login'),
-            json={'email': email, 'password': password},
-            headers={'Content-Type': 'application/json'},
-            timeout=API_TIMEOUT
-        )
-        
-        try:
-            response_data = response.json()
-        except ValueError:
-            logger.error(f"Invalid JSON response from API: {response.text}")
-            return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
-        
-        if response.status_code == 200:
-            if response_data.get('success'):
-                session.permanent = True
-                session['token'] = 'firebase_token'  # Replace with actual token if using Firebase auth
-                session['email'] = email
-                session['user_id'] = response_data.get('user', {}).get('uid')
-                
-                if response_data.get('quiz_completed', False):
-                    return jsonify({
-                        'success': True,
-                        'redirect': url_for('explore')
-                    })
-                else:
-                    return jsonify({
-                        'success': True,
-                        'redirect': url_for('questions')
-                    })
-            else:
-                error = response_data.get('error', 'Invalid credentials')
-                return jsonify({'success': False, 'error': error}), 401
-        elif response.status_code == 401 and response_data.get('verification_required'):
-            session['email'] = email
-            session['verification_pending'] = True
-            return jsonify({
-                'success': False,
-                'verification_required': True,
-                'email': email,
-                'message': 'Please verify your email before logging in'
-            })
-        else:
-            error = response_data.get('error', 'Login failed. Please try again.')
-            return jsonify({'success': False, 'error': error}), response.status_code
-            
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Login request failed: {str(e)}")
-        return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
-    except Exception as e:
-        logger.error(f"Unexpected error in login: {str(e)}")
-        return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
+  <div class="final-screen" id="final-screen">
+    <h2>🎉 Match Found!</h2>
+    <p>Based on your answers, we've discovered people who connect deeply with your energy.</p>
+    <p>Get ready to meet your potential matches!</p>
+    <button class="btn-start-over" id="btn-explore">Meet Your Partner</button>
+  </div>
+</div>
 
-def handle_signup():
-    try:
-        data = {
-            'email': request.form.get('email'),
-            'password': request.form.get('password'),
-            'full_name': request.form.get('full_name'),
-            'age': request.form.get('age', type=int),
-            'gender': request.form.get('gender')
-        }
-        
-        if not all([data['email'], data['password'], data['full_name']]):
-            return jsonify({'success': False, 'error': 'Please fill all required fields'}), 400
-        
-        if not validate_email(data['email']):
-            return jsonify({'success': False, 'error': 'Please enter a valid email address'}), 400
-        
-        if len(data['password']) < 8:
-            return jsonify({'success': False, 'error': 'Password must be at least 8 characters'}), 400
-        
-        response = requests.post(
-            urljoin(API_BASE_URL, '/api/signup'),
-            json=data,
-            headers={'Content-Type': 'application/json'},
-            timeout=API_TIMEOUT
-        )
-        
-        try:
-            response_data = response.json()
-        except ValueError:
-            logger.error(f"Invalid JSON response from API: {response.text}")
-            return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
-        
-        if response.status_code == 201:
-            if response_data.get('success'):
-                session.permanent = True
-                session['email'] = data['email']
-                session['verification_pending'] = True
-                session['signup_data'] = data
-                
-                return jsonify({
-                    'success': True,
-                    'verification_required': True,
-                    'email': data['email'],
-                    'message': 'Verification email sent! Please check your inbox.'
-                })
-            else:
-                error = response_data.get('error', 'Signup failed. Please try again.')
-                return jsonify({'success': False, 'error': error}), 400
-        else:
-            error = response_data.get('error', 'Signup failed. Please try again.')
-            return jsonify({'success': False, 'error': error}), response.status_code
-            
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Signup request failed: {str(e)}")
-        return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
-    except Exception as e:
-        logger.error(f"Unexpected error in signup: {str(e)}")
-        return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
+<script>
+  const requiredQuestions = [
+    { 
+      question: "When you're falling in love, you usually feel...", 
+      answers: [
+        "Safe and calm inside",
+        "Excited and full of butterflies",
+        "Like I've found someone truly rare",
+        "Scared of being too vulnerable"
+      ],
+      types: ["👂 Listener", "💘 Romantic", "🌙 Dreamer", "🛡️ Protector"]
+    },
+    { 
+      question: "Arrange these in order of importance in a relationship:", 
+      answers: [
+        "Trust",
+        "Emotional connection",
+        "Shared goals",
+        "Physical intimacy"
+      ],
+      types: ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "💘 Romantic"],
+      isRankQuestion: true
+    },
+    { 
+      question: "What kind of emotional support feels most comforting to you?", 
+      answers: [
+        "Someone silently sitting with me through pain",
+        "Someone helping me fix the situation",
+        "Someone saying exactly the right words",
+        "Someone holding me tight without speaking"
+      ],
+      types: ["🌿 Nurturer", "🛡️ Protector", "👂 Listener", "💘 Romantic"]
+    },
+    { 
+      question: "In a disagreement with someone you care about, you...", 
+      answers: [
+        "Try to stay calm and really listen",
+        "Express your emotions openly",
+        "Try to solve it quickly and move on",
+        "Take it personally and overthink it"
+      ],
+      types: ["👂 Listener", "💘 Romantic", "🛡️ Protector", "🌙 Dreamer"]
+    },
+    { 
+      question: "How do you want others to describe you?", 
+      answers: [
+        "Kind and soft",
+        "Strong and independent",
+        "Perfect and without flaws",
+        "Honest and growing"
+      ],
+      types: ["🌿 Nurturer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
+    },
+    { 
+      question: "What do you crave most in a relationship?", 
+      answers: [
+        "Peace and emotional safety",
+        "Excitement and mystery",
+        "Growth and learning together",
+        "Feeling truly known and accepted"
+      ],
+      types: ["🌿 Nurturer", "💘 Romantic", "🌟 Idealist", "🌙 Dreamer"]
+    },
+    { 
+      question: "What makes you feel emotionally alive in love?", 
+      answers: [
+        "Deep, late-night emotional conversations",
+        "Intense physical closeness and passion",
+        "When someone notices the little things",
+        "Solving life's problems together"
+      ],
+      types: ["🌙 Dreamer", "💘 Romantic", "🌿 Nurturer", "🛡️ Protector"]
+    },
+    { 
+      question: "When you feel deeply hurt, you usually...", 
+      answers: [
+        "Cry or let it out",
+        "Get silent and withdraw",
+        "Keep busy to avoid it",
+        "Talk it out with someone trusted"
+      ],
+      types: ["🌙 Dreamer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
+    },
+    { 
+      question: "What does financial stability mean to you in a relationship?", 
+      answers: [
+        "Freedom to spend and still save together",
+        "Clear roles — one earns, one manages",
+        "Always discuss big spending decisions",
+        "Having separate money but shared goals"
+      ],
+      types: ["🛡️ Protector", "👂 Listener", "🌿 Nurturer", "🌟 Idealist"]
+    },
+    { 
+      question: "How do you usually show someone that you love them?", 
+      answers: [
+        "I check in on their feelings often",
+        "I protect them and help solve their problems",
+        "I write, say, or express how much I care",
+        "I give them space but make sure I'm always there"
+      ],
+      types: ["🌿 Nurturer", "🛡️ Protector", "💘 Romantic", "👂 Listener"]
+    }
+  ];
 
-def resend_verification():
-    try:
-        email = request.json.get('email') or session.get('email')
-        if not email:
-            return jsonify({'success': False, 'error': 'No email provided'}), 400
-        
-        response = requests.post(
-            urljoin(API_BASE_URL, '/api/resend-verification'),
-            json={'email': email},
-            headers={'Content-Type': 'application/json'},
-            timeout=API_TIMEOUT
-        )
-        
-        try:
-            response_data = response.json()
-        except ValueError:
-            logger.error(f"Invalid JSON response from API: {response.text}")
-            return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
-        
-        if response.status_code == 200:
-            session['verification_pending'] = True
-            session['email'] = email
-            return jsonify({
-                'success': True,
-                'message': 'Verification email resent successfully!'
-            })
-        else:
-            error = response_data.get('error', 'Failed to resend verification email.')
-            return jsonify({'success': False, 'error': error}), response.status_code
-            
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Resend verification request failed: {str(e)}")
-        return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
-    except Exception as e:
-        logger.error(f"Unexpected error in resend verification: {str(e)}")
-        return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
+  const optionalQuestions = [
+    { 
+      question: "You see your partner being emotionally close to a friend. You feel…", 
+      answers: [
+        "Curious and ask openly",
+        "Completely fine",
+        "A little jealous but trust them",
+        "Insecure and silent"
+      ],
+      types: ["🌿 Nurturer", "👂 Listener", "💘 Romantic", "🛡️ Protector"]
+    },
+    { 
+      question: "Your partner has a serious conflict with your family. You...", 
+      answers: [
+        "Support your partner but stay neutral",
+        "Try to fix the situation without taking sides",
+        "Defend your family — they raised me",
+        "Fully support my partner, even if it causes tension"
+      ],
+      types: ["👂 Listener", "🌿 Nurturer", "🛡️ Protector", "🌙 Dreamer"]
+    },
+    { 
+      question: "How do you handle emotional overwhelm?", 
+      answers: [
+        "Talk it out immediately",
+        "Need space to calm down",
+        "Write or reflect privately",
+        "Look for distraction or activity"
+      ],
+      types: ["👂 Listener", "🛡️ Protector", "🌙 Dreamer", "🌟 Idealist"]
+    },
+    { 
+      question: "What's your biggest fear in love?", 
+      answers: [
+        "Being misunderstood",
+        "Losing emotional connection",
+        "Getting hurt or rejected",
+        "Not being able to protect the person I love"
+      ],
+      types: ["🌟 Idealist", "👂 Listener", "🌙 Dreamer", "🛡️ Protector"]
+    },
+    { 
+      question: "What do you quietly need most in a relationship?", 
+      answers: [
+        "To feel safe and protected",
+        "To be emotionally understood",
+        "To give and receive open affection",
+        "To be accepted without pressure"
+      ],
+      types: ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "👂 Listener"]
+    },
+    { 
+      question: "Which quality do you most admire in a partner?", 
+      answers: [
+        "Loyalty",
+        "Compassion",
+        "Passion",
+        "Wisdom"
+      ],
+      types: ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "🌟 Idealist"]
+    }
+  ];
 
-def validate_email(email):
-    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
+  const animationList = [
+    "animate__fadeInUp", "animate__fadeInDown", "animate__zoomIn",
+    "animate__slideInLeft", "animate__slideInRight", "animate__bounceIn",
+    "animate__flipInX", "animate__lightSpeedInLeft", "animate__backInUp", "animate__fadeInTopLeft"
+  ];
 
-def check_quiz_status():
-    try:
-        if 'user_id' not in session:
-            return {'quiz_completed': False}
-        
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        response = requests.get(
-            urljoin(API_BASE_URL, f"/api/profile"),
-            headers=headers,
-            timeout=API_TIMEOUT
-        )
-        
-        if response.status_code == 200:
-            response_data = response.json()
-            if response_data.get('success'):
-                return {'quiz_completed': response_data.get('quiz_completed', False)}
-    
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Quiz status check failed: {str(e)}")
-    
-    return {'quiz_completed': False}
+  let currentQuestionIndex = 0;
+  let selectedAnswers = [];
+  let isInOptionalSection = false;
+  let currentRank = 1;
 
-@app.route('/verify-email')
-def verify_email_endpoint():
-    token = request.args.get('token')
-    if not token:
-        return redirect(url_for('auth', error='Invalid verification link'))
-    
-    try:
-        # Verify the token with the API
-        response = requests.post(
-            urljoin(API_BASE_URL, '/api/verify-email'),
-            json={'token': token},
-            headers={'Content-Type': 'application/json'},
-            timeout=API_TIMEOUT
-        )
-        
-        try:
-            response_data = response.json()
-        except ValueError:
-            logger.error(f"Invalid JSON response from API: {response.text}")
-            return redirect(url_for('auth', error='Invalid response from server'))
-        
-        if response.status_code == 200 and response_data.get('success'):
-            # Set cookie to show verification success message
-            resp = make_response(redirect(url_for('auth')))
-            resp.set_cookie('email_verified', '1', max_age=60)
-            return resp
-        else:
-            error = response_data.get('error', 'Verification failed. Please try again.')
-            return redirect(url_for('auth', error=error))
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Verification API request failed: {str(e)}")
-        return redirect(url_for('auth', error='Verification service unavailable. Please try again later.'))
+  window.onload = () => {
+    document.getElementById('btn-start').addEventListener('click', startQuiz);
+    document.getElementById('btn-yes').addEventListener('click', startOptionalQuestions);
+    document.getElementById('btn-no').addEventListener('click', skipOptionalQuestions);
+    document.getElementById('btn-explore').addEventListener('click', () => {
+      window.location.href = '/explore';
+    });
+  };
 
-@app.route('/explore')
-def explore():
-    if 'user_id' not in session:
-        return redirect(url_for('auth'))
-    
-    try:
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        response = requests.get(
-            urljoin(API_BASE_URL, '/api/matches'),
-            headers=headers,
-            timeout=API_TIMEOUT
-        )
-        
-        matches = []
-        if response.status_code == 200:
-            response_data = response.json()
-            if response_data.get('success'):
-                matches = response_data.get('matches', [])
-        
-        return render_template('explore.html', matches=matches)
-    
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Explore request failed: {str(e)}")
-        return render_template('explore.html', matches=[])
+  function startQuiz() {
+    document.getElementById('intro-container').style.display = 'none';
+    document.getElementById('qa-container').style.display = 'block';
+    document.getElementById('section-title').textContent = "What Kind of Partner Are You Emotionally?";
+    document.getElementById('section-description').textContent = "These 10 questions reveal your emotional personality — the way you love, feel, and respond in relationships. This helps us match you with people who emotionally connect with you.";
+    loadQuestion(currentQuestionIndex);
+  }
 
-@app.route('/chat')
-def chat():
-    if 'user_id' not in session:
-        return redirect(url_for('auth'))
+  function loadQuestion(index) {
+    const questionEl = document.getElementById('question');
+    const answersBox = document.getElementById('answers');
+    const progressBar = document.getElementById('progress-bar');
+    const questionBox = document.getElementById('question-box');
+    const instructionsEl = document.getElementById('rank-instructions');
+    const questions = isInOptionalSection ? optionalQuestions : requiredQuestions;
     
-    try:
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        response = requests.get(
-            urljoin(API_BASE_URL, '/api/chats'),
-            headers=headers,
-            timeout=API_TIMEOUT
-        )
-        
-        chats = []
-        if response.status_code == 200:
-            response_data = response.json()
-            if response_data.get('success'):
-                chats = response_data.get('chats', [])
-        
-        return render_template('chat.html', chats=chats)
-    
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Chat request failed: {str(e)}")
-        return render_template('chat.html', chats=[])
+    if (index < questions.length) {
+      questionBox.className = `question-box animate__animated ${animationList[index % animationList.length]}`;
+      questionEl.innerText = questions[index].question;
+      answersBox.innerHTML = '';
+      instructionsEl.textContent = '';
 
-@app.route('/profile')
-def profile():
-    if 'user_id' not in session:
-        return redirect(url_for('auth'))
-    
-    try:
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        response = requests.get(
-            urljoin(API_BASE_URL, '/api/profile'),
-            headers=headers,
-            timeout=API_TIMEOUT
-        )
+      if (questions[index].isRankQuestion) {
+        answersBox.className = 'rank-container';
+        instructionsEl.textContent = "Click to select your most important to least important (1-4). Click again to unselect.";
         
-        profile_data = {}
-        if response.status_code == 200:
-            response_data = response.json()
-            if response_data.get('success'):
-                profile_data = response_data.get('profile', {})
+        const submitBtn = document.createElement('button');
+        submitBtn.className = 'rank-submit';
+        submitBtn.textContent = 'Continue';
+        submitBtn.onclick = () => handleRankSubmit(questions[index]);
         
-        return render_template('profile.html', profile=profile_data)
-    
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Profile request failed: {str(e)}")
-        return render_template('profile.html', profile={})
+        questions[index].answers.forEach((answer, i) => {
+          const item = document.createElement('div');
+          item.className = 'rank-item';
+          item.textContent = answer;
+          item.dataset.type = questions[index].types[i];
+          item.dataset.selected = 'false';
+          item.dataset.rank = '0';
+          item.onclick = () => toggleRankSelection(item);
+          answersBox.appendChild(item);
+        });
+        
+        answersBox.appendChild(submitBtn);
+      } else {
+        answersBox.className = 'answers';
+        questions[index].answers.forEach((answer, i) => {
+          const btn = document.createElement('button');
+          btn.textContent = answer;
+          btn.onclick = () => {
+            selectedAnswers.push({
+              answer: answer,
+              type: questions[index].types[i]
+            });
+            nextQuestion();
+          };
+          answersBox.appendChild(btn);
+        });
+      }
 
-@app.route('/questions', methods=['GET', 'POST'])
-def questions():
-    if 'user_id' not in session:
-        return redirect(url_for('auth'))
-    
-    if request.method == 'POST':
-        data = request.get_json()
-        if not data or 'answers' not in data:
-            return jsonify({'success': False, 'error': 'Missing answers data'}), 400
-        
-        try:
-            # Use the same session as the Flask app
-            with requests.Session() as s:
-                # Copy cookies from current session
-                s.cookies.update(request.cookies)
-                
-                response = s.post(
-                    urljoin(API_BASE_URL, '/api/quiz/submit'),
-                    json={'answers': data['answers']},
-                    headers={'Content-Type': 'application/json'},
-                    timeout=API_TIMEOUT
-                )
-                
-            try:
-                response_data = response.json()
-            except ValueError:
-                logger.error(f"Invalid JSON response from API: {response.text}")
-                return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
-            
-            if response.status_code == 200:
-                return jsonify(response_data)
-            else:
-                error = response_data.get('error', 'Quiz submission failed')
-                return jsonify({'success': False, 'error': error}), response.status_code
-                
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Quiz submission failed: {str(e)}")
-            return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
-    
-    return render_template('questions.html')
+      const totalQuestions = isInOptionalSection ? 
+        requiredQuestions.length + optionalQuestions.length : 
+        requiredQuestions.length;
+      const answeredQuestions = isInOptionalSection ? 
+        requiredQuestions.length + index : 
+        index;
+      progressBar.style.width = `${(answeredQuestions / totalQuestions) * 100}%`;
+    } else {
+      if (!isInOptionalSection) {
+        document.getElementById('optional-section').style.display = 'block';
+        document.getElementById('question-box').style.display = 'none';
+      } else {
+        showFinalScreen();
+      }
+    }
+  }
 
-@app.route('/logout')
-def logout():
-    if 'user_id' in session:
-        try:
-            headers = {
-                'Content-Type': 'application/json'
-            }
-            requests.post(
-                urljoin(API_BASE_URL, '/api/logout'),
-                headers=headers,
-                timeout=API_TIMEOUT
-            )
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Logout request failed: {str(e)}")
-        
-        session.clear()
+  function toggleRankSelection(item) {
+    const isSelected = item.dataset.selected === 'true';
     
-    return redirect(url_for('index'))
+    if (isSelected) {
+      item.dataset.selected = 'false';
+      item.classList.remove('selected');
+      
+      const rankNumber = item.querySelector('.rank-number');
+      if (rankNumber) {
+        item.removeChild(rankNumber);
+      }
+      
+      const currentRankNum = parseInt(item.dataset.rank);
+      if (currentRankNum === currentRank - 1) {
+        currentRank--;
+      }
+      
+      item.dataset.rank = '0';
+    } else {
+      if (currentRank > 4) return;
+      
+      item.dataset.selected = 'true';
+      item.dataset.rank = currentRank.toString();
+      item.classList.add('selected');
+      
+      let rankNumber = item.querySelector('.rank-number');
+      if (!rankNumber) {
+        rankNumber = document.createElement('div');
+        rankNumber.className = 'rank-number';
+        item.appendChild(rankNumber);
+      }
+      rankNumber.textContent = currentRank;
+      
+      currentRank++;
+    }
+  }
+  
+  function handleRankSubmit(question) {
+    const rankItems = document.querySelectorAll('.rank-item');
+    const rankedItems = Array.from(rankItems)
+      .filter(item => item.dataset.rank !== '0')
+      .sort((a, b) => parseInt(a.dataset.rank) - parseInt(b.dataset.rank));
+    
+    if (rankedItems.length > 0) {
+      selectedAnswers.push({
+        answer: "Ranked: " + rankedItems.map(item => `${item.dataset.rank}. ${item.textContent}`).join(", "),
+        type: rankedItems[0].dataset.type
+      });
+    } else {
+      selectedAnswers.push({
+        answer: question.answers[0],
+        type: question.types[0]
+      });
+    }
+    
+    currentRank = 1;
+    nextQuestion();
+  }
 
-if __name__ == '__main__':
-    app.run(debug=True)
+  function nextQuestion() {
+    currentQuestionIndex++;
+    const questions = isInOptionalSection ? optionalQuestions : requiredQuestions;
+    
+    if (currentQuestionIndex < questions.length) {
+      loadQuestion(currentQuestionIndex);
+    } else {
+      if (!isInOptionalSection) {
+        document.getElementById('optional-section').style.display = 'block';
+        document.getElementById('question-box').style.display = 'none';
+      } else {
+        showFinalScreen();
+      }
+    }
+  }
+
+  function startOptionalQuestions() {
+    document.getElementById('optional-section').style.display = 'none';
+    document.getElementById('question-box').style.display = 'block';
+    isInOptionalSection = true;
+    currentQuestionIndex = 0;
+    document.getElementById('section-title').textContent = "Want Deeper Matches? (Optional)";
+    document.getElementById('section-description').textContent = "These 6 extra questions help us detect emotional maturity, depth, and hidden traits. They refine your results — but only if you choose to answer them.";
+    loadQuestion(currentQuestionIndex);
+  }
+
+  function skipOptionalQuestions() {
+    showFinalScreen();
+  }
+
+  function showFinalScreen() {
+    document.getElementById('qa-content').style.display = 'none';
+    document.getElementById('final-screen').style.display = 'block';
+    document.getElementById('progress-bar').style.width = `100%`;
+
+    const answersToSubmit = selectedAnswers.map(item => ({
+      answer: item.answer,
+      type: item.type
+    }));
+
+    fetch('/questions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ answers: answersToSubmit }),
+      credentials: 'include'
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.success) {
+        confetti({
+          particleCount: 200,
+          spread: 90,
+          origin: { y: 0.6 }
+        });
+        
+        setTimeout(() => {
+          confetti({
+            particleCount: 100,
+            angle: 60,
+            spread: 70,
+            origin: { x: 0 }
+          });
+          
+          confetti({
+            particleCount: 100,
+            angle: 120,
+            spread: 70,
+            origin: { x: 1 }
+          });
+        }, 300);
+      } else {
+        console.error('Error:', data.error);
+        alert('Failed to submit quiz: ' + data.error);
+      }
+    })
+    .catch(error => {
+      console.error('Error submitting answers:', error);
+      alert('Error submitting quiz. Please try again.');
+    });
+  }
+
+  function restart() {
+    currentQuestionIndex = 0;
+    selectedAnswers = [];
+    isInOptionalSection = false;
+    document.getElementById('qa-content').style.display = 'block';
+    document.getElementById('final-screen').style.display = 'none';
+    document.getElementById('optional-section').style.display = 'none';
+    document.getElementById('question-box').style.display = 'block';
+    document.getElementById('intro-container').style.display = 'none';
+    document.getElementById('qa-container').style.display = 'block';
+    startQuiz();
+  }
+</script>
+
+</body>
+</html>
