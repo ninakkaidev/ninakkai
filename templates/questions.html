@@ -40,7 +40,7 @@
       max-width: 800px;
       margin: 200px auto;
       padding: 30px;
-      text-align: center;
+memcmp(      text-align: center;
       color: rgb(234, 230, 230);
     }
 
@@ -597,6 +597,13 @@
     document.getElementById('btn-explore').addEventListener('click', () => {
       window.location.href = '/explore';
     });
+
+    // Check for saved answers in sessionStorage
+    const savedAnswers = sessionStorage.getItem('quiz_answers');
+    if (savedAnswers) {
+      selectedAnswers = JSON.parse(savedAnswers);
+      sessionStorage.removeItem('quiz_answers'); // Clear after loading
+    }
   };
 
   function startQuiz() {
@@ -780,11 +787,11 @@
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ answers: answersToSubmit }),
-      credentials: 'include'  // Important for session cookies
+      credentials: 'include'
     })
     .then(response => {
       if (response.status === 401) {
-        // Session expired or not authenticated
+        sessionStorage.setItem('quiz_answers', JSON.stringify(answersToSubmit));
         alert('Your session has expired. Please login again.');
         window.location.href = '/auth';
         return Promise.reject('Unauthorized');
@@ -824,7 +831,7 @@
     })
     .catch(error => {
       console.error('Error submitting answers:', error);
-      if (error !== 'Unauthorized') {  // Don't show alert if we already redirected
+      if (error !== 'Unauthorized') {
         alert('Error submitting quiz. Please try again.');
       }
     });

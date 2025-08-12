@@ -3,7 +3,7 @@ import requests
 from datetime import timedelta
 import logging
 from urllib.parse import urljoin
-import re  # Add this import for email validation
+import re
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -80,6 +80,7 @@ def handle_login():
                 session['token'] = 'firebase_token'  # Replace with actual token if using Firebase auth
                 session['email'] = email
                 session['user_id'] = response_data.get('user', {}).get('uid')
+                logger.debug(f"Session set after login: {session}")
                 
                 if response_data.get('quiz_completed', False):
                     return jsonify({
@@ -152,6 +153,7 @@ def handle_signup():
                 session['email'] = data['email']
                 session['verification_pending'] = True
                 session['signup_data'] = data
+                logger.debug(f"Session set after signup: {session}")
                 
                 return jsonify({
                     'success': True,
@@ -216,6 +218,7 @@ def validate_email(email):
 def check_quiz_status():
     try:
         if 'user_id' not in session:
+            logger.debug("No user_id in session for quiz status check")
             return {'quiz_completed': False}
         
         headers = {
@@ -244,7 +247,6 @@ def verify_email_endpoint():
         return redirect(url_for('auth', error='Invalid verification link'))
     
     try:
-        # Verify the token with the API
         response = requests.post(
             urljoin(API_BASE_URL, '/api/verify-email'),
             json={'token': token},
@@ -259,7 +261,6 @@ def verify_email_endpoint():
             return redirect(url_for('auth', error='Invalid response from server'))
         
         if response.status_code == 200 and response_data.get('success'):
-            # Set cookie to show verification success message
             resp = make_response(redirect(url_for('auth')))
             resp.set_cookie('email_verified', '1', max_age=60)
             return resp
@@ -273,6 +274,7 @@ def verify_email_endpoint():
 @app.route('/explore')
 def explore():
     if 'user_id' not in session:
+        logger.debug("No user_id in session for /explore")
         return redirect(url_for('auth'))
     
     try:
@@ -300,6 +302,7 @@ def explore():
 @app.route('/chat')
 def chat():
     if 'user_id' not in session:
+        logger.debug("No user_id in session for /chat")
         return redirect(url_for('auth'))
     
     try:
@@ -327,7 +330,10 @@ def chat():
 @app.route('/profile')
 def profile():
     if 'user_id' not in session:
-        return redirect(url_for('auth'))
+        logger.debug("No user_id in session for /profile")
+        return redirect
+
+(url_for('auth'))
     
     try:
         headers = {
@@ -353,10 +359,11 @@ def profile():
 
 @app.route('/questions', methods=['GET'])
 def questions():
+    logger.debug(f"Session in /questions: {session}")
     if 'user_id' not in session:
+        logger.debug("No user_id in session for /questions")
         return redirect(url_for('auth'))
     
-    # Check if user has already completed the quiz
     quiz_status = check_quiz_status()
     if quiz_status.get('quiz_completed', False):
         return redirect(url_for('explore'))
@@ -365,7 +372,10 @@ def questions():
 
 @app.route('/api/quiz/submit', methods=['POST'])
 def submit_quiz():
+    logger.debug(f"Session data: {session}")
+    logger.debug(f"Incoming cookies: {request.cookies}")
     if 'user_id' not in session:
+        logger.error("No user_id in session")
         return jsonify({'success': False, 'error': 'Authentication required'}), 401
     
     data = request.get_json()
@@ -374,8 +384,7 @@ def submit_quiz():
     
     try:
         headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f"Bearer {session.get('token', '')}"
+            'Content-Type': 'application/json'
         }
         
         response = requests.post(
