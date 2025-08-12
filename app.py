@@ -362,16 +362,18 @@ def questions():
             return jsonify({'success': False, 'error': 'Missing answers data'}), 400
         
         try:
-            headers = {
-                'Content-Type': 'application/json'
-            }
-            response = requests.post(
-                urljoin(API_BASE_URL, '/api/quiz/submit'),
-                json={'answers': data['answers']},
-                headers=headers,
-                timeout=API_TIMEOUT
-            )
-            
+            # Use the same session as the Flask app
+            with requests.Session() as s:
+                # Copy cookies from current session
+                s.cookies.update(request.cookies)
+                
+                response = s.post(
+                    urljoin(API_BASE_URL, '/api/quiz/submit'),
+                    json={'answers': data['answers']},
+                    headers={'Content-Type': 'application/json'},
+                    timeout=API_TIMEOUT
+                )
+                
             try:
                 response_data = response.json()
             except ValueError:
