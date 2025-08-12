@@ -750,7 +750,6 @@
             const stepDots = document.querySelectorAll('.step-dot');
             const nextButtons = document.querySelectorAll('.next-step');
             const prevButtons = document.querySelectorAll('.prev-step');
-            const signupStepElements = document.querySelectorAll('.signup-step');
             const passwordInput = document.getElementById('password');
             const confirmPasswordInput = document.getElementById('confirmPassword');
             const passwordStrengthBar = document.getElementById('passwordStrengthBar');
@@ -786,7 +785,8 @@
                         body: JSON.stringify({
                             form_type: 'resend_verification',
                             email: email
-                        })
+                        }),
+                        credentials: 'include' // Include cookies for session
                     });
                     
                     const data = await response.json();
@@ -971,7 +971,8 @@
                         headers: {
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
-                        }
+                        },
+                        credentials: 'include' // Include cookies for session
                     });
                     
                     const data = await response.json();
@@ -1017,7 +1018,8 @@
                         headers: {
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
-                        }
+                        },
+                        credentials: 'include' // Include cookies for session
                     });
                     
                     const data = await response.json();

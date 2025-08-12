@@ -85,13 +85,10 @@ def handle_login():
                 session['user_id'] = response_data.get('user', {}).get('id')  # Use 'id' from API
                 logger.debug(f"Session set after login: {session}")
                 
-                # Set session cookie explicitly
-                resp = make_response(jsonify({
+                return jsonify({
                     'success': True,
                     'redirect': url_for('explore') if response_data.get('quiz_completed', False) else url_for('questions')
-                }))
-                resp.set_cookie('session_id', session.sid, max_age=86400, httponly=True, secure=True, samesite='Lax')
-                return resp
+                })
             else:
                 error = response_data.get('error', 'Invalid credentials')
                 return jsonify({'success': False, 'error': error}), 401
@@ -155,15 +152,12 @@ def handle_signup():
                 session['verification_pending'] = True
                 logger.debug(f"Session set after signup: {session}")
                 
-                # Set session cookie explicitly
-                resp = make_response(jsonify({
+                return jsonify({
                     'success': True,
                     'verification_required': True,
                     'email': data['email'],
                     'message': 'Verification email sent! Please check your inbox.'
-                }))
-                resp.set_cookie('session_id', session.sid, max_age=86400, httponly=True, secure=True, samesite='Lax')
-                return resp
+                })
             else:
                 error = response_data.get('error', 'Signup failed. Please try again.')
                 return jsonify({'success': False, 'error': error}), 400
@@ -224,10 +218,7 @@ def check_quiz_status():
             logger.debug("No user_id in session for quiz status check")
             return {'quiz_completed': False}
         
-        headers = {
-            'Content-Type': 'application/json',
-            'X-Session-ID': session.sid
-        }
+        headers = {'Content-Type': 'application/json'}
         response = requests.get(
             urljoin(API_BASE_URL, f"/api/profile"),
             headers=headers,
@@ -248,8 +239,7 @@ def check_quiz_status():
 def check_session():
     logger.debug(f"Session in check_session: {session}")
     logger.debug(f"Incoming cookies: {request.cookies}")
-    session_id = request.cookies.get('session_id')
-    if not session_id or 'user_id' not in session:
+    if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'No active session'}), 401
     return jsonify({'success': True, 'user_id': session.get('user_id'), 'email': session.get('email')})
 
@@ -293,10 +283,7 @@ def explore():
         return redirect(url_for('auth'))
     
     try:
-        headers = {
-            'Content-Type': 'application/json',
-            'X-Session-ID': session.sid
-        }
+        headers = {'Content-Type': 'application/json'}
         response = requests.get(
             urljoin(API_BASE_URL, '/api/matches'),
             headers=headers,
@@ -323,10 +310,7 @@ def chat():
         return redirect(url_for('auth'))
     
     try:
-        headers = {
-            'Content-Type': 'application/json',
-            'X-Session-ID': session.sid
-        }
+        headers = {'Content-Type': 'application/json'}
         response = requests.get(
             urljoin(API_BASE_URL, '/api/chats'),
             headers=headers,
@@ -353,10 +337,7 @@ def profile():
         return redirect(url_for('auth'))
     
     try:
-        headers = {
-            'Content-Type': 'application/json',
-            'X-Session-ID': session.sid
-        }
+        headers = {'Content-Type': 'application/json'}
         response = requests.get(
             urljoin(API_BASE_URL, '/api/profile'),
             headers=headers,
@@ -393,9 +374,8 @@ def questions():
 def submit_quiz():
     logger.debug(f"Session in submit_quiz: {session}")
     logger.debug(f"Incoming cookies: {request.cookies}")
-    session_id = request.headers.get('X-Session-ID') or request.cookies.get('session_id')
-    if not session_id or 'user_id' not in session:
-        logger.error("No user_id in session or invalid session_id")
+    if 'user_id' not in session:
+        logger.error("No user_id in session")
         return jsonify({'success': False, 'error': 'Authentication required'}), 401
     
     data = request.get_json()
@@ -403,11 +383,7 @@ def submit_quiz():
         return jsonify({'success': False, 'error': 'Missing answers data'}), 400
     
     try:
-        headers = {
-            'Content-Type': 'application/json',
-            'X-Session-ID': session_id
-        }
-        
+        headers = {'Content-Type': 'application/json'}
         response = requests.post(
             urljoin(API_BASE_URL, '/api/quiz/submit'),
             json={'answers': data['answers'], 'user_id': session.get('user_id')},
@@ -440,10 +416,7 @@ def logout():
     logger.debug(f"Session in logout: {session}")
     if 'user_id' in session:
         try:
-            headers = {
-                'Content-Type': 'application/json',
-                'X-Session-ID': session.sid
-            }
+            headers = {'Content-Type': 'application/json'}
             response = requests.post(
                 urljoin(API_BASE_URL, '/api/logout'),
                 headers=headers,
@@ -454,9 +427,7 @@ def logout():
             logger.error(f"Logout request failed: {str(e)}")
         
         session.clear()
-        resp = make_response(redirect(url_for('index')))
-        resp.set_cookie('session_id', '', expires=0)
-        return resp
+        return redirect(url_for('index'))
     
     return redirect(url_for('index'))
 
