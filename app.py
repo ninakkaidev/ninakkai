@@ -4,9 +4,10 @@ from datetime import timedelta
 import logging
 from urllib.parse import urljoin
 import re
+import os
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'
+app.secret_key = os.urandom(24).hex()  # Secure random key
 app.permanent_session_lifetime = timedelta(days=1)
 
 # Configure logging
@@ -19,10 +20,13 @@ API_TIMEOUT = 10  # seconds
 
 @app.route('/')
 def index():
+    logger.debug(f"Session in index: {session}")
     return render_template('index.html')
 
 @app.route('/auth', methods=['GET', 'POST'])
 def auth():
+    logger.debug(f"Session in auth: {session}")
+    logger.debug(f"Incoming cookies: {request.cookies}")
     if request.method == 'POST':
         form_type = request.form.get('form_type')
         
@@ -77,9 +81,8 @@ def handle_login():
         if response.status_code == 200:
             if response_data.get('success'):
                 session.permanent = True
-                session['token'] = 'firebase_token'  # Replace with actual token if using Firebase auth
                 session['email'] = email
-                session['user_id'] = response_data.get('user', {}).get('uid')
+                session['user_id'] = response_data.get('user', {}).get('id')  # Use 'id' from API
                 logger.debug(f"Session set after login: {session}")
                 
                 if response_data.get('quiz_completed', False):
@@ -151,8 +154,8 @@ def handle_signup():
             if response_data.get('success'):
                 session.permanent = True
                 session['email'] = data['email']
+                session['user_id'] = response_data.get('user_id')  # Use 'user_id' from API
                 session['verification_pending'] = True
-                session['signup_data'] = data
                 logger.debug(f"Session set after signup: {session}")
                 
                 return jsonify({
@@ -242,6 +245,7 @@ def check_quiz_status():
 
 @app.route('/verify-email')
 def verify_email_endpoint():
+    logger.debug(f"Session in verify-email: {session}")
     token = request.args.get('token')
     if not token:
         return redirect(url_for('auth', error='Invalid verification link'))
@@ -273,6 +277,7 @@ def verify_email_endpoint():
 
 @app.route('/explore')
 def explore():
+    logger.debug(f"Session in explore: {session}")
     if 'user_id' not in session:
         logger.debug("No user_id in session for /explore")
         return redirect(url_for('auth'))
@@ -301,6 +306,7 @@ def explore():
 
 @app.route('/chat')
 def chat():
+    logger.debug(f"Session in chat: {session}")
     if 'user_id' not in session:
         logger.debug("No user_id in session for /chat")
         return redirect(url_for('auth'))
@@ -329,6 +335,7 @@ def chat():
 
 @app.route('/profile')
 def profile():
+    logger.debug(f"Session in profile: {session}")
     if 'user_id' not in session:
         logger.debug("No user_id in session for /profile")
         return redirect(url_for('auth'))
@@ -357,7 +364,8 @@ def profile():
 
 @app.route('/questions', methods=['GET'])
 def questions():
-    logger.debug(f"Session in /questions: {session}")
+    logger.debug(f"Session in questions: {session}")
+    logger.debug(f"Incoming cookies: {request.cookies}")
     if 'user_id' not in session:
         logger.debug("No user_id in session for /questions")
         return redirect(url_for('auth'))
@@ -370,7 +378,7 @@ def questions():
 
 @app.route('/api/quiz/submit', methods=['POST'])
 def submit_quiz():
-    logger.debug(f"Session data: {session}")
+    logger.debug(f"Session in submit_quiz: {session}")
     logger.debug(f"Incoming cookies: {request.cookies}")
     if 'user_id' not in session:
         logger.error("No user_id in session")
@@ -387,10 +395,7 @@ def submit_quiz():
         
         response = requests.post(
             urljoin(API_BASE_URL, '/api/quiz/submit'),
-            json={
-                'answers': data['answers'],
-                'user_id': session['user_id']
-            },
+            json={'answers': data['answers']},  # Removed user_id from payload
             headers=headers,
             timeout=API_TIMEOUT
         )
@@ -417,16 +422,18 @@ def submit_quiz():
 
 @app.route('/logout')
 def logout():
+    logger.debug(f"Session in logout: {session}")
     if 'user_id' in session:
         try:
             headers = {
                 'Content-Type': 'application/json'
             }
-            requests.post(
+            response = requests.post(
                 urljoin(API_BASE_URL, '/api/logout'),
                 headers=headers,
                 timeout=API_TIMEOUT
             )
+            logger.debug(f"Logout API response: {response.status_code}")
         except requests.exceptions.RequestException as e:
             logger.error(f"Logout request failed: {str(e)}")
         
