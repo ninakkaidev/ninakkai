@@ -12,10 +12,10 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secure-fixed-secret-key-here')  # Replace fallback with a secure key
 app.permanent_session_lifetime = timedelta(days=1)
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Allow cookies in cross-origin requests
-app.config['SESSION_COOKIE_SECURE'] = True  # Require HTTPS
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV', 'development') != 'development'  # HTTPS only in production
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_NAME'] = 'session'  # Ensure consistent cookie name
-app.config['SESSION_COOKIE_PATH'] = '/'  # Ensure cookie is available for all routes
+app.config['SESSION_COOKIE_NAME'] = 'session'
+app.config['SESSION_COOKIE_PATH'] = '/'
 
 # Configure CORS
 CORS(app, supports_credentials=True, origins=['https://routinely-positive-rattler.ngrok-free.app', 'http://localhost:5000'])
@@ -27,6 +27,11 @@ logger = logging.getLogger(__name__)
 # API Configuration
 API_BASE_URL = 'https://routinely-positive-rattler.ngrok-free.app'
 API_TIMEOUT = 10  # seconds
+
+@app.after_request
+def log_response(response):
+    logger.debug(f"Response - Route: {request.path}, Status: {response.status_code}, Set-Cookie: {response.headers.get('Set-Cookie', 'None')}")
+    return response
 
 @app.before_request
 def log_session_info():
@@ -98,6 +103,7 @@ def handle_login():
                 session.permanent = True
                 session['email'] = email
                 session['user_id'] = response_data.get('user', {}).get('id')  # Use 'id' from API
+                session.modified = True  # Ensure session is marked as modified
                 logger.debug(f"Session set after login: {session}")
                 
                 return jsonify({
@@ -110,6 +116,8 @@ def handle_login():
         elif response.status_code == 401 and response_data.get('verification_required'):
             session['email'] = email
             session['verification_pending'] = True
+            session.modified = True
+            logger.debug(f"Session set for verification: {session}")
             return jsonify({
                 'success': False,
                 'verification_required': True,
@@ -165,6 +173,7 @@ def handle_signup():
                 session['email'] = data['email']
                 session['user_id'] = response_data.get('user_id')  # Use 'user_id' from API
                 session['verification_pending'] = True
+                session.modified = True
                 logger.debug(f"Session set after signup: {session}")
                 
                 return jsonify({
@@ -209,6 +218,8 @@ def resend_verification():
         if response.status_code == 200:
             session['verification_pending'] = True
             session['email'] = email
+            session.modified = True
+            logger.debug(f"Session set after resend: {session}")
             return jsonify({
                 'success': True,
                 'message': 'Verification email resent successfully!'
@@ -289,6 +300,7 @@ def verify_email_endpoint():
         
         if response.status_code == 200 and response_data.get('success'):
             session.pop('verification_pending', None)
+            session.modified = True
             resp = make_response(redirect(url_for('auth')))
             resp.set_cookie('email_verified', '1', max_age=60)
             return resp
@@ -455,7 +467,9 @@ def logout():
             logger.error(f"Logout request failed: {str(e)}")
         
         session.clear()
-        return redirect(url_for('index'))
+        resp = make_response(redirect(url_for('index')))
+        resp.set_cookie('session', '', expires=0)
+        return resp
     
     return redirect(url_for('index'))
 
