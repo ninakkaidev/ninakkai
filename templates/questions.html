@@ -774,23 +774,30 @@
       type: item.type
     }));
 
-    // Make sure to include credentials in the fetch request
+    // Enhanced fetch with error handling and session verification
     fetch('/questions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ answers: answersToSubmit }),
-      credentials: 'include'  // This ensures cookies are sent with the request
+      credentials: 'include'  // Crucial for sending cookies
     })
     .then(response => {
+      if (response.status === 401) {
+        // Session expired or not authenticated
+        alert('Your session has expired. Please login again.');
+        window.location.href = '/auth';
+        return Promise.reject('Unauthorized');
+      }
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        return Promise.reject('Network response was not ok');
       }
       return response.json();
     })
     .then(data => {
-      if (data.success) {
+      if (data && data.success) {
+        // Success celebration
         confetti({
           particleCount: 200,
           spread: 90,
@@ -812,14 +819,15 @@
             origin: { x: 1 }
           });
         }, 300);
-      } else {
-        console.error('Error:', data.error);
+      } else if (data && data.error) {
         alert('Failed to submit quiz: ' + data.error);
       }
     })
     .catch(error => {
       console.error('Error submitting answers:', error);
-      alert('Error submitting quiz. Please try again.');
+      if (error !== 'Unauthorized') {  // Don't show alert if we already redirected
+        alert('Error submitting quiz. Please try again.');
+      }
     });
   }
 
