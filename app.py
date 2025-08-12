@@ -8,11 +8,14 @@ import os
 from flask_cors import CORS
 
 app = Flask(__name__)
-app.secret_key = 'your-fixed-secret-key-here'  # Fixed secret key for consistent session handling
+# Use environment variable for secret key, fallback to a secure default
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secure-fixed-secret-key-here')  # Replace fallback with a secure key
 app.permanent_session_lifetime = timedelta(days=1)
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Ensure cookies work cross-origin
-app.config['SESSION_COOKIE_SECURE'] = True  # Require HTTPS for cookies
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Allow cookies in cross-origin requests
+app.config['SESSION_COOKIE_SECURE'] = True  # Require HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_NAME'] = 'session'  # Ensure consistent cookie name
+app.config['SESSION_COOKIE_PATH'] = '/'  # Ensure cookie is available for all routes
 
 # Configure CORS
 CORS(app, supports_credentials=True, origins=['https://routinely-positive-rattler.ngrok-free.app', 'http://localhost:5000'])
@@ -25,9 +28,14 @@ logger = logging.getLogger(__name__)
 API_BASE_URL = 'https://routinely-positive-rattler.ngrok-free.app'
 API_TIMEOUT = 10  # seconds
 
+@app.before_request
+def log_session_info():
+    logger.debug(f"Before request - Route: {request.path}, Session: {session}, Cookies: {request.cookies}, Secret Key: {app.secret_key[:4]}...")
+
 @app.route('/')
 def index():
     logger.debug(f"Session in index: {session}")
+    logger.debug(f"Incoming cookies: {request.cookies}")
     return render_template('index.html')
 
 @app.route('/auth', methods=['GET', 'POST'])
