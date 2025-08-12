@@ -774,13 +774,14 @@
       type: item.type
     }));
 
+    // Make sure to include credentials in the fetch request
     fetch('/questions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ answers: answersToSubmit }),
-      credentials: 'include'
+      credentials: 'include'  // This ensures cookies are sent with the request
     })
     .then(response => {
       if (!response.ok) {
