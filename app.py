@@ -1,440 +1,455 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, make_response
-import requests
-from datetime import timedelta
+from flask import Flask, request, jsonify, session, redirect, url_for, make_response
+from firebase_service import FirebaseService
+from mongo_service import MongoService
+from functools import wraps
+import os
 import logging
-from urllib.parse import urljoin
-import re
+from datetime import timedelta
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from itsdangerous import URLSafeTimedSerializer
+from bson import ObjectId
+from flask_cors import CORS
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'
-app.permanent_session_lifetime = timedelta(days=1)
+
+# Enhanced CORS configuration for your client domain
+CORS(app, 
+     supports_credentials=True,
+     resources={
+         r"/*": {
+             "origins": ["https://ninakkai.com"],
+             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+             "allow_headers": ["Content-Type", "Authorization"],
+             "expose_headers": ["Set-Cookie"],
+             "supports_credentials": True
+         }
+     })
+
+# Session configuration
+app.secret_key = os.urandom(24)
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='None',
+    SESSION_COOKIE_NAME='for_you_session',
+    PERMANENT_SESSION_LIFETIME=timedelta(days=1)
+)
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# API Configuration
-API_BASE_URL = 'https://routinely-positive-rattler.ngrok-free.app'
-API_TIMEOUT = 10  # seconds
+# Initialize Services
+firebase = FirebaseService()
+mongo = MongoService()
+
+# Email Configuration
+SMTP_SERVER = 'smtp.gmail.com'
+SMTP_PORT = 587
+SMTP_USERNAME = os.getenv('SMTP_USERNAME', 'ninakkaiforyou@gmail.com')
+SMTP_PASSWORD = os.getenv('SMTP_PASSWORD', 'porz cqqt bumr wdgj')
+SENDER_EMAIL = 'ninakkaiforyou@gmail.com'
+APP_DOMAIN = os.getenv('APP_DOMAIN', 'https://ninakkai.com')
+
+# Initialize the serializer for generating tokens
+serializer = URLSafeTimedSerializer(app.secret_key)
+
+def send_verification_email(email, verification_token):
+    try:
+        verification_link = f"{APP_DOMAIN}/verify-email?token={verification_token}"
+        
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = email
+        msg['Subject'] = "Verify Your Email Address"
+        
+        html = f"""
+        <html>
+          <body>
+            <h2>നിനക്കായി-ForYou Email Verification</h2>
+            <p>Please click the button below to verify your email address:</p>
+            <a href="{verification_link}" style="background-color: #4CAF50; color: white; padding: 14px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;">
+              Verify Email
+            </a>
+            <p>If you didn't request this, please ignore this email.</p>
+          </body>
+        </html>
+        """
+        
+        msg.attach(MIMEText(html, 'html'))
+        
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.send_message(msg)
+        return True
+    except Exception as e:
+        logger.error(f"Email send error: {str(e)}")
+        return False
+
+def generate_verification_token(email):
+    return serializer.dumps(email, salt='email-verification')
+
+def verify_token(token, expiration=3600):
+    try:
+        email = serializer.loads(
+            token,
+            salt='email-verification',
+            max_age=expiration
+        )
+        return email
+    except Exception as e:
+        logger.error(f"Token verification failed: {str(e)}")
+        return None
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        logger.debug(f"Session in {f.__name__}: {session}")
+        logger.debug(f"Incoming cookies in {f.__name__}: {request.cookies}")
+        if 'user_id' not in session:
+            logger.error(f"Authentication required - no user_id in session for {f.__name__}")
+            response = make_response(jsonify({'success': False, 'error': 'Authentication required'}))
+            response.headers['Access-Control-Allow-Origin'] = 'https://ninakkai.com'
+            response.headers['Access-Control-Allow-Credentials'] = 'true'
+            return response, 401
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.route('/')
-def index():
-    return render_template('index.html')
+def home():
+    return jsonify({'message': 'Welcome to നിനക്കായി-ForYou API'})
 
-@app.route('/auth', methods=['GET', 'POST'])
-def auth():
-    if request.method == 'POST':
-        form_type = request.form.get('form_type')
-        
-        if form_type == 'login':
-            return handle_login()
-        elif form_type == 'signup':
-            return handle_signup()
-        elif form_type == 'resend_verification':
-            return resend_verification()
-        
-        return jsonify({'success': False, 'error': 'Invalid form type'}), 400
-    
-    email_verified = request.cookies.get('email_verified') == '1'
-    verification_pending = session.get('verification_pending', False)
-    email = session.get('email', '')
-    
-    if email_verified:
-        verification_success = True
-        resp = make_response(render_template('auth.html', 
-                         verification_sent=verification_pending,
-                         verification_success=verification_success,
-                         email=email))
-        resp.set_cookie('email_verified', '', expires=0)
-        return resp
-    
-    return render_template('auth.html', 
-                         verification_sent=verification_pending,
-                         verification_success=False,
-                         email=email)
-
-def handle_login():
+@app.route('/api/signup', methods=['POST'])
+def signup():
     try:
-        email = request.form.get('email')
-        password = request.form.get('password')
-        
-        if not email or not password:
-            return jsonify({'success': False, 'error': 'Email and password are required'}), 400
-        
-        response = requests.post(
-            urljoin(API_BASE_URL, '/api/login'),
-            json={'email': email, 'password': password},
-            headers={'Content-Type': 'application/json'},
-            timeout=API_TIMEOUT
+        data = request.get_json()
+        required_fields = ['email', 'password', 'full_name']
+        if not all(field in data for field in required_fields):
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+
+        result = mongo.create_user(
+            data['email'],
+            data['password'],
+            data['full_name'],
+            data.get('age'),
+            data.get('gender')
         )
         
-        try:
-            response_data = response.json()
-        except ValueError:
-            logger.error(f"Invalid JSON response from API: {response.text}")
-            return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
-        
-        if response.status_code == 200:
-            if response_data.get('success'):
-                session.permanent = True
-                session['token'] = 'firebase_token'  # Replace with actual token if using Firebase auth
-                session['email'] = email
-                session['user_id'] = response_data.get('user', {}).get('uid')
-                logger.debug(f"Session set after login: {session}")
-                
-                if response_data.get('quiz_completed', False):
-                    return jsonify({
-                        'success': True,
-                        'redirect': url_for('explore')
-                    })
-                else:
-                    return jsonify({
-                        'success': True,
-                        'redirect': url_for('questions')
-                    })
-            else:
-                error = response_data.get('error', 'Invalid credentials')
-                return jsonify({'success': False, 'error': error}), 401
-        elif response.status_code == 401 and response_data.get('verification_required'):
-            session['email'] = email
-            session['verification_pending'] = True
+        if not result['success']:
+            return jsonify(result), 400
+            
+        verification_token = generate_verification_token(data['email'])
+        if not send_verification_email(data['email'], verification_token):
             return jsonify({
                 'success': False,
-                'verification_required': True,
-                'email': email,
-                'message': 'Please verify your email before logging in'
-            })
-        else:
-            error = response_data.get('error', 'Login failed. Please try again.')
-            return jsonify({'success': False, 'error': error}), response.status_code
-            
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Login request failed: {str(e)}")
-        return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
+                'error': 'Failed to send verification email'
+            }), 500
+        
+        session.permanent = True
+        session['user_id'] = result['user']['id']
+        session['email'] = data['email']
+        logger.debug(f"Session set after signup: {session}")
+        
+        response = make_response(jsonify({
+            'success': True,
+            'message': 'Account created. Verification email sent.',
+            'user_id': result['user']['id']
+        }))
+        response.headers['Access-Control-Allow-Origin'] = 'https://ninakkai.com'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response, 201
+        
     except Exception as e:
-        logger.error(f"Unexpected error in login: {str(e)}")
-        return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
+        logger.error(f"Signup error: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'An error occurred during signup'}), 500
 
-def handle_signup():
+@app.route('/api/verify-email', methods=['POST'])
+def verify_email():
     try:
-        data = {
-            'email': request.form.get('email'),
-            'password': request.form.get('password'),
-            'full_name': request.form.get('full_name'),
-            'age': request.form.get('age', type=int),
-            'gender': request.form.get('gender')
-        }
+        data = request.get_json()
+        if not data or 'token' not in data:
+            return jsonify({'success': False, 'error': 'Missing verification token'}), 400
         
-        if not all([data['email'], data['password'], data['full_name']]):
-            return jsonify({'success': False, 'error': 'Please fill all required fields'}), 400
+        email = verify_token(data['token'])
+        if not email:
+            return jsonify({'success': False, 'error': 'Invalid or expired verification token'}), 400
         
-        if not validate_email(data['email']):
-            return jsonify({'success': False, 'error': 'Please enter a valid email address'}), 400
-        
-        if len(data['password']) < 8:
-            return jsonify({'success': False, 'error': 'Password must be at least 8 characters'}), 400
-        
-        response = requests.post(
-            urljoin(API_BASE_URL, '/api/signup'),
-            json=data,
-            headers={'Content-Type': 'application/json'},
-            timeout=API_TIMEOUT
-        )
-        
-        try:
-            response_data = response.json()
-        except ValueError:
-            logger.error(f"Invalid JSON response from API: {response.text}")
-            return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
-        
-        if response.status_code == 201:
-            if response_data.get('success'):
-                session.permanent = True
-                session['email'] = data['email']
-                session['verification_pending'] = True
-                session['signup_data'] = data
-                logger.debug(f"Session set after signup: {session}")
-                
-                return jsonify({
-                    'success': True,
-                    'verification_required': True,
-                    'email': data['email'],
-                    'message': 'Verification email sent! Please check your inbox.'
-                })
-            else:
-                error = response_data.get('error', 'Signup failed. Please try again.')
-                return jsonify({'success': False, 'error': error}), 400
-        else:
-            error = response_data.get('error', 'Signup failed. Please try again.')
-            return jsonify({'success': False, 'error': error}), response.status_code
+        user_data = mongo.get_user_by_email(email)
+        if not user_data:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
             
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Signup request failed: {str(e)}")
-        return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
+        mongo.update_user(user_data['id'], {'email_verified': True})
+        firebase.update_profile(user_data['id'], {'email_verified': True})
+        
+        response = make_response(jsonify({
+            'success': True,
+            'message': 'Email verified successfully'
+        }))
+        response.headers['Access-Control-Allow-Origin'] = 'https://ninakkai.com'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response
     except Exception as e:
-        logger.error(f"Unexpected error in signup: {str(e)}")
-        return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
+        logger.error(f"Verification error: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'An error occurred during verification'}), 500
 
+@app.route('/api/login', methods=['POST'])
+def login():
+    try:
+        data = request.get_json()
+        if not data or 'email' not in data or 'password' not in data:
+            return jsonify({'success': False, 'error': 'Missing email or password'}), 400
+
+        result = mongo.verify_user(data['email'], data['password'])
+        
+        if not result['success']:
+            if result.get('needs_verification'):
+                return jsonify({
+                    'success': False,
+                    'verification_required': True,
+                    'message': 'Please verify your email before logging in'
+                }), 401
+            return jsonify(result), 401
+
+        session.permanent = True
+        session['user_id'] = result['user']['id']
+        session['email'] = data['email']
+        logger.debug(f"Session set after login: {session}")
+        
+        firebase_user = firebase.get_user_profile(result['user']['id'])
+        quiz_completed = firebase_user.get('profile_complete', False) if firebase_user else False
+        
+        response = make_response(jsonify({
+            'success': True,
+            'user': result['user'],
+            'quiz_completed': quiz_completed
+        }))
+        response.headers['Access-Control-Allow-Origin'] = 'https://ninakkai.com'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response, 200
+            
+    except Exception as e:
+        logger.error(f"Login error: {str(e)}")
+        return jsonify({'success': False, 'error': 'An error occurred during login'}), 500
+
+@app.route('/api/resend-verification', methods=['POST'])
 def resend_verification():
     try:
-        email = request.json.get('email') or session.get('email')
+        data = request.get_json()
+        email = data.get('email')
         if not email:
             return jsonify({'success': False, 'error': 'No email provided'}), 400
         
-        response = requests.post(
-            urljoin(API_BASE_URL, '/api/resend-verification'),
-            json={'email': email},
-            headers={'Content-Type': 'application/json'},
-            timeout=API_TIMEOUT
-        )
-        
-        try:
-            response_data = response.json()
-        except ValueError:
-            logger.error(f"Invalid JSON response from API: {response.text}")
-            return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
-        
-        if response.status_code == 200:
-            session['verification_pending'] = True
-            session['email'] = email
+        verification_token = generate_verification_token(email)
+        if not send_verification_email(email, verification_token):
             return jsonify({
-                'success': True,
-                'message': 'Verification email resent successfully!'
-            })
-        else:
-            error = response_data.get('error', 'Failed to resend verification email.')
-            return jsonify({'success': False, 'error': error}), response.status_code
-            
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Resend verification request failed: {str(e)}")
-        return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
+                'success': False,
+                'error': 'Failed to resend verification email'
+            }), 500
+        
+        response = make_response(jsonify({
+            'success': True,
+            'message': 'Verification email resent successfully'
+        }))
+        response.headers['Access-Control-Allow-Origin'] = 'https://ninakkai.com'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response
     except Exception as e:
-        logger.error(f"Unexpected error in resend verification: {str(e)}")
-        return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
+        logger.error(f"Resend verification error: {str(e)}")
+        return jsonify({'success': False, 'error': 'An error occurred while resending verification'}), 500
 
-def validate_email(email):
-    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
-
-def check_quiz_status():
+@app.route('/api/logout', methods=['POST'])
+@login_required
+def logout():
     try:
-        if 'user_id' not in session:
-            logger.debug("No user_id in session for quiz status check")
-            return {'quiz_completed': False}
-        
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        response = requests.get(
-            urljoin(API_BASE_URL, f"/api/profile"),
-            headers=headers,
-            timeout=API_TIMEOUT
-        )
-        
-        if response.status_code == 200:
-            response_data = response.json()
-            if response_data.get('success'):
-                return {'quiz_completed': response_data.get('quiz_completed', False)}
-    
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Quiz status check failed: {str(e)}")
-    
-    return {'quiz_completed': False}
+        session.clear()
+        response = make_response(jsonify({'success': True, 'message': 'Logged out successfully'}))
+        response.set_cookie('for_you_session', '', expires=0)
+        response.headers['Access-Control-Allow-Origin'] = 'https://ninakkai.com'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response, 200
+    except Exception as e:
+        logger.error(f"Logout error: {str(e)}")
+        return jsonify({'success': False, 'error': 'An error occurred during logout'}), 500
 
-@app.route('/verify-email')
-def verify_email_endpoint():
-    token = request.args.get('token')
-    if not token:
-        return redirect(url_for('auth', error='Invalid verification link'))
-    
+@app.route('/api/profile', methods=['GET'])
+@login_required
+def get_profile():
     try:
-        response = requests.post(
-            urljoin(API_BASE_URL, '/api/verify-email'),
-            json={'token': token},
-            headers={'Content-Type': 'application/json'},
-            timeout=API_TIMEOUT
-        )
-        
-        try:
-            response_data = response.json()
-        except ValueError:
-            logger.error(f"Invalid JSON response from API: {response.text}")
-            return redirect(url_for('auth', error='Invalid response from server'))
-        
-        if response.status_code == 200 and response_data.get('success'):
-            resp = make_response(redirect(url_for('auth')))
-            resp.set_cookie('email_verified', '1', max_age=60)
-            return resp
-        else:
-            error = response_data.get('error', 'Verification failed. Please try again.')
-            return redirect(url_for('auth', error=error))
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Verification API request failed: {str(e)}")
-        return redirect(url_for('auth', error='Verification service unavailable. Please try again later.'))
+        user_id = session['user_id']
+        profile = firebase.get_user_profile(user_id)
+        if profile:
+            response = make_response(jsonify({
+                'success': True, 
+                'profile': profile,
+                'quiz_completed': profile.get('profile_complete', False)
+            }))
+            response.headers['Access-Control-Allow-Origin'] = 'https://ninakkai.com'
+            response.headers['Access-Control-Allow-Credentials'] = 'true'
+            return response, 200
+        return jsonify({'success': False, 'error': 'Profile not found'}), 404
+    except Exception as e:
+        logger.error(f"Get profile error: {str(e)}")
+        return jsonify({'success': False, 'error': 'An error occurred while fetching profile'}), 500
 
-@app.route('/explore')
-def explore():
-    if 'user_id' not in session:
-        logger.debug("No user_id in session for /explore")
-        return redirect(url_for('auth'))
-    
+@app.route('/api/profile/update', methods=['POST'])
+@login_required
+def update_profile():
     try:
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        response = requests.get(
-            urljoin(API_BASE_URL, '/api/matches'),
-            headers=headers,
-            timeout=API_TIMEOUT
-        )
+        user_id = session['user_id']
+        data = request.get_json()
         
-        matches = []
-        if response.status_code == 200:
-            response_data = response.json()
-            if response_data.get('success'):
-                matches = response_data.get('matches', [])
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
         
-        return render_template('explore.html', matches=matches)
-    
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Explore request failed: {str(e)}")
-        return render_template('explore.html', matches=[])
+        allowed_fields = ['full_name', 'age', 'gender', 'bio', 'interests', 'location']
+        update_data = {k: v for k, v in data.items() if k in allowed_fields and v is not None}
+        
+        result = firebase.update_profile(user_id, update_data)
+        response = make_response(jsonify(result))
+        response.headers['Access-Control-Allow-Origin'] = 'https://ninakkai.com'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response, 200 if result['success'] else 400
+    except Exception as e:
+        logger.error(f"Update profile error: {str(e)}")
+        return jsonify({'success': False, 'error': 'An error occurred while updating profile'}), 500
 
-@app.route('/chat')
-def chat():
-    if 'user_id' not in session:
-        logger.debug("No user_id in session for /chat")
-        return redirect(url_for('auth'))
-    
-    try:
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        response = requests.get(
-            urljoin(API_BASE_URL, '/api/chats'),
-            headers=headers,
-            timeout=API_TIMEOUT
-        )
-        
-        chats = []
-        if response.status_code == 200:
-            response_data = response.json()
-            if response_data.get('success'):
-                chats = response_data.get('chats', [])
-        
-        return render_template('chat.html', chats=chats)
-    
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Chat request failed: {str(e)}")
-        return render_template('chat.html', chats=[])
-
-@app.route('/profile')
-def profile():
-    if 'user_id' not in session:
-        logger.debug("No user_id in session for /profile")
-        return redirect
-
-(url_for('auth'))
-    
-    try:
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        response = requests.get(
-            urljoin(API_BASE_URL, '/api/profile'),
-            headers=headers,
-            timeout=API_TIMEOUT
-        )
-        
-        profile_data = {}
-        if response.status_code == 200:
-            response_data = response.json()
-            if response_data.get('success'):
-                profile_data = response_data.get('profile', {})
-        
-        return render_template('profile.html', profile=profile_data)
-    
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Profile request failed: {str(e)}")
-        return render_template('profile.html', profile={})
-
-@app.route('/questions', methods=['GET'])
-def questions():
-    logger.debug(f"Session in /questions: {session}")
-    if 'user_id' not in session:
-        logger.debug("No user_id in session for /questions")
-        return redirect(url_for('auth'))
-    
-    quiz_status = check_quiz_status()
-    if quiz_status.get('quiz_completed', False):
-        return redirect(url_for('explore'))
-    
-    return render_template('questions.html')
+@app.route('/api/quiz/submit', methods=['OPTIONS'])
+def quiz_options():
+    response = make_response()
+    response.headers.add("Access-Control-Allow-Origin", "https://ninakkai.com")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+    response.headers.add("Access-Control-Allow-Methods", "POST")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    return response
 
 @app.route('/api/quiz/submit', methods=['POST'])
+@login_required
 def submit_quiz():
-    logger.debug(f"Session data: {session}")
     logger.debug(f"Incoming cookies: {request.cookies}")
+    logger.debug(f"Session data: {session}")
     if 'user_id' not in session:
-        logger.error("No user_id in session")
-        return jsonify({'success': False, 'error': 'Authentication required'}), 401
+        response = make_response(jsonify({'success': False, 'error': 'Unauthorized'}))
+        response.headers['Access-Control-Allow-Origin'] = 'https://ninakkai.com'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response, 401
     
     data = request.get_json()
     if not data or 'answers' not in data:
         return jsonify({'success': False, 'error': 'Missing answers data'}), 400
-    
-    try:
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        
-        response = requests.post(
-            urljoin(API_BASE_URL, '/api/quiz/submit'),
-            json={
-                'answers': data['answers'],
-                'user_id': session['user_id']
-            },
-            headers=headers,
-            timeout=API_TIMEOUT
-        )
-        
-        try:
-            response_data = response.json()
-        except ValueError:
-            logger.error(f"Invalid JSON response from API: {response.text}")
-            return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
-        
-        if response.status_code == 200:
-            if response_data.get('success'):
-                return jsonify({'success': True})
-            else:
-                error = response_data.get('error', 'Quiz submission failed')
-                return jsonify({'success': False, 'error': error}), 400
-        else:
-            error = response_data.get('error', 'Quiz submission failed')
-            return jsonify({'success': False, 'error': error}), response.status_code
-            
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Quiz submission failed: {str(e)}")
-        return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
 
-@app.route('/logout')
-def logout():
-    if 'user_id' in session:
-        try:
-            headers = {
-                'Content-Type': 'application/json'
-            }
-            requests.post(
-                urljoin(API_BASE_URL, '/api/logout'),
-                headers=headers,
-                timeout=API_TIMEOUT
-            )
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Logout request failed: {str(e)}")
-        
-        session.clear()
+    user_id = session['user_id']
+    logger.debug(f"Processing quiz for user: {user_id}")
     
-    return redirect(url_for('index'))
+    result = mongo.save_quiz_results(user_id, data['answers'])
+    
+    if not result['success']:
+        return jsonify(result), 400
+
+    firebase.update_profile(user_id, {
+        'profile_complete': True,
+        'personality_profile': result.get('scores', {})
+    })
+    
+    response = make_response(jsonify({
+        'success': True,
+        'message': 'Quiz submitted successfully',
+        'redirect_url': '/explore',
+        'personality_type': result.get('personality_type', ''),
+        'compatibility_matches': result.get('compatibility_matches', [])
+    }))
+    response.headers['Access-Control-Allow-Origin'] = 'https://ninakkai.com'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response, 200
+        
+@app.route('/api/matches', methods=['GET'])
+@login_required
+def get_matches():
+    try:
+        user_id = session['user_id']
+        limit = request.args.get('limit', default=10, type=int)
+
+        matches = firebase.find_matches(user_id, limit)
+        response = make_response(jsonify({'success': True, 'matches': matches}))
+        response.headers['Access-Control-Allow-Origin'] = 'https://ninakkai.com'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response, 200
+    except Exception as e:
+        logger.error(f"Get matches error: {str(e)}")
+        return jsonify({'success': False, 'error': 'An error occurred while fetching matches'}), 500
+
+@app.route('/api/chat/create', methods=['POST'])
+@login_required
+def create_chat():
+    try:
+        user_id = session['user_id']
+        data = request.get_json()
+        
+        if not data or 'other_user_id' not in data:
+            return jsonify({'success': False, 'error': 'Missing other user ID'}), 400
+        
+        result = firebase.create_chat(user_id, data['other_user_id'])
+        response = make_response(jsonify(result))
+        response.headers['Access-Control-Allow-Origin'] = 'https://ninakkai.com'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response, 200 if result['success'] else 400
+    except Exception as e:
+        logger.error(f"Create chat error: {str(e)}")
+        return jsonify({'success': False, 'error': 'An error occurred while creating chat'}), 500
+
+@app.route('/api/chat/send', methods=['POST'])
+@login_required
+def send_message():
+    try:
+        user_id = session['user_id']
+        data = request.get_json()
+        
+        if not data or 'chat_id' not in data or 'message' not in data:
+            return jsonify({'success': False, 'error': 'Missing chat ID or message'}), 400
+        
+        result = firebase.send_message(data['chat_id'], user_id, data['message'])
+        response = make_response(jsonify(result))
+        response.headers['Access-Control-Allow-Origin'] = 'https://ninakkai.com'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response, 200 if result['success'] else 400
+    except Exception as e:
+        logger.error(f"Send message error: {str(e)}")
+        return jsonify({'success': False, 'error': 'An error occurred while sending message'}), 500
+
+@app.route('/api/chat/messages', methods=['GET'])
+@login_required
+def get_chat_messages():
+    try:
+        chat_id = request.args.get('chat_id')
+        limit = request.args.get('limit', default=50, type=int)
+        
+        if not chat_id:
+            return jsonify({'success': False, 'error': 'Missing chat ID'}), 400
+        
+        messages = firebase.get_chat_messages(chat_id, limit)
+        response = make_response(jsonify({'success': True, 'messages': messages}))
+        response.headers['Access-Control-Allow-Origin'] = 'https://ninakkai.com'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response, 200
+    except Exception as e:
+        logger.error(f"Get messages error: {str(e)}")
+        return jsonify({'success': False, 'error': 'An error occurred while fetching messages'}), 500
+
+@app.route('/api/chats', methods=['GET'])
+@login_required
+def get_user_chats():
+    try:
+        user_id = session['user_id']
+        chats = firebase.get_user_chats(user_id)
+        response = make_response(jsonify({'success': True, 'chats': chats}))
+        response.headers['Access-Control-Allow-Origin'] = 'https://ninakkai.com'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response, 200
+    except Exception as e:
+        logger.error(f"Get chats error: {str(e)}") 
+        return jsonify({'success': False, 'error': 'An error occurred while fetching chats'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5050)
