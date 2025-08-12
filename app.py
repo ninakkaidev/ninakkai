@@ -42,16 +42,16 @@ def auth():
     if email_verified:
         verification_success = True
         resp = make_response(render_template('auth.html', 
-                         verification_sent=verification_pending,
-                         verification_success=verification_success,
-                         email=email))
+                                            verification_sent=verification_pending,
+                                            verification_success=verification_success,
+                                            email=email))
         resp.set_cookie('email_verified', '', expires=0)
         return resp
     
     return render_template('auth.html', 
-                         verification_sent=verification_pending,
-                         verification_success=False,
-                         email=email)
+                          verification_sent=verification_pending,
+                          verification_success=False,
+                          email=email)
 
 def handle_login():
     try:
@@ -331,9 +331,7 @@ def chat():
 def profile():
     if 'user_id' not in session:
         logger.debug("No user_id in session for /profile")
-        return redirect
-
-(url_for('auth'))
+        return redirect(url_for('auth'))
     
     try:
         headers = {
