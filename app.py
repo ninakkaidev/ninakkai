@@ -18,7 +18,11 @@ app.config['SESSION_COOKIE_NAME'] = 'session'
 app.config['SESSION_COOKIE_PATH'] = '/'
 
 # Configure CORS
-CORS(app, supports_credentials=True, origins=['https://routinely-positive-rattler.ngrok-free.app', 'http://localhost:5000'])
+CORS(app, supports_credentials=True, origins=[
+    'https://routinely-positive-rattler.ngrok-free.app',
+    'http://localhost:5000',
+    'https://client1-ez5pxwg0k-ashiks-projects-05a199d3.vercel.app'
+])
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -103,13 +107,15 @@ def handle_login():
                 session.permanent = True
                 session['email'] = email
                 session['user_id'] = response_data.get('user', {}).get('id')  # Use 'id' from API
-                session.modified = True  # Ensure session is marked as modified
+                session.modified = True
                 logger.debug(f"Session set after login: {session}")
                 
-                return jsonify({
+                resp = make_response(jsonify({
                     'success': True,
                     'redirect': url_for('explore') if response_data.get('quiz_completed', False) else url_for('questions')
-                })
+                }))
+                resp.set_cookie('session', session.sid, max_age=86400, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
+                return resp
             else:
                 error = response_data.get('error', 'Invalid credentials')
                 return jsonify({'success': False, 'error': error}), 401
@@ -118,12 +124,14 @@ def handle_login():
             session['verification_pending'] = True
             session.modified = True
             logger.debug(f"Session set for verification: {session}")
-            return jsonify({
+            resp = make_response(jsonify({
                 'success': False,
                 'verification_required': True,
                 'email': email,
                 'message': 'Please verify your email before logging in'
-            })
+            }))
+            resp.set_cookie('session', session.sid, max_age=86400, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
+            return resp
         else:
             error = response_data.get('error', 'Login failed. Please try again.')
             return jsonify({'success': False, 'error': error}), response.status_code
@@ -176,12 +184,14 @@ def handle_signup():
                 session.modified = True
                 logger.debug(f"Session set after signup: {session}")
                 
-                return jsonify({
+                resp = make_response(jsonify({
                     'success': True,
                     'verification_required': True,
                     'email': data['email'],
                     'message': 'Verification email sent! Please check your inbox.'
-                })
+                }))
+                resp.set_cookie('session', session.sid, max_age=86400, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
+                return resp
             else:
                 error = response_data.get('error', 'Signup failed. Please try again.')
                 return jsonify({'success': False, 'error': error}), 400
@@ -220,10 +230,12 @@ def resend_verification():
             session['email'] = email
             session.modified = True
             logger.debug(f"Session set after resend: {session}")
-            return jsonify({
+            resp = make_response(jsonify({
                 'success': True,
                 'message': 'Verification email resent successfully!'
-            })
+            }))
+            resp.set_cookie('session', session.sid, max_age=86400, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
+            return resp
         else:
             error = response_data.get('error', 'Failed to resend verification email.')
             return jsonify({'success': False, 'error': error}), response.status_code
@@ -303,6 +315,7 @@ def verify_email_endpoint():
             session.modified = True
             resp = make_response(redirect(url_for('auth')))
             resp.set_cookie('email_verified', '1', max_age=60)
+            resp.set_cookie('session', session.sid, max_age=86400, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
             return resp
         else:
             error = response_data.get('error', 'Verification failed. Please try again.')
@@ -468,7 +481,7 @@ def logout():
         
         session.clear()
         resp = make_response(redirect(url_for('index')))
-        resp.set_cookie('session', '', expires=0)
+        resp.set_cookie('session', '', expires=0, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
         return resp
     
     return redirect(url_for('index'))
