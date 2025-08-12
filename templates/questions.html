@@ -774,14 +774,13 @@
       type: item.type
     }));
 
-    // Enhanced fetch with error handling and session verification
-    fetch('/questions', {
+    fetch('/api/quiz/submit', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ answers: answersToSubmit }),
-      credentials: 'include'  // Crucial for sending cookies
+      credentials: 'include'  // Important for session cookies
     })
     .then(response => {
       if (response.status === 401) {
@@ -791,7 +790,7 @@
         return Promise.reject('Unauthorized');
       }
       if (!response.ok) {
-        return Promise.reject('Network response was not ok');
+        return response.json().then(err => Promise.reject(err));
       }
       return response.json();
     })

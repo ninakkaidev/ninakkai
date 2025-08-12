@@ -351,46 +351,62 @@ def profile():
         logger.error(f"Profile request failed: {str(e)}")
         return render_template('profile.html', profile={})
 
-@app.route('/questions', methods=['GET', 'POST'])
+@app.route('/questions', methods=['GET'])
 def questions():
     if 'user_id' not in session:
         return redirect(url_for('auth'))
     
-    if request.method == 'POST':
-        data = request.get_json()
-        if not data or 'answers' not in data:
-            return jsonify({'success': False, 'error': 'Missing answers data'}), 400
-        
-        try:
-            # Use the same session as the Flask app
-            with requests.Session() as s:
-                # Copy cookies from current session
-                s.cookies.update(request.cookies)
-                
-                response = s.post(
-                    urljoin(API_BASE_URL, '/api/quiz/submit'),
-                    json={'answers': data['answers']},
-                    headers={'Content-Type': 'application/json'},
-                    timeout=API_TIMEOUT
-                )
-                
-            try:
-                response_data = response.json()
-            except ValueError:
-                logger.error(f"Invalid JSON response from API: {response.text}")
-                return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
-            
-            if response.status_code == 200:
-                return jsonify(response_data)
-            else:
-                error = response_data.get('error', 'Quiz submission failed')
-                return jsonify({'success': False, 'error': error}), response.status_code
-                
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Quiz submission failed: {str(e)}")
-            return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
+    # Check if user has already completed the quiz
+    quiz_status = check_quiz_status()
+    if quiz_status.get('quiz_completed', False):
+        return redirect(url_for('explore'))
     
     return render_template('questions.html')
+
+@app.route('/api/quiz/submit', methods=['POST'])
+def submit_quiz():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
+    
+    data = request.get_json()
+    if not data or 'answers' not in data:
+        return jsonify({'success': False, 'error': 'Missing answers data'}), 400
+    
+    try:
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f"Bearer {session.get('token', '')}"
+        }
+        
+        response = requests.post(
+            urljoin(API_BASE_URL, '/api/quiz/submit'),
+            json={
+                'answers': data['answers'],
+                'user_id': session['user_id']
+            },
+            headers=headers,
+            timeout=API_TIMEOUT
+        )
+        
+        try:
+            response_data = response.json()
+        except ValueError:
+            logger.error(f"Invalid JSON response from API: {response.text}")
+            return jsonify({'success': False, 'error': 'Invalid response from server'}), 500
+        
+        if response.status_code == 200:
+            if response_data.get('success'):
+                return jsonify({'success': True})
+            else:
+                error = response_data.get('error', 'Quiz submission failed')
+                return jsonify({'success': False, 'error': error}), 400
+        else:
+            error = response_data.get('error', 'Quiz submission failed')
+            return jsonify({'success': False, 'error': error}), response.status_code
+            
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Quiz submission failed: {str(e)}")
+        return jsonify({'success': False, 'error': 'Connection error. Please try again later.'}), 500
 
 @app.route('/logout')
 def logout():
