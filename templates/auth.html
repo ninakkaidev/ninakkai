@@ -772,18 +772,18 @@
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
                         },
-                        credentials: 'include'
+                        credentials: 'include'  // Ensure cookies are sent
                     });
                     const data = await response.json();
                     if (data.success) {
                         // Check quiz status
-                        const quizResponse = await fetch('{{ url_for("check_quiz_status") }}', {
+                        const quizResponse = await fetch('{{ url_for("check_quiz_status_endpoint") }}', {
                             method: 'GET',
                             headers: {
                                 'Accept': 'application/json',
                                 'X-Requested-With': 'XMLHttpRequest'
                             },
-                            credentials: 'include'
+                            credentials: 'include'  // Ensure cookies are sent
                         });
                         const quizData = await quizResponse.json();
                         window.location.href = quizData.quiz_completed ? '{{ url_for("explore") }}' : '{{ url_for("questions") }}';
@@ -821,7 +821,7 @@
                             form_type: 'resend_verification',
                             email: email
                         }),
-                        credentials: 'include'
+                        credentials: 'include'  // Ensure cookies are sent
                     });
                     
                     const data = await response.json();
@@ -1003,7 +1003,7 @@
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
                         },
-                        credentials: 'include'
+                        credentials: 'include'  // Ensure cookies are sent
                     });
                     
                     const data = await response.json();
@@ -1050,7 +1050,7 @@
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
                         },
-                        credentials: 'include'
+                        credentials: 'include'  // Ensure cookies are sent
                     });
                     
                     const data = await response.json();
