@@ -425,461 +425,482 @@
 </div>
 
 <script>
-  const requiredQuestions = [
-    { 
-      question: "When you're falling in love, you usually feel...", 
-      answers: [
-        "Safe and calm inside",
-        "Excited and full of butterflies",
-        "Like I've found someone truly rare",
-        "Scared of being too vulnerable"
-      ],
-      types: ["👂 Listener", "💘 Romantic", "🌙 Dreamer", "🛡️ Protector"]
-    },
-    { 
-      question: "Arrange these in order of importance in a relationship:", 
-      answers: [
-        "Trust",
-        "Emotional connection",
-        "Shared goals",
-        "Physical intimacy"
-      ],
-      types: ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "💘 Romantic"],
-      isRankQuestion: true
-    },
-    { 
-      question: "What kind of emotional support feels most comforting to you?", 
-      answers: [
-        "Someone silently sitting with me through pain",
-        "Someone helping me fix the situation",
-        "Someone saying exactly the right words",
-        "Someone holding me tight without speaking"
-      ],
-      types: ["🌿 Nurturer", "🛡️ Protector", "👂 Listener", "💘 Romantic"]
-    },
-    { 
-      question: "In a disagreement with someone you care about, you...", 
-      answers: [
-        "Try to stay calm and really listen",
-        "Express your emotions openly",
-        "Try to solve it quickly and move on",
-        "Take it personally and overthink it"
-      ],
-      types: ["👂 Listener", "💘 Romantic", "🛡️ Protector", "🌙 Dreamer"]
-    },
-    { 
-      question: "How do you want others to describe you?", 
-      answers: [
-        "Kind and soft",
-        "Strong and independent",
-        "Perfect and without flaws",
-        "Honest and growing"
-      ],
-      types: ["🌿 Nurturer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
-    },
-    { 
-      question: "What do you crave most in a relationship?", 
-      answers: [
-        "Peace and emotional safety",
-        "Excitement and mystery",
-        "Growth and learning together",
-        "Feeling truly known and accepted"
-      ],
-      types: ["🌿 Nurturer", "💘 Romantic", "🌟 Idealist", "🌙 Dreamer"]
-    },
-    { 
-      question: "What makes you feel emotionally alive in love?", 
-      answers: [
-        "Deep, late-night emotional conversations",
-        "Intense physical closeness and passion",
-        "When someone notices the little things",
-        "Solving life's problems together"
-      ],
-      types: ["🌙 Dreamer", "💘 Romantic", "🌿 Nurturer", "🛡️ Protector"]
-    },
-    { 
-      question: "When you feel deeply hurt, you usually...", 
-      answers: [
-        "Cry or let it out",
-        "Get silent and withdraw",
-        "Keep busy to avoid it",
-        "Talk it out with someone trusted"
-      ],
-      types: ["🌙 Dreamer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
-    },
-    { 
-      question: "What does financial stability mean to you in a relationship?", 
-      answers: [
-        "Freedom to spend and still save together",
-        "Clear roles — one earns, one manages",
-        "Always discuss big spending decisions",
-        "Having separate money but shared goals"
-      ],
-      types: ["🛡️ Protector", "👂 Listener", "🌿 Nurturer", "🌟 Idealist"]
-    },
-    { 
-      question: "How do you usually show someone that you love them?", 
-      answers: [
-        "I check in on their feelings often",
-        "I protect them and help solve their problems",
-        "I write, say, or express how much I care",
-        "I give them space but make sure I'm always there"
-      ],
-      types: ["🌿 Nurturer", "🛡️ Protector", "💘 Romantic", "👂 Listener"]
-    }
-  ];
-
-  const optionalQuestions = [
-    { 
-      question: "You see your partner being emotionally close to a friend. You feel…", 
-      answers: [
-        "Curious and ask openly",
-        "Completely fine",
-        "A little jealous but trust them",
-        "Insecure and silent"
-      ],
-      types: ["🌿 Nurturer", "👂 Listener", "💘 Romantic", "🛡️ Protector"]
-    },
-    { 
-      question: "Your partner has a serious conflict with your family. You...", 
-      answers: [
-        "Support your partner but stay neutral",
-        "Try to fix the situation without taking sides",
-        "Defend your family — they raised me",
-        "Fully support my partner, even if it causes tension"
-      ],
-      types: ["👂 Listener", "🌿 Nurturer", "🛡️ Protector", "🌙 Dreamer"]
-    },
-    { 
-      question: "How do you handle emotional overwhelm?", 
-      answers: [
-        "Talk it out immediately",
-        "Need space to calm down",
-        "Write or reflect privately",
-        "Look for distraction or activity"
-      ],
-      types: ["👂 Listener", "🛡️ Protector", "🌙 Dreamer", "🌟 Idealist"]
-    },
-    { 
-      question: "What's your biggest fear in love?", 
-      answers: [
-        "Being misunderstood",
-        "Losing emotional connection",
-        "Getting hurt or rejected",
-        "Not being able to protect the person I love"
-      ],
-      types: ["🌟 Idealist", "👂 Listener", "🌙 Dreamer", "🛡️ Protector"]
-    },
-    { 
-      question: "What do you quietly need most in a relationship?", 
-      answers: [
-        "To feel safe and protected",
-        "To be emotionally understood",
-        "To give and receive open affection",
-        "To be accepted without pressure"
-      ],
-      types: ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "👂 Listener"]
-    },
-    { 
-      question: "Which quality do you most admire in a partner?", 
-      answers: [
-        "Loyalty",
-        "Compassion",
-        "Passion",
-        "Wisdom"
-      ],
-      types: ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "🌟 Idealist"]
-    }
-  ];
-
-  const animationList = [
-    "animate__fadeInUp", "animate__fadeInDown", "animate__zoomIn",
-    "animate__slideInLeft", "animate__slideInRight", "animate__bounceIn",
-    "animate__flipInX", "animate__lightSpeedInLeft", "animate__backInUp", "animate__fadeInTopLeft"
-  ];
-
-  let currentQuestionIndex = 0;
-  let selectedAnswers = [];
-  let isInOptionalSection = false;
-  let currentRank = 1;
-
-  window.onload = () => {
-    document.getElementById('btn-start').addEventListener('click', startQuiz);
-    document.getElementById('btn-yes').addEventListener('click', startOptionalQuestions);
-    document.getElementById('btn-no').addEventListener('click', skipOptionalQuestions);
-    document.getElementById('btn-explore').addEventListener('click', () => {
-      window.location.href = '/explore';
-    });
-
-    // Check for saved answers in sessionStorage
-    const savedAnswers = sessionStorage.getItem('quiz_answers');
-    if (savedAnswers) {
-      selectedAnswers = JSON.parse(savedAnswers);
-      sessionStorage.removeItem('quiz_answers'); // Clear after loading
-    }
-
-    // Fetch session data to verify user is logged in
-    fetch('/api/check-session', {
-      method: 'GET',
-      credentials: 'include'
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (!data.success) {
-        sessionStorage.setItem('quiz_answers', JSON.stringify(selectedAnswers));
-        window.location.href = '/auth';
-      }
-    })
-    .catch(error => {
-      console.error('Error checking session:', error);
+  document.addEventListener('DOMContentLoaded', async function() {
+    // First check session
+    const sessionCheck = await checkSession();
+    if (!sessionCheck.success) {
       window.location.href = '/auth';
-    });
-  };
+      return;
+    }
 
-  function startQuiz() {
-    document.getElementById('intro-container').style.display = 'none';
-    document.getElementById('qa-container').style.display = 'block';
-    document.getElementById('section-title').textContent = "What Kind of Partner Are You Emotionally?";
-    document.getElementById('section-description').textContent = "These 10 questions reveal your emotional personality — the way you love, feel, and respond in relationships. This helps us match you with people who emotionally connect with you.";
-    loadQuestion(currentQuestionIndex);
-  }
-
-  function loadQuestion(index) {
+    // DOM Elements
+    const introContainer = document.getElementById('intro-container');
+    const qaContainer = document.getElementById('qa-container');
+    const btnStart = document.getElementById('btn-start');
     const questionEl = document.getElementById('question');
     const answersBox = document.getElementById('answers');
     const progressBar = document.getElementById('progress-bar');
-    const questionBox = document.getElementById('question-box');
-    const instructionsEl = document.getElementById('rank-instructions');
-    const questions = isInOptionalSection ? optionalQuestions : requiredQuestions;
-    
-    if (index < questions.length) {
-      questionBox.className = `question-box animate__animated ${animationList[index % animationList.length]}`;
-      questionEl.innerText = questions[index].question;
-      answersBox.innerHTML = '';
-      instructionsEl.textContent = '';
+    const sectionTitle = document.getElementById('section-title');
+    const sectionDescription = document.getElementById('section-description');
+    const optionalSection = document.getElementById('optional-section');
+    const finalScreen = document.getElementById('final-screen');
+    const btnYes = document.getElementById('btn-yes');
+    const btnNo = document.getElementById('btn-no');
+    const btnExplore = document.getElementById('btn-explore');
+    const rankInstructions = document.getElementById('rank-instructions');
 
-      if (questions[index].isRankQuestion) {
-        answersBox.className = 'rank-container';
-        instructionsEl.textContent = "Click to select your most important to least important (1-4). Click again to unselect.";
-        
-        const submitBtn = document.createElement('button');
-        submitBtn.className = 'rank-submit';
-        submitBtn.textContent = 'Continue';
-        submitBtn.onclick = () => handleRankSubmit(questions[index]);
-        
-        questions[index].answers.forEach((answer, i) => {
-          const item = document.createElement('div');
-          item.className = 'rank-item';
-          item.textContent = answer;
-          item.dataset.type = questions[index].types[i];
-          item.dataset.selected = 'false';
-          item.dataset.rank = '0';
-          item.onclick = () => toggleRankSelection(item);
-          answersBox.appendChild(item);
-        });
-        
-        answersBox.appendChild(submitBtn);
-      } else {
-        answersBox.className = 'answers';
-        questions[index].answers.forEach((answer, i) => {
-          const btn = document.createElement('button');
-          btn.textContent = answer;
-          btn.onclick = () => {
-            selectedAnswers.push({
-              answer: answer,
-              type: questions[index].types[i]
-            });
-            nextQuestion();
-          };
-          answersBox.appendChild(btn);
-        });
-      }
-
-      const totalQuestions = isInOptionalSection ? 
-        requiredQuestions.length + optionalQuestions.length : 
-        requiredQuestions.length;
-      const answeredQuestions = isInOptionalSection ? 
-        requiredQuestions.length + index : 
-        index;
-      progressBar.style.width = `${(answeredQuestions / totalQuestions) * 100}%`;
-    } else {
-      if (!isInOptionalSection) {
-        document.getElementById('optional-section').style.display = 'block';
-        document.getElementById('question-box').style.display = 'none';
-      } else {
-        showFinalScreen();
-      }
-    }
-  }
-
-  function toggleRankSelection(item) {
-    const isSelected = item.dataset.selected === 'true';
-    
-    if (isSelected) {
-      item.dataset.selected = 'false';
-      item.classList.remove('selected');
-      
-      const rankNumber = item.querySelector('.rank-number');
-      if (rankNumber) {
-        item.removeChild(rankNumber);
-      }
-      
-      const currentRankNum = parseInt(item.dataset.rank);
-      if (currentRankNum === currentRank - 1) {
-        currentRank--;
-      }
-      
-      item.dataset.rank = '0';
-    } else {
-      if (currentRank > 4) return;
-      
-      item.dataset.selected = 'true';
-      item.dataset.rank = currentRank.toString();
-      item.classList.add('selected');
-      
-      let rankNumber = item.querySelector('.rank-number');
-      if (!rankNumber) {
-        rankNumber = document.createElement('div');
-        rankNumber.className = 'rank-number';
-        item.appendChild(rankNumber);
-      }
-      rankNumber.textContent = currentRank;
-      
-      currentRank++;
-    }
-  }
-  
-  function handleRankSubmit(question) {
-    const rankItems = document.querySelectorAll('.rank-item');
-    const rankedItems = Array.from(rankItems)
-      .filter(item => item.dataset.rank !== '0')
-      .sort((a, b) => parseInt(a.dataset.rank) - parseInt(b.dataset.rank));
-    
-    if (rankedItems.length > 0) {
-      selectedAnswers.push({
-        answer: "Ranked: " + rankedItems.map(item => `${item.dataset.rank}. ${item.textContent}`).join(", "),
-        type: rankedItems[0].dataset.type
-      });
-    } else {
-      selectedAnswers.push({
-        answer: question.answers[0],
-        type: question.types[0]
-      });
-    }
-    
-    currentRank = 1;
-    nextQuestion();
-  }
-
-  function nextQuestion() {
-    currentQuestionIndex++;
-    const questions = isInOptionalSection ? optionalQuestions : requiredQuestions;
-    
-    if (currentQuestionIndex < questions.length) {
-      loadQuestion(currentQuestionIndex);
-    } else {
-      if (!isInOptionalSection) {
-        document.getElementById('optional-section').style.display = 'block';
-        document.getElementById('question-box').style.display = 'none';
-      } else {
-        showFinalScreen();
-      }
-    }
-  }
-
-  function startOptionalQuestions() {
-    document.getElementById('optional-section').style.display = 'none';
-    document.getElementById('question-box').style.display = 'block';
-    isInOptionalSection = true;
-    currentQuestionIndex = 0;
-    document.getElementById('section-title').textContent = "Want Deeper Matches? (Optional)";
-    document.getElementById('section-description').textContent = "These 6 extra questions help us detect emotional maturity, depth, and hidden traits. They refine your results — but only if you choose to answer them.";
-    loadQuestion(currentQuestionIndex);
-  }
-
-  function skipOptionalQuestions() {
-    showFinalScreen();
-  }
-
-  function showFinalScreen() {
-    document.getElementById('qa-content').style.display = 'none';
-    document.getElementById('final-screen').style.display = 'block';
-    document.getElementById('progress-bar').style.width = `100%`;
-
-    const answersToSubmit = selectedAnswers.map(item => ({
-      answer: item.answer,
-      type: item.type
-    }));
-
-    fetch('/api/quiz/submit', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Session-ID': document.cookie.split('; ').find(row => row.startsWith('session_id'))?.split('=')[1] || ''
+    // Quiz data
+    const requiredQuestions = [
+      { 
+        question: "When you're falling in love, you usually feel...", 
+        answers: [
+          "Safe and calm inside",
+          "Excited and full of butterflies",
+          "Like I've found someone truly rare",
+          "Scared of being too vulnerable"
+        ],
+        types: ["👂 Listener", "💘 Romantic", "🌙 Dreamer", "🛡️ Protector"]
       },
-      body: JSON.stringify({ answers: answersToSubmit }),
-      credentials: 'include'
-    })
-    .then(response => {
-      if (response.status === 401) {
-        sessionStorage.setItem('quiz_answers', JSON.stringify(answersToSubmit));
-        alert('Your session has expired. Please login again.');
-        window.location.href = '/auth';
-        return Promise.reject('Unauthorized');
+      { 
+        question: "Arrange these in order of importance in a relationship:", 
+        answers: [
+          "Trust",
+          "Emotional connection",
+          "Shared goals",
+          "Physical intimacy"
+        ],
+        types: ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "💘 Romantic"],
+        isRankQuestion: true
+      },
+      { 
+        question: "What kind of emotional support feels most comforting to you?", 
+        answers: [
+          "Someone silently sitting with me through pain",
+          "Someone helping me fix the situation",
+          "Someone saying exactly the right words",
+          "Someone holding me tight without speaking"
+        ],
+        types: ["🌿 Nurturer", "🛡️ Protector", "👂 Listener", "💘 Romantic"]
+      },
+      { 
+        question: "In a disagreement with someone you care about, you...", 
+        answers: [
+          "Try to stay calm and really listen",
+          "Express your emotions openly",
+          "Try to solve it quickly and move on",
+          "Take it personally and overthink it"
+        ],
+        types: ["👂 Listener", "💘 Romantic", "🛡️ Protector", "🌙 Dreamer"]
+      },
+      { 
+        question: "How do you want others to describe you?", 
+        answers: [
+          "Kind and soft",
+          "Strong and independent",
+          "Perfect and without flaws",
+          "Honest and growing"
+        ],
+        types: ["🌿 Nurturer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
+      },
+      { 
+        question: "What do you crave most in a relationship?", 
+        answers: [
+          "Peace and emotional safety",
+          "Excitement and mystery",
+          "Growth and learning together",
+          "Feeling truly known and accepted"
+        ],
+        types: ["🌿 Nurturer", "💘 Romantic", "🌟 Idealist", "🌙 Dreamer"]
+      },
+      { 
+        question: "What makes you feel emotionally alive in love?", 
+        answers: [
+          "Deep, late-night emotional conversations",
+          "Intense physical closeness and passion",
+          "When someone notices the little things",
+          "Solving life's problems together"
+        ],
+        types: ["🌙 Dreamer", "💘 Romantic", "🌿 Nurturer", "🛡️ Protector"]
+      },
+      { 
+        question: "When you feel deeply hurt, you usually...", 
+        answers: [
+          "Cry or let it out",
+          "Get silent and withdraw",
+          "Keep busy to avoid it",
+          "Talk it out with someone trusted"
+        ],
+        types: ["🌙 Dreamer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
+      },
+      { 
+        question: "What does financial stability mean to you in a relationship?", 
+        answers: [
+          "Freedom to spend and still save together",
+          "Clear roles — one earns, one manages",
+          "Always discuss big spending decisions",
+          "Having separate money but shared goals"
+        ],
+        types: ["🛡️ Protector", "👂 Listener", "🌿 Nurturer", "🌟 Idealist"]
+      },
+      { 
+        question: "How do you usually show someone that you love them?", 
+        answers: [
+          "I check in on their feelings often",
+          "I protect them and help solve their problems",
+          "I write, say, or express how much I care",
+          "I give them space but make sure I'm always there"
+        ],
+        types: ["🌿 Nurturer", "🛡️ Protector", "💘 Romantic", "👂 Listener"]
       }
-      if (!response.ok) {
-        return response.json().then(err => Promise.reject(err));
+    ];
+
+    const optionalQuestions = [
+      { 
+        question: "You see your partner being emotionally close to a friend. You feel…", 
+        answers: [
+          "Curious and ask openly",
+          "Completely fine",
+          "A little jealous but trust them",
+          "Insecure and silent"
+        ],
+        types: ["🌿 Nurturer", "👂 Listener", "💘 Romantic", "🛡️ Protector"]
+      },
+      { 
+        question: "Your partner has a serious conflict with your family. You...", 
+        answers: [
+          "Support your partner but stay neutral",
+          "Try to fix the situation without taking sides",
+          "Defend your family — they raised me",
+          "Fully support my partner, even if it causes tension"
+        ],
+        types: ["👂 Listener", "🌿 Nurturer", "🛡️ Protector", "🌙 Dreamer"]
+      },
+      { 
+        question: "How do you handle emotional overwhelm?", 
+        answers: [
+          "Talk it out immediately",
+          "Need space to calm down",
+          "Write or reflect privately",
+          "Look for distraction or activity"
+        ],
+        types: ["👂 Listener", "🛡️ Protector", "🌙 Dreamer", "🌟 Idealist"]
+      },
+      { 
+        question: "What's your biggest fear in love?", 
+        answers: [
+          "Being misunderstood",
+          "Losing emotional connection",
+          "Getting hurt or rejected",
+          "Not being able to protect the person I love"
+        ],
+        types: ["🌟 Idealist", "👂 Listener", "🌙 Dreamer", "🛡️ Protector"]
+      },
+      { 
+        question: "What do you quietly need most in a relationship?", 
+        answers: [
+          "To feel safe and protected",
+          "To be emotionally understood",
+          "To give and receive open affection",
+          "To be accepted without pressure"
+        ],
+        types: ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "👂 Listener"]
+      },
+      { 
+        question: "Which quality do you most admire in a partner?", 
+        answers: [
+          "Loyalty",
+          "Compassion",
+          "Passion",
+          "Wisdom"
+        ],
+        types: ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "🌟 Idealist"]
       }
-      return response.json();
-    })
-    .then(data => {
-      if (data && data.success) {
-        // Success celebration
-        confetti({
-          particleCount: 200,
-          spread: 90,
-          origin: { y: 0.6 }
+    ];
+
+    const animationList = [
+      "animate__fadeInUp", "animate__fadeInDown", "animate__zoomIn",
+      "animate__slideInLeft", "animate__slideInRight", "animate__bounceIn",
+      "animate__flipInX", "animate__lightSpeedInLeft", "animate__backInUp", "animate__fadeInTopLeft"
+    ];
+
+    let currentQuestionIndex = 0;
+    let selectedAnswers = [];
+    let isInOptionalSection = false;
+    let currentRank = 1;
+
+    // Event listeners
+    btnStart.addEventListener('click', startQuiz);
+    btnYes.addEventListener('click', startOptionalQuestions);
+    btnNo.addEventListener('click', skipOptionalQuestions);
+    btnExplore.addEventListener('click', () => {
+      window.location.href = '/explore';
+    });
+
+    // Session verification function
+    async function checkSession() {
+      try {
+        const response = await fetch('/api/check-session', {
+          method: 'GET',
+          credentials: 'include'
         });
         
-        setTimeout(() => {
-          confetti({
-            particleCount: 100,
-            angle: 60,
-            spread: 70,
-            origin: { x: 0 }
+        if (!response.ok) {
+          return { success: false };
+        }
+        
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Session check error:', error);
+        return { success: false };
+      }
+    }
+
+    function startQuiz() {
+      introContainer.style.display = 'none';
+      qaContainer.style.display = 'block';
+      sectionTitle.textContent = "What Kind of Partner Are You Emotionally?";
+      sectionDescription.textContent = "These 10 questions reveal your emotional personality — the way you love, feel, and respond in relationships. This helps us match you with people who emotionally connect with you.";
+      loadQuestion(currentQuestionIndex);
+    }
+
+    async function loadQuestion(index) {
+      // Verify session before loading each question
+      const sessionCheck = await checkSession();
+      if (!sessionCheck.success) {
+        window.location.href = '/auth';
+        return;
+      }
+
+      const questions = isInOptionalSection ? optionalQuestions : requiredQuestions;
+      
+      if (index < questions.length) {
+        const questionBox = document.getElementById('question-box');
+        questionBox.className = `question-box animate__animated ${animationList[index % animationList.length]}`;
+        questionEl.innerText = questions[index].question;
+        answersBox.innerHTML = '';
+        rankInstructions.textContent = '';
+
+        if (questions[index].isRankQuestion) {
+          answersBox.className = 'rank-container';
+          rankInstructions.textContent = "Click to select your most important to least important (1-4). Click again to unselect.";
+          
+          const submitBtn = document.createElement('button');
+          submitBtn.className = 'rank-submit';
+          submitBtn.textContent = 'Continue';
+          submitBtn.onclick = () => handleRankSubmit(questions[index]);
+          
+          questions[index].answers.forEach((answer, i) => {
+            const item = document.createElement('div');
+            item.className = 'rank-item';
+            item.textContent = answer;
+            item.dataset.type = questions[index].types[i];
+            item.dataset.selected = 'false';
+            item.dataset.rank = '0';
+            item.onclick = () => toggleRankSelection(item);
+            answersBox.appendChild(item);
           });
           
-          confetti({
-            particleCount: 100,
-            angle: 120,
-            spread: 70,
-            origin: { x: 1 }
+          answersBox.appendChild(submitBtn);
+        } else {
+          answersBox.className = 'answers';
+          questions[index].answers.forEach((answer, i) => {
+            const btn = document.createElement('button');
+            btn.textContent = answer;
+            btn.onclick = () => {
+              selectedAnswers.push({
+                answer: answer,
+                type: questions[index].types[i]
+              });
+              nextQuestion();
+            };
+            answersBox.appendChild(btn);
           });
-        }, 300);
-      } else if (data && data.error) {
-        alert('Failed to submit quiz: ' + data.error);
-      }
-    })
-    .catch(error => {
-      console.error('Error submitting answers:', error);
-      if (error !== 'Unauthorized') {
-        alert('Error submitting quiz. Please try again.');
-      }
-    });
-  }
+        }
 
-  function restart() {
-    currentQuestionIndex = 0;
-    selectedAnswers = [];
-    isInOptionalSection = false;
-    document.getElementById('qa-content').style.display = 'block';
-    document.getElementById('final-screen').style.display = 'none';
-    document.getElementById('optional-section').style.display = 'none';
-    document.getElementById('question-box').style.display = 'block';
-    document.getElementById('intro-container').style.display = 'none';
-    document.getElementById('qa-container').style.display = 'block';
-    startQuiz();
-  }
+        const totalQuestions = isInOptionalSection ? 
+          requiredQuestions.length + optionalQuestions.length : 
+          requiredQuestions.length;
+        const answeredQuestions = isInOptionalSection ? 
+          requiredQuestions.length + index : 
+          index;
+        progressBar.style.width = `${(answeredQuestions / totalQuestions) * 100}%`;
+      } else {
+        if (!isInOptionalSection) {
+          optionalSection.style.display = 'block';
+          document.getElementById('question-box').style.display = 'none';
+        } else {
+          showFinalScreen();
+        }
+      }
+    }
+
+    function toggleRankSelection(item) {
+      const isSelected = item.dataset.selected === 'true';
+      
+      if (isSelected) {
+        item.dataset.selected = 'false';
+        item.classList.remove('selected');
+        
+        const rankNumber = item.querySelector('.rank-number');
+        if (rankNumber) {
+          item.removeChild(rankNumber);
+        }
+        
+        const currentRankNum = parseInt(item.dataset.rank);
+        if (currentRankNum === currentRank - 1) {
+          currentRank--;
+        }
+        
+        item.dataset.rank = '0';
+      } else {
+        if (currentRank > 4) return;
+        
+        item.dataset.selected = 'true';
+        item.dataset.rank = currentRank.toString();
+        item.classList.add('selected');
+        
+        let rankNumber = item.querySelector('.rank-number');
+        if (!rankNumber) {
+          rankNumber = document.createElement('div');
+          rankNumber.className = 'rank-number';
+          item.appendChild(rankNumber);
+        }
+        rankNumber.textContent = currentRank;
+        
+        currentRank++;
+      }
+    }
+    
+    function handleRankSubmit(question) {
+      const rankItems = document.querySelectorAll('.rank-item');
+      const rankedItems = Array.from(rankItems)
+        .filter(item => item.dataset.rank !== '0')
+        .sort((a, b) => parseInt(a.dataset.rank) - parseInt(b.dataset.rank));
+      
+      if (rankedItems.length > 0) {
+        selectedAnswers.push({
+          answer: "Ranked: " + rankedItems.map(item => `${item.dataset.rank}. ${item.textContent}`).join(", "),
+          type: rankedItems[0].dataset.type
+        });
+      } else {
+        selectedAnswers.push({
+          answer: question.answers[0],
+          type: question.types[0]
+        });
+      }
+      
+      currentRank = 1;
+      nextQuestion();
+    }
+
+    function nextQuestion() {
+      currentQuestionIndex++;
+      const questions = isInOptionalSection ? optionalQuestions : requiredQuestions;
+      
+      if (currentQuestionIndex < questions.length) {
+        loadQuestion(currentQuestionIndex);
+      } else {
+        if (!isInOptionalSection) {
+          optionalSection.style.display = 'block';
+          document.getElementById('question-box').style.display = 'none';
+        } else {
+          showFinalScreen();
+        }
+      }
+    }
+
+    function startOptionalQuestions() {
+      document.getElementById('optional-section').style.display = 'none';
+      document.getElementById('question-box').style.display = 'block';
+      isInOptionalSection = true;
+      currentQuestionIndex = 0;
+      sectionTitle.textContent = "Want Deeper Matches? (Optional)";
+      sectionDescription.textContent = "These 6 extra questions help us detect emotional maturity, depth, and hidden traits. They refine your results — but only if you choose to answer them.";
+      loadQuestion(currentQuestionIndex);
+    }
+
+    function skipOptionalQuestions() {
+      showFinalScreen();
+    }
+
+    async function showFinalScreen() {
+      // Verify session before showing final screen
+      const sessionCheck = await checkSession();
+      if (!sessionCheck.success) {
+        window.location.href = '/auth';
+        return;
+      }
+
+      document.getElementById('qa-content').style.display = 'none';
+      finalScreen.style.display = 'block';
+      document.getElementById('progress-bar').style.width = `100%`;
+
+      const answersToSubmit = selectedAnswers.map(item => ({
+        answer: item.answer,
+        type: item.type
+      }));
+
+      try {
+        const response = await fetch('/api/quiz/submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Session-ID': document.cookie.split('; ').find(row => row.startsWith('for_you_session'))?.split('=')[1] || ''
+          },
+          body: JSON.stringify({ answers: answersToSubmit }),
+          credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (data && data.success) {
+          // Success celebration
+          confetti({
+            particleCount: 200,
+            spread: 90,
+            origin: { y: 0.6 }
+          });
+          
+          setTimeout(() => {
+            confetti({
+              particleCount: 100,
+              angle: 60,
+              spread: 70,
+              origin: { x: 0 }
+            });
+            
+            confetti({
+              particleCount: 100,
+              angle: 120,
+              spread: 70,
+              origin: { x: 1 }
+            });
+          }, 300);
+        } else if (data && data.error) {
+          alert('Failed to submit quiz: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Error submitting answers:', error);
+        if (error !== 'Unauthorized') {
+          alert('Error submitting quiz. Please try again.');
+        }
+      }
+    }
+
+    function restart() {
+      currentQuestionIndex = 0;
+      selectedAnswers = [];
+      isInOptionalSection = false;
+      document.getElementById('qa-content').style.display = 'block';
+      document.getElementById('final-screen').style.display = 'none';
+      document.getElementById('optional-section').style.display = 'none';
+      document.getElementById('question-box').style.display = 'block';
+      document.getElementById('intro-container').style.display = 'none';
+      document.getElementById('qa-container').style.display = 'block';
+      startQuiz();
+    }
+  });
 </script>
 
 </body>
