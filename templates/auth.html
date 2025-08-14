@@ -772,17 +772,18 @@
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
                         },
-                        credentials: 'include'
+                        credentials: 'include'  // Ensure cookies are sent
                     });
                     const data = await response.json();
                     if (data.success) {
+                        // Check quiz status
                         const quizResponse = await fetch('{{ url_for("check_quiz_status_endpoint") }}', {
                             method: 'GET',
                             headers: {
                                 'Accept': 'application/json',
                                 'X-Requested-With': 'XMLHttpRequest'
                             },
-                            credentials: 'include'
+                            credentials: 'include'  // Ensure cookies are sent
                         });
                         const quizData = await quizResponse.json();
                         window.location.href = quizData.quiz_completed ? '{{ url_for("explore") }}' : '{{ url_for("questions") }}';
@@ -820,7 +821,7 @@
                             form_type: 'resend_verification',
                             email: email
                         }),
-                        credentials: 'include'
+                        credentials: 'include'  // Ensure cookies are sent
                     });
                     
                     const data = await response.json();
@@ -984,96 +985,16 @@
                 }, 10);
             }
 
-            // Form submission
-            loginFormElement.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                if (!validateLoginForm()) return;
-                
-                showLoading();
-                loginSubmitBtn.disabled = true;
-                
-                try {
-                    const formData = new FormData(this);
-                    const response = await fetch(this.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        credentials: 'include'
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        if (data.redirect) {
-                            window.location.href = data.redirect;
-                        }
-                    } else {
-                        if (data.verification_required) {
-                            verificationSection.classList.add('active');
-                            formContainer.classList.remove('active');
-                            authButtons.classList.add('hidden');
-                            
-                            verificationEmail.textContent = data.email || '{{ session.get("email", "") }}';
-                            showError(data.message || 'Please verify your email first.');
-                        } else {
-                            showError(data.error || 'Login failed. Please check your credentials and try again.');
-                        }
-                    }
-                } catch (error) {
-                    console.error('Login error:', error);
-                    showError('An error occurred during login. Please try again.');
-                } finally {
-                    hideLoading();
-                    loginSubmitBtn.disabled = false;
+            // Form submission validation (server handles the submission)
+            loginFormElement.addEventListener('submit', function(e) {
+                if (!validateLoginForm()) {
+                    e.preventDefault();
                 }
             });
 
-            signupFormElement.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                if (!validateSignupForm()) return;
-                
-                showLoading();
-                signupSubmitBtn.disabled = true;
-                
-                try {
-                    const formData = new FormData(this);
-                    const response = await fetch(this.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        credentials: 'include'
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        if (data.verification_required) {
-                            verificationSection.classList.add('active');
-                            formContainer.classList.remove('active');
-                            authButtons.classList.add('hidden');
-                            
-                            verificationEmail.textContent = data.email || '{{ session.get("email", "") }}';
-                            showSuccess(data.message || 'Verification email sent! Please check your inbox.');
-                        } else if (data.redirect) {
-                            window.location.href = data.redirect;
-                        }
-                    } else {
-                        showError(data.error || 'Signup failed. Please try again.');
-                    }
-                } catch (error) {
-                    console.error('Signup error:', error);
-                    showError('An error occurred during signup. Please try again.');
-                } finally {
-                    hideLoading();
-                    signupSubmitBtn.disabled = false;
+            signupFormElement.addEventListener('submit', function(e) {
+                if (!validateSignupForm()) {
+                    e.preventDefault();
                 }
             });
 
