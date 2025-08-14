@@ -9,7 +9,7 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 # Use environment variable for secret key, fallback to a secure default
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secure-fixed-secret-key-here')  # Replace fallback with a secure key
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secure-fixed-secret-key-here')  # Replace with a secure key
 app.permanent_session_lifetime = timedelta(days=1)
 app.config.update(
     SESSION_COOKIE_SAMESITE='None',  # Align with API-side for cross-origin requests
@@ -26,8 +26,8 @@ CORS(app, supports_credentials=True, resources={
             'https://routinely-positive-rattler.ngrok-free.app',
             'http://localhost:5050',
             'https://client1-ez5pxwg0k-ashiks-projects-05a199d3.vercel.app',
-            'https://client1-amber.vercel.app',  # Added new domain
-            'https://www.ninakkai.com'  # Added new domain
+            'https://client1-amber.vercel.app',
+            'https://www.ninakkai.com'
         ],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization", "X-Session-ID"],
@@ -41,8 +41,19 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # API Configuration
-API_BASE_URL = 'https://routinely-positive-rattler.ngrok-free.app'
+API_BASE_URL = 'https://routinely-positive-rattler.ngrok-free.app'  # Update with correct API URL
 API_TIMEOUT = 10  # seconds
+
+# Temporary mock signup endpoint for testing (remove in production)
+@app.route('/api/signup', methods=['POST'])
+def mock_signup():
+    data = request.get_json()
+    logger.debug(f"Mock signup called with data: {data}")
+    return jsonify({
+        'success': True,
+        'user_id': 'mock_user_id_123',
+        'message': 'Mock signup successful. Please verify your email.'
+    }), 201
 
 @app.after_request
 def log_response(response):
@@ -82,11 +93,12 @@ def auth():
             else:
                 try:
                     response = requests.post(
-                        urljoin(API_BASE_URL, '/api/login'),
+                        urljoin(API_BASE_URL, '/api/login'),  # Verify endpoint
                         json={'email': email, 'password': password},
                         headers={'Content-Type': 'application/json'},
                         timeout=API_TIMEOUT
                     )
+                    logger.debug(f"API login response: {response.status_code}, {response.text}")
                     
                     response_data = response.json()
                     
@@ -95,10 +107,12 @@ def auth():
                         session['email'] = email
                         session['user_id'] = response_data.get('user', {}).get('id')
                         session.modified = True
-                        logger.debug(f"Session set after login: {session}")
-                        
+                        logger.debug(f"Session set after login: {session}, SID: {session.sid if hasattr(session, 'sid') else 'No SID'}")
+                        resp = make_response(redirect(url_for('questions')))
+                        resp.set_cookie('for_you_session', session.sid, max_age=86400, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='None')
+                        logger.debug(f"Login response headers: {resp.headers}")
                         quiz_completed = response_data.get('quiz_completed', False)
-                        return redirect(url_for('explore') if quiz_completed else url_for('questions'))
+                        return resp if not quiz_completed else make_response(redirect(url_for('explore')))
                     elif response.status_code == 401 and response_data.get('verification_required'):
                         session['email'] = email
                         session['verification_pending'] = True
@@ -128,12 +142,15 @@ def auth():
                 error = 'Password must be at least 8 characters'
             else:
                 try:
+                    # Use mock endpoint for local testing; replace with actual endpoint
+                    endpoint = '/api/signup'  # Update if endpoint is different (e.g., '/api/register')
                     response = requests.post(
-                        urljoin(API_BASE_URL, '/api/signup'),
+                        urljoin(API_BASE_URL, endpoint),
                         json=data,
                         headers={'Content-Type': 'application/json'},
                         timeout=API_TIMEOUT
                     )
+                    logger.debug(f"API signup response: {response.status_code}, {response.text}")
                     
                     response_data = response.json()
                     
@@ -145,8 +162,12 @@ def auth():
                         session.modified = True
                         verification_sent = True
                         success = response_data.get('message', 'Verification email sent! Please check your inbox.')
+                        resp = make_response(render_template('auth.html', error=error, success=success, verification_sent=verification_sent, verification_success=verification_success, email=email))
+                        resp.set_cookie('for_you_session', session.sid, max_age=86400, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='None')
+                        logger.debug(f"Session after signup: {session}, SID: {session.sid if hasattr(session, 'sid') else 'No SID'}")
+                        return resp
                     else:
-                        error = response_data.get('error', 'Signup failed. Please try again.')
+                        error = response_data.get('error', f'Signup failed with status {response.status_code}: {response.text}')
                 except Exception as e:
                     logger.error(f"Signup error: {str(e)}")
                     error = 'An error occurred during signup. Please try again.'
@@ -174,6 +195,7 @@ def resend_verification():
             headers={'Content-Type': 'application/json'},
             timeout=API_TIMEOUT
         )
+        logger.debug(f"API resend-verification response: {response.status_code}, {response.text}")
         
         response_data = response.json()
         
@@ -181,7 +203,7 @@ def resend_verification():
             session['verification_pending'] = True
             session['email'] = email
             session.modified = True
-            logger.debug(f"Session set after resend: {session}")
+            logger.debug(f"Session set after resend: {session}, SID: {session.sid if hasattr(session, 'sid') else 'No SID'}")
             resp = make_response(jsonify({
                 'success': True,
                 'message': 'Verification email resent successfully!'
@@ -209,6 +231,7 @@ def check_quiz_status():
             headers=headers,
             timeout=API_TIMEOUT
         )
+        logger.debug(f"API profile response: {response.status_code}, {response.text}")
         
         if response.status_code == 200:
             response_data = response.json()
@@ -235,6 +258,14 @@ def check_session():
         return jsonify({'success': False, 'error': 'No active session'}), 401
     return jsonify({'success': True, 'user_id': session.get('user_id'), 'email': session.get('email')})
 
+@app.route('/debug-session')
+def debug_session():
+    return jsonify({
+        'session': dict(session),
+        'cookies': dict(request.cookies),
+        'sid': session.sid if hasattr(session, 'sid') else 'No SID'
+    })
+
 @app.route('/verify-email')
 def verify_email_endpoint():
     logger.debug(f"Session in verify-email: {session}")
@@ -249,6 +280,7 @@ def verify_email_endpoint():
             headers={'Content-Type': 'application/json'},
             timeout=API_TIMEOUT
         )
+        logger.debug(f"API verify-email response: {response.status_code}, {response.text}")
         
         response_data = response.json()
         
@@ -281,6 +313,7 @@ def explore():
             headers=headers,
             timeout=API_TIMEOUT
         )
+        logger.debug(f"API matches response: {response.status_code}, {response.text}")
         
         matches = []
         if response.status_code == 200:
@@ -309,6 +342,7 @@ def chat():
             headers=headers,
             timeout=API_TIMEOUT
         )
+        logger.debug(f"API chats response: {response.status_code}, {response.text}")
         
         chats = []
         if response.status_code == 200:
@@ -337,6 +371,7 @@ def profile():
             headers=headers,
             timeout=API_TIMEOUT
         )
+        logger.debug(f"API profile response: {response.status_code}, {response.text}")
         
         profile_data = {}
         if response.status_code == 200:
@@ -384,6 +419,7 @@ def submit_quiz():
             headers=headers,
             timeout=API_TIMEOUT
         )
+        logger.debug(f"API quiz submit response: {response.status_code}, {response.text}")
         
         response_data = response.json()
         
@@ -408,7 +444,7 @@ def logout():
                 headers=headers,
                 timeout=API_TIMEOUT
             )
-            logger.debug(f"Logout API response: {response.status_code}")
+            logger.debug(f"API logout response: {response.status_code}, {response.text}")
         except Exception as e:
             logger.error(f"Logout error: {str(e)}")
         

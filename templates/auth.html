@@ -798,12 +798,6 @@
                 await checkSession();
             }
 
-            // Show verification section if verification is pending
-            if (verificationSection.classList.contains('active')) {
-                formContainer.classList.remove('active');
-                authButtons.classList.add('hidden');
-            }
-            
             // Resend verification email
             resendLink.addEventListener('click', async function() {
                 showLoading();
@@ -939,7 +933,7 @@
             }
 
             function validateEmail(email) {
-                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                const re = /^[^\s@]+@[^\s@]+\.[^@]+$/;
                 return re.test(email);
             }
 
