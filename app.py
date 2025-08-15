@@ -238,7 +238,7 @@ def check_quiz_status():
             if response_data.get('success'):
                 return {'quiz_completed': response_data.get('quiz_completed', False)}
     
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         logger.error(f"Quiz status check failed: {str(e)}")
     
     return {'quiz_completed': False}
