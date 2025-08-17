@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, make_response, session, render_template, redirect, url_for
+from flask import Flask, jsonify, request, make_response, session, render_template, redirect, url_for, send_from_directory
 import requests
 from datetime import timedelta
 import logging
@@ -7,7 +7,10 @@ import re
 import os
 from flask_cors import CORS
 
-app = Flask(__name__)
+app = Flask(__name__, 
+            static_url_path='/static', 
+            static_folder='static', 
+            template_folder='templates')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secure-fixed-secret-key-here')
 app.permanent_session_lifetime = timedelta(days=1)
 app.config.update(
@@ -18,6 +21,10 @@ app.config.update(
     SESSION_COOKIE_PATH='/',
     SESSION_COOKIE_DOMAIN=None
 )
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Configure CORS
 CORS(app, supports_credentials=True, resources={
@@ -35,10 +42,6 @@ CORS(app, supports_credentials=True, resources={
         "supports_credentials": True
     }
 })
-
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
 
 # API Configuration
 API_BASE_URL = 'https://routinely-positive-rattler.ngrok-free.app'
@@ -58,7 +61,19 @@ def log_session_info():
 def index():
     logger.debug(f"Session in index: {session}")
     logger.debug(f"Incoming cookies: {request.cookies}")
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        logger.error(f"Error rendering index.html: {str(e)}")
+        return jsonify({'success': False, 'error': 'Template not found'}), 404
+
+@app.route('/favicon.ico')
+def favicon():
+    try:
+        return send_from_directory(app.static_folder, 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+    except Exception as e:
+        logger.error(f"Error serving favicon.ico: {str(e)}")
+        return jsonify({'success': False, 'error': 'Favicon not found'}), 404
 
 @app.route('/auth', methods=['GET', 'POST'])
 def auth():
@@ -232,7 +247,7 @@ def check_quiz_status():
         if response.status_code == 200:
             response_data = response.json()
             if response_data.get('success'):
-                return {'quiz_completed': response_data.get('quiz_completed', False)}
+                return {'quiz_completed': response_data.get('profile', {}).get('quiz_completed', False)}
     
     except Exception as e:
         logger.error(f"Quiz status check failed: {str(e)}")
@@ -474,4 +489,4 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5050)
+    app.run(host='0.0.0.0', port=5050, debug=True)
