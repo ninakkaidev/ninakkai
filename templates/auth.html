@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        /* [Previous CSS remains unchanged] */
         * {
             margin: 0;
             padding: 0;
@@ -736,368 +737,380 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', async function() {
-            // DOM Elements
-            const loginBtn = document.getElementById('loginBtn');
-            const signupBtn = document.getElementById('signupBtn');
-            const loginForm = document.getElementById('loginForm');
-            const signupForm = document.getElementById('signupForm');
-            const formContainer = document.getElementById('formContainer');
-            const showLogin = document.getElementById('showLogin');
-            const showSignup = document.getElementById('showSignup');
-            const signupSteps = document.getElementById('signupSteps');
-            const stepDots = document.querySelectorAll('.step-dot');
-            const nextButtons = document.querySelectorAll('.next-step');
-            const prevButtons = document.querySelectorAll('.prev-step');
-            const passwordInput = document.getElementById('password');
-            const confirmPasswordInput = document.getElementById('confirmPassword');
-            const passwordStrengthBar = document.getElementById('passwordStrengthBar');
-            const loginFormElement = document.getElementById('loginFormElement');
-            const signupFormElement = document.getElementById('signupFormElement');
-            const loginSubmitBtn = document.getElementById('loginSubmitBtn');
-            const signupSubmitBtn = document.getElementById('signupSubmitBtn');
-            const verificationSection = document.getElementById('verificationSection');
-            const resendLink = document.getElementById('resendLink');
-            const authButtons = document.getElementById('authButtons');
-            const verificationEmail = document.getElementById('verificationEmail');
-            const loginAfterVerify = document.getElementById('loginAfterVerify');
-            
-            // Check session on page load
-            async function checkSession() {
-                try {
-                    const response = await fetch('/api/check-session', {
+<script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        // DOM Elements
+        const loginBtn = document.getElementById('loginBtn');
+        const signupBtn = document.getElementById('signupBtn');
+        const loginForm = document.getElementById('loginForm');
+        const signupForm = document.getElementById('signupForm');
+        const formContainer = document.getElementById('formContainer');
+        const showLogin = document.getElementById('showLogin');
+        const showSignup = document.getElementById('showSignup');
+        const signupSteps = document.getElementById('signupSteps');
+        const stepDots = document.querySelectorAll('.step-dot');
+        const nextButtons = document.querySelectorAll('.next-step');
+        const prevButtons = document.querySelectorAll('.prev-step');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const passwordStrengthBar = document.getElementById('passwordStrengthBar');
+        const loginFormElement = document.getElementById('loginFormElement');
+        const signupFormElement = document.getElementById('signupFormElement');
+        const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+        const signupSubmitBtn = document.getElementById('signupSubmitBtn');
+        const verificationSection = document.getElementById('verificationSection');
+        const resendLink = document.getElementById('resendLink');
+        const authButtons = document.getElementById('authButtons');
+        const verificationEmail = document.getElementById('verificationEmail');
+        const loginAfterVerify = document.getElementById('loginAfterVerify');
+        const loading = document.getElementById('loading');
+        
+        // Show/hide loading spinner
+        function showLoading() {
+            loading.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loading.style.display = 'none';
+        }
+
+        // Check session on page load
+        async function checkSession() {
+            try {
+                const response = await fetch('/api/check-session', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (data.success) {
+                    // Check quiz status
+                    const quizResponse = await fetch('{{ url_for("check_quiz_status_endpoint") }}', {
                         method: 'GET',
                         headers: {
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
                         },
-                        credentials: 'include'  // Ensure cookies are sent
+                        credentials: 'include'
                     });
-                    const data = await response.json();
-                    if (data.success) {
-                        // Check quiz status
-                        const quizResponse = await fetch('{{ url_for("check_quiz_status_endpoint") }}', {
-                            method: 'GET',
-                            headers: {
-                                'Accept': 'application/json',
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            credentials: 'include'  // Ensure cookies are sent
-                        });
-                        const quizData = await quizResponse.json();
-                        window.location.href = quizData.quiz_completed ? '{{ url_for("explore") }}' : '{{ url_for("questions") }}';
-                    }
-                } catch (error) {
-                    console.error('Session check error:', error);
+                    const quizData = await quizResponse.json();
+                    window.location.href = quizData.quiz_completed ? '{{ url_for("explore") }}' : '{{ url_for("questions") }}';
                 }
+            } catch (error) {
+                console.error('Session check error:', error);
             }
+        }
 
-            // Run session check if not in verification mode
-            if (!verificationSection.classList.contains('active')) {
-                await checkSession();
-            }
+        // Run session check if not in verification mode
+        if (!verificationSection.classList.contains('active')) {
+            await checkSession();
+        }
 
-            // Resend verification email
-            resendLink.addEventListener('click', async function() {
-                showLoading();
-                resendLink.textContent = 'Sending...';
-                
-                try {
-                    const email = verificationEmail.textContent;
-                    const response = await fetch("{{ url_for('auth') }}", {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: JSON.stringify({
-                            form_type: 'resend_verification',
-                            email: email
-                        }),
-                        credentials: 'include'  // Ensure cookies are sent
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        showSuccess(data.message || 'Verification email resent successfully!');
-                    } else {
-                        showError(data.error || 'Failed to resend verification email. Please try again.');
-                    }
-                } catch (error) {
-                    console.error('Resend error:', error);
-                    showError('An error occurred while resending the verification email. Please try again.');
-                } finally {
-                    hideLoading();
-                    resendLink.textContent = 'Didn\'t receive email? Resend';
-                }
+        // Toggle between login and signup forms
+        loginBtn.addEventListener('click', () => {
+            loginBtn.classList.add('active');
+            signupBtn.classList.remove('active');
+            loginForm.classList.add('active');
+            signupForm.classList.remove('active');
+            formContainer.classList.add('active');
+            verificationSection.classList.remove('active');
+            authButtons.classList.remove('hidden');
+        });
+
+        signupBtn.addEventListener('click', () => {
+            signupBtn.classList.add('active');
+            loginBtn.classList.remove('active');
+            signupForm.classList.add('active');
+            loginForm.classList.remove('active');
+            formContainer.classList.add('active');
+            verificationSection.classList.remove('active');
+            authButtons.classList.remove('hidden');
+            resetSignupSteps();
+        });
+
+        showLogin.addEventListener('click', () => {
+            loginBtn.click();
+        });
+
+        showSignup.addEventListener('click', () => {
+            signupBtn.click();
+        });
+
+        // Handle signup steps navigation
+        let currentStep = 1;
+
+        function updateStepIndicator() {
+            stepDots.forEach(dot => {
+                dot.classList.toggle('active', parseInt(dot.dataset.step) === currentStep);
             });
-            
-            // Password strength checker
-            passwordInput.addEventListener('input', function() {
-                const password = this.value;
-                const strength = calculatePasswordStrength(password);
-                updatePasswordStrengthBar(strength);
+        }
+
+        function showStep(step) {
+            document.querySelectorAll('.signup-step').forEach(stepElement => {
+                stepElement.classList.toggle('active', parseInt(stepElement.dataset.step) === step);
             });
+            currentStep = step;
+            updateStepIndicator();
+        }
 
-            function calculatePasswordStrength(password) {
-                let strength = 0;
-                
-                if (password.length >= 8) strength += 1;
-                if (password.length >= 12) strength += 1;
-                
-                if (/[A-Z]/.test(password)) strength += 1;
-                if (/[a-z]/.test(password)) strength += 1;
-                if (/[0-9]/.test(password)) strength += 1;
-                if (/[^A-Za-z0-9]/.test(password)) strength += 1;
-                
-                return Math.min(strength, 5);
-            }
+        function resetSignupSteps() {
+            showStep(1);
+            signupFormElement.reset();
+            passwordStrengthBar.style.width = '0%';
+        }
 
-            function updatePasswordStrengthBar(strength) {
-                const colors = ['#ff4d6d', '#ff758f', '#ff8fa3', '#ffb3c1', '#4CAF50'];
-                const width = (strength / 5) * 100;
-                passwordStrengthBar.style.width = `${width}%`;
-                passwordStrengthBar.style.background = colors[strength - 1] || colors[0];
-            }
-
-            // Form validation
-            function validateCurrentStep() {
-                if (currentStep === 1) {
-                    const fullName = document.getElementById('fullName').value.trim();
-                    const email = document.getElementById('email').value.trim();
-                    
-                    if (!fullName || !email) {
-                        showError('Please fill in all required fields.');
-                        return false;
-                    }
-                    
-                    if (!validateEmail(email)) {
-                        showError('Please enter a valid email address.');
-                        return false;
-                    }
-                    
-                    return true;
-                } else if (currentStep === 2) {
-                    const age = document.getElementById('age').value;
-                    const gender = document.getElementById('gender').value;
-                    
-                    if (!age || !gender) {
-                        showError('Please fill in all required fields.');
-                        return false;
-                    }
-                    
-                    if (age < 13 || age > 120) {
-                        showError('Please enter a valid age between 13 and 120.');
-                        return false;
-                    }
-                    
-                    return true;
-                }
-                return true;
-            }
-
-            function validateSignupForm() {
-                const password = passwordInput.value;
-                const confirmPassword = confirmPasswordInput.value;
-                
-                if (password !== confirmPassword) {
-                    showError('Passwords do not match.');
-                    return false;
-                }
-                
-                if (password.length < 8) {
-                    showError('Password must be at least 8 characters long.');
-                    return false;
-                }
-                
-                return true;
-            }
-
-            function validateLoginForm() {
-                const email = loginFormElement.querySelector('input[name="email"]').value.trim();
-                const password = loginFormElement.querySelector('input[name="password"]').value;
-                
-                if (!email || !password) {
-                    showError('Email and password are required.');
-                    return false;
-                }
-                
-                if (!validateEmail(email)) {
-                    showError('Please enter a valid email address.');
-                    return false;
-                }
-                
-                return true;
-            }
-
-            function validateEmail(email) {
-                const re = /^[^\s@]+@[^\s@]+\.[^@]+$/;
-                return re.test(email);
-            }
-
-            function showError(message) {
-                const existingSuccess = document.querySelector('.success-message');
-                if (existingSuccess) {
-                    existingSuccess.remove();
-                }
-                
-                const errorElement = document.querySelector('.error-message') || document.createElement('div');
-                errorElement.className = 'error-message';
-                errorElement.textContent = message;
-                
-                if (!document.querySelector('.error-message')) {
-                    const container = document.querySelector('.container');
-                    const welcomeText = document.querySelector('.welcome-text');
-                    container.insertBefore(errorElement, welcomeText.nextSibling);
-                }
-                
-                setTimeout(() => {
-                    errorElement.style.opacity = '1';
-                }, 10);
-            }
-
-            function showSuccess(message) {
-                const existingError = document.querySelector('.error-message');
-                if (existingError) {
-                    existingError.remove();
-                }
-                
-                const successElement = document.querySelector('.success-message') || document.createElement('div');
-                successElement.className = 'success-message';
-                successElement.textContent = message;
-                
-                if (!document.querySelector('.success-message')) {
-                    const container = document.querySelector('.container');
-                    const welcomeText = document.querySelector('.welcome-text');
-                    container.insertBefore(successElement, welcomeText.nextSibling);
-                }
-                
-                setTimeout(() => {
-                    successElement.style.opacity = '1';
-                }, 10);
-            }
-
-            // Form submission validation (server handles the submission)
-            loginFormElement.addEventListener('submit', function(e) {
-                if (!validateLoginForm()) {
-                    e.preventDefault();
-                }
-            });
-
-            signupFormElement.addEventListener('submit', function(e) {
-                if (!validateSignupForm()) {
-                    e.preventDefault();
-                }
-            });
-
-            // Form navigation
-            function showLoginForm() {
-                loginBtn.classList.add('active');
-                signupBtn.classList.remove('active');
-                loginForm.classList.add('active');
-                signupForm.classList.remove('active');
-                formContainer.classList.add('active');
-                resetSignupForm();
-            }
-
-            function showSignupForm() {
-                signupBtn.classList.add('active');
-                loginBtn.classList.remove('active');
-                signupForm.classList.add('active');
-                loginForm.classList.remove('active');
-                formContainer.classList.add('active');
-                goToStep(1);
-            }
-
-            function resetSignupForm() {
-                currentStep = 1;
-                updateStepIndicator();
-                updateStepVisibility();
-            }
-
-            function goToStep(step) {
-                currentStep = step;
-                updateStepIndicator();
-                updateStepVisibility();
-            }
-
-            function updateStepVisibility() {
-                signupStepElements.forEach(step => {
-                    step.classList.remove('active');
-                    if (parseInt(step.getAttribute('data-step')) === currentStep) {
-                        step.classList.add('active');
-                    }
-                });
-            }
-
-            function updateStepIndicator() {
-                stepDots.forEach((dot, index) => {
-                    if (index < currentStep) {
-                        dot.classList.add('active');
-                    } else {
-                        dot.classList.remove('active');
-                    }
-                });
-            }
-
-            // State variables
-            let currentStep = 1;
-            const totalSteps = 3;
-            const signupStepElements = document.querySelectorAll('.signup-step');
-
-            // Event listeners
-            loginBtn.addEventListener('click', showLoginForm);
-            signupBtn.addEventListener('click', showSignupForm);
-            showLogin.addEventListener('click', showLoginForm);
-            showSignup.addEventListener('click', showSignupForm);
-
-            nextButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    if (validateCurrentStep()) {
-                        if (currentStep < totalSteps) {
-                            goToStep(currentStep + 1);
+        nextButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                if (currentStep < 3) {
+                    // Basic client-side validation
+                    if (currentStep === 1) {
+                        const fullName = document.getElementById('fullName').value;
+                        const email = document.getElementById('email').value;
+                        if (!fullName || !email || !/[^@]+@[^@]+\.[^@]+/.test(email)) {
+                            showError('Please fill in all fields with a valid email');
+                            return;
+                        }
+                    } else if (currentStep === 2) {
+                        const age = document.getElementById('age').value;
+                        const gender = document.getElementById('gender').value;
+                        if (!age || age < 13 || age > 120 || !gender) {
+                            showError('Please enter a valid age (13-120) and select a gender');
+                            return;
                         }
                     }
-                });
+                    showStep(currentStep + 1);
+                }
             });
-
-            prevButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    if (currentStep > 1) {
-                        goToStep(currentStep - 1);
-                    }
-                });
-            });
-
-            stepDots.forEach(dot => {
-                dot.addEventListener('click', () => {
-                    const step = parseInt(dot.getAttribute('data-step'));
-                    if (step <= currentStep) {
-                        goToStep(step);
-                    }
-                });
-            });
-
-            // Continue to login after verification
-            if (loginAfterVerify) {
-                loginAfterVerify.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    showLoginForm();
-                    window.scrollTo(0, 0);
-                });
-            }
-
-            // Loading functions
-            window.showLoading = function() {
-                document.getElementById('loading').style.display = 'flex';
-            };
-
-            window.hideLoading = function() {
-                document.getElementById('loading').style.display = 'none';
-            };
         });
-    </script>
+
+        prevButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                if (currentStep > 1) {
+                    showStep(currentStep - 1);
+                }
+            });
+        });
+
+        // Password strength checker
+        function checkPasswordStrength(password) {
+            let strength = 0;
+            if (password.length >= 8) strength += 25;
+            if (/[A-Z]/.test(password)) strength += 25;
+            if (/[0-9]/.test(password)) strength += 25;
+            if (/[^A-Za-z0-9]/.test(password)) strength += 25;
+            passwordStrengthBar.style.width = `${strength}%`;
+            passwordStrengthBar.style.background = strength < 50 ? '#ff4d6d' : strength < 75 ? '#ffa500' : '#4CAF50';
+        }
+
+        if (passwordInput) {
+            passwordInput.addEventListener('input', () => {
+                checkPasswordStrength(passwordInput.value);
+            });
+        }
+
+        // Validate password match
+        function validatePasswords() {
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                confirmPasswordInput.setCustomValidity('Passwords do not match');
+            } else {
+                confirmPasswordInput.setCustomValidity('');
+            }
+        }
+
+        if (confirmPasswordInput) {
+            confirmPasswordInput.addEventListener('input', validatePasswords);
+            passwordInput.addEventListener('input', validatePasswords);
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            const existingError = document.querySelector('.error-message');
+            if (existingError) existingError.remove();
+            document.querySelector('.container').insertBefore(errorDiv, formContainer);
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.textContent = message;
+            const existingSuccess = document.querySelector('.success-message');
+            if (existingSuccess) existingSuccess.remove();
+            document.querySelector('.container').insertBefore(successDiv, formContainer);
+            setTimeout(() => successDiv.remove(), 5000);
+        }
+
+        // Resend verification email
+        resendLink.addEventListener('click', async function() {
+            showLoading();
+            resendLink.textContent = 'Sending...';
+            
+            try {
+                const email = verificationEmail.textContent;
+                const response = await fetch("{{ url_for('auth') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        form_type: 'resend_verification',
+                        email: email
+                    }),
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                hideLoading();
+                resendLink.textContent = 'Didn\'t receive email? Resend';
+                
+                if (data.success) {
+                    showSuccess('Verification email resent successfully!');
+                } else {
+                    showError(data.error || 'Failed to resend verification email');
+                }
+            } catch (error) {
+                hideLoading();
+                resendLink.textContent = 'Didn\'t receive email? Resend';
+                showError('An error occurred while resending verification email');
+                console.error('Resend verification error:', error);
+            }
+        });
+
+        // Handle login form submission
+        loginFormElement.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            showLoading();
+            loginSubmitBtn.disabled = true;
+
+            try {
+                const formData = new FormData(loginFormElement);
+                const data = Object.fromEntries(formData);
+                
+                const response = await fetch("{{ url_for('auth') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(data),
+                    credentials: 'include'
+                });
+                
+                const responseData = await response.json();
+                hideLoading();
+                loginSubmitBtn.disabled = false;
+
+                if (responseData.success) {
+                    const quizResponse = await fetch('{{ url_for("check_quiz_status_endpoint") }}', {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        credentials: 'include'
+                    });
+                    const quizData = await quizResponse.json();
+                    window.location.href = quizData.quiz_completed ? '{{ url_for("explore") }}' : '{{ url_for("questions") }}';
+                } else if (responseData.verification_required) {
+                    verificationSection.classList.add('active');
+                    formContainer.classList.add('hidden');
+                    authButtons.classList.add('hidden');
+                    verificationEmail.textContent = data.email;
+                    showSuccess(responseData.message || 'Please verify your email');
+                } else {
+                    showError(responseData.error || 'Login failed');
+                }
+            } catch (error) {
+                hideLoading();
+                loginSubmitBtn.disabled = false;
+                showError('An error occurred during login');
+                console.error('Login error:', error);
+            }
+        });
+
+        // Handle signup form submission
+        signupFormElement.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (currentStep !== 3) return;
+            
+            showLoading();
+            signupSubmitBtn.disabled = true;
+
+            try {
+                const formData = new FormData(signupFormElement);
+                const data = Object.fromEntries(formData);
+                
+                // Validate passwords match
+                if (data.password !== data.confirm_password) {
+                    showError('Passwords do not match');
+                    hideLoading();
+                    signupSubmitBtn.disabled = false;
+                    return;
+                }
+
+                // Ensure age is a number
+                data.age = parseInt(data.age);
+
+                const response = await fetch("{{ url_for('auth') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(data),
+                    credentials: 'include'
+                });
+                
+                const responseData = await response.json();
+                hideLoading();
+                signupSubmitBtn.disabled = false;
+
+                if (responseData.success) {
+                    verificationSection.classList.add('active');
+                    formContainer.classList.add('hidden');
+                    authButtons.classList.add('hidden');
+                    verificationEmail.textContent = data.email;
+                    showSuccess(responseData.message || 'Verification email sent! Please check your inbox.');
+                } else {
+                    showError(responseData.error || 'Signup failed');
+                }
+            } catch (error) {
+                hideLoading();
+                signupSubmitBtn.disabled = false;
+                showError('An error occurred during signup');
+                console.error('Signup error:', error);
+            }
+        });
+
+        // Handle login after verification
+        loginAfterVerify.addEventListener('click', () => {
+            loginBtn.click();
+        });
+
+        // Initialize form container
+        formContainer.classList.add('active');
+
+        // Handle social login buttons (placeholder)
+        document.querySelectorAll('.social-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                showError('Social login is not implemented yet');
+            });
+        });
+
+        // Handle forgot password link (placeholder)
+        document.querySelector('.forgot-link').addEventListener('click', (e) => {
+            e.preventDefault();
+            showError('Password reset is not implemented yet');
+        });
+    });
+</script>
 </body>
 </html>

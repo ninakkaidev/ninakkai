@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, make_response
+from flask import Flask, jsonify, request, make_response, session, render_template, redirect, url_for
 import requests
 from datetime import timedelta
 import logging
@@ -8,15 +8,15 @@ import os
 from flask_cors import CORS
 
 app = Flask(__name__)
-# Use environment variable for secret key, fallback to a secure default
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secure-fixed-secret-key-here')  # Replace with a secure key
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secure-fixed-secret-key-here')
 app.permanent_session_lifetime = timedelta(days=1)
 app.config.update(
-    SESSION_COOKIE_SAMESITE='None',  # Align with API-side for cross-origin requests
-    SESSION_COOKIE_SECURE=os.environ.get('FLASK_ENV', 'development') != 'development',  # HTTPS only in production
+    SESSION_COOKIE_SAMESITE='None',
+    SESSION_COOKIE_SECURE=os.environ.get('FLASK_ENV', 'development') != 'development',
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_NAME='for_you_session',  # Use same cookie name as API
-    SESSION_COOKIE_PATH='/'
+    SESSION_COOKIE_NAME='for_you_session',
+    SESSION_COOKIE_PATH='/',
+    SESSION_COOKIE_DOMAIN=None
 )
 
 # Configure CORS
@@ -41,19 +41,8 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # API Configuration
-API_BASE_URL = 'https://routinely-positive-rattler.ngrok-free.app'  # Update with correct API URL
-API_TIMEOUT = 10  # seconds
-
-# Temporary mock signup endpoint for testing (remove in production)
-@app.route('/api/signup', methods=['POST'])
-def mock_signup():
-    data = request.get_json()
-    logger.debug(f"Mock signup called with data: {data}")
-    return jsonify({
-        'success': True,
-        'user_id': 'mock_user_id_123',
-        'message': 'Mock signup successful. Please verify your email.'
-    }), 201
+API_BASE_URL = 'https://routinely-positive-rattler.ngrok-free.app'
+API_TIMEOUT = 10
 
 @app.after_request
 def log_response(response):
@@ -93,10 +82,12 @@ def auth():
             else:
                 try:
                     response = requests.post(
-                        urljoin(API_BASE_URL, '/api/login'),  # Verify endpoint
+                        urljoin(API_BASE_URL, '/api/login'),
                         json={'email': email, 'password': password},
                         headers={'Content-Type': 'application/json'},
-                        timeout=API_TIMEOUT
+                        timeout=API_TIMEOUT,
+                        cookies=request.cookies,
+                        allow_redirects=False
                     )
                     logger.debug(f"API login response: {response.status_code}, {response.text}")
                     
@@ -142,13 +133,13 @@ def auth():
                 error = 'Password must be at least 8 characters'
             else:
                 try:
-                    # Use mock endpoint for local testing; replace with actual endpoint
-                    endpoint = '/api/signup'  # Update if endpoint is different (e.g., '/api/register')
                     response = requests.post(
-                        urljoin(API_BASE_URL, endpoint),
+                        urljoin(API_BASE_URL, '/api/signup'),
                         json=data,
                         headers={'Content-Type': 'application/json'},
-                        timeout=API_TIMEOUT
+                        timeout=API_TIMEOUT,
+                        cookies=request.cookies,
+                        allow_redirects=False
                     )
                     logger.debug(f"API signup response: {response.status_code}, {response.text}")
                     
@@ -178,7 +169,7 @@ def auth():
     if request.cookies.get('email_verified') == '1':
         verification_success = True
         resp = make_response(render_template('auth.html', error=error, success=success, verification_sent=verification_sent, verification_success=verification_success, email=email))
-        resp.set_cookie('email_verified', '', expires=0)
+        resp.set_cookie('email_verified', '', expires=0, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='None')
         return resp
 
     return render_template('auth.html', error=error, success=success, verification_sent=verification_sent, verification_success=verification_success, email=email)
@@ -193,15 +184,18 @@ def resend_verification():
             urljoin(API_BASE_URL, '/api/resend-verification'),
             json={'email': email},
             headers={'Content-Type': 'application/json'},
-            timeout=API_TIMEOUT
+            timeout=API_TIMEOUT,
+            cookies=request.cookies,
+            allow_redirects=False
         )
         logger.debug(f"API resend-verification response: {response.status_code}, {response.text}")
         
         response_data = response.json()
         
         if response.status_code == 200:
-            session['verification_pending'] = True
+            session.permanent = True
             session['email'] = email
+            session['verification_pending'] = True
             session.modified = True
             logger.debug(f"Session set after resend: {session}, SID: {session.sid if hasattr(session, 'sid') else 'No SID'}")
             resp = make_response(jsonify({
@@ -229,7 +223,9 @@ def check_quiz_status():
             urljoin(API_BASE_URL, f"/api/profile"),
             json={'user_id': session.get('user_id')},
             headers=headers,
-            timeout=API_TIMEOUT
+            timeout=API_TIMEOUT,
+            cookies=request.cookies,
+            allow_redirects=False
         )
         logger.debug(f"API profile response: {response.status_code}, {response.text}")
         
@@ -255,8 +251,18 @@ def check_session():
     logger.debug(f"Session in check_session: {session}")
     logger.debug(f"Incoming cookies: {request.cookies}")
     if 'user_id' not in session:
+        logger.debug("No user_id in session for check_session")
         return jsonify({'success': False, 'error': 'No active session'}), 401
-    return jsonify({'success': True, 'user_id': session.get('user_id'), 'email': session.get('email')})
+    
+    response = requests.get(
+        urljoin(API_BASE_URL, '/api/check-session'),
+        headers={'Content-Type': 'application/json'},
+        cookies=request.cookies,
+        timeout=API_TIMEOUT
+    )
+    logger.debug(f"API check-session response: {response.status_code}, {response.text}")
+    
+    return jsonify(response.json()), response.status_code
 
 @app.route('/debug-session')
 def debug_session():
@@ -278,7 +284,9 @@ def verify_email_endpoint():
             urljoin(API_BASE_URL, '/api/verify-email'),
             json={'token': token},
             headers={'Content-Type': 'application/json'},
-            timeout=API_TIMEOUT
+            timeout=API_TIMEOUT,
+            cookies=request.cookies,
+            allow_redirects=False
         )
         logger.debug(f"API verify-email response: {response.status_code}, {response.text}")
         
@@ -288,7 +296,7 @@ def verify_email_endpoint():
             session.pop('verification_pending', None)
             session.modified = True
             resp = make_response(redirect(url_for('auth')))
-            resp.set_cookie('email_verified', '1', max_age=60)
+            resp.set_cookie('email_verified', '1', max_age=60, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='None')
             resp.set_cookie('for_you_session', session.sid, max_age=86400, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='None')
             return resp
         else:
@@ -311,7 +319,9 @@ def explore():
             urljoin(API_BASE_URL, '/api/matches'),
             json={'user_id': session.get('user_id')},
             headers=headers,
-            timeout=API_TIMEOUT
+            timeout=API_TIMEOUT,
+            cookies=request.cookies,
+            allow_redirects=False
         )
         logger.debug(f"API matches response: {response.status_code}, {response.text}")
         
@@ -340,7 +350,9 @@ def chat():
             urljoin(API_BASE_URL, '/api/chats'),
             json={'user_id': session.get('user_id')},
             headers=headers,
-            timeout=API_TIMEOUT
+            timeout=API_TIMEOUT,
+            cookies=request.cookies,
+            allow_redirects=False
         )
         logger.debug(f"API chats response: {response.status_code}, {response.text}")
         
@@ -369,7 +381,9 @@ def profile():
             urljoin(API_BASE_URL, '/api/profile'),
             json={'user_id': session.get('user_id')},
             headers=headers,
-            timeout=API_TIMEOUT
+            timeout=API_TIMEOUT,
+            cookies=request.cookies,
+            allow_redirects=False
         )
         logger.debug(f"API profile response: {response.status_code}, {response.text}")
         
@@ -417,7 +431,9 @@ def submit_quiz():
             urljoin(API_BASE_URL, '/api/quiz/submit'),
             json={'answers': data['answers'], 'user_id': session.get('user_id')},
             headers=headers,
-            timeout=API_TIMEOUT
+            timeout=API_TIMEOUT,
+            cookies=request.cookies,
+            allow_redirects=False
         )
         logger.debug(f"API quiz submit response: {response.status_code}, {response.text}")
         
@@ -442,7 +458,9 @@ def logout():
                 urljoin(API_BASE_URL, '/api/logout'),
                 json={'user_id': session.get('user_id')},
                 headers=headers,
-                timeout=API_TIMEOUT
+                timeout=API_TIMEOUT,
+                cookies=request.cookies,
+                allow_redirects=False
             )
             logger.debug(f"API logout response: {response.status_code}, {response.text}")
         except Exception as e:
