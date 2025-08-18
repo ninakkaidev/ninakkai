@@ -24,8 +24,8 @@ app = Flask(__name__,
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secure-fixed-secret-key-here')
 app.permanent_session_lifetime = timedelta(days=1)
 app.config.update(
-    SESSION_COOKIE_SAMESITE='None',
-    SESSION_COOKIE_SECURE=os.environ.get('FLASK_ENV', 'development') != 'development',
+    SESSION_COOKIE_SAMESITE='Lax',  # Changed for local testing compatibility
+    SESSION_COOKIE_SECURE=False,  # Set to False for local development (non-HTTPS)
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_NAME='for_you_session',
     SESSION_COOKIE_PATH='/',
@@ -130,7 +130,7 @@ class MongoService:
                 {'_id': ObjectId(user['id'])},
                 {'$set': {'email_verified': True}, '$unset': {'verification_token': ''}}
             )
-            return {'success': result.modified_count > 0, 'email': user['email']}
+            return {'success': result.modified_count > 0, 'email': user['email'], 'user_id': user['id']}
         except Exception as e:
             logger.error(f"Verify email error: {str(e)}")
             return {'success': False, 'error': str(e)}
@@ -366,6 +366,7 @@ def auth():
 
     # Check if user is already logged in
     if 'user_id' in session:
+        logger.debug(f"User already logged in, redirecting to questions: {session['user_id']}")
         return redirect(url_for('questions'))
 
     if request.method == 'POST':
@@ -474,7 +475,7 @@ def auth():
     if request.cookies.get('email_verified') == '1':
         verification_success = True
         resp = make_response(render_template('auth.html', error=error, success=success, verification_sent=verification_sent, verification_success=verification_success, email=email))
-        resp.set_cookie('email_verified', '', expires=0, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='None')
+        resp.set_cookie('email_verified', '', expires=0, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
         return resp
 
     return render_template('auth.html', error=error, success=success, verification_sent=verification_sent, verification_success=verification_success, email=email)
@@ -491,10 +492,12 @@ def verify_email_endpoint():
             return redirect(url_for('auth', error=result.get('error', 'Verification failed. Please try again.')))
         session.permanent = True
         session['email'] = result['email']
+        session['user_id'] = result['user_id']
         session['verification_pending'] = False
         session.modified = True
-        resp = make_response(redirect(url_for('auth')))
-        resp.set_cookie('email_verified', '1', max_age=60, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='None')
+        logger.debug(f"Session set after email verification: {session}")
+        resp = make_response(redirect(url_for('questions')))
+        resp.set_cookie('email_verified', '1', max_age=60, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
         return resp
     except Exception as e:
         logger.error(f"Verification error: {str(e)}")
@@ -556,6 +559,7 @@ def questions():
     if 'user_id' not in session:
         logger.debug("No user_id in session for /questions")
         return redirect(url_for('auth'))
+    logger.debug(f"Rendering questions.html for user_id: {session['user_id']}")
     return render_template('questions.html')
 
 @app.route('/logout')
@@ -563,8 +567,8 @@ def logout():
     logger.debug(f"Session in logout: {session}")
     session.clear()
     resp = make_response(redirect(url_for('index')))
-    resp.set_cookie('for_you_session', '', expires=0, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='None')
-    resp.set_cookie('email_verified', '', expires=0, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='None')
+    resp.set_cookie('for_you_session', '', expires=0, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
+    resp.set_cookie('email_verified', '', expires=0, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
     return resp
 
 if __name__ == '__main__':
