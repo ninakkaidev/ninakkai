@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        /* Same CSS as original, no changes needed */
         * {
             margin: 0;
             padding: 0;
@@ -609,7 +610,11 @@
                 </ol>
             </div>
             
-            <div class="resend-link" id="resendLink">Didn't receive email? Resend</div>
+            <form method="POST" action="{{ url_for('auth') }}" id="resendForm">
+                <input type="hidden" name="form_type" value="resend_verification">
+                <input type="hidden" name="email" value="{{ email if email else session.get('email', '') }}">
+                <button type="submit" class="resend-link" id="resendLink">Didn't receive email? Resend</button>
+            </form>
         </div>
         
         <!-- Auth Forms Section -->
@@ -735,7 +740,7 @@
     </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', async function() {
+    document.addEventListener('DOMContentLoaded', function() {
         // DOM Elements
         const loginBtn = document.getElementById('loginBtn');
         const signupBtn = document.getElementById('signupBtn');
@@ -769,41 +774,6 @@
 
         function hideLoading() {
             loading.style.display = 'none';
-        }
-
-        // Check session on page load
-        async function checkSession() {
-            try {
-                const response = await fetch('/api/check-session', {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    credentials: 'include'
-                });
-                const data = await response.json();
-                if (data.success) {
-                    // Check quiz status
-                    const quizResponse = await fetch('{{ url_for("check_quiz_status_endpoint") }}', {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        credentials: 'include'
-                    });
-                    const quizData = await quizResponse.json();
-                    window.location.href = quizData.quiz_completed ? '{{ url_for("explore") }}' : '{{ url_for("questions") }}';
-                }
-            } catch (error) {
-                console.error('Session check error:', error);
-            }
-        }
-
-        // Run session check if not in verification mode
-        if (!verificationSection.classList.contains('active')) {
-            await checkSession();
         }
 
         // Toggle between login and signup forms
@@ -933,165 +903,43 @@
             setTimeout(() => errorDiv.remove(), 5000);
         }
 
-        // Show success message
-        function showSuccess(message) {
-            const successDiv = document.createElement('div');
-            successDiv.className = 'success-message';
-            successDiv.textContent = message;
-            const existingSuccess = document.querySelector('.success-message');
-            if (existingSuccess) existingSuccess.remove();
-            document.querySelector('.container').insertBefore(successDiv, formContainer);
-            setTimeout(() => successDiv.remove(), 5000);
-        }
-
-        // Resend verification email
-        resendLink.addEventListener('click', async function() {
-            showLoading();
-            resendLink.textContent = 'Sending...';
-            
-            try {
-                const email = verificationEmail.textContent;
-                const formData = new FormData();
-                formData.append('form_type', 'resend_verification');
-                formData.append('email', email);
-                
-                const response = await fetch("{{ url_for('auth') }}", {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'include'
-                });
-                
-                const data = await response.json();
-                hideLoading();
-                resendLink.textContent = "Didn't receive email? Resend";
-                
-                if (data.success) {
-                    showSuccess('Verification email resent successfully!');
-                } else {
-                    showError(data.error || 'Failed to resend verification email');
-                }
-            } catch (error) {
-                hideLoading();
-                resendLink.textContent = "Didn't receive email? Resend";
-                showError('An error occurred while resending verification email');
-                console.error('Resend verification error:', error);
-            }
-        });
-
-        // Handle login form submission
-        loginFormElement.addEventListener('submit', async function(e) {
-            e.preventDefault();
+        // Handle form submissions
+        loginFormElement.addEventListener('submit', function() {
             showLoading();
             loginSubmitBtn.disabled = true;
-
-            try {
-                const formData = new FormData(loginFormElement);
-                
-                const response = await fetch("{{ url_for('auth') }}", {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'include'
-                });
-                
-                if (response.redirected) {
-                    window.location.href = response.url;
-                    return;
-                }
-                
-                const responseData = await response.json();
-                hideLoading();
+            setTimeout(() => {
                 loginSubmitBtn.disabled = false;
-
-                if (responseData.success) {
-                    const quizResponse = await fetch('{{ url_for("check_quiz_status_endpoint") }}', {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        credentials: 'include'
-                    });
-                    const quizData = await quizResponse.json();
-                    window.location.href = quizData.quiz_completed ? '{{ url_for("explore") }}' : '{{ url_for("questions") }}';
-                } else if (responseData.needs_verification) {
-                    verificationSection.classList.add('active');
-                    formContainer.classList.add('hidden');
-                    authButtons.classList.add('hidden');
-                    verificationEmail.textContent = formData.get('email');
-                    showSuccess('Please verify your email');
-                } else {
-                    showError(responseData.error || 'Login failed');
-                }
-            } catch (error) {
                 hideLoading();
-                loginSubmitBtn.disabled = false;
-                showError('An error occurred during login');
-                console.error('Login error:', error);
-            }
+            }, 1000); // Simulate server response time
         });
 
-        // Handle signup form submission
-        signupFormElement.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            if (currentStep !== 3) return;
-            
+        signupFormElement.addEventListener('submit', function(e) {
+            if (currentStep !== 3) {
+                e.preventDefault();
+                return;
+            }
             showLoading();
             signupSubmitBtn.disabled = true;
-
-            try {
-                const formData = new FormData(signupFormElement);
-                const data = Object.fromEntries(formData);
-                
-                // Validate passwords match
-                if (data.password !== data.confirm_password) {
-                    showError('Passwords do not match');
-                    hideLoading();
-                    signupSubmitBtn.disabled = false;
-                    return;
-                }
-
-                // Ensure age is a number
-                formData.set('age', parseInt(data.age));
-
-                const response = await fetch("{{ url_for('auth') }}", {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'include'
-                });
-                
-                if (response.redirected) {
-                    window.location.href = response.url;
-                    return;
-                }
-                
-                const responseData = await response.json();
-                hideLoading();
+            setTimeout(() => {
                 signupSubmitBtn.disabled = false;
-
-                if (responseData.success) {
-                    verificationSection.classList.add('active');
-                    formContainer.classList.add('hidden');
-                    authButtons.classList.add('hidden');
-                    verificationEmail.textContent = data.email;
-                    showSuccess('Verification email sent! Please check your inbox.');
-                } else {
-                    showError(responseData.error || 'Signup failed');
-                }
-            } catch (error) {
                 hideLoading();
-                signupSubmitBtn.disabled = false;
-                showError('An error occurred during signup');
-                console.error('Signup error:', error);
-            }
+            }, 1000); // Simulate server response time
+        });
+
+        // Handle resend verification
+        resendLink.addEventListener('click', function() {
+            showLoading();
+            resendLink.textContent = 'Sending...';
+            setTimeout(() => {
+                resendLink.textContent = "Didn't receive email? Resend";
+                hideLoading();
+            }, 1000); // Simulate server response time
         });
 
         // Handle login after verification
         loginAfterVerify.addEventListener('click', () => {
             loginBtn.click();
         });
-
-        // Initialize form container
-        formContainer.classList.add('active');
 
         // Handle social login buttons (placeholder)
         document.querySelectorAll('.social-btn').forEach(btn => {
@@ -1105,6 +953,9 @@
             e.preventDefault();
             showError('Password reset is not implemented yet');
         });
+
+        // Initialize form container
+        formContainer.classList.add('active');
     });
 </script>
 </body>
