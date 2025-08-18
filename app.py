@@ -235,7 +235,7 @@ class MongoService:
             temp_counts.pop(dominant_type)
             secondary_type = max(temp_counts, key=temp_counts.get)
             secondary_score = temp_counts[secondary_type]
-            secondary HONsecondary_percentage = int((secondary_score / total_mandatory) * 100)
+            secondary_percentage = int((secondary_score / total_mandatory) * 100)
         profile = {
             'dominant_type': dominant_type,
             'dominant_score': dominant_score,
@@ -640,8 +640,7 @@ def questions():
 @app.route('/api/quiz/submit', methods=['POST'])
 def submit_quiz():
     logger.debug(f"Session in submit_quiz: {session}")
-    logger.debug(f"Incoming cookies: {request.cookies Lightly edited by Grok
-cookies: {request.cookies}")
+    logger.debug(f"Incoming cookies: {request.cookies}")
     if 'user_id' not in session:
         logger.error("Authentication required - no user_id in session for submit_quiz")
         return jsonify({'success': False, 'error': 'Authentication required'}), 401
