@@ -194,7 +194,7 @@
       padding: 20px;
       background: rgba(255, 255, 255, 0.1);
       border-radius: 15px;
-      display: none; /* Ensure initial state is hidden */
+      display: none;
     }
 
     .optional-section p {
@@ -563,12 +563,12 @@
 
     // State Variables
     let currentQuestion = 0;
-    let questions = [...requiredQuestions]; // Start with required questions only
+    let questions = [...requiredQuestions];
     let selectedAnswers = [];
     let isOptionalSection = false;
     let rankedItems = [];
     let currentRank = 1;
-    const requiredQuestionCount = requiredQuestions.length; // Store required questions count
+    const requiredQuestionCount = requiredQuestions.length;
 
     // Load saved answers if redirected from auth
     function loadSavedAnswers() {
@@ -597,7 +597,7 @@
     loadSavedAnswers();
     btnStart.addEventListener('click', startQuiz);
     btnExplore.addEventListener('click', () => {
-      console.log('Navigating to explore page');
+      console.log('Meet Your Partner clicked, redirecting to explore');
       window.location.href = '{{ url_for("explore") }}';
     });
     btnYes.addEventListener('click', () => {
@@ -713,9 +713,9 @@
     function showOptionalSection() {
       console.log('Showing optional section');
       isOptionalSection = true;
-      qaContainer.style.display = 'block'; // Ensure container is visible
-      questionBox.style.display = 'none'; // Hide question box
-      optionalSection.style.display = 'block'; // Show optional section
+      qaContainer.style.display = 'block';
+      questionBox.style.display = 'none';
+      optionalSection.style.display = 'block';
       sectionTitle.textContent = 'Optional Questions';
       sectionDescription.textContent = 'Answer a few more questions to refine your matches or skip to see your results.';
     }
@@ -745,8 +745,14 @@
         const data = await response.json();
         console.log('Quiz submission response:', data);
         if (data.success) {
+          console.log('Quiz submitted successfully, clearing session storage');
           sessionStorage.removeItem('quiz_answers');
           showFinalScreen();
+          // Auto-redirect after 2 seconds
+          setTimeout(() => {
+            console.log('Auto-redirecting to explore after final screen');
+            window.location.href = '{{ url_for("explore") }}';
+          }, 2000);
         } else {
           console.error('Quiz submission failed:', data.error);
           alert('Error submitting quiz: ' + (data.error || 'Unknown error'));
