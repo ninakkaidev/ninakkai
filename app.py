@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, make_response, session, render_template, redirect, url_for, send_from_directory
+from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory
 from pymongo import MongoClient
 from typing import Dict, Any, Optional, List
 from bson import ObjectId
@@ -11,11 +11,10 @@ import secrets
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_cors import CORS
 
-# Configure logging to suppress pymongo debug logs and set app logger correctly
+# Configure logging
 logging.getLogger('pymongo').setLevel(logging.WARNING)
-logging.basicConfig(level=logging.INFO)  # Changed to INFO to avoid mislabeling
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__,
@@ -32,23 +31,6 @@ app.config.update(
     SESSION_COOKIE_PATH='/',
     SESSION_COOKIE_DOMAIN=None
 )
-
-# Configure CORS
-CORS(app, supports_credentials=True, resources={
-    r"/*": {
-        "origins": [
-            'https://routinely-positive-rattler.ngrok-free.app',
-            'http://localhost:5050',
-            'https://client1-ez5pxwg0k-ashiks-projects-05a199d3.vercel.app',
-            'https://client1-amber.vercel.app',
-            'https://www.ninakkai.com'
-        ],
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization", "X-Session-ID"],
-        "expose_headers": ["Set-Cookie"],
-        "supports_credentials": True
-    }
-})
 
 class MongoService:
     def __init__(self):
@@ -313,7 +295,7 @@ def send_verification_email(email: str, verification_token: str) -> Dict[str, An
         smtp_server = 'smtp.gmail.com'
         smtp_port = 587
         smtp_user = 'ninakkaiforyou@gmail.com'
-        smtp_password = 'porz cqqt bumr wdgj'
+        smtp_password = os.environ.get('SMTP_PASSWORD', 'porz cqqt bumr wdgj')
         verification_url = f"https://www.ninakkai.com/verify-email?token={verification_token}"
         msg = MIMEMultipart()
         msg['From'] = smtp_user
@@ -355,11 +337,14 @@ def log_session_info():
 def index():
     logger.debug(f"Session in index: {session}")
     logger.debug(f"Incoming cookies: {request.cookies}")
+    if 'user_id' in session:
+        quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
+        return redirect(url_for('explore') if quiz_completed else url_for('questions'))
     try:
         return render_template('index.html')
     except Exception as e:
         logger.error(f"Error rendering index.html: {str(e)}")
-        return jsonify({'success': False, 'error': 'Template not found'}), 404
+        return render_template('error.html', error='Template not found'), 404
 
 @app.route('/favicon.ico')
 def favicon():
@@ -367,7 +352,7 @@ def favicon():
         return send_from_directory(app.static_folder, 'favicon.ico', mimetype='image/vnd.microsoft.icon')
     except Exception as e:
         logger.error(f"Error serving favicon.ico: {str(e)}")
-        return jsonify({'success': False, 'error': 'Favicon not found'}), 404
+        return render_template('error.html', error='Favicon not found'), 404
 
 @app.route('/auth', methods=['GET', 'POST'])
 def auth():
@@ -379,17 +364,19 @@ def auth():
     verification_success = False
     email = session.get('email', '')
 
+    # Check if user is already logged in
+    if 'user_id' in session:
+        quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
+        return redirect(url_for('explore') if quiz_completed else url_for('questions'))
+
     if request.method == 'POST':
         form_type = request.form.get('form_type')
-        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
         if form_type == 'login':
             email = request.form.get('email')
             password = request.form.get('password')
             if not email or not password:
                 error = 'Email and password are required'
-                if is_ajax:
-                    return jsonify({'success': False, 'error': error}), 400
             else:
                 try:
                     result = mongo_service.verify_user(email, password)
@@ -401,12 +388,8 @@ def auth():
                             session.modified = True
                             verification_sent = True
                             error = 'Please verify your email before logging in'
-                            if is_ajax:
-                                return jsonify({'success': False, 'needs_verification': True, 'error': error}), 403
                         else:
                             error = result.get('error', 'Login failed. Please try again.')
-                            if is_ajax:
-                                return jsonify({'success': False, 'error': error}), 401
                     else:
                         session.permanent = True
                         session['email'] = email
@@ -414,15 +397,10 @@ def auth():
                         session.modified = True
                         logger.debug(f"Session set after login: {session}")
                         quiz_completed = bool(mongo_service.get_quiz_results(result['user']['id']))
-                        redirect_url = url_for('questions') if not quiz_completed else url_for('explore')
-                        if is_ajax:
-                            return jsonify({'success': True, 'redirect': redirect_url}), 200
-                        return redirect(redirect_url)
+                        return redirect(url_for('explore') if quiz_completed else url_for('questions'))
                 except Exception as e:
                     logger.error(f"Login error: {str(e)}")
                     error = 'An error occurred during login. Please try again.'
-                    if is_ajax:
-                        return jsonify({'success': False, 'error': error}), 500
         elif form_type == 'signup':
             data = {
                 'email': request.form.get('email'),
@@ -433,37 +411,27 @@ def auth():
             }
             if not all([data['email'], data['password'], data['full_name']]):
                 error = 'Please fill all required fields'
-                if is_ajax:
-                    return jsonify({'success': False, 'error': error}), 400
             elif not re.match(r"[^@]+@[^@]+\.[^@]+", data['email']):
                 error = 'Please enter a valid email address'
-                if is_ajax:
-                    return jsonify({'success': False, 'error': error}), 400
             elif len(data['password']) < 8:
                 error = 'Password must be at least 8 characters'
-                if is_ajax:
-                    return jsonify({'success': False, 'error': error}), 400
+            elif data['password'] != request.form.get('confirm_password'):
+                error = 'Passwords do not match'
             else:
                 try:
                     existing_user = mongo_service.get_user_by_email(data['email'])
                     if existing_user:
                         error = 'Email already registered'
-                        if is_ajax:
-                            return jsonify({'success': False, 'error': error}), 400
                     else:
                         result = mongo_service.create_user(
                             data['email'], data['password'], data['full_name'], data['age'], data['gender']
                         )
                         if not result['success']:
                             error = result.get('error', 'Failed to create user')
-                            if is_ajax:
-                                return jsonify({'success': False, 'error': error}), 400
                         else:
                             email_result = send_verification_email(data['email'], result['user']['verification_token'])
                             if not email_result['success']:
                                 error = 'Failed to send verification email'
-                                if is_ajax:
-                                    return jsonify({'success': False, 'error': error}), 500
                             else:
                                 session.permanent = True
                                 session['email'] = data['email']
@@ -472,16 +440,38 @@ def auth():
                                 session.modified = True
                                 verification_sent = True
                                 success = 'Verification email sent! Please check your inbox.'
-                                if is_ajax:
-                                    return jsonify({'success': True, 'message': success}), 200
-                                return render_template('auth.html', error=error, success=success, verification_sent=verification_sent, verification_success=verification_success, email=data['email'])
                 except Exception as e:
                     logger.error(f"Signup error: {str(e)}")
                     error = 'An error occurred during signup. Please try again.'
-                    if is_ajax:
-                        return jsonify({'success': False, 'error': error}), 500
         elif form_type == 'resend_verification':
-            return resend_verification()
+            try:
+                email = request.form.get('email') or session.get('email')
+                if not email:
+                    error = 'No email provided'
+                else:
+                    user = mongo_service.get_user_by_email(email)
+                    if not user:
+                        error = 'User not found'
+                    elif user.get('email_verified', False):
+                        error = 'Email already verified'
+                    else:
+                        verification_token = user.get('verification_token')
+                        if not verification_token:
+                            verification_token = secrets.token_urlsafe(32)
+                            mongo_service.update_user(user['id'], {'verification_token': verification_token})
+                        email_result = send_verification_email(email, verification_token)
+                        if not email_result['success']:
+                            error = 'Failed to send verification email'
+                        else:
+                            session.permanent = True
+                            session['email'] = email
+                            session['verification_pending'] = True
+                            session.modified = True
+                            verification_sent = True
+                            success = 'Verification email resent successfully!'
+            except Exception as e:
+                logger.error(f"Resend verification error: {str(e)}")
+                error = 'An unexpected error occurred'
 
     if request.cookies.get('email_verified') == '1':
         verification_success = True
@@ -490,89 +480,6 @@ def auth():
         return resp
 
     return render_template('auth.html', error=error, success=success, verification_sent=verification_sent, verification_success=verification_success, email=email)
-
-def resend_verification():
-    try:
-        email = request.form.get('email') or session.get('email')
-        if not email:
-            return jsonify({'success': False, 'error': 'No email provided'}), 400
-        user = mongo_service.get_user_by_email(email)
-        if not user:
-            return jsonify({'success': False, 'error': 'User not found'}), 404
-        if user.get('email_verified', False):
-            return jsonify({'success': False, 'error': 'Email already verified'}), 400
-        verification_token = user.get('verification_token')
-        if not verification_token:
-            verification_token = secrets.token_urlsafe(32)
-            mongo_service.update_user(user['id'], {'verification_token': verification_token})
-        email_result = send_verification_email(email, verification_token)
-        if not email_result['success']:
-            return jsonify({'success': False, 'error': 'Failed to send verification email'}), 500
-        session.permanent = True
-        session['email'] = email
-        session['verification_pending'] = True
-        session.modified = True
-        logger.debug(f"Session set after resend: {session}")
-        return jsonify({
-            'success': True,
-            'message': 'Verification email resent successfully!'
-        })
-    except Exception as e:
-        logger.error(f"Resend verification error: {str(e)}")
-        return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
-
-def check_quiz_status():
-    try:
-        if 'user_id' not in session:
-            logger.debug("No user_id in session for quiz status check")
-            return {'quiz_completed': False}
-        quiz_completed = bool(mongo_service.get_quiz_results(session.get('user_id')))
-        return {'quiz_completed': quiz_completed}
-    except Exception as e:
-        logger.error(f"Quiz status check failed: {str(e)}")
-        return {'quiz_completed': False}
-
-@app.route('/api/check-quiz-status', methods=['GET'])
-def check_quiz_status_endpoint():
-    logger.debug(f"Session in check_quiz_status: {session}")
-    logger.debug(f"Incoming cookies: {request.cookies}")
-    result = check_quiz_status()
-    return jsonify(result)
-
-@app.route('/api/check-session', methods=['GET'])
-def check_session():
-    logger.debug(f"Session in check_session: {session}")
-    logger.debug(f"Incoming cookies: {request.cookies}")
-    try:
-        user_id = session.get('user_id')
-        if not user_id:
-            logger.debug("No user_id in session for check_session")
-            return jsonify({'success': False, 'error': 'No active session'}), 401
-        user = mongo_service.get_user_by_email(session.get('email'))
-        if not user:
-            logger.debug("User not found for email in session")
-            return jsonify({'success': False, 'error': 'User not found'}), 401
-        return jsonify({
-            'success': True,
-            'user': {
-                'id': str(user['id']),
-                'email': user['email'],
-                'full_name': user.get('full_name', ''),
-                'age': user.get('age'),
-                'gender': user.get('gender')
-            },
-            'quiz_completed': bool(mongo_service.get_quiz_results(user_id))
-        }), 200
-    except Exception as e:
-        logger.error(f"Check session error: {str(e)}")
-        return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
-
-@app.route('/debug-session')
-def debug_session():
-    return jsonify({
-        'session': dict(session),
-        'cookies': dict(request.cookies)
-    })
 
 @app.route('/verify-email')
 def verify_email_endpoint():
@@ -651,29 +558,10 @@ def questions():
     if 'user_id' not in session:
         logger.debug("No user_id in session for /questions")
         return redirect(url_for('auth'))
-    quiz_status = check_quiz_status()
-    if quiz_status.get('quiz_completed', False):
+    quiz_status = bool(mongo_service.get_quiz_results(session['user_id']))
+    if quiz_status:
         return redirect(url_for('explore'))
     return render_template('questions.html')
-
-@app.route('/api/quiz/submit', methods=['POST'])
-def submit_quiz():
-    logger.debug(f"Session in submit_quiz: {session}")
-    logger.debug(f"Incoming cookies: {request.cookies}")
-    if 'user_id' not in session:
-        logger.error("Authentication required - no user_id in session for submit_quiz")
-        return jsonify({'success': False, 'error': 'Authentication required'}), 401
-    data = request.get_json()
-    if not data or 'answers' not in data:
-        return jsonify({'success': False, 'error': 'Missing answers data'}), 400
-    try:
-        result = mongo_service.save_quiz_results(session['user_id'], {'answers': data['answers']})
-        if not result['success']:
-            return jsonify({'success': False, 'error': result['error']}), 400
-        return jsonify({'success': True}), 200
-    except Exception as e:
-        logger.error(f"Quiz submission error: {str(e)}")
-        return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
 
 @app.route('/logout')
 def logout():
