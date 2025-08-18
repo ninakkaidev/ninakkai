@@ -13,9 +13,9 @@ from email.mime.multipart import MIMEMultipart
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_cors import CORS
 
-# Configure logging to suppress pymongo debug logs
+# Configure logging to suppress pymongo debug logs and set app logger correctly
 logging.getLogger('pymongo').setLevel(logging.WARNING)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)  # Changed to INFO to avoid mislabeling
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__,
@@ -350,7 +350,6 @@ def log_response(response):
 @app.before_request
 def log_session_info():
     logger.debug(f"Before request - Route: {request.path}, Session: {session}, Cookies: {request.cookies}, Secret Key: {app.secret_key[:4]}...")
-    logger.debug(f"Session SID: {session.sid if hasattr(session, 'sid') else 'No SID'}")
 
 @app.route('/')
 def index():
@@ -413,15 +412,12 @@ def auth():
                         session['email'] = email
                         session['user_id'] = result['user']['id']
                         session.modified = True
-                        logger.debug(f"Session set after login: {session}, SID: {session.sid if hasattr(session, 'sid') else 'No SID'}")
+                        logger.debug(f"Session set after login: {session}")
                         quiz_completed = bool(mongo_service.get_quiz_results(result['user']['id']))
                         redirect_url = url_for('questions') if not quiz_completed else url_for('explore')
                         if is_ajax:
                             return jsonify({'success': True, 'redirect': redirect_url}), 200
-                        resp = make_response(redirect(redirect_url))
-                        resp.set_cookie('for_you_session', session.sid, max_age=86400, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='None')
-                        logger.debug(f"Login response headers: {resp.headers}")
-                        return resp
+                        return redirect(redirect_url)
                 except Exception as e:
                     logger.error(f"Login error: {str(e)}")
                     error = 'An error occurred during login. Please try again.'
@@ -478,10 +474,7 @@ def auth():
                                 success = 'Verification email sent! Please check your inbox.'
                                 if is_ajax:
                                     return jsonify({'success': True, 'message': success}), 200
-                                resp = make_response(render_template('auth.html', error=error, success=success, verification_sent=verification_sent, verification_success=verification_success, email=email))
-                                resp.set_cookie('for_you_session', session.sid, max_age=86400, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='None')
-                                logger.debug(f"Session after signup: {session}, SID: {session.sid if hasattr(session, 'sid') else 'No SID'}")
-                                return resp
+                                return render_template('auth.html', error=error, success=success, verification_sent=verification_sent, verification_success=verification_success, email=data['email'])
                 except Exception as e:
                     logger.error(f"Signup error: {str(e)}")
                     error = 'An error occurred during signup. Please try again.'
@@ -519,13 +512,11 @@ def resend_verification():
         session['email'] = email
         session['verification_pending'] = True
         session.modified = True
-        logger.debug(f"Session set after resend: {session}, SID: {session.sid if hasattr(session, 'sid') else 'No SID'}")
-        resp = make_response(jsonify({
+        logger.debug(f"Session set after resend: {session}")
+        return jsonify({
             'success': True,
             'message': 'Verification email resent successfully!'
-        }))
-        resp.set_cookie('for_you_session', session.sid, max_age=86400, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='None')
-        return resp
+        })
     except Exception as e:
         logger.error(f"Resend verification error: {str(e)}")
         return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
@@ -580,8 +571,7 @@ def check_session():
 def debug_session():
     return jsonify({
         'session': dict(session),
-        'cookies': dict(request.cookies),
-        'sid': session.sid if hasattr(session, 'sid') else 'No SID'
+        'cookies': dict(request.cookies)
     })
 
 @app.route('/verify-email')
@@ -600,7 +590,6 @@ def verify_email_endpoint():
         session.modified = True
         resp = make_response(redirect(url_for('auth')))
         resp.set_cookie('email_verified', '1', max_age=60, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='None')
-        resp.set_cookie('for_you_session', session.sid, max_age=86400, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='None')
         return resp
     except Exception as e:
         logger.error(f"Verification error: {str(e)}")
