@@ -366,8 +366,7 @@ def auth():
 
     # Check if user is already logged in
     if 'user_id' in session:
-        quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
-        return redirect(url_for('explore') if quiz_completed else url_for('questions'))
+        return redirect(url_for('questions'))
 
     if request.method == 'POST':
         form_type = request.form.get('form_type')
@@ -396,8 +395,7 @@ def auth():
                         session['user_id'] = result['user']['id']
                         session.modified = True
                         logger.debug(f"Session set after login: {session}")
-                        quiz_completed = bool(mongo_service.get_quiz_results(result['user']['id']))
-                        return redirect(url_for('explore') if quiz_completed else url_for('questions'))
+                        return redirect(url_for('questions'))
                 except Exception as e:
                     logger.error(f"Login error: {str(e)}")
                     error = 'An error occurred during login. Please try again.'
@@ -558,9 +556,6 @@ def questions():
     if 'user_id' not in session:
         logger.debug("No user_id in session for /questions")
         return redirect(url_for('auth'))
-    quiz_status = bool(mongo_service.get_quiz_results(session['user_id']))
-    if quiz_status:
-        return redirect(url_for('explore'))
     return render_template('questions.html')
 
 @app.route('/logout')
