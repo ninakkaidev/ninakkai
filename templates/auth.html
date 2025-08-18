@@ -7,7 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* [Previous CSS remains unchanged] */
         * {
             margin: 0;
             padding: 0;
@@ -457,7 +456,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Verification Section Styles */
         .verification-section {
             display: none;
             text-align: center;
@@ -509,7 +507,6 @@
             text-decoration: underline;
         }
 
-        /* Verification Success Styles */
         .verification-success {
             text-align: center;
             color: white;
@@ -954,22 +951,19 @@
             
             try {
                 const email = verificationEmail.textContent;
+                const formData = new FormData();
+                formData.append('form_type', 'resend_verification');
+                formData.append('email', email);
+                
                 const response = await fetch("{{ url_for('auth') }}", {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({
-                        form_type: 'resend_verification',
-                        email: email
-                    }),
+                    body: formData,
                     credentials: 'include'
                 });
                 
                 const data = await response.json();
                 hideLoading();
-                resendLink.textContent = 'Didn\'t receive email? Resend';
+                resendLink.textContent = "Didn't receive email? Resend";
                 
                 if (data.success) {
                     showSuccess('Verification email resent successfully!');
@@ -978,7 +972,7 @@
                 }
             } catch (error) {
                 hideLoading();
-                resendLink.textContent = 'Didn\'t receive email? Resend';
+                resendLink.textContent = "Didn't receive email? Resend";
                 showError('An error occurred while resending verification email');
                 console.error('Resend verification error:', error);
             }
@@ -992,17 +986,17 @@
 
             try {
                 const formData = new FormData(loginFormElement);
-                const data = Object.fromEntries(formData);
                 
                 const response = await fetch("{{ url_for('auth') }}", {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify(data),
+                    body: formData,
                     credentials: 'include'
                 });
+                
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
                 
                 const responseData = await response.json();
                 hideLoading();
@@ -1019,12 +1013,12 @@
                     });
                     const quizData = await quizResponse.json();
                     window.location.href = quizData.quiz_completed ? '{{ url_for("explore") }}' : '{{ url_for("questions") }}';
-                } else if (responseData.verification_required) {
+                } else if (responseData.needs_verification) {
                     verificationSection.classList.add('active');
                     formContainer.classList.add('hidden');
                     authButtons.classList.add('hidden');
-                    verificationEmail.textContent = data.email;
-                    showSuccess(responseData.message || 'Please verify your email');
+                    verificationEmail.textContent = formData.get('email');
+                    showSuccess('Please verify your email');
                 } else {
                     showError(responseData.error || 'Login failed');
                 }
@@ -1057,17 +1051,18 @@
                 }
 
                 // Ensure age is a number
-                data.age = parseInt(data.age);
+                formData.set('age', parseInt(data.age));
 
                 const response = await fetch("{{ url_for('auth') }}", {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify(data),
+                    body: formData,
                     credentials: 'include'
                 });
+                
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
                 
                 const responseData = await response.json();
                 hideLoading();
@@ -1078,7 +1073,7 @@
                     formContainer.classList.add('hidden');
                     authButtons.classList.add('hidden');
                     verificationEmail.textContent = data.email;
-                    showSuccess(responseData.message || 'Verification email sent! Please check your inbox.');
+                    showSuccess('Verification email sent! Please check your inbox.');
                 } else {
                     showError(responseData.error || 'Signup failed');
                 }
