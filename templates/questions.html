@@ -574,11 +574,15 @@
       if (savedAnswers) {
         selectedAnswers = JSON.parse(savedAnswers);
         currentQuestion = selectedAnswers.length;
+        console.log(`Loaded saved answers: ${selectedAnswers.length}, currentQuestion: ${currentQuestion}, questions.length: ${questions.length}`);
         if (currentQuestion >= questions.length && !isOptionalSection) {
+          console.log('Showing optional section from saved answers');
           showOptionalSection();
         } else if (currentQuestion >= questions.length && isOptionalSection) {
-          showFinalScreen();
+          console.log('Showing final screen from saved answers');
+          submitQuiz();
         } else {
+          console.log('Displaying question from saved answers');
           displayQuestion();
         }
         sessionStorage.removeItem('quiz_answers');
@@ -589,12 +593,20 @@
     loadSavedAnswers();
     btnStart.addEventListener('click', startQuiz);
     btnExplore.addEventListener('click', () => {
+      console.log('Navigating to explore page');
       window.location.href = '{{ url_for("explore") }}';
     });
-    btnYes.addEventListener('click', continueOptionalQuestions);
-    btnNo.addEventListener('click', submitQuiz);
+    btnYes.addEventListener('click', () => {
+      console.log('Continuing with optional questions');
+      continueOptionalQuestions();
+    });
+    btnNo.addEventListener('click', () => {
+      console.log('Skipping optional questions');
+      submitQuiz();
+    });
 
     function startQuiz() {
+      console.log('Starting quiz');
       introContainer.style.display = 'none';
       qaContainer.style.display = 'block';
       sectionTitle.textContent = 'Personality Quiz';
@@ -603,7 +615,19 @@
     }
 
     function displayQuestion() {
+      if (currentQuestion >= questions.length) {
+        if (!isOptionalSection) {
+          console.log('Reached end of required questions, showing optional section');
+          showOptionalSection();
+        } else {
+          console.log('Reached end of optional questions, submitting quiz');
+          submitQuiz();
+        }
+        return;
+      }
+
       const questionData = questions[currentQuestion];
+      console.log(`Displaying question ${currentQuestion + 1}: ${questionData.question}`);
       questionElement.textContent = questionData.question;
 
       // Update progress
@@ -615,6 +639,7 @@
       rankInstructions.style.display = 'none';
 
       if (questionData.isRankQuestion) {
+        console.log('Displaying ranking question');
         rankInstructions.style.display = 'block';
         rankInstructions.textContent = 'Click to select and rank items in order of importance (1 is highest).';
         rankedItems = [];
@@ -635,9 +660,10 @@
         submitButton.addEventListener('click', submitRank);
         answersElement.appendChild(submitButton);
       } else {
+        console.log('Displaying multiple-choice question');
         questionData.answers.forEach((answer, index) => {
           const button = document.createElement('button');
-          button.textContent = `${answer} ${questionData.types[index]}`;
+          button.textContent = answer; // Removed type from display
           button.addEventListener('click', () => selectAnswer(index));
           answersElement.appendChild(button);
         });
@@ -645,13 +671,16 @@
     }
 
     function selectAnswer(index) {
+      console.log(`Selected answer ${index} for question ${currentQuestion}`);
       selectedAnswers.push({ question: currentQuestion, answer: index });
       currentQuestion++;
       if (currentQuestion < questions.length) {
         displayQuestion();
       } else if (!isOptionalSection) {
+        console.log('Finished required questions, showing optional section');
         showOptionalSection();
       } else {
+        console.log('Finished optional questions, submitting quiz');
         submitQuiz();
       }
     }
@@ -665,6 +694,7 @@
         rankItem.appendChild(rankNumber);
         rankedItems.push({ index, rank: currentRank });
         currentRank++;
+        console.log(`Ranked item ${index} as rank ${currentRank - 1}, rankedItems:`, rankedItems);
         if (currentRank > questions[currentQuestion].answers.length) {
           answersElement.querySelector('.rank-submit').disabled = false;
         }
@@ -672,20 +702,25 @@
     }
 
     function submitRank() {
+      console.log(`Submitting ranking for question ${currentQuestion}:`, rankedItems);
       selectedAnswers.push({ question: currentQuestion, ranking: rankedItems });
       currentQuestion++;
       if (currentQuestion < questions.length) {
         displayQuestion();
       } else if (!isOptionalSection) {
+        console.log('Finished required questions (ranking), showing optional section');
         showOptionalSection();
       } else {
+        console.log('Finished optional questions (ranking), submitting quiz');
         submitQuiz();
       }
     }
 
     function showOptionalSection() {
+      console.log('Showing optional section');
       isOptionalSection = true;
       qaContainer.style.display = 'none';
+      questionBox.style.display = 'none'; // Hide question box to prevent blank content
       optionalSection.style.display = 'block';
       sectionTitle.textContent = 'Optional Questions';
       sectionDescription.textContent = 'Answer a few more questions to refine your matches or skip to see your results.';
@@ -694,8 +729,10 @@
     function continueOptionalQuestions() {
       questions = [...requiredQuestions, ...optionalQuestions];
       currentQuestion = requiredQuestions.length;
+      console.log(`Continuing with optional questions, currentQuestion: ${currentQuestion}, total questions: ${questions.length}`);
       optionalSection.style.display = 'none';
       qaContainer.style.display = 'block';
+      questionBox.style.display = 'block';
       displayQuestion();
     }
 
@@ -709,7 +746,7 @@
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({ answers: selectedAnswers }),
-          credentials: 'include' // Ensure cookies are sent
+          credentials: 'include'
         });
         const data = await response.json();
         console.log('Quiz submission response:', data);
@@ -717,6 +754,7 @@
           sessionStorage.removeItem('quiz_answers');
           showFinalScreen();
         } else {
+          console.error('Quiz submission failed:', data.error);
           alert('Error submitting quiz: ' + (data.error || 'Unknown error'));
         }
       } catch (error) {
@@ -726,6 +764,7 @@
     }
 
     function showFinalScreen() {
+      console.log('Showing final screen');
       qaContainer.style.display = 'none';
       finalScreen.style.display = 'block';
       // Trigger confetti
