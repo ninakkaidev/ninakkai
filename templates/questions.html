@@ -568,46 +568,6 @@
     let rankedItems = [];
     let currentRank = 1;
 
-    // Session Check
-    async function checkSession() {
-      try {
-        console.log('Checking session...');
-        const response = await fetch('/api/check-session', {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-          },
-          credentials: 'include' // Ensure cookies are sent
-        });
-        const data = await response.json();
-        console.log('Session check response:', data);
-        if (!data.success) {
-          // Store answers in sessionStorage before redirect
-          sessionStorage.setItem('quiz_answers', JSON.stringify(selectedAnswers));
-          window.location.href = '/auth';
-        } else {
-          // Check quiz status
-          const quizResponse = await fetch('/api/check-quiz-status', {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-              'X-Requested-With': 'XMLHttpRequest'
-            },
-            credentials: 'include'
-          });
-          const quizData = await quizResponse.json();
-          console.log('Quiz status response:', quizData);
-          if (quizData.quiz_completed) {
-            window.location.href = '/explore';
-          }
-        }
-      } catch (error) {
-        console.error('Session check error:', error);
-        window.location.href = '/auth';
-      }
-    }
-
     // Load saved answers if redirected from auth
     function loadSavedAnswers() {
       const savedAnswers = sessionStorage.getItem('quiz_answers');
@@ -626,15 +586,13 @@
     }
 
     // Initialize
-    checkSession().then(() => {
-      loadSavedAnswers();
-      btnStart.addEventListener('click', startQuiz);
-      btnExplore.addEventListener('click', () => {
-        window.location.href = '/explore';
-      });
-      btnYes.addEventListener('click', continueOptionalQuestions);
-      btnNo.addEventListener('click', submitQuiz);
+    loadSavedAnswers();
+    btnStart.addEventListener('click', startQuiz);
+    btnExplore.addEventListener('click', () => {
+      window.location.href = '{{ url_for("explore") }}';
     });
+    btnYes.addEventListener('click', continueOptionalQuestions);
+    btnNo.addEventListener('click', submitQuiz);
 
     function startQuiz() {
       introContainer.style.display = 'none';
@@ -744,11 +702,11 @@
     async function submitQuiz() {
       try {
         console.log('Submitting quiz with answers:', selectedAnswers);
-        const response = await fetch('/api/quiz/submit', {
+        sessionStorage.setItem('quiz_answers', JSON.stringify(selectedAnswers));
+        const response = await fetch('{{ url_for("submit_quiz") }}', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({ answers: selectedAnswers }),
           credentials: 'include' // Ensure cookies are sent
@@ -756,6 +714,7 @@
         const data = await response.json();
         console.log('Quiz submission response:', data);
         if (data.success) {
+          sessionStorage.removeItem('quiz_answers');
           showFinalScreen();
         } else {
           alert('Error submitting quiz: ' + (data.error || 'Unknown error'));

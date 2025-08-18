@@ -24,8 +24,8 @@ app = Flask(__name__,
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secure-fixed-secret-key-here')
 app.permanent_session_lifetime = timedelta(days=1)
 app.config.update(
-    SESSION_COOKIE_SAMESITE='Lax',  # Changed for local testing compatibility
-    SESSION_COOKIE_SECURE=False,  # Set to False for local development (non-HTTPS)
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SECURE=False,  # Set to False for local development
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_NAME='for_you_session',
     SESSION_COOKIE_PATH='/',
@@ -364,7 +364,6 @@ def auth():
     verification_success = False
     email = session.get('email', '')
 
-    # Check if user is already logged in
     if 'user_id' in session:
         logger.debug(f"User already logged in, redirecting to questions: {session['user_id']}")
         return redirect(url_for('questions'))
@@ -559,8 +558,107 @@ def questions():
     if 'user_id' not in session:
         logger.debug("No user_id in session for /questions")
         return redirect(url_for('auth'))
+    quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
+    if quiz_completed:
+        return redirect(url_for('explore'))
     logger.debug(f"Rendering questions.html for user_id: {session['user_id']}")
     return render_template('questions.html')
+
+@app.route('/submit-quiz', methods=['POST'])
+def submit_quiz():
+    logger.debug(f"Session in submit-quiz: {session}")
+    if 'user_id' not in session:
+        logger.debug("No user_id in session for /submit-quiz")
+        return redirect(url_for('auth'))
+    
+    try:
+        data = request.get_json()
+        answers = data.get('answers', [])
+        if not answers:
+            return {'success': False, 'error': 'No answers provided'}, 400
+        
+        # Process answers to match MongoService format
+        processed_answers = []
+        required_questions = [
+            {
+                'answers': ["Safe and calm inside", "Excited and full of butterflies", "Like I've found someone truly rare", "Scared of being too vulnerable"],
+                'types': ["👂 Listener", "💘 Romantic", "🌙 Dreamer", "🛡️ Protector"]
+            },
+            {
+                'answers': ["Trust", "Emotional connection", "Shared goals", "Physical intimacy"],
+                'types': ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "💘 Romantic"],
+                'isRankQuestion': True
+            },
+            {
+                'answers': ["Someone silently sitting with me through pain", "Someone helping me fix the situation", "Someone saying exactly the right words", "Someone holding me tight without speaking"],
+                'types': ["🌿 Nurturer", "🛡️ Protector", "👂 Listener", "💘 Romantic"]
+            },
+            {
+                'answers': ["Try to stay calm and really listen", "Express your emotions openly", "Try to solve it quickly and move on", "Take it personally and overthink it"],
+                'types': ["👂 Listener", "💘 Romantic", "🛡️ Protector", "🌙 Dreamer"]
+            },
+            {
+                'answers': ["Kind and soft", "Strong and independent", "Perfect and without flaws", "Honest and growing"],
+                'types': ["🌿 Nurturer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
+            },
+            {
+                'answers': ["Peace and emotional safety", "Excitement and mystery", "Growth and learning together", "Feeling truly known and accepted"],
+                'types': ["🌿 Nurturer", "💘 Romantic", "🌟 Idealist", "🌙 Dreamer"]
+            },
+            {
+                'answers': ["Deep, late-night emotional conversations", "Intense physical closeness and passion", "When someone notices the little things", "Solving life's problems together"],
+                'types': ["🌙 Dreamer", "💘 Romantic", "🌿 Nurturer", "🛡️ Protector"]
+            },
+            {
+                'answers': ["Cry or let it out", "Get silent and withdraw", "Keep busy to avoid it", "Talk it out with someone trusted"],
+                'types': ["🌙 Dreamer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
+            },
+            {
+                'answers': ["Freedom to spend and still save together", "Clear roles — one earns, one manages", "Always discuss big spending decisions", "Having separate money but shared goals"],
+                'types': ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "🌟 Idealist"]
+            }
+        ]
+        optional_questions = [
+            {
+                'answers': ["I need space to process alone", "I want to talk it through together", "I focus on practical solutions", "I lean on my partner for comfort"],
+                'types': ["🛡️ Protector", "👂 Listener", "🌟 Idealist", "🌿 Nurturer"]
+            },
+            {
+                'answers': ["Dream big and figure it out later", "Set clear goals and timelines", "Go with the flow and see what happens", "Discuss every step together"],
+                'types': ["🌙 Dreamer", "🛡️ Protector", "💘 Romantic", "👂 Listener"]
+            }
+        ]
+        
+        all_questions = required_questions + optional_questions
+        for answer_data in answers:
+            question_idx = answer_data.get('question')
+            if question_idx >= len(all_questions):
+                continue
+            question = all_questions[question_idx]
+            if question.get('isRankQuestion'):
+                ranking = answer_data.get('ranking', [])
+                ranked_answer = "Ranked: " + ", ".join(f"{r['rank']}. {question['answers'][r['index']]}" for r in ranking)
+                processed_answers.append({
+                    'type': question['types'][ranking[0]['index']] if ranking else question['types'][0],
+                    'answer': ranked_answer
+                })
+            else:
+                answer_idx = answer_data.get('answer')
+                if answer_idx is not None and 0 <= answer_idx < len(question['answers']):
+                    processed_answers.append({
+                        'type': question['types'][answer_idx],
+                        'answer': question['answers'][answer_idx]
+                    })
+
+        quiz_data = {'answers': processed_answers}
+        result = mongo_service.save_quiz_results(session['user_id'], quiz_data)
+        if result['success']:
+            return {'success': True}, 200
+        else:
+            return {'success': False, 'error': result.get('error', 'Failed to save quiz results')}, 500
+    except Exception as e:
+        logger.error(f"Submit quiz error: {str(e)}")
+        return {'success': False, 'error': str(e)}, 500
 
 @app.route('/logout')
 def logout():
