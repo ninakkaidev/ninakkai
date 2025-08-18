@@ -194,6 +194,7 @@
       padding: 20px;
       background: rgba(255, 255, 255, 0.1);
       border-radius: 15px;
+      display: none; /* Ensure initial state is hidden */
     }
 
     .optional-section p {
@@ -408,7 +409,7 @@
       <div class="answers" id="answers"></div>
     </div>
     
-    <div class="optional-section" id="optional-section" style="display: none;">
+    <div class="optional-section" id="optional-section">
       <p>Want to refine your matches with deeper questions?</p>
       <button class="btn-optional" id="btn-yes">Yes, Continue</button>
       <button class="btn-optional" id="btn-no">No, Skip</button>
@@ -562,11 +563,12 @@
 
     // State Variables
     let currentQuestion = 0;
-    let questions = [...requiredQuestions];
+    let questions = [...requiredQuestions]; // Start with required questions only
     let selectedAnswers = [];
     let isOptionalSection = false;
     let rankedItems = [];
     let currentRank = 1;
+    const requiredQuestionCount = requiredQuestions.length; // Store required questions count
 
     // Load saved answers if redirected from auth
     function loadSavedAnswers() {
@@ -574,18 +576,20 @@
       if (savedAnswers) {
         selectedAnswers = JSON.parse(savedAnswers);
         currentQuestion = selectedAnswers.length;
-        console.log(`Loaded saved answers: ${selectedAnswers.length}, currentQuestion: ${currentQuestion}, questions.length: ${questions.length}`);
-        if (currentQuestion >= questions.length && !isOptionalSection) {
+        console.log(`Loaded saved answers: ${selectedAnswers.length}, currentQuestion: ${currentQuestion}, requiredQuestionCount: ${requiredQuestionCount}`);
+        if (currentQuestion >= requiredQuestionCount && !isOptionalSection) {
           console.log('Showing optional section from saved answers');
           showOptionalSection();
         } else if (currentQuestion >= questions.length && isOptionalSection) {
           console.log('Showing final screen from saved answers');
           submitQuiz();
         } else {
-          console.log('Displaying question from saved answers');
+          console.log(`Resuming at question ${currentQuestion + 1}`);
           displayQuestion();
         }
         sessionStorage.removeItem('quiz_answers');
+      } else {
+        console.log('No saved answers found');
       }
     }
 
@@ -601,7 +605,7 @@
       continueOptionalQuestions();
     });
     btnNo.addEventListener('click', () => {
-      console.log('Skipping optional questions');
+      console.log('Skipping optional questions, submitting quiz');
       submitQuiz();
     });
 
@@ -609,20 +613,21 @@
       console.log('Starting quiz');
       introContainer.style.display = 'none';
       qaContainer.style.display = 'block';
+      questionBox.style.display = 'block';
       sectionTitle.textContent = 'Personality Quiz';
       sectionDescription.textContent = 'Answer these questions to help us find your perfect match.';
       displayQuestion();
     }
 
     function displayQuestion() {
-      if (currentQuestion >= questions.length) {
-        if (!isOptionalSection) {
-          console.log('Reached end of required questions, showing optional section');
-          showOptionalSection();
-        } else {
-          console.log('Reached end of optional questions, submitting quiz');
-          submitQuiz();
-        }
+      console.log(`Current state: currentQuestion=${currentQuestion}, questions.length=${questions.length}, isOptionalSection=${isOptionalSection}`);
+      if (currentQuestion >= requiredQuestionCount && !isOptionalSection) {
+        console.log('Finished required questions, showing optional section');
+        showOptionalSection();
+        return;
+      } else if (currentQuestion >= questions.length && isOptionalSection) {
+        console.log('Finished optional questions, submitting quiz');
+        submitQuiz();
         return;
       }
 
@@ -631,8 +636,8 @@
       questionElement.textContent = questionData.question;
 
       // Update progress
-      const progress = ((currentQuestion + 1) / questions.length) * 100;
-      progressBar.style.width = `${progress}%`;
+      const progress = ((currentQuestion + 1) / requiredQuestionCount) * 100;
+      progressBar.style.width = `${Math.min(progress, 100)}%`;
 
       // Clear previous answers
       answersElement.innerHTML = '';
@@ -663,7 +668,7 @@
         console.log('Displaying multiple-choice question');
         questionData.answers.forEach((answer, index) => {
           const button = document.createElement('button');
-          button.textContent = answer; // Removed type from display
+          button.textContent = answer;
           button.addEventListener('click', () => selectAnswer(index));
           answersElement.appendChild(button);
         });
@@ -674,15 +679,7 @@
       console.log(`Selected answer ${index} for question ${currentQuestion}`);
       selectedAnswers.push({ question: currentQuestion, answer: index });
       currentQuestion++;
-      if (currentQuestion < questions.length) {
-        displayQuestion();
-      } else if (!isOptionalSection) {
-        console.log('Finished required questions, showing optional section');
-        showOptionalSection();
-      } else {
-        console.log('Finished optional questions, submitting quiz');
-        submitQuiz();
-      }
+      displayQuestion();
     }
 
     function selectRankItem(rankItem, index) {
@@ -702,37 +699,34 @@
     }
 
     function submitRank() {
+      if (rankedItems.length !== questions[currentQuestion].answers.length) {
+        console.error('Incomplete ranking, please rank all items');
+        alert('Please rank all items before submitting.');
+        return;
+      }
       console.log(`Submitting ranking for question ${currentQuestion}:`, rankedItems);
       selectedAnswers.push({ question: currentQuestion, ranking: rankedItems });
       currentQuestion++;
-      if (currentQuestion < questions.length) {
-        displayQuestion();
-      } else if (!isOptionalSection) {
-        console.log('Finished required questions (ranking), showing optional section');
-        showOptionalSection();
-      } else {
-        console.log('Finished optional questions (ranking), submitting quiz');
-        submitQuiz();
-      }
+      displayQuestion();
     }
 
     function showOptionalSection() {
       console.log('Showing optional section');
       isOptionalSection = true;
-      qaContainer.style.display = 'none';
-      questionBox.style.display = 'none'; // Hide question box to prevent blank content
-      optionalSection.style.display = 'block';
+      qaContainer.style.display = 'block'; // Ensure container is visible
+      questionBox.style.display = 'none'; // Hide question box
+      optionalSection.style.display = 'block'; // Show optional section
       sectionTitle.textContent = 'Optional Questions';
       sectionDescription.textContent = 'Answer a few more questions to refine your matches or skip to see your results.';
     }
 
     function continueOptionalQuestions() {
+      console.log(`Continuing with optional questions, currentQuestion: ${currentQuestion}, adding ${optionalQuestions.length} optional questions`);
       questions = [...requiredQuestions, ...optionalQuestions];
-      currentQuestion = requiredQuestions.length;
-      console.log(`Continuing with optional questions, currentQuestion: ${currentQuestion}, total questions: ${questions.length}`);
+      currentQuestion = requiredQuestionCount;
       optionalSection.style.display = 'none';
-      qaContainer.style.display = 'block';
       questionBox.style.display = 'block';
+      qaContainer.style.display = 'block';
       displayQuestion();
     }
 
@@ -766,6 +760,7 @@
     function showFinalScreen() {
       console.log('Showing final screen');
       qaContainer.style.display = 'none';
+      optionalSection.style.display = 'none';
       finalScreen.style.display = 'block';
       // Trigger confetti
       confetti({
