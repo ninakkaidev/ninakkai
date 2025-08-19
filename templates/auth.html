@@ -597,14 +597,50 @@
                 <button type="submit" class="resend-link" id="resendLink">Didn't receive email? Resend</button>
             </form>
         </div>
+
+        <!-- Reset Sent Section -->
+        <div class="verification-section {% if reset_sent %}active{% endif %}" id="resetSentSection">
+            <div class="verification-icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <h2>Reset Link Sent</h2>
+            <p>We've sent a password reset link to <strong>{{ email }}</strong></p>
+            
+            <div class="verification-instructions">
+                <p>To reset your password:</p>
+                <ol>
+                    <li>Check your email inbox (and spam folder)</li>
+                    <li>Click on the reset link we sent you</li>
+                    <li>Enter your new password on the page</li>
+                </ol>
+            </div>
+            
+            <a href="#" class="switch-form" id="backToLoginFromReset">Back to Login</a>
+        </div>
+
+        <!-- Forgot Password Section -->
+        <div class="verification-section" id="forgotSection" style="display: none;">
+            <div class="verification-icon">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h2>Reset Password</h2>
+            <form method="POST" action="{{ url_for('auth') }}" id="forgotForm">
+                <input type="hidden" name="form_type" value="forgot_password">
+                <div class="input-group">
+                    <input type="email" name="email" placeholder="Enter your email" required>
+                </div>
+                <button type="submit" class="submit-btn">Send Reset Link</button>
+            </form>
+            <a href="#" class="switch-form" id="backToLoginFromForgot">Back to Login</a>
+        </div>
         
         <!-- Auth Forms Section -->
-        <div class="toggle-buttons {% if verification_sent %}hidden{% endif %}" id="authButtons">
+        <div class="toggle-buttons {% if verification_sent or reset_sent %}hidden{% endif %}" id="authButtons">
             <button class="toggle-btn active" id="loginBtn">Login</button>
             <button class="toggle-btn" id="signupBtn">Sign Up</button>
         </div>
 
-        <div class="form-container {% if verification_sent %}hidden{% endif %}" id="formContainer">
+        <div class="form-container {% if verification_sent or reset_sent %}hidden{% endif %}" id="formContainer">
             <!-- Login Form -->
             <div class="form active" id="loginForm">
                 <h2>Welcome Back</h2>
@@ -617,7 +653,7 @@
                         <input type="password" name="password" placeholder="Password" required>
                     </div>
                     <button type="submit" class="submit-btn" id="loginSubmitBtn">Login</button>
-                    <a href="#" class="forgot-link">Forgot password?</a>
+                    <a href="#" class="forgot-link" id="forgotLink">Forgot password?</a>
                     
                     <div class="divider">or continue with</div>
                     
@@ -742,7 +778,14 @@
         const loginSubmitBtn = document.getElementById('loginSubmitBtn');
         const signupSubmitBtn = document.getElementById('signupSubmitBtn');
         const verificationSection = document.getElementById('verificationSection');
+        const resetSentSection = document.getElementById('resetSentSection');
+        const forgotSection = document.getElementById('forgotSection');
+        const resendForm = document.getElementById('resendForm');
+        const forgotForm = document.getElementById('forgotForm');
         const resendLink = document.getElementById('resendLink');
+        const forgotLink = document.getElementById('forgotLink');
+        const backToLoginFromForgot = document.getElementById('backToLoginFromForgot');
+        const backToLoginFromReset = document.getElementById('backToLoginFromReset');
         const authButtons = document.getElementById('authButtons');
         const loading = document.getElementById('loading');
 
@@ -763,6 +806,8 @@
             signupForm.classList.remove('active');
             formContainer.classList.add('active');
             verificationSection.classList.remove('active');
+            resetSentSection.classList.remove('active');
+            forgotSection.style.display = 'none';
             authButtons.classList.remove('hidden');
         });
 
@@ -773,6 +818,8 @@
             loginForm.classList.remove('active');
             formContainer.classList.add('active');
             verificationSection.classList.remove('active');
+            resetSentSection.classList.remove('active');
+            forgotSection.style.display = 'none';
             authButtons.classList.remove('hidden');
             resetSignupSteps();
         });
@@ -897,9 +944,13 @@
             signupSubmitBtn.disabled = true;
         });
 
-        resendLink.addEventListener('submit', function() {
+        resendForm.addEventListener('submit', function() {
             showLoading();
             resendLink.disabled = true;
+        });
+
+        forgotForm.addEventListener('submit', function() {
+            showLoading();
         });
 
         // Handle social login buttons (placeholder)
@@ -909,11 +960,35 @@
             });
         });
 
-        // Handle forgot password link (placeholder)
-        document.querySelector('.forgot-link').addEventListener('click', (e) => {
+        // Handle forgot password link
+        forgotLink.addEventListener('click', (e) => {
             e.preventDefault();
-            showError('Password reset is not implemented yet');
+            formContainer.classList.remove('active');
+            authButtons.classList.add('hidden');
+            verificationSection.classList.remove('active');
+            resetSentSection.classList.remove('active');
+            forgotSection.style.display = 'block';
         });
+
+        // Back to login from forgot
+        backToLoginFromForgot.addEventListener('click', (e) => {
+            e.preventDefault();
+            forgotSection.style.display = 'none';
+            formContainer.classList.add('active');
+            authButtons.classList.remove('hidden');
+            loginBtn.click();
+        });
+
+        // Back to login from reset sent
+        if (backToLoginFromReset) {
+            backToLoginFromReset.addEventListener('click', (e) => {
+                e.preventDefault();
+                resetSentSection.classList.remove('active');
+                formContainer.classList.add('active');
+                authButtons.classList.remove('hidden');
+                loginBtn.click();
+            });
+        }
 
         // Initialize form container
         formContainer.classList.add('active');
