@@ -627,9 +627,9 @@
             <form method="POST" action="{{ url_for('auth') }}" id="forgotForm">
                 <input type="hidden" name="form_type" value="forgot_password">
                 <div class="input-group">
-                    <input type="email" name="email" placeholder="Enter your email" required>
+                    <input type="email" name="email" id="forgotEmail" placeholder="Enter your email" required>
                 </div>
-                <button type="submit" class="submit-btn">Send Reset Link</button>
+                <button type="submit" class="submit-btn" id="forgotSubmitBtn">Send Reset Link</button>
             </form>
             <a href="#" class="switch-form" id="backToLoginFromForgot">Back to Login</a>
         </div>
@@ -788,6 +788,8 @@
         const backToLoginFromReset = document.getElementById('backToLoginFromReset');
         const authButtons = document.getElementById('authButtons');
         const loading = document.getElementById('loading');
+        const forgotSubmitBtn = document.getElementById('forgotSubmitBtn');
+        const forgotEmailInput = document.getElementById('forgotEmail');
 
         // Show/hide loading spinner
         function showLoading() {
@@ -796,6 +798,17 @@
 
         function hideLoading() {
             loading.style.display = 'none';
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            const existingError = document.querySelector('.error-message');
+            if (existingError) existingError.remove();
+            document.querySelector('.container').insertBefore(errorDiv, formContainer || forgotSection);
+            setTimeout(() => errorDiv.remove(), 5000);
         }
 
         // Toggle between login and signup forms
@@ -918,17 +931,6 @@
             passwordInput.addEventListener('input', validatePasswords);
         }
 
-        // Show error message
-        function showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-message';
-            errorDiv.textContent = message;
-            const existingError = document.querySelector('.error-message');
-            if (existingError) existingError.remove();
-            document.querySelector('.container').insertBefore(errorDiv, formContainer);
-            setTimeout(() => errorDiv.remove(), 5000);
-        }
-
         // Handle form submissions
         loginFormElement.addEventListener('submit', function() {
             showLoading();
@@ -949,8 +951,56 @@
             resendLink.disabled = true;
         });
 
-        forgotForm.addEventListener('submit', function() {
+        forgotForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = forgotEmailInput.value;
+            if (!email || !/[^@]+@[^@]+\.[^@]+/.test(email)) {
+                showError('Please enter a valid email address');
+                return;
+            }
             showLoading();
+            forgotSubmitBtn.disabled = true;
+
+            // Submit form via fetch to handle response
+            fetch('{{ url_for("auth") }}', {
+                method: 'POST',
+                body: new FormData(forgotForm),
+                headers: {
+                    'Accept': 'text/html'
+                }
+            })
+            .then(response => {
+                hideLoading();
+                forgotSubmitBtn.disabled = false;
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else {
+                    return response.text();
+                }
+            })
+            .then(html => {
+                if (html) {
+                    // Parse the response HTML to extract error or success messages
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const errorMessage = doc.querySelector('.error-message');
+                    const successMessage = doc.querySelector('.success-message');
+                    if (errorMessage) {
+                        showError(errorMessage.textContent);
+                    } else if (successMessage) {
+                        forgotSection.style.display = 'none';
+                        resetSentSection.classList.add('active');
+                        authButtons.classList.add('hidden');
+                        formContainer.classList.add('hidden');
+                    }
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                forgotSubmitBtn.disabled = false;
+                showError('An error occurred. Please try again.');
+                console.error('Forgot password error:', error);
+            });
         });
 
         // Handle social login buttons (placeholder)
