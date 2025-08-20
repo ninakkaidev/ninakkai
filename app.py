@@ -1,4 +1,5 @@
 from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory, jsonify
+from flask_cors import CORS
 from pymongo import MongoClient
 from typing import Dict, Any, Optional, List
 from bson import ObjectId
@@ -27,6 +28,7 @@ app = Flask(__name__,
             static_url_path='/static',
             static_folder='static',
             template_folder='templates')
+CORS(app)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secure-fixed-secret-key-here')
 app.permanent_session_lifetime = timedelta(days=1)
 app.config.update(
@@ -416,6 +418,24 @@ class MongoService:
                 boosts[answer_type] += 1
         return boosts
 
+    def get_liked_users(self, user_id: str) -> List[Dict[str, Any]]:
+        try:
+            likes = self.likes.find({'user_id': user_id})
+            liked_users = []
+            for like in likes:
+                user = self.get_user_by_id(like['matched_user_id'])
+                if user:
+                    liked_users.append({
+                        'id': user['id'],
+                        'full_name': user['full_name'],
+                        'image': user['image'],
+                        'occupation': user.get('occupation', 'N/A')
+                    })
+            return liked_users
+        except Exception as e:
+            logger.error(f"Get liked users error: {str(e)}")
+            return []
+
 mongo_service = MongoService()
 
 def send_verification_email(email: str, verification_token: str) -> Dict[str, Any]:
@@ -786,7 +806,7 @@ def profile():
     try:
         user = mongo_service.get_user_by_id(session['user_id'])
         if not user:
-            return render_template('profile.html', profile={})
+            return render_template('profile.html', profile={}, liked_users=[])
         quiz_result = mongo_service.get_quiz_results(session['user_id'])
         profile = {
             'id': user['id'],
@@ -804,10 +824,11 @@ def profile():
             'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
             'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0
         }
-        return render_template('profile.html', profile=profile)
+        liked_users = mongo_service.get_liked_users(session['user_id'])
+        return render_template('profile.html', profile=profile, liked_users=liked_users)
     except Exception as e:
         logger.error(f"Profile error: {str(e)}")
-        return render_template('profile.html', profile={})
+        return render_template('profile.html', profile={}, liked_users=[])
 
 @app.route('/questions', methods=['GET'])
 def questions():
