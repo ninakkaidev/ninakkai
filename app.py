@@ -1,4 +1,4 @@
-from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory
+from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory, jsonify
 from pymongo import MongoClient
 from typing import Dict, Any, Optional, List
 from bson import ObjectId
@@ -44,8 +44,10 @@ class MongoService:
         self.db = self.client['ninakkai']
         self.users = self.db['users']
         self.quiz_results = self.db['quiz_results']
+        self.likes = self.db['likes']
+        self.passes = self.db['passes']
 
-    def create_user(self, email: str, password: str, full_name: str, age: int = None, gender: str = None) -> Dict[str, Any]:
+    def create_user(self, email: str, password: str, full_name: str, age: int = None, gender: str = None, image: str = None, occupation: str = None, bio: str = None, interests: List[str] = None) -> Dict[str, Any]:
         try:
             hashed_password = generate_password_hash(password)
             verification_token = secrets.token_urlsafe(32)
@@ -55,6 +57,10 @@ class MongoService:
                 'full_name': full_name,
                 'age': age,
                 'gender': gender,
+                'image': image or 'https://randomuser.me/api/portraits/women/44.jpg',
+                'occupation': occupation,
+                'bio': bio,
+                'interests': interests or [],
                 'profile_complete': False,
                 'email_verified': False,
                 'verification_token': verification_token,
@@ -84,6 +90,18 @@ class MongoService:
             return None
         except Exception as e:
             logger.error(f"Get user error: {str(e)}")
+            return None
+
+    def get_user_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
+        try:
+            user = self.users.find_one({'_id': ObjectId(user_id)})
+            if user:
+                user['id'] = str(user['_id'])
+                del user['_id']
+                return user
+            return None
+        except Exception as e:
+            logger.error(f"Get user by id error: {str(e)}")
             return None
 
     def get_user_by_verification_token(self, token: str) -> Optional[Dict[str, Any]]:
@@ -190,6 +208,108 @@ class MongoService:
         except Exception as e:
             logger.error(f"Get quiz results error: {str(e)}")
             return None
+
+    def find_matches(self, user_id: str) -> List[Dict[str, Any]]:
+        try:
+            user_quiz = self.get_quiz_results(user_id)
+            if not user_quiz:
+                return []
+            user_scores = user_quiz['scores']
+            dominant_type = user_scores['dominant_type']
+            all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
+            matches = []
+            for other_user in all_users:
+                other_scores = other_user['scores']
+                match_percentage = self._calculate_match_percentage(user_scores, other_scores)
+                if other_scores['dominant_type'] == dominant_type or other_scores.get('secondary_type') == dominant_type:
+                    user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
+                    if user_data:
+                        matches.append({
+                            'id': str(user_data['_id']),
+                            'full_name': user_data['full_name'],
+                            'age': user_data.get('age'),
+                            'gender': user_data.get('gender'),
+                            'image': user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+                            'occupation': user_data.get('occupation', 'N/A'),
+                            'bio': user_data.get('bio', 'No bio available'),
+                            'interests': user_data.get('interests', []),
+                            'distance': 'N/A',  # Placeholder; implement geolocation if needed
+                            'rating': '4.5',  # Placeholder; implement rating system if needed
+                            'dominant_type': other_scores['dominant_type'],
+                            'match_percentage': match_percentage
+                        })
+            return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:10]
+        except Exception as e:
+            logger.error(f"Find matches error: {str(e)}")
+            return []
+
+    def _calculate_match_percentage(self, user_scores: Dict[str, Any], other_scores: Dict[str, Any]) -> int:
+        try:
+            # Simple match percentage based on dominant and secondary type overlap
+            dominant_match = 50 if user_scores['dominant_type'] == other_scores['dominant_type'] else 20
+            secondary_match = 30 if user_scores.get('secondary_type') == other_scores.get('secondary_type') and user_scores.get('secondary_type') else 10
+            return min(dominant_match + secondary_match, 100)
+        except Exception as e:
+            logger.error(f"Calculate match percentage error: {str(e)}")
+            return 50  # Fallback percentage
+
+    def like_user(self, user_id: str, matched_user_id: str) -> Dict[str, Any]:
+        try:
+            like_data = {
+                'user_id': user_id,
+                'matched_user_id': matched_user_id,
+                'timestamp': datetime.now(timezone.utc)
+            }
+            result = self.likes.insert_one(like_data)
+            return {'success': True, 'like_id': str(result.inserted_id)}
+        except Exception as e:
+            logger.error(f"Like user error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
+    def pass_user(self, user_id: str, passed_user_id: str) -> Dict[str, Any]:
+        try:
+            pass_data = {
+                'user_id': user_id,
+                'passed_user_id': passed_user_id,
+                'timestamp': datetime.now(timezone.utc)
+            }
+            result = self.passes.insert_one(pass_data)
+            return {'success': True, 'pass_id': str(result.inserted_id)}
+        except Exception as e:
+            logger.error(f"Pass user error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
+    def search_matches(self, query: str, user_id: str) -> List[Dict[str, Any]]:
+        try:
+            query = query.lower().strip()
+            matches = []
+            all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
+            user_quiz = self.get_quiz_results(user_id)
+            if not user_quiz:
+                return []
+            user_scores = user_quiz['scores']
+            for other_user in all_users:
+                user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
+                if user_data and (query in user_data['full_name'].lower() or any(query in interest.lower() for interest in user_data.get('interests', []))):
+                    match_percentage = self._calculate_match_percentage(user_scores, other_user['scores'])
+                    matches.append({
+                        'id': str(user_data['_id']),
+                        'full_name': user_data['full_name'],
+                        'age': user_data.get('age'),
+                        'gender': user_data.get('gender'),
+                        'image': user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+                        'occupation': user_data.get('occupation', 'N/A'),
+                        'bio': user_data.get('bio', 'No bio available'),
+                        'interests': user_data.get('interests', []),
+                        'distance': 'N/A',
+                        'rating': '4.5',
+                        'dominant_type': other_user['scores']['dominant_type'],
+                        'match_percentage': match_percentage
+                    })
+            return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:10]
+        except Exception as e:
+            logger.error(f"Search matches error: {str(e)}")
+            return []
 
     def _calculate_scores(self, answers: List[Dict[str, Any]]) -> Dict[str, Any]:
         type_counts = {}
@@ -405,7 +525,10 @@ def auth():
                 'password': request.form.get('password'),
                 'full_name': request.form.get('full_name'),
                 'age': request.form.get('age', type=int),
-                'gender': request.form.get('gender')
+                'gender': request.form.get('gender'),
+                'occupation': request.form.get('occupation', ''),
+                'bio': request.form.get('bio', ''),
+                'interests': request.form.get('interests', '').split(',') if request.form.get('interests') else []
             }
             if not all([data['email'], data['password'], data['full_name']]):
                 error = 'Please fill all required fields'
@@ -422,7 +545,8 @@ def auth():
                         error = 'Email already registered'
                     else:
                         result = mongo_service.create_user(
-                            data['email'], data['password'], data['full_name'], data['age'], data['gender']
+                            data['email'], data['password'], data['full_name'], data['age'], data['gender'],
+                            data.get('image'), data['occupation'], data['bio'], data['interests']
                         )
                         if not result['success']:
                             error = result.get('error', 'Failed to create user')
@@ -507,13 +631,130 @@ def explore():
     logger.debug(f"Session in explore: {session}")
     if 'user_id' not in session:
         logger.debug("No user_id in session for /explore")
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth', error='Please log in to access the explore page'))
+    
     try:
-        matches = []
-        return render_template('explore.html', matches=matches)
+        # Fetch user data
+        user = mongo_service.get_user_by_id(session['user_id'])
+        if not user:
+            session.clear()
+            return redirect(url_for('auth', error='User not found. Please log in again.'))
+        
+        # Fetch quiz results
+        quiz_result = mongo_service.get_quiz_results(session['user_id'])
+        if not quiz_result:
+            return redirect(url_for('questions', error='Please complete the quiz to access the explore page'))
+        
+        # Fetch matches
+        matches = mongo_service.find_matches(session['user_id'])
+        
+        # Prepare user profile data
+        profile = {
+            'id': user['id'],
+            'full_name': user['full_name'],
+            'email': user['email'],
+            'age': user.get('age'),
+            'gender': user.get('gender'),
+            'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+            'occupation': user.get('occupation', 'N/A'),
+            'bio': user.get('bio', 'No bio available'),
+            'interests': user.get('interests', []),
+            'dominant_type': quiz_result['scores']['dominant_type'],
+            'dominant_percentage': quiz_result['scores']['dominant_percentage'],
+            'secondary_type': quiz_result['scores']['secondary_type'],
+            'secondary_percentage': quiz_result['scores']['secondary_percentage']
+        }
+        
+        # Split matches into categories (for simplicity, use same matches for all sections)
+        discovery = matches
+        nearby = matches
+        
+        return render_template('explore.html', profile=profile, matches=matches, discovery=discovery, nearby=nearby, error=None)
     except Exception as e:
         logger.error(f"Explore error: {str(e)}")
-        return render_template('explore.html', matches=[])
+        return render_template('explore.html', profile={}, matches=[], discovery=[], nearby=[], error='An error occurred while loading the explore page. Please try again.')
+
+@app.route('/like-user', methods=['POST'])
+def like_user():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    try:
+        data = request.get_json()
+        matched_user_id = data.get('matched_user_id')
+        if not matched_user_id:
+            return jsonify({'success': False, 'error': 'No user ID provided'}), 400
+        result = mongo_service.like_user(session['user_id'], matched_user_id)
+        if result['success']:
+            return jsonify({'success': True}), 200
+        else:
+            return jsonify({'success': False, 'error': result.get('error', 'Failed to like user')}), 500
+    except Exception as e:
+        logger.error(f"Like user endpoint error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/pass-user', methods=['POST'])
+def pass_user():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    try:
+        data = request.get_json()
+        passed_user_id = data.get('passed_user_id')
+        if not passed_user_id:
+            return jsonify({'success': False, 'error': 'No user ID provided'}), 400
+        result = mongo_service.pass_user(session['user_id'], passed_user_id)
+        if result['success']:
+            return jsonify({'success': True}), 200
+        else:
+            return jsonify({'success': False, 'error': result.get('error', 'Failed to pass user')}), 500
+    except Exception as e:
+        logger.error(f"Pass user endpoint error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/search-matches')
+def search_matches():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    try:
+        query = request.args.get('q', '')
+        if not query:
+            return jsonify({'success': False, 'error': 'No search query provided'}), 400
+        matches = mongo_service.search_matches(query, session['user_id'])
+        return jsonify({'success': True, 'matches': matches}), 200
+    except Exception as e:
+        logger.error(f"Search matches endpoint error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/user-profile/<user_id>')
+def user_profile(user_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    try:
+        user = mongo_service.get_user_by_id(user_id)
+        if not user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        quiz_result = mongo_service.get_quiz_results(user_id)
+        profile = {
+            'id': user['id'],
+            'full_name': user['full_name'],
+            'age': user.get('age'),
+            'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+            'occupation': user.get('occupation', 'N/A'),
+            'bio': user.get('bio', 'No bio available'),
+            'interests': user.get('interests', []),
+            'distance': 'N/A',
+            'rating': '4.5',
+            'match_percentage': 50,  # Placeholder; calculate based on quiz results
+            'personality': {
+                'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
+                'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0,
+                'secondary_type': quiz_result['scores']['secondary_type'] if quiz_result else 'N/A',
+                'secondary_percentage': quiz_result['scores']['secondary_percentage'] if quiz_result else 0
+            }
+        }
+        return jsonify({'success': True, 'user': profile}), 200
+    except Exception as e:
+        logger.error(f"User profile endpoint error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/chat')
 def chat():
@@ -535,16 +776,23 @@ def profile():
         logger.debug("No user_id in session for /profile")
         return redirect(url_for('auth'))
     try:
-        user = mongo_service.users.find_one({'_id': ObjectId(session['user_id'])})
+        user = mongo_service.get_user_by_id(session['user_id'])
         if not user:
             return render_template('profile.html', profile={})
+        quiz_result = mongo_service.get_quiz_results(session['user_id'])
         profile = {
-            'id': str(user['_id']),
+            'id': user['id'],
             'email': user['email'],
             'full_name': user['full_name'],
             'age': user.get('age'),
             'gender': user.get('gender'),
-            'quiz_completed': bool(mongo_service.get_quiz_results(session['user_id']))
+            'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+            'occupation': user.get('occupation', 'N/A'),
+            'bio': user.get('bio', 'No bio available'),
+            'interests': user.get('interests', []),
+            'quiz_completed': bool(quiz_result),
+            'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
+            'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0
         }
         return render_template('profile.html', profile=profile)
     except Exception as e:
@@ -575,9 +823,8 @@ def submit_quiz():
         data = request.get_json()
         answers = data.get('answers', [])
         if not answers:
-            return {'success': False, 'error': 'No answers provided'}, 400
+            return jsonify({'success': False, 'error': 'No answers provided'}), 400
         
-        # Process answers to match MongoService format
         processed_answers = []
         required_questions = [
             {
@@ -653,12 +900,12 @@ def submit_quiz():
         quiz_data = {'answers': processed_answers}
         result = mongo_service.save_quiz_results(session['user_id'], quiz_data)
         if result['success']:
-            return {'success': True}, 200
+            return jsonify({'success': True}), 200
         else:
-            return {'success': False, 'error': result.get('error', 'Failed to save quiz results')}, 500
+            return jsonify({'success': False, 'error': result.get('error', 'Failed to save quiz results')}), 500
     except Exception as e:
         logger.error(f"Submit quiz error: {str(e)}")
-        return {'success': False, 'error': str(e)}, 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/logout')
 def logout():
