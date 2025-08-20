@@ -11,6 +11,12 @@ import secrets
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from werkzeug.security import generate_password_hash, check_password_hash
+import cloudinary
+import cloudinary.uploader
+
+# Configure Cloudinary
+os.environ['CLOUDINARY_URL'] = 'cloudinary://869559855343136:FfJnI44v31rzfPvp7-K9lnI5BDM@dibbkr9vs'
+cloudinary.config(secure=True)
 
 # Configure logging
 logging.getLogger('pymongo').setLevel(logging.WARNING)
@@ -61,6 +67,8 @@ class MongoService:
                 'occupation': occupation,
                 'bio': bio,
                 'interests': interests or [],
+                'photos': [],
+                'location': '',
                 'profile_complete': False,
                 'email_verified': False,
                 'verification_token': verification_token,
@@ -790,6 +798,8 @@ def profile():
             'occupation': user.get('occupation', 'N/A'),
             'bio': user.get('bio', 'No bio available'),
             'interests': user.get('interests', []),
+            'photos': user.get('photos', []),
+            'location': user.get('location', ''),
             'quiz_completed': bool(quiz_result),
             'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
             'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0
@@ -915,6 +925,79 @@ def logout():
     resp.set_cookie('for_you_session', '', expires=0, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
     resp.set_cookie('email_verified', '', expires=0, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
     return resp
+
+@app.route('/upload_profile_picture', methods=['POST'])
+def upload_profile_picture():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    file = request.files.get('file')
+    if not file:
+        return jsonify({'success': False, 'error': 'No file provided'}), 400
+    try:
+        upload_result = cloudinary.uploader.upload(file)
+        url = upload_result['secure_url']
+        mongo_service.update_user(session['user_id'], {'image': url})
+        return jsonify({'success': True, 'url': url}), 200
+    except Exception as e:
+        logger.error(f"Upload profile picture error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/upload_photo', methods=['POST'])
+def upload_photo():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    file = request.files.get('file')
+    if not file:
+        return jsonify({'success': False, 'error': 'No file provided'}), 400
+    user = mongo_service.get_user_by_id(session['user_id'])
+    if len(user.get('photos', [])) >= 7:
+        return jsonify({'success': False, 'error': 'Maximum 7 photos allowed'}), 400
+    try:
+        upload_result = cloudinary.uploader.upload(file)
+        url = upload_result['secure_url']
+        photos = user.get('photos', []) + [url]
+        mongo_service.update_user(session['user_id'], {'photos': photos})
+        return jsonify({'success': True, 'url': url}), 200
+    except Exception as e:
+        logger.error(f"Upload photo error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/delete_photo', methods=['POST'])
+def delete_photo():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    url = data.get('url')
+    if not url:
+        return jsonify({'success': False, 'error': 'No URL provided'}), 400
+    user = mongo_service.get_user_by_id(session['user_id'])
+    photos = user.get('photos', [])
+    if url in photos:
+        photos.remove(url)
+        mongo_service.update_user(session['user_id'], {'photos': photos})
+        return jsonify({'success': True}), 200
+    return jsonify({'success': False, 'error': 'Photo not found'}), 404
+
+@app.route('/update_profile', methods=['POST'])
+def update_profile():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    update_data = {}
+    if 'full_name' in data:
+        update_data['full_name'] = data['full_name']
+    if 'age' in data:
+        update_data['age'] = int(data['age'])
+    if 'bio' in data:
+        update_data['bio'] = data['bio']
+    if 'location' in data:
+        update_data['location'] = data['location']
+    if 'interests' in data:
+        update_data['interests'] = data['interests']
+    if update_data:
+        result = mongo_service.update_user(session['user_id'], update_data)
+        return jsonify(result)
+    return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5050, debug=True)

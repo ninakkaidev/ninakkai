@@ -324,7 +324,7 @@
     <!-- Header -->
     <header class="bg-white shadow-sm sticky top-0 z-10">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <a href="explore.html" class="text-gray-600 hover:text-pink-500">
+            <a href="explore" class="text-gray-600 hover:text-pink-500">
                 <i class="fas fa-arrow-left text-xl"></i>
             </a>
             <h1 class="text-xl font-bold text-neutral-900">My Profile</h1>
@@ -337,16 +337,16 @@
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-4">
         <!-- Profile Header -->
-        <div class="bg-gradient-to-r from-indigo-100 via-white to-pink-100 rounded-xl shadow-md p-6 mb-6 relative">
+        <div class="bg-gradient-to-r from-indigo-100 via-white to-pink-100 rounded-xl shadow-md p-6 mb-6 relative edit-mode-target">
             <div class="flex flex-col md:flex-row items-center md:items-start">
                 <!-- Profile Picture -->
                 <div class="relative mb-4 md:mb-0 md:mr-6">
                     <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-pink-200 relative">
-                        <img id="profileImage" src="https://randomuser.me/api/portraits/women/44.jpg" alt="Profile" class="w-full h-full object-cover">
-                        <div class="profile-pic-upload">
+                        <img id="profileImage" src="{{ profile.image }}" alt="Profile" class="w-full h-full object-cover">
+                        <label for="profileUpload" class="profile-pic-upload cursor-pointer">
                             <i class="fas fa-camera text-sm"></i>
-                            <input type="file" id="profileUpload" accept="image/*" class="hidden">
-                        </div>
+                        </label>
+                        <input type="file" id="profileUpload" accept="image/*" class="hidden">
                     </div>
                 </div>
                 
@@ -354,23 +354,24 @@
                 <div class="flex-grow text-center md:text-left">
                     <div class="mb-4">
                         <h2 class="text-2xl font-bold flex items-center justify-center md:justify-start">
-                            <span id="nameView" class="view-field">Sarah Johnson</span>
-                            <input id="nameEdit" type="text" value="Sarah Johnson" class="edit-field w-full border rounded px-2 py-1">
-                            <span id="ageView" class="view-field ml-2 text-gray-600">, 27</span>
-                            <input id="ageEdit" type="number" value="27" class="edit-field w-16 border rounded px-2 py-1 ml-2">
+                            <span id="nameView" class="view-field">{{ profile.full_name }}</span>
+                            <input id="nameEdit" type="text" value="{{ profile.full_name }}" class="edit-field w-full border rounded px-2 py-1">
+                            <span id="ageView" class="view-field ml-2 text-gray-600">{% if profile.age %}, {{ profile.age }}{% endif %}</span>
+                            <input id="ageEdit" type="number" value="{{ profile.age or '' }}" class="edit-field w-16 border rounded px-2 py-1 ml-2">
                             <button id="editProfileBtn" class="ml-2 text-pink-500 hover:text-pink-600">
                                 <i class="fas fa-pencil-alt text-sm"></i>
                             </button>
                         </h2>
                         <div class="text-gray-600 mb-2">
-                            <span id="locationView" class="view-field">New York, NY</span>
-                            <input id="locationEdit" type="text" value="New York, NY" class="edit-field w-full border rounded px-2 py-1">
+                            <span id="locationView" class="view-field">{{ profile.location }}</span>
+                            <input id="locationEdit" type="text" value="{{ profile.location }}" class="edit-field w-full border rounded px-2 py-1">
                         </div>
-                        <div class="flex justify-center md:justify-start space-x-2">
-                            <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">Photographer</span>
-                            <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">Coffee Lover</span>
-                            <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">Traveler</span>
+                        <div class="flex justify-center md:justify-start space-x-2 flex-wrap">
+                            {% for interest in profile.interests %}
+                            <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full m-1">{{ interest }}</span>
+                            {% endfor %}
                         </div>
+                        <input id="interestsEdit" type="text" value="{{ profile.interests|join(', ') }}" class="edit-field w-full border rounded px-2 py-1 mt-2" placeholder="Interests (comma-separated)">
                     </div>
                 </div>
             </div>
@@ -378,16 +379,8 @@
             <!-- Bio -->
             <div class="mt-6">
                 <h3 class="font-semibold mb-2">About Me</h3>
-                <p id="bioView" class="view-field text-gray-700">
-                    Adventure seeker and coffee enthusiast! 📷 I love capturing moments and exploring new places.
-                    Looking for someone to share spontaneous trips and deep conversations with.
-                    Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
-                </p>
-                <textarea id="bioEdit" class="edit-field w-full border rounded px-3 py-2 h-24">
-Adventure seeker and coffee enthusiast! 📷 I love capturing moments and exploring new places.
-Looking for someone to share spontaneous trips and deep conversations with.
-Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
-                </textarea>
+                <p id="bioView" class="view-field text-gray-700">{{ profile.bio }}</p>
+                <textarea id="bioEdit" class="edit-field w-full border rounded px-3 py-2 h-24">{{ profile.bio }}</textarea>
             </div>
             
             <!-- Edit Buttons (shown only in edit mode) -->
@@ -401,37 +394,21 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
         <div class="bg-gradient-to-r from-indigo-100 via-white to-pink-100 rounded-xl shadow-md p-6 mb-6 relative">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold">My Photos</h2>
-                <button id="addPhotoBtn" class="text-pink-500 text-sm font-medium flex items-center">
+                <label for="photoUpload" id="addPhotoBtn" class="text-pink-500 text-sm font-medium flex items-center cursor-pointer">
                     <i class="fas fa-plus mr-1"></i> Add Photo
-                </button>
+                </label>
                 <input type="file" id="photoUpload" accept="image/*" class="hidden" multiple>
             </div>
             
             <div class="photo-slider flex overflow-x-auto pb-2 -mx-2" style="scroll-snap-type: x mandatory;">
+                {% for photo in profile.photos %}
                 <div class="flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative" style="scroll-snap-align: start;">
-                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80" class="w-full h-full object-cover">
-                    <button class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
+                    <img src="{{ photo }}" class="w-full h-full object-cover">
+                    <button onclick="deletePhoto('{{ photo }}')" class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
                         <i class="fas fa-times text-xs"></i>
                     </button>
                 </div>
-                <div class="flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative" style="scroll-snap-align: start;">
-                    <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80" class="w-full h-full object-cover">
-                    <button class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
-                        <i class="fas fa-times text-xs"></i>
-                    </button>
-                </div>
-                <div class="flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative" style="scroll-snap-align: start;">
-                    <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80" class="w-full h-full object-cover">
-                    <button class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
-                        <i class="fas fa-times text-xs"></i>
-                    </button>
-                </div>
-                <div class="flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative" style="scroll-snap-align: start;">
-                    <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80" class="w-full h-full object-cover">
-                    <button class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
-                        <i class="fas fa-times text-xs"></i>
-                    </button>
-                </div>
+                {% endfor %}
             </div>
         </div>
         
@@ -693,7 +670,7 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
                     <div class="space-y-3">
                         <div class="flex justify-between items-center dark:text-gray-300">
                             <span>Email</span>
-                            <span class="text-gray-500 dark:text-gray-400">sarah.johnson@example.com</span>
+                            <span class="text-gray-500 dark:text-gray-400">{{ profile.email }}</span>
                         </div>
                         <div class="flex justify-between items-center dark:text-gray-300">
                             <span>Phone</span>
@@ -788,11 +765,11 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
     <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg z-10 dark:bg-gray-800">
         <div class="container mx-auto px-4">
             <div class="flex justify-around py-3">
-                <a href="explore.html" class="text-gray-500 hover:text-pink-500 flex flex-col items-center dark:text-gray-400">
+                <a href="explore" class="text-gray-500 hover:text-pink-500 flex flex-col items-center dark:text-gray-400">
                     <i class="fas fa-compass text-xl"></i>
                     <span class="text-xs mt-1">Explore</span>
                 </a>
-                <a href="explore.html#matches-section" class="text-gray-500 hover:text-pink-500 flex flex-col items-center dark:text-gray-400">
+                <a href="explore#matches-section" class="text-gray-500 hover:text-pink-500 flex flex-col items-center dark:text-gray-400">
                     <i class="fas fa-heart text-xl"></i>
                     <span class="text-xs mt-1">Matches</span>
                 </a>
@@ -814,19 +791,15 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
                 const circle = document.createElement('div');
                 circle.className = 'circle';
                 
-                // Random size between 50px and 200px
                 const size = Math.random() * 150 + 50;
                 circle.style.width = `${size}px`;
                 circle.style.height = `${size}px`;
                 
-                // Random position
                 circle.style.left = `${Math.random() * 100}%`;
                 circle.style.top = `${Math.random() * 100}%`;
                 
-                // Random color
                 circle.style.background = colors[Math.floor(Math.random() * colors.length)];
                 
-                // Random animation duration and delay
                 const duration = Math.random() * 20 + 10;
                 const delay = Math.random() * 5;
                 circle.style.animationDuration = `${duration}s`;
@@ -841,7 +814,6 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
             
             tabButtons.forEach(button => {
                 button.addEventListener('click', () => {
-                    // Remove active class from all buttons and contents
                     tabButtons.forEach(btn => {
                         btn.classList.remove('border-pink-500', 'text-pink-500');
                         btn.classList.add('border-transparent', 'text-gray-500');
@@ -851,7 +823,6 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
                         content.classList.remove('active');
                     });
                     
-                    // Add active class to clicked button and corresponding content
                     button.classList.remove('border-transparent', 'text-gray-500');
                     button.classList.add('border-pink-500', 'text-pink-500');
                     
@@ -860,7 +831,7 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
                 });
             });
             
-            // Chat functionality
+            // Chat functionality (simulated)
             const chatItems = document.querySelectorAll('#chats .flex.items-center.p-3');
             const chatList = document.querySelector('#chats > div:first-child');
             const chatView = document.getElementById('chatView');
@@ -874,11 +845,9 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
                     document.getElementById('chatUserName').textContent = userName;
                     document.getElementById('chatUserImage').src = userImage;
                     
-                    // Load chat messages (simulated)
                     const chatMessages = document.getElementById('chatMessages');
                     chatMessages.innerHTML = '';
                     
-                    // Sample messages
                     const messages = [
                         { text: "Hey there! How are you?", sent: false, time: "10:30 AM" },
                         { text: "I'm good, thanks! How about you?", sent: true, time: "10:32 AM" },
@@ -897,10 +866,8 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
                         chatMessages.appendChild(messageDiv);
                     });
                     
-                    // Scroll to bottom
                     chatMessages.scrollTop = chatMessages.scrollHeight;
                     
-                    // Show chat view
                     chatList.classList.add('hidden');
                     chatView.classList.remove('hidden');
                 });
@@ -915,7 +882,7 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
             const editProfileBtn = document.getElementById('editProfileBtn');
             const cancelEditBtn = document.getElementById('cancelEditBtn');
             const saveProfileBtn = document.getElementById('saveProfileBtn');
-            const profileSection = document.querySelector('.bg-white.rounded-xl.shadow-sm.p-6');
+            const profileSection = document.querySelector('.edit-mode-target');
             
             editProfileBtn.addEventListener('click', () => {
                 profileSection.classList.add('edit-mode');
@@ -926,15 +893,34 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
             });
             
             saveProfileBtn.addEventListener('click', () => {
-                // Update view fields with edited values
-                document.getElementById('nameView').textContent = document.getElementById('nameEdit').value;
-                document.getElementById('ageView').textContent = ', ' + document.getElementById('ageEdit').value;
-                document.getElementById('locationView').textContent = document.getElementById('locationEdit').value;
-                document.getElementById('bioView').textContent = document.getElementById('bioEdit').value;
+                const data = {
+                    full_name: document.getElementById('nameEdit').value,
+                    age: document.getElementById('ageEdit').value,
+                    location: document.getElementById('locationEdit').value,
+                    bio: document.getElementById('bioEdit').value,
+                    interests: document.getElementById('interestsEdit').value.split(',').map(i => i.trim()).filter(i => i)
+                };
                 
-                profileSection.classList.remove('edit-mode');
-                
-                showNotification('Profile updated successfully');
+                fetch('/update_profile', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.success) {
+                        document.getElementById('nameView').textContent = data.full_name;
+                        document.getElementById('ageView').textContent = data.age ? ', ' + data.age : '';
+                        document.getElementById('locationView').textContent = data.location;
+                        document.getElementById('bioView').textContent = data.bio;
+                        // Interests update requires reload or dynamic update, for simplicity reload
+                        location.reload();
+                    } else {
+                        alert('Failed to update profile');
+                    }
+                    profileSection.classList.remove('edit-mode');
+                })
+                .catch(err => console.error(err));
             });
             
             // Profile picture upload
@@ -944,56 +930,84 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
             profileUpload.addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        profileImage.src = event.target.result;
-                    };
-                    reader.readAsDataURL(file);
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    fetch('/upload_profile_picture', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            profileImage.src = data.url;
+                        } else {
+                            alert(data.error);
+                        }
+                    })
+                    .catch(err => console.error(err));
                 }
             });
             
             // Photo upload
-            const addPhotoBtn = document.getElementById('addPhotoBtn');
             const photoUpload = document.getElementById('photoUpload');
             const photoSlider = document.querySelector('.photo-slider');
             
-            addPhotoBtn.addEventListener('click', () => {
-                photoUpload.click();
-            });
-            
             photoUpload.addEventListener('change', (e) => {
-                const files = e.target.files;
-                if (files.length > 0) {
-                    Array.from(files).forEach(file => {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
+                const files = Array.from(e.target.files);
+                files.forEach(file => {
+                    if (photoSlider.children.length >= 7) {
+                        alert('Maximum 7 photos allowed');
+                        return;
+                    }
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    fetch('/upload_photo', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
                             const photoDiv = document.createElement('div');
                             photoDiv.className = 'flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative';
                             photoDiv.style.scrollSnapAlign = 'start';
                             photoDiv.innerHTML = `
-                                <img src="${event.target.result}" class="w-full h-full object-cover">
-                                <button class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
+                                <img src="${data.url}" class="w-full h-full object-cover">
+                                <button onclick="deletePhoto('${data.url}')" class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
                                     <i class="fas fa-times text-xs"></i>
                                 </button>
                             `;
                             photoSlider.appendChild(photoDiv);
-                            
-                            // Add delete functionality
-                            photoDiv.querySelector('button').addEventListener('click', () => {
-                                photoDiv.remove();
-                            });
-                        };
-                        reader.readAsDataURL(file);
-                    });
-                }
-            });
-            
-            // Delete photo functionality
-            document.querySelectorAll('.photo-slider button').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    this.parentElement.remove();
+                        } else {
+                            alert(data.error);
+                        }
+                    })
+                    .catch(err => console.error(err));
                 });
             });
+            
+            // Delete photo function
+            window.deletePhoto = function(url) {
+                fetch('/delete_photo', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({url: url})
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const photoDivs = photoSlider.querySelectorAll('div.relative');
+                        photoDivs.forEach(div => {
+                            if (div.querySelector('img').src === url) {
+                                div.remove();
+                            }
+                        });
+                    } else {
+                        alert(data.error);
+                    }
+                })
+                .catch(err => console.error(err));
+            };
             
             // Notification functionality
             document.querySelectorAll('.notification-item').forEach(item => {
@@ -1018,7 +1032,6 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
                 document.body.style.overflow = '';
             });
             
-            // Close modal when clicking outside
             settingsModal.addEventListener('click', (e) => {
                 if (e.target === settingsModal) {
                     settingsModal.classList.add('hidden');
@@ -1026,235 +1039,5 @@ Dog person, sunrise chaser, and terrible at cooking but I make great coffee!
                 }
             });
             
-            // Updated Toggle switches functionality
-            function updateToggleStatus(toggle) {
-                const status = toggle.parentElement.querySelector('.toggle-status');
-                if (status) {
-                    status.textContent = toggle.checked ? 'On' : 'Off';
-                    status.classList.toggle('text-pink-500', toggle.checked);
-                    status.classList.toggle('text-gray-500', !toggle.checked);
-                }
-            }
-
-            document.querySelectorAll('.toggle-container input[type="checkbox"]').forEach(toggle => {
-                // Initialize status text
-                updateToggleStatus(toggle);
-
-                toggle.addEventListener('change', function() {
-                    const settingName = this.closest('.flex').querySelector('span').textContent;
-                    updateToggleStatus(this);
-                    showNotification(`${settingName} ${this.checked ? 'enabled' : 'disabled'}`);
-                });
-            });
-
-            // Dark mode toggle
-            const darkModeToggle = document.getElementById('darkModeToggle');
-            
-            // Check for saved user preference or use system preference
-            if (localStorage.getItem('darkMode') === 'enabled' ||
-                (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-                darkModeToggle.checked = true;
-                updateToggleStatus(darkModeToggle);
-            }
-            
-            darkModeToggle.addEventListener('change', function() {
-                if (this.checked) {
-                    document.documentElement.classList.add('dark');
-                    localStorage.setItem('darkMode', 'enabled');
-                    showNotification('Dark mode enabled');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                    localStorage.setItem('darkMode', 'disabled');
-                    showNotification('Dark mode disabled');
-                }
-                updateToggleStatus(this);
-            });
-            
-            // Language selector functionality
-            const languageSelectors = document.querySelectorAll('.language-selector');
-            
-            languageSelectors.forEach(selector => {
-                const toggle = selector.querySelector('span');
-                const options = selector.querySelector('.language-options');
-                
-                toggle.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    options.classList.toggle('hidden');
-                });
-                
-                selector.querySelectorAll('.language-option').forEach(option => {
-                    option.addEventListener('click', function() {
-                        const lang = this.getAttribute('data-lang');
-                        
-                        // Update selected language
-                        selector.querySelectorAll('.language-option').forEach(opt => {
-                            opt.classList.remove('selected');
-                        });
-                        this.classList.add('selected');
-                        
-                        // Update display
-                        toggle.innerHTML = `${this.textContent} <i class="fas fa-chevron-down ml-1 text-xs"></i>`;
-                        options.classList.add('hidden');
-                        
-                        showNotification(`Language changed to ${this.textContent}`);
-                    });
-                });
-            });
-            
-            // Close language selector when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.language-selector')) {
-                    document.querySelectorAll('.language-options').forEach(options => {
-                        options.classList.add('hidden');
-                    });
-                }
-            });
-            
-            // Change Password functionality
-            const changePasswordBtn = document.querySelector('.settings-option button:text("Change Password")');
-            const changePasswordModal = document.createElement('div');
-            changePasswordModal.id = 'changePasswordModal';
-            changePasswordModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center hidden';
-            changePasswordModal.innerHTML = `
-                <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 dark:bg-gray-800">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-bold dark:text-white">Change Password</h3>
-                        <button class="close-password-modal text-gray-500 hover:text-gray-700 dark:text-gray-300">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Current Password</label>
-                            <input type="password" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">New Password</label>
-                            <input type="password" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Confirm New Password</label>
-                            <input type="password" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        </div>
-                        <button class="w-full bg-pink-500 text-white py-2 rounded-lg hover:bg-pink-600 mt-2">
-                            Update Password
-                        </button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(changePasswordModal);
-            
-            changePasswordBtn.addEventListener('click', () => {
-                changePasswordModal.classList.remove('hidden');
-            });
-            
-            changePasswordModal.querySelector('.close-password-modal').addEventListener('click', () => {
-                changePasswordModal.classList.add('hidden');
-            });
-            
-            changePasswordModal.querySelector('button:not(.close-password-modal)').addEventListener('click', () => {
-                changePasswordModal.classList.add('hidden');
-                showNotification('Password changed successfully');
-            });
-            
-            // Log Out functionality
-            const logoutBtn = document.querySelector('.settings-option button:text("Log Out")');
-            logoutBtn.addEventListener('click', () => {
-                const confirmation = createConfirmationDialog(
-                    'Log Out',
-                    'Are you sure you want to log out?',
-                    'Log Out',
-                    'Cancel'
-                );
-                
-                confirmation.querySelector('.confirm-btn').addEventListener('click', () => {
-                    showNotification('Logged out successfully');
-                    confirmation.remove();
-                    settingsModal.classList.add('hidden');
-                });
-                
-                confirmation.querySelector('.cancel-btn').addEventListener('click', () => {
-                    confirmation.remove();
-                });
-            });
-            
-            // Delete Account functionality
-            const deleteAccountBtn = document.querySelector('.settings-option button:text("Delete Account")');
-            deleteAccountBtn.addEventListener('click', () => {
-                const confirmation = createConfirmationDialog(
-                    'Delete Account',
-                    'This will permanently delete your account and all data. This action cannot be undone.',
-                    'Delete',
-                    'Cancel',
-                    'text-red-500'
-                );
-                
-                confirmation.querySelector('.confirm-btn').addEventListener('click', () => {
-                    showNotification('Account deleted successfully');
-                    confirmation.remove();
-                    settingsModal.classList.add('hidden');
-                });
-                
-                confirmation.querySelector('.cancel-btn').addEventListener('click', () => {
-                    confirmation.remove();
-                });
-            });
-            
-            // Helper function to create confirmation dialogs
-            function createConfirmationDialog(title, message, confirmText, cancelText, confirmColor = 'text-pink-500') {
-                const dialog = document.createElement('div');
-                dialog.className = 'confirmation-dialog fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center';
-                dialog.innerHTML = `
-                    <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 dark:bg-gray-800">
-                        <h3 class="text-lg font-bold mb-2 dark:text-white">${title}</h3>
-                        <p class="text-gray-600 mb-6 dark:text-gray-300">${message}</p>
-                        <div class="flex justify-end space-x-3">
-                            <button class="cancel-btn px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
-                                ${cancelText}
-                            </button>
-                            <button class="confirm-btn px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 ${confirmColor}">
-                                ${confirmText}
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                document.body.appendChild(dialog);
-                return dialog;
-            }
-            
-            // Notification function
-            function showNotification(message) {
-                const notification = document.createElement('div');
-                notification.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-30 flex items-center dark:bg-gray-700';
-                notification.innerHTML = `
-                    <span>${message}</span>
-                    <button class="ml-3 text-white opacity-70 hover:opacity-100">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
-                
-                document.body.appendChild(notification);
-                
-                // Auto-remove after 3 seconds
-                const autoRemove = setTimeout(() => {
-                    notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 300);
-                }, 3000);
-                
-                // Manual close
-                notification.querySelector('button').addEventListener('click', () => {
-                    clearTimeout(autoRemove);
-                    notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 300);
-                });
-            }
-        });
-    </script>
-</body>
-</html>
+            // Toggle switches functionality
+            function updateToggleStatus
