@@ -59,11 +59,7 @@ class MongoService:
         try:
             hashed_password = generate_password_hash(password)
             verification_token = secrets.token_urlsafe(32)
-            default_image = 'https://randomuser.me/api/portraits/women/44.jpg'
-            if gender == 'male':
-                default_image = 'https://i.ibb.co/4RbtYQBM/luthfi-alfarizi-jl-Jp-DBK17-Hw-unsplash.jpg'
-            elif gender == 'female':
-                default_image = 'https://i.ibb.co/Ld65xcCC/luthfi-alfarizi-y-XAGGb-Vuh-EY-unsplash.jpg'
+            default_image = 'https://i.ibb.co/Ld65xcCC/luthfi-alfarizi-y-XAGGb-Vuh-EY-unsplash.jpg' if gender == 'female' else 'https://i.ibb.co/4RbtYQBM/luthfi-alfarizi-jl-Jp-DBK17-Hw-unsplash.jpg' if gender == 'male' else 'https://randomuser.me/api/portraits/women/44.jpg'
             user_data = {
                 'email': email,
                 'password': hashed_password,
@@ -244,7 +240,7 @@ class MongoService:
                             'full_name': user_data['full_name'],
                             'age': user_data.get('age'),
                             'gender': user_data.get('gender'),
-                            'image': user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+                            'image': user_data.get('image'),
                             'occupation': user_data.get('occupation', 'N/A'),
                             'bio': user_data.get('bio', 'No bio available'),
                             'interests': user_data.get('interests', []),
@@ -312,7 +308,7 @@ class MongoService:
                         'full_name': user_data['full_name'],
                         'age': user_data.get('age'),
                         'gender': user_data.get('gender'),
-                        'image': user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+                        'image': user_data.get('image'),
                         'occupation': user_data.get('occupation', 'N/A'),
                         'bio': user_data.get('bio', 'No bio available'),
                         'interests': user_data.get('interests', []),
@@ -688,7 +684,7 @@ def explore():
             'email': user['email'],
             'age': user.get('age'),
             'gender': user.get('gender'),
-            'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+            'image': user.get('image'),
             'occupation': user.get('occupation', 'N/A'),
             'bio': user.get('bio', 'No bio available'),
             'interests': user.get('interests', []),
@@ -770,7 +766,7 @@ def user_profile(user_id):
             'id': user['id'],
             'full_name': user['full_name'],
             'age': user.get('age'),
-            'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+            'image': user.get('image'),
             'occupation': user.get('occupation', 'N/A'),
             'bio': user.get('bio', 'No bio available'),
             'interests': user.get('interests', []),
@@ -819,7 +815,7 @@ def profile():
             'full_name': user['full_name'],
             'age': user.get('age'),
             'gender': user.get('gender'),
-            'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+            'image': user.get('image'),
             'occupation': user.get('occupation', 'N/A'),
             'bio': user.get('bio', 'No bio available'),
             'interests': user.get('interests', []),
@@ -1026,4 +1022,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True) 
+    app.run(host='0.0.0.0', port=5050, debug=True)
