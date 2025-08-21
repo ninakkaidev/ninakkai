@@ -552,7 +552,7 @@ def auth():
                 except Exception as e:
                     logger.error(f"Login error: {str(e)}")
                     error = 'An error occurred during login. Please try again.'
-        elif form_type = 'signup':
+        elif form_type == 'signup':
             data = {
                 'email': request.form.get('email'),
                 'password': request.form.get('password'),
@@ -1026,4 +1026,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True) 
+    app.run(host='0.0.0.0', port=5050, debug=True)
