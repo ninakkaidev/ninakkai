@@ -187,7 +187,7 @@
                     <input type="text" id="searchInput" placeholder="Search by name or interests..." class="border border-gray-300 rounded-full px-4 py-1 focus:outline-none focus:ring-2 focus:ring-pink-500" />
                 </div>
                 <div class="w-8 h-8 rounded-full bg-pink-500 overflow-hidden">
-                    <img src="{{ profile.image }}" alt="{{ profile.full_name }}" class="w-full h-full object-cover">
+                    <img src="{{ profile.image }}" alt="Profile" class="w-full h-full object-cover">
                 </div>
             </div>
         </div>
@@ -217,11 +217,11 @@
                     {% for match in matches %}
                     <div class="bg-white rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="{{ match.id }}">
                         <div class="match-percentage">{{ match.match_percentage }}%</div>
-                        <img src="{{ match.image }}" alt="{{ match.full_name }}" class="w-full h-48 md:h-64 object-cover">
+                        <img src="{{ match.image }}" alt="Profile" class="w-full h-48 md:h-64 object-cover">
                         <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
                             <div class="flex justify-between items-end">
                                 <div>
-                                    <h3 class="text-white font-bold">{{ match.full_name }}{% if match.age %}, {{ match.age }}{% endif %}</h3>
+                                    <h3 class="text-white font-bold">{{ match.full_name }}, {{ match.age|default('N/A') }}</h3>
                                     <p class="text-gray-300 text-sm">{{ match.occupation }} • {{ match.distance }}</p>
                                 </div>
                                 <button class="bg-pink-500 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:bg-pink-600 transition like-button" data-user-id="{{ match.id }}">
@@ -247,11 +247,11 @@
                 {% if discovery %}
                     {% for match in discovery %}
                     <div class="bg-white rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="{{ match.id }}">
-                        <img src="{{ match.image }}" alt="{{ match.full_name }}" class="w-full h-48 md:h-64 object-cover">
+                        <img src="{{ match.image }}" alt="Profile" class="w-full h-48 md:h-64 object-cover">
                         <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
                             <div class="flex justify-between items-end">
                                 <div>
-                                    <h3 class="text-white font-bold">{{ match.full_name }}{% if match.age %}, {{ match.age }}{% endif %}</h3>
+                                    <h3 class="text-white font-bold">{{ match.full_name }}, {{ match.age|default('N/A') }}</h3>
                                     <p class="text-gray-300 text-sm">{{ match.distance }}</p>
                                 </div>
                                 <button class="bg-pink-500 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:bg-pink-600 transition like-button" data-user-id="{{ match.id }}">
@@ -282,11 +282,11 @@
                     {% for match in nearby %}
                     <div class="bg-white rounded-xl shadow-sm overflow-hidden flex nearby-card" data-user-id="{{ match.id }}">
                         <div class="w-1/3">
-                            <img src="{{ match.image }}" alt="{{ match.full_name }}" class="w-full h-full object-cover">
+                            <img src="{{ match.image }}" alt="Profile" class="w-full h-full object-cover">
                         </div>
                         <div class="w-2/3 p-4 flex flex-col justify-between">
                             <div>
-                                <h3 class="font-bold text-lg">{{ match.full_name }}{% if match.age %}, {{ match.age }}{% endif %}</h3>
+                                <h3 class="font-bold text-lg">{{ match.full_name }}, {{ match.age|default('N/A') }}</h3>
                                 <p class="text-gray-600 text-sm mb-2">{{ match.occupation }} • {{ match.distance }}</p>
                                 <div class="flex items-center mb-2">
                                     <i class="fas fa-star text-yellow-500 text-xs mr-1"></i>
@@ -493,7 +493,7 @@
                         <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
                             <div class="flex justify-between items-end">
                                 <div>
-                                    <h3 class="text-white font-bold">${match.full_name}${match.age ? ', ' + match.age : ''}</h3>
+                                    <h3 class="text-white font-bold">${match.full_name}, ${match.age || 'N/A'}</h3>
                                     <p class="text-gray-300 text-sm">${match.occupation} • ${match.distance}</p>
                                 </div>
                                 <button class="bg-pink-500 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:bg-pink-600 transition like-button" data-user-id="${match.id}">
@@ -539,7 +539,7 @@
                             <div class="p-6">
                                 <div class="flex justify-between items-start mb-4">
                                     <div>
-                                        <h2 class="text-2xl font-bold">${profile.user.full_name}${profile.user.age ? ', ' + profile.user.age : ''}</h2>
+                                        <h2 class="text-2xl font-bold">${profile.user.full_name}, ${profile.user.age || 'N/A'}</h2>
                                         <p class="text-gray-600">${profile.user.occupation} • ${profile.user.distance}</p>
                                     </div>
                                     <button class="bg-pink-500 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-pink-600 transition like-button" data-user-id="${userId}">
@@ -629,15 +629,15 @@
                 });
             });
 
-            // See All buttons (placeholder functionality)
-            document.getElementById('see-all-matches').addEventListener('click', () => {
-                showNotification('Loading more matches...');
-            });
-            document.getElementById('see-all-discovery').addEventListener('click', () => {
-                showNotification('Loading more people...');
-            });
-            document.getElementById('see-all-nearby').addEventListener('click', () => {
-                showNotification('Loading more nearby matches...');
+            // Initial loading state
+            showLoading();
+            window.addEventListener('load', hideLoading);
+
+            // See All buttons (placeholder)
+            document.querySelectorAll('#see-all-matches, #see-all-discovery, #see-all-nearby').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    showError('See All functionality coming soon!');
+                });
             });
         });
     </script>
