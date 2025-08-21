@@ -59,13 +59,18 @@ class MongoService:
         try:
             hashed_password = generate_password_hash(password)
             verification_token = secrets.token_urlsafe(32)
+            default_image = 'https://randomuser.me/api/portraits/women/44.jpg'
+            if gender == 'male':
+                default_image = 'https://i.ibb.co/4RbtYQBM/luthfi-alfarizi-jl-Jp-DBK17-Hw-unsplash.jpg'
+            elif gender == 'female':
+                default_image = 'https://i.ibb.co/Ld65xcCC/luthfi-alfarizi-y-XAGGb-Vuh-EY-unsplash.jpg'
             user_data = {
                 'email': email,
                 'password': hashed_password,
                 'full_name': full_name,
                 'age': age,
                 'gender': gender,
-                'image': image or 'https://randomuser.me/api/portraits/women/44.jpg',
+                'image': image or default_image,
                 'occupation': occupation,
                 'bio': bio,
                 'interests': interests or [],
@@ -1021,4 +1026,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True)
+    app.run(host='0.0.0.0', port=5050, debug=True) 

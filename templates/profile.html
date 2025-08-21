@@ -228,7 +228,7 @@
             font-weight: 500;
         }
         
-        /* Change Password Modal */
+        /* Change Password Modal Styles */
         #changePasswordModal {
             transition: all 0.3s ease;
         }
@@ -460,7 +460,6 @@
                 <div id="chats" class="tab-content">
                     <!-- Chat list -->
                     <div class="space-y-3">
-                        <!-- No real data, so empty -->
                     </div>
                     
                     <!-- Chat view (hidden by default) -->
@@ -745,84 +744,145 @@
             const cancelEditBtn = document.getElementById('cancelEditBtn');
             const saveProfileBtn = document.getElementById('saveProfileBtn');
             const profileSection = document.querySelector('.bg-gradient-to-r.from-indigo-100.via-white.to-pink-100.rounded-xl.shadow-md.p-6.mb-6.relative');
-            
+            const nameView = document.getElementById('nameView');
+            const ageView = document.getElementById('ageView');
+            const locationView = document.getElementById('locationView');
+            const bioView = document.getElementById('bioView');
+            const nameEdit = document.getElementById('nameEdit');
+            const ageEdit = document.getElementById('ageEdit');
+            const locationEdit = document.getElementById('locationEdit');
+            const bioEdit = document.getElementById('bioEdit');
+
             editProfileBtn.addEventListener('click', () => {
                 profileSection.classList.add('edit-mode');
             });
             
             cancelEditBtn.addEventListener('click', () => {
                 profileSection.classList.remove('edit-mode');
+                // Reset edits to original
+                nameEdit.value = nameView.textContent;
+                ageEdit.value = ageView.textContent.replace(', ', '') || '';
+                locationEdit.value = locationView.textContent;
+                bioEdit.value = bioView.textContent;
             });
             
-            saveProfileBtn.addEventListener('click', () => {
-                // Update view fields with edited values
-                document.getElementById('nameView').textContent = document.getElementById('nameEdit').value;
-                document.getElementById('ageView').textContent = ', ' + document.getElementById('ageEdit').value;
-                document.getElementById('locationView').textContent = document.getElementById('locationEdit').value;
-                document.getElementById('bioView').textContent = document.getElementById('bioEdit').value;
-                
-                profileSection.classList.remove('edit-mode');
-                
-                showNotification('Profile updated successfully');
+            saveProfileBtn.addEventListener('click', async () => {
+                const data = {
+                    full_name: nameEdit.value,
+                    age: ageEdit.value,
+                    bio: bioEdit.value,
+                    location: locationEdit.value
+                };
+                try {
+                    const response = await fetch('/update_profile', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        nameView.textContent = data.full_name;
+                        ageView.textContent = data.age ? ', ' + data.age : '';
+                        locationView.textContent = data.location;
+                        bioView.textContent = data.bio;
+                        profileSection.classList.remove('edit-mode');
+                        showNotification('Profile updated successfully');
+                    } else {
+                        showNotification('Failed to update profile');
+                    }
+                } catch (error) {
+                    showNotification('Error updating profile');
+                }
             });
             
             // Profile picture upload
             const profileUpload = document.getElementById('profileUpload');
             const profileImage = document.getElementById('profileImage');
             
-            profileUpload.addEventListener('change', (e) => {
+            profileUpload.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        profileImage.src = event.target.result;
-                    };
-                    reader.readAsDataURL(file);
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    try {
+                        const response = await fetch('/upload_profile_picture', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            profileImage.src = result.url;
+                            showNotification('Profile picture updated');
+                        } else {
+                            showNotification('Failed to upload profile picture');
+                        }
+                    } catch (error) {
+                        showNotification('Error uploading profile picture');
+                    }
                 }
             });
             
             // Photo upload
-            const addPhotoBtn = document.getElementById('addPhotoBtn');
             const photoUpload = document.getElementById('photoUpload');
             const photoSlider = document.querySelector('.photo-slider');
             
-            addPhotoBtn.addEventListener('click', () => {
-                photoUpload.click();
-            });
-            
-            photoUpload.addEventListener('change', (e) => {
+            photoUpload.addEventListener('change', async (e) => {
                 const files = e.target.files;
                 if (files.length > 0) {
-                    Array.from(files).forEach(file => {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                            const photoDiv = document.createElement('div');
-                            photoDiv.className = 'flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative';
-                            photoDiv.style.scrollSnapAlign = 'start';
-                            photoDiv.innerHTML = `
-                                <img src="${event.target.result}" class="w-full h-full object-cover">
-                                <button class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
-                                    <i class="fas fa-times text-xs"></i>
-                                </button>
-                            `;
-                            photoSlider.appendChild(photoDiv);
-                            
-                            // Add delete functionality
-                            photoDiv.querySelector('button').addEventListener('click', () => {
-                                photoDiv.remove();
+                    for (let file of files) {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        try {
+                            const response = await fetch('/upload_photo', {
+                                method: 'POST',
+                                body: formData
                             });
-                        };
-                        reader.readAsDataURL(file);
-                    });
+                            const result = await response.json();
+                            if (result.success) {
+                                const photoDiv = document.createElement('div');
+                                photoDiv.className = 'flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative';
+                                photoDiv.style.scrollSnapAlign = 'start';
+                                photoDiv.innerHTML = `
+                                    <img src="${result.url}" class="w-full h-full object-cover">
+                                    <button onclick="deletePhoto('${result.url}')" class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
+                                        <i class="fas fa-times text-xs"></i>
+                                    </button>
+                                `;
+                                photoSlider.appendChild(photoDiv);
+                                showNotification('Photo uploaded');
+                            } else {
+                                showNotification('Failed to upload photo');
+                            }
+                        } catch (error) {
+                            showNotification('Error uploading photo');
+                        }
+                    }
                 }
             });
             
             // Delete photo functionality
-            document.querySelectorAll('.photo-slider button').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    this.parentElement.remove();
-                });
-            });
+            window.deletePhoto = async function(url) {
+                try {
+                    const response = await fetch('/delete_photo', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        document.querySelectorAll('.photo-slider > div').forEach(div => {
+                            if (div.querySelector('img').src === url) {
+                                div.remove();
+                            }
+                        });
+                        showNotification('Photo deleted');
+                    } else {
+                        showNotification('Failed to delete photo');
+                    }
+                } catch (error) {
+                    showNotification('Error deleting photo');
+                }
+            };
             
             // Notification functionality
             document.querySelectorAll('.notification-item').forEach(item => {
