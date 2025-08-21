@@ -754,76 +754,130 @@
                 profileSection.classList.remove('edit-mode');
             });
             
-            saveProfileBtn.addEventListener('click', () => {
-                // Update view fields with edited values
-                document.getElementById('nameView').textContent = document.getElementById('nameEdit').value;
-                document.getElementById('ageView').textContent = ', ' + document.getElementById('ageEdit').value;
-                document.getElementById('locationView').textContent = document.getElementById('locationEdit').value;
-                document.getElementById('bioView').textContent = document.getElementById('bioEdit').value;
-                
-                profileSection.classList.remove('edit-mode');
-                
-                showNotification('Profile updated successfully');
+            saveProfileBtn.addEventListener('click', async () => {
+                const data = {
+                    full_name: document.getElementById('nameEdit').value,
+                    age: document.getElementById('ageEdit').value,
+                    location: document.getElementById('locationEdit').value,
+                    bio: document.getElementById('bioEdit').value
+                };
+                try {
+                    const response = await fetch('/update_profile', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        // Update view fields
+                        document.getElementById('nameView').textContent = data.full_name;
+                        document.getElementById('ageView').textContent = data.age ? ', ' + data.age : '';
+                        document.getElementById('locationView').textContent = data.location;
+                        document.getElementById('bioView').textContent = data.bio;
+                        
+                        profileSection.classList.remove('edit-mode');
+                        showNotification('Profile updated successfully');
+                        setTimeout(() => location.reload(), 1000); // Reload to confirm changes
+                    } else {
+                        showNotification('Failed to update profile');
+                    }
+                } catch (error) {
+                    showNotification('Error updating profile');
+                }
             });
             
             // Profile picture upload
             const profileUpload = document.getElementById('profileUpload');
             const profileImage = document.getElementById('profileImage');
             
-            profileUpload.addEventListener('change', (e) => {
+            profileUpload.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        profileImage.src = event.target.result;
-                    };
-                    reader.readAsDataURL(file);
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    try {
+                        const response = await fetch('/upload_profile_picture', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            profileImage.src = result.url;
+                            showNotification('Profile picture updated successfully');
+                            setTimeout(() => location.reload(), 1000); // Reload to confirm changes
+                        } else {
+                            showNotification('Failed to update profile picture');
+                        }
+                    } catch (error) {
+                        showNotification('Error updating profile picture');
+                    }
                 }
             });
             
             // Photo upload
-            const addPhotoBtn = document.getElementById('addPhotoBtn');
             const photoUpload = document.getElementById('photoUpload');
             const photoSlider = document.querySelector('.photo-slider');
             
-            addPhotoBtn.addEventListener('click', () => {
-                photoUpload.click();
-            });
-            
-            photoUpload.addEventListener('change', (e) => {
+            photoUpload.addEventListener('change', async (e) => {
                 const files = e.target.files;
                 if (files.length > 0) {
-                    Array.from(files).forEach(file => {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                            const photoDiv = document.createElement('div');
-                            photoDiv.className = 'flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative';
-                            photoDiv.style.scrollSnapAlign = 'start';
-                            photoDiv.innerHTML = `
-                                <img src="${event.target.result}" class="w-full h-full object-cover">
-                                <button class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
-                                    <i class="fas fa-times text-xs"></i>
-                                </button>
-                            `;
-                            photoSlider.appendChild(photoDiv);
-                            
-                            // Add delete functionality
-                            photoDiv.querySelector('button').addEventListener('click', () => {
-                                photoDiv.remove();
+                    for (let file of files) {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        try {
+                            const response = await fetch('/upload_photo', {
+                                method: 'POST',
+                                body: formData
                             });
-                        };
-                        reader.readAsDataURL(file);
-                    });
+                            const result = await response.json();
+                            if (result.success) {
+                                const photoDiv = document.createElement('div');
+                                photoDiv.className = 'flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative';
+                                photoDiv.style.scrollSnapAlign = 'start';
+                                photoDiv.innerHTML = `
+                                    <img src="${result.url}" class="w-full h-full object-cover">
+                                    <button onclick="deletePhoto('${result.url}')" class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
+                                        <i class="fas fa-times text-xs"></i>
+                                    </button>
+                                `;
+                                photoSlider.appendChild(photoDiv);
+                                showNotification('Photo uploaded successfully');
+                            } else {
+                                showNotification('Failed to upload photo');
+                            }
+                        } catch (error) {
+                            showNotification('Error uploading photo');
+                        }
+                    }
+                    setTimeout(() => location.reload(), 1000); // Reload to confirm changes
                 }
             });
             
             // Delete photo functionality
-            document.querySelectorAll('.photo-slider button').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    this.parentElement.remove();
-                });
-            });
-            
+            window.deletePhoto = async function(url) {
+                try {
+                    const response = await fetch('/delete_photo', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: url })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        document.querySelectorAll('.photo-slider div').forEach(div => {
+                            if (div.querySelector('img').src === url) {
+                                div.remove();
+                            }
+                        });
+                        showNotification('Photo deleted successfully');
+                        setTimeout(() => location.reload(), 1000); // Reload to confirm changes
+                    } else {
+                        showNotification('Failed to delete photo');
+                    }
+                } catch (error) {
+                    showNotification('Error deleting photo');
+                }
+            };
+
             // Notification functionality
             document.querySelectorAll('.notification-item').forEach(item => {
                 item.addEventListener('click', function() {

@@ -15,8 +15,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import cloudinary
 import cloudinary.uploader
 
-# Note: Replace the CLOUDINARY_URL with your actual Cloudinary credentials for uploads to work
-os.environ['CLOUDINARY_URL'] = 'cloudinary://your_api_key:your_api_secret@your_cloud_name'
+# Configure Cloudinary
+os.environ['CLOUDINARY_URL'] = 'cloudinary://869559855343136:FfJnI44v31rzfPvp7-K9lnI5BDM@dibbkr9vs'
 cloudinary.config(secure=True)
 
 # Configure logging
@@ -59,7 +59,11 @@ class MongoService:
         try:
             hashed_password = generate_password_hash(password)
             verification_token = secrets.token_urlsafe(32)
-            default_image = 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg' if gender == 'female' else 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg' if gender == 'male' else 'https://randomuser.me/api/portraits/women/44.jpg'
+            default_image = 'https://randomuser.me/api/portraits/women/44.jpg'
+            if gender == 'male':
+                default_image = 'https://i.ibb.co/4RbtYQBM/luthfi-alfarizi-jl-Jp-DBK17-Hw-unsplash.jpg'
+            elif gender == 'female':
+                default_image = 'https://i.ibb.co/Ld65xcCC/luthfi-alfarizi-y-XAGGb-Vuh-EY-unsplash.jpg'
             user_data = {
                 'email': email,
                 'password': hashed_password,
@@ -97,8 +101,6 @@ class MongoService:
             if user:
                 user['id'] = str(user['_id'])
                 del user['_id']
-                if not user.get('image'):
-                    user['image'] = 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg' if user.get('gender') == 'female' else 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg' if user.get('gender') == 'male' else 'https://randomuser.me/api/portraits/women/44.jpg'
                 return user
             return None
         except Exception as e:
@@ -111,8 +113,6 @@ class MongoService:
             if user:
                 user['id'] = str(user['_id'])
                 del user['_id']
-                if not user.get('image'):
-                    user['image'] = 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg' if user.get('gender') == 'female' else 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg' if user.get('gender') == 'male' else 'https://randomuser.me/api/portraits/women/44.jpg'
                 return user
             return None
         except Exception as e:
@@ -125,8 +125,6 @@ class MongoService:
             if user:
                 user['id'] = str(user['_id'])
                 del user['_id']
-                if not user.get('image'):
-                    user['image'] = 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg' if user.get('gender') == 'female' else 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg' if user.get('gender') == 'male' else 'https://randomuser.me/api/portraits/women/44.jpg'
                 return user
             return None
         except Exception as e:
@@ -149,8 +147,6 @@ class MongoService:
             user['id'] = str(user['_id'])
             del user['_id']
             del user['password']
-            if not user.get('image'):
-                user['image'] = 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg' if user.get('gender') == 'female' else 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg' if user.get('gender') == 'male' else 'https://randomuser.me/api/portraits/women/44.jpg'
             return {
                 'success': True,
                 'user': user
@@ -243,14 +239,12 @@ class MongoService:
                 if other_scores['dominant_type'] == dominant_type or other_scores.get('secondary_type') == dominant_type:
                     user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
                     if user_data:
-                        if not user_data.get('image'):
-                            user_data['image'] = 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg' if user_data.get('gender') == 'female' else 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg' if user_data.get('gender') == 'male' else 'https://randomuser.me/api/portraits/women/44.jpg'
                         matches.append({
                             'id': str(user_data['_id']),
                             'full_name': user_data['full_name'],
                             'age': user_data.get('age'),
                             'gender': user_data.get('gender'),
-                            'image': user_data['image'],
+                            'image': user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
                             'occupation': user_data.get('occupation', 'N/A'),
                             'bio': user_data.get('bio', 'No bio available'),
                             'interests': user_data.get('interests', []),
@@ -312,15 +306,13 @@ class MongoService:
             for other_user in all_users:
                 user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
                 if user_data and (query in user_data['full_name'].lower() or any(query in interest.lower() for interest in user_data.get('interests', []))):
-                    if not user_data.get('image'):
-                        user_data['image'] = 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg' if user_data.get('gender') == 'female' else 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg' if user_data.get('gender') == 'male' else 'https://randomuser.me/api/portraits/women/44.jpg'
                     match_percentage = self._calculate_match_percentage(user_scores, other_user['scores'])
                     matches.append({
                         'id': str(user_data['_id']),
                         'full_name': user_data['full_name'],
                         'age': user_data.get('age'),
                         'gender': user_data.get('gender'),
-                        'image': user_data['image'],
+                        'image': user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
                         'occupation': user_data.get('occupation', 'N/A'),
                         'bio': user_data.get('bio', 'No bio available'),
                         'interests': user_data.get('interests', []),
@@ -560,7 +552,7 @@ def auth():
                 except Exception as e:
                     logger.error(f"Login error: {str(e)}")
                     error = 'An error occurred during login. Please try again.'
-        elif form_type == 'signup':
+        elif form_type = 'signup':
             data = {
                 'email': request.form.get('email'),
                 'password': request.form.get('password'),
@@ -571,8 +563,8 @@ def auth():
                 'bio': request.form.get('bio', ''),
                 'interests': request.form.get('interests', '').split(',') if request.form.get('interests') else []
             }
-            if not all([data['email'], data['password'], data['full_name'], data['gender']]):
-                error = 'Please fill all required fields including gender'
+            if not all([data['email'], data['password'], data['full_name']]):
+                error = 'Please fill all required fields'
             elif not re.match(r"[^@]+@[^@]+\.[^@]+", data['email']):
                 error = 'Please enter a valid email address'
             elif len(data['password']) < 8:
@@ -696,7 +688,7 @@ def explore():
             'email': user['email'],
             'age': user.get('age'),
             'gender': user.get('gender'),
-            'image': user['image'],
+            'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
             'occupation': user.get('occupation', 'N/A'),
             'bio': user.get('bio', 'No bio available'),
             'interests': user.get('interests', []),
@@ -778,7 +770,7 @@ def user_profile(user_id):
             'id': user['id'],
             'full_name': user['full_name'],
             'age': user.get('age'),
-            'image': user['image'],
+            'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
             'occupation': user.get('occupation', 'N/A'),
             'bio': user.get('bio', 'No bio available'),
             'interests': user.get('interests', []),
@@ -827,7 +819,7 @@ def profile():
             'full_name': user['full_name'],
             'age': user.get('age'),
             'gender': user.get('gender'),
-            'image': user['image'],
+            'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
             'occupation': user.get('occupation', 'N/A'),
             'bio': user.get('bio', 'No bio available'),
             'interests': user.get('interests', []),
@@ -1034,4 +1026,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True)
+    app.run(host='0.0.0.0', port=5050, debug=True) 
