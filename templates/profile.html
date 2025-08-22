@@ -26,7 +26,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: hsl(0, 0%, 0%);
+            color: hsl(0, 0%, 100%);
             cursor: pointer;
         }
         
@@ -920,7 +920,7 @@
             }
 
             document.querySelectorAll('.toggle-container input[type="checkbox"]').forEach(toggle => {
-                // Initialize status text
+                // Initialize status
                 updateToggleStatus(toggle);
 
                 toggle.addEventListener('change', function() {
