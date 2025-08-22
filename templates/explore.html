@@ -389,6 +389,9 @@
                             this.classList.remove('bg-pink-500', 'hover:bg-pink-600', 'text-pink-500', 'hover:text-pink-600');
                             this.classList.add('bg-green-500', 'hover:bg-green-600', 'text-white');
                             showNotification('Liked! We\'ll let them know');
+                            if (result.is_match) {
+                                showNotification("It's a match! You can now chat.");
+                            }
                         } else {
                             showError(result.error || 'Failed to like user');
                         }
@@ -591,6 +594,9 @@
                                         this.classList.remove('bg-pink-500', 'hover:bg-pink-600');
                                         this.classList.add('bg-green-500', 'hover:bg-green-600');
                                         showNotification('Liked! We\'ll let them know');
+                                        if (result.is_match) {
+                                            showNotification("It's a match! You can now chat.");
+                                        }
                                         setTimeout(() => profileViewer.remove(), 1500);
                                     } else {
                                         showError(result.error || 'Failed to like user');

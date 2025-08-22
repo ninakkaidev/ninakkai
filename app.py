@@ -286,6 +286,27 @@ class MongoService:
             logger.error(f"Calculate match percentage error: {str(e)}")
             return 50  # Fallback percentage
 
+    def is_matched(self, user1: str, user2: str) -> bool:
+        try:
+            like1 = self.likes.find_one({'user_id': user1, 'matched_user_id': user2})
+            like2 = self.likes.find_one({'user_id': user2, 'matched_user_id': user1})
+            return bool(like1 and like2)
+        except Exception as e:
+            logger.error(f"Is matched error: {str(e)}")
+            return False
+
+    def get_matched_users(self, user_id: str) -> List[str]:
+        try:
+            # Get users who liked me
+            likers = [str(l['user_id']) for l in self.likes.find({'matched_user_id': user_id})]
+            # Get my likes among those likers
+            my_likes = self.likes.find({'user_id': user_id, 'matched_user_id': {'$in': likers}})
+            matches = [str(l['matched_user_id']) for l in my_likes]
+            return matches
+        except Exception as e:
+            logger.error(f"Get matched users error: {str(e)}")
+            return []
+
     def like_user(self, user_id: str, matched_user_id: str) -> Dict[str, Any]:
         try:
             like_data = {
@@ -294,7 +315,8 @@ class MongoService:
                 'timestamp': datetime.now(timezone.utc)
             }
             result = self.likes.insert_one(like_data)
-            return {'success': True, 'like_id': str(result.inserted_id)}
+            is_match = self.is_matched(user_id, matched_user_id)
+            return {'success': True, 'like_id': str(result.inserted_id), 'is_match': is_match}
         except Exception as e:
             logger.error(f"Like user error: {str(e)}")
             return {'success': False, 'error': str(e)}
@@ -459,7 +481,67 @@ class MongoService:
             logger.error(f"Get liked users error: {str(e)}")
             return []
 
+class ChatService:
+    def __init__(self):
+        self.uri = "mongodb+srv://infoqiooo:Gjresr7SikhBmM5U@cluster0.hyzcpcz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+        self.client = MongoClient(self.uri)
+        try:
+            self.client.admin.command('ping')
+            logger.info("Chat MongoDB connection successful")
+        except Exception as e:
+            logger.error(f"Chat MongoDB connection failed: {str(e)}")
+        self.db = self.client['chat_db']
+        self.messages = self.db['messages']
+
+    def send_message(self, sender_id: str, receiver_id: str, message: str) -> Dict[str, Any]:
+        try:
+            msg_data = {
+                'sender_id': sender_id,
+                'receiver_id': receiver_id,
+                'message': message,
+                'timestamp': datetime.now(timezone.utc)
+            }
+            result = self.messages.insert_one(msg_data)
+            return {'success': True, 'message_id': str(result.inserted_id)}
+        except Exception as e:
+            logger.error(f"Send message error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
+    def get_messages(self, user1: str, user2: str) -> List[Dict[str, Any]]:
+        try:
+            query = {'$or': [
+                {'sender_id': user1, 'receiver_id': user2},
+                {'sender_id': user2, 'receiver_id': user1}
+            ]}
+            msgs = list(self.messages.find(query).sort('timestamp', 1))
+            for msg in msgs:
+                msg['id'] = str(msg['_id'])
+                del msg['_id']
+                msg['timestamp'] = msg['timestamp'].isoformat()
+            return msgs
+        except Exception as e:
+            logger.error(f"Get messages error: {str(e)}")
+            return []
+
+    def get_last_message(self, user1: str, user2: str) -> Optional[Dict[str, Any]]:
+        try:
+            query = {'$or': [
+                {'sender_id': user1, 'receiver_id': user2},
+                {'sender_id': user2, 'receiver_id': user1}
+            ]}
+            msg = self.messages.find_one(query, sort=[('timestamp', -1)])
+            if msg:
+                msg['id'] = str(msg['_id'])
+                del msg['_id']
+                msg['timestamp'] = msg['timestamp']
+                return msg
+            return None
+        except Exception as e:
+            logger.error(f"Get last message error: {str(e)}")
+            return None
+
 mongo_service = MongoService()
+chat_service = ChatService()
 
 def send_verification_email(email: str, verification_token: str) -> Dict[str, Any]:
     try:
@@ -736,7 +818,7 @@ def like_user():
             return jsonify({'success': False, 'error': 'No user ID provided'}), 400
         result = mongo_service.like_user(session['user_id'], matched_user_id)
         if result['success']:
-            return jsonify({'success': True}), 200
+            return jsonify(result), 200
         else:
             return jsonify({'success': False, 'error': result.get('error', 'Failed to like user')}), 500
     except Exception as e:
@@ -814,11 +896,63 @@ def chat():
         logger.debug("No user_id in session for /chat")
         return redirect(url_for('auth'))
     try:
-        chats = []
-        return render_template('chat.html', chats=chats)
+        current_user_id = session['user_id']
+        matched_user_ids = mongo_service.get_matched_users(current_user_id)
+        conversations = []
+        for match_id in matched_user_ids:
+            user = mongo_service.get_user_by_id(match_id)
+            if user:
+                last_msg = chat_service.get_last_message(current_user_id, match_id)
+                conv = {
+                    'id': user['id'],
+                    'full_name': user['full_name'],
+                    'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+                    'last_message': last_msg['message'] if last_msg else 'Start chatting!',
+                    'time': last_msg['timestamp'].strftime('%H:%M') if last_msg else '',
+                    'sort_time': last_msg['timestamp'] if last_msg else datetime.min
+                }
+                conversations.append(conv)
+        conversations.sort(key=lambda c: c['sort_time'], reverse=True)
+        return render_template('chat.html', conversations=conversations)
     except Exception as e:
         logger.error(f"Chat error: {str(e)}")
-        return render_template('chat.html', chats=[])
+        return render_template('chat.html', conversations=[])
+
+@app.route('/messages/<other_user_id>', methods=['GET'])
+def get_messages(other_user_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    current_user_id = session['user_id']
+    if not mongo_service.is_matched(current_user_id, other_user_id):
+        return jsonify({'success': False, 'error': 'Not matched'}), 403
+    try:
+        messages = chat_service.get_messages(current_user_id, other_user_id)
+        return jsonify({'success': True, 'messages': messages}), 200
+    except Exception as e:
+        logger.error(f"Get messages endpoint error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/send_message', methods=['POST'])
+def send_message():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    try:
+        data = request.get_json()
+        to_user_id = data.get('to_user_id')
+        message = data.get('message')
+        if not to_user_id or not message:
+            return jsonify({'success': False, 'error': 'Missing parameters'}), 400
+        current_user_id = session['user_id']
+        if not mongo_service.is_matched(current_user_id, to_user_id):
+            return jsonify({'success': False, 'error': 'Not matched'}), 403
+        result = chat_service.send_message(current_user_id, to_user_id, message)
+        if result['success']:
+            return jsonify({'success': True}), 200
+        else:
+            return jsonify({'success': False, 'error': result.get('error', 'Failed to send message')}), 500
+    except Exception as e:
+        logger.error(f"Send message endpoint error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/profile')
 def profile():
