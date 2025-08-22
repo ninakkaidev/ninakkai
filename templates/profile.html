@@ -791,26 +791,34 @@
             const profileImage = document.getElementById('profileImage');
             
             profileUpload.addEventListener('change', async (e) => {
+                console.log('Profile picture change event triggered');
                 const file = e.target.files[0];
                 if (file) {
+                    console.log('File selected:', file.name);
                     const formData = new FormData();
                     formData.append('file', file);
                     try {
+                        console.log('Sending fetch to /upload_profile_picture');
                         const response = await fetch('/upload_profile_picture', {
                             method: 'POST',
                             body: formData
                         });
+                        console.log('Response status:', response.status);
                         const result = await response.json();
+                        console.log('Response result:', result);
                         if (result.success) {
                             profileImage.src = result.url;
                             showNotification('Profile picture updated successfully');
                             setTimeout(() => location.reload(), 1000); // Reload to confirm changes
                         } else {
-                            showNotification('Failed to update profile picture');
+                            showNotification('Failed to update profile picture: ' + result.error);
                         }
                     } catch (error) {
-                        showNotification('Error updating profile picture');
+                        console.error('Error in upload:', error);
+                        showNotification('Error updating profile picture: ' + error.message);
                     }
+                } else {
+                    console.log('No file selected');
                 }
             });
             
@@ -819,17 +827,22 @@
             const photoSlider = document.querySelector('.photo-slider');
             
             photoUpload.addEventListener('change', async (e) => {
+                console.log('Photo upload change event triggered');
                 const files = e.target.files;
                 if (files.length > 0) {
                     for (let file of files) {
+                        console.log('File selected:', file.name);
                         const formData = new FormData();
                         formData.append('file', file);
                         try {
+                            console.log('Sending fetch to /upload_photo');
                             const response = await fetch('/upload_photo', {
                                 method: 'POST',
                                 body: formData
                             });
+                            console.log('Response status:', response.status);
                             const result = await response.json();
+                            console.log('Response result:', result);
                             if (result.success) {
                                 const photoDiv = document.createElement('div');
                                 photoDiv.className = 'flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative';
@@ -843,13 +856,16 @@
                                 photoSlider.appendChild(photoDiv);
                                 showNotification('Photo uploaded successfully');
                             } else {
-                                showNotification('Failed to upload photo');
+                                showNotification('Failed to upload photo: ' + result.error);
                             }
                         } catch (error) {
-                            showNotification('Error uploading photo');
+                            console.error('Error in upload:', error);
+                            showNotification('Error uploading photo: ' + error.message);
                         }
                     }
                     setTimeout(() => location.reload(), 1000); // Reload to confirm changes
+                } else {
+                    console.log('No files selected');
                 }
             });
             

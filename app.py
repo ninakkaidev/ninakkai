@@ -954,15 +954,24 @@ def logout():
 
 @app.route('/upload_profile_picture', methods=['POST'])
 def upload_profile_picture():
+    logger.info("Upload profile picture request received")
     if 'user_id' not in session:
+        logger.warning("Unauthorized access to upload_profile_picture")
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     file = request.files.get('file')
     if not file:
+        logger.warning("No file provided in upload_profile_picture")
         return jsonify({'success': False, 'error': 'No file provided'}), 400
     try:
+        logger.info("Uploading to Cloudinary")
         upload_result = cloudinary.uploader.upload(file)
         url = upload_result['secure_url']
-        mongo_service.update_user(session['user_id'], {'image': url})
+        logger.info(f"Uploaded image URL: {url}")
+        update_result = mongo_service.update_user(session['user_id'], {'image': url})
+        if update_result['success']:
+            logger.info("User image updated successfully")
+        else:
+            logger.error("Failed to update user image in database")
         return jsonify({'success': True, 'url': url}), 200
     except Exception as e:
         logger.error(f"Upload profile picture error: {str(e)}")
@@ -970,19 +979,29 @@ def upload_profile_picture():
 
 @app.route('/upload_photo', methods=['POST'])
 def upload_photo():
+    logger.info("Upload photo request received")
     if 'user_id' not in session:
+        logger.warning("Unauthorized access to upload_photo")
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     file = request.files.get('file')
     if not file:
+        logger.warning("No file provided in upload_photo")
         return jsonify({'success': False, 'error': 'No file provided'}), 400
     user = mongo_service.get_user_by_id(session['user_id'])
     if len(user.get('photos', [])) >= 7:
+        logger.warning("Maximum photos limit reached")
         return jsonify({'success': False, 'error': 'Maximum 7 photos allowed'}), 400
     try:
+        logger.info("Uploading to Cloudinary")
         upload_result = cloudinary.uploader.upload(file)
         url = upload_result['secure_url']
+        logger.info(f"Uploaded photo URL: {url}")
         photos = user.get('photos', []) + [url]
-        mongo_service.update_user(session['user_id'], {'photos': photos})
+        update_result = mongo_service.update_user(session['user_id'], {'photos': photos})
+        if update_result['success']:
+            logger.info("User photos updated successfully")
+        else:
+            logger.error("Failed to update user photos in database")
         return jsonify({'success': True, 'url': url}), 200
     except Exception as e:
         logger.error(f"Upload photo error: {str(e)}")
