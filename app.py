@@ -25,10 +25,11 @@ def configure_cloudinary():
             api_secret='FfJnI44v31rzfPvp7-K9lnI5BDM',
             secure=True
         )
+        # Verify configuration by checking required fields
+        config = cloudinary.config()
+        if not (config.cloud_name and config.api_key and config.api_secret):
+            raise Exception("Cloudinary configuration incomplete: missing cloud_name, api_key, or api_secret")
         logger.info("Cloudinary configured successfully")
-        # Verify configuration by fetching account details
-        cloudinary.api.account_config()
-        logger.info("Cloudinary API key verified")
     except Exception as e:
         logger.error(f"Failed to configure Cloudinary: {str(e)}")
         raise Exception(f"Cloudinary configuration failed: {str(e)}")
@@ -982,7 +983,8 @@ def upload_profile_picture():
     try:
         logger.info("Attempting to upload profile picture to Cloudinary")
         # Verify Cloudinary configuration
-        if not cloudinary.config().cloud_name or not cloudinary.config().api_key:
+        config = cloudinary.config()
+        if not (config.cloud_name and config.api_key and config.api_secret):
             logger.error("Cloudinary configuration missing")
             return jsonify({'success': False, 'error': 'Cloudinary configuration missing'}), 500
         upload_result = cloudinary.uploader.upload(file, folder="profile_pictures")
@@ -1016,7 +1018,8 @@ def upload_photo():
     try:
         logger.info("Attempting to upload photo to Cloudinary")
         # Verify Cloudinary configuration
-        if not cloudinary.config().cloud_name or not cloudinary.config().api_key:
+        config = cloudinary.config()
+        if not (config.cloud_name and config.api_key and config.api_secret):
             logger.error("Cloudinary configuration missing")
             return jsonify({'success': False, 'error': 'Cloudinary configuration missing'}), 500
         upload_result = cloudinary.uploader.upload(file, folder="user_photos")
