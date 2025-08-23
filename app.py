@@ -149,6 +149,18 @@ class MongoService:
             logger.error(f"Get user by verification token error: {str(e)}")
             return None
 
+    def get_user_by_reset_token(self, token: str) -> Optional[Dict[str, Any]]:
+        try:
+            user = self.users.find_one({'reset_token': token, 'reset_token_expiry': {'$gt': datetime.now(timezone.utc)}})
+            if user:
+                user['id'] = str(user['_id'])
+                del user['_id']
+                return user
+            return None
+        except Exception as e:
+            logger.error(f"Get user by reset token error: {str(e)}")
+            return None
+
     def verify_user(self, email: str, password: str) -> Dict[str, Any]:
         try:
             user = self.users.find_one({'email': email})
@@ -206,6 +218,18 @@ class MongoService:
             return {'success': result.modified_count > 0}
         except Exception as e:
             logger.error(f"Update user by email error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
+    def update_password(self, user_id: str, new_password: str) -> Dict[str, Any]:
+        try:
+            hashed_password = generate_password_hash(new_password)
+            result = self.users.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$set': {'password': hashed_password}, '$unset': {'reset_token': '', 'reset_token_expiry': ''}}
+            )
+            return {'success': result.modified_count > 0}
+        except Exception as e:
+            logger.error(f"Update password error: {str(e)}")
             return {'success': False, 'error': str(e)}
 
     def save_quiz_results(self, user_id: str, quiz_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -266,8 +290,8 @@ class MongoService:
                             'occupation': user_data.get('occupation', 'N/A'),
                             'bio': user_data.get('bio', 'No bio available'),
                             'interests': user_data.get('interests', []),
-                            'distance': 'N/A',  # Placeholder; implement geolocation if needed
-                            'rating': '4.5',  # Placeholder; implement rating system if needed
+                            'distance': 'N/A',
+                            'rating': '4.5',
                             'dominant_type': other_scores['dominant_type'],
                             'match_percentage': match_percentage
                         })
@@ -278,13 +302,12 @@ class MongoService:
 
     def _calculate_match_percentage(self, user_scores: Dict[str, Any], other_scores: Dict[str, Any]) -> int:
         try:
-            # Simple match percentage based on dominant and secondary type overlap
             dominant_match = 50 if user_scores['dominant_type'] == other_scores['dominant_type'] else 20
             secondary_match = 30 if user_scores.get('secondary_type') == other_scores.get('secondary_type') and user_scores.get('secondary_type') else 10
             return min(dominant_match + secondary_match, 100)
         except Exception as e:
             logger.error(f"Calculate match percentage error: {str(e)}")
-            return 50  # Fallback percentage
+            return 50
 
     def is_matched(self, user1: str, user2: str) -> bool:
         try:
@@ -297,9 +320,7 @@ class MongoService:
 
     def get_matched_users(self, user_id: str) -> List[str]:
         try:
-            # Get users who liked me
             likers = [str(l['user_id']) for l in self.likes.find({'matched_user_id': user_id})]
-            # Get my likes among those likers
             my_likes = self.likes.find({'user_id': user_id, 'matched_user_id': {'$in': likers}})
             matches = [str(l['matched_user_id']) for l in my_likes]
             return matches
@@ -536,7 +557,6 @@ class ChatService:
                 {'sender_id': user2, 'receiver_id': user1}
             ]}
             msgs = list(self.messages.find(query).sort('timestamp', 1))
-            # Mark as read for current user
             self.messages.update_many(
                 {'receiver_id': user1, 'sender_id': user2, 'read': False},
                 {'$set': {'read': True}}
@@ -611,6 +631,40 @@ def send_verification_email(email: str, verification_token: str) -> Dict[str, An
         logger.error(f"Failed to send verification email to {email}: {str(e)}")
         return {'success': False, 'error': str(e)}
 
+def send_reset_email(email: str, reset_token: str) -> Dict[str, Any]:
+    try:
+        smtp_server = 'smtp.gmail.com'
+        smtp_port = 587
+        smtp_user = 'ninakkaiforyou@gmail.com'
+        smtp_password = os.environ.get('SMTP_PASSWORD', 'porz cqqt bumr wdgj')
+        reset_url = f"https://www.ninakkai.com/reset-password/{reset_token}"
+        msg = MIMEMultipart()
+        msg['From'] = smtp_user
+        msg['To'] = email
+        msg['Subject'] = 'Reset Your Password - Ninakkai'
+        body = f"""
+        Hello,
+
+        You requested a password reset for your Ninakkai account. Click the link below to reset your password:
+
+        {reset_url}
+
+        This link will expire in 1 hour. If you did not request this, please ignore this email.
+
+        Best regards,
+        The Ninakkai Team
+        """
+        msg.attach(MIMEText(body, 'plain'))
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_password)
+            server.sendmail(smtp_user, email, msg.as_string())
+        logger.info(f"Reset email sent to {email}")
+        return {'success': True}
+    except Exception as e:
+        logger.error(f"Failed to send reset email to {email}: {str(e)}")
+        return {'success': False, 'error': str(e)}
+
 @app.after_request
 def log_response(response):
     logger.debug(f"Response - Route: {request.path}, Status: {response.status_code}, Set-Cookie: {response.headers.get('Set-Cookie', 'None')}")
@@ -649,6 +703,7 @@ def auth():
     success = None
     verification_sent = False
     verification_success = False
+    reset_sent = False
     email = session.get('email', '')
 
     if 'user_id' in session:
@@ -761,14 +816,42 @@ def auth():
             except Exception as e:
                 logger.error(f"Resend verification error: {str(e)}")
                 error = 'An unexpected error occurred'
+        elif form_type == 'forgot_password':
+            email = request.form.get('email')
+            if not email:
+                error = 'Email is required'
+            else:
+                try:
+                    user = mongo_service.get_user_by_email(email)
+                    if not user:
+                        error = 'No account found with this email'
+                    else:
+                        reset_token = secrets.token_urlsafe(32)
+                        expiry = datetime.now(timezone.utc) + timedelta(hours=1)
+                        update_result = mongo_service.update_user(user['id'], {
+                            'reset_token': reset_token,
+                            'reset_token_expiry': expiry
+                        })
+                        if not update_result['success']:
+                            error = 'Failed to generate reset token'
+                        else:
+                            email_result = send_reset_email(email, reset_token)
+                            if not email_result['success']:
+                                error = 'Failed to send reset email'
+                            else:
+                                reset_sent = True
+                                success = 'Password reset link sent to your email'
+                except Exception as e:
+                    logger.error(f"Forgot password error: {str(e)}")
+                    error = 'An error occurred during password reset request. Please try again.'
 
     if request.cookies.get('email_verified') == '1':
         verification_success = True
-        resp = make_response(render_template('auth.html', error=error, success=success, verification_sent=verification_sent, verification_success=verification_success, email=email))
+        resp = make_response(render_template('auth.html', error=error, success=success, verification_sent=verification_sent, verification_success=verification_success, reset_sent=reset_sent, email=email))
         resp.set_cookie('email_verified', '', expires=0, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
         return resp
 
-    return render_template('auth.html', error=error, success=success, verification_sent=verification_sent, verification_success=verification_success, email=email)
+    return render_template('auth.html', error=error, success=success, verification_sent=verification_sent, verification_success=verification_success, reset_sent=reset_sent, email=email)
 
 @app.route('/verify-email')
 def verify_email_endpoint():
@@ -793,6 +876,34 @@ def verify_email_endpoint():
         logger.error(f"Verification error: {str(e)}")
         return redirect(url_for('auth', error='An unexpected error occurred during verification.'))
 
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password_endpoint(token):
+    if request.method == 'GET':
+        user = mongo_service.get_user_by_reset_token(token)
+        if not user:
+            return redirect(url_for('auth', error='Invalid or expired reset link'))
+        return render_template('reset_password.html', token=token)
+
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        if not password or not confirm_password:
+            return render_template('reset_password.html', token=token, error='Passwords are required')
+        if password != confirm_password:
+            return render_template('reset_password.html', token=token, error='Passwords do not match')
+        if len(password) < 8:
+            return render_template('reset_password.html', token=token, error='Password must be at least 8 characters')
+        
+        user = mongo_service.get_user_by_reset_token(token)
+        if not user:
+            return render_template('reset_password.html', token=token, error='Invalid or expired reset link')
+        
+        result = mongo_service.update_password(user['id'], password)
+        if result['success']:
+            return redirect(url_for('auth', success='Password reset successfully. Please login.'))
+        else:
+            return render_template('reset_password.html', token=token, error='Failed to update password')
+
 @app.route('/explore')
 def explore():
     logger.debug(f"Session in explore: {session}")
@@ -801,21 +912,17 @@ def explore():
         return redirect(url_for('auth', error='Please log in to access the explore page'))
     
     try:
-        # Fetch user data
         user = mongo_service.get_user_by_id(session['user_id'])
         if not user:
             session.clear()
             return redirect(url_for('auth', error='User not found. Please log in again.'))
         
-        # Fetch quiz results
         quiz_result = mongo_service.get_quiz_results(session['user_id'])
         if not quiz_result:
             return redirect(url_for('questions', error='Please complete the quiz to access the explore page'))
         
-        # Fetch matches
         matches = mongo_service.find_matches(session['user_id'])
         
-        # Prepare user profile data
         profile = {
             'id': user['id'],
             'full_name': user['full_name'],
@@ -832,7 +939,6 @@ def explore():
             'secondary_percentage': quiz_result['scores']['secondary_percentage']
         }
         
-        # Split matches into categories (for simplicity, use same matches for all sections)
         discovery = matches
         nearby = matches
         
@@ -910,7 +1016,7 @@ def user_profile(user_id):
             'interests': user.get('interests', []),
             'distance': 'N/A',
             'rating': '4.5',
-            'match_percentage': 50,  # Placeholder; calculate based on quiz results
+            'match_percentage': 50,
             'personality': {
                 'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
                 'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0,
@@ -931,18 +1037,15 @@ def chat():
         return redirect(url_for('auth'))
     try:
         current_user_id = session['user_id']
-        # Fetch user data
         user = mongo_service.get_user_by_id(current_user_id)
         if not user:
             session.clear()
             return redirect(url_for('auth', error='User not found. Please log in again.'))
         
-        # Fetch quiz results
         quiz_result = mongo_service.get_quiz_results(current_user_id)
         if not quiz_result:
             return redirect(url_for('questions', error='Please complete the quiz to access the chat page'))
         
-        # Prepare user profile data (consistent with explore route)
         profile = {
             'id': user['id'],
             'full_name': user['full_name'],
@@ -959,7 +1062,6 @@ def chat():
             'secondary_percentage': quiz_result['scores']['secondary_percentage']
         }
         
-        # Fetch matched users and conversations
         matched_user_ids = mongo_service.get_matched_users(current_user_id)
         unread_count = chat_service.get_unread_count(current_user_id)
         conversations = []
@@ -1181,7 +1283,6 @@ def upload_profile_picture():
         return jsonify({'success': False, 'error': 'No file provided'}), 400
     try:
         logger.info("Attempting to upload profile picture to Cloudinary")
-        # Verify Cloudinary configuration
         config = cloudinary.config()
         if not (config.cloud_name and config.api_key and config.api_secret):
             logger.error("Cloudinary configuration missing")
@@ -1216,7 +1317,6 @@ def upload_photo():
         return jsonify({'success': False, 'error': 'Maximum 7 photos allowed'}), 400
     try:
         logger.info("Attempting to upload photo to Cloudinary")
-        # Verify Cloudinary configuration
         config = cloudinary.config()
         if not (config.cloud_name and config.api_key and config.api_secret):
             logger.error("Cloudinary configuration missing")
