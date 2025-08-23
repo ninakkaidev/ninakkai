@@ -99,21 +99,11 @@
         }
         
         @keyframes move {
-            0% {
-                transform: translateY(0) translateX(0);
-            }
-            25% {
-                transform: translateY(-50px) translateX(50px);
-            }
-            50% {
-                transform: translateY(0) translateX(100px);
-            }
-            75% {
-                transform: translateY(50px) translateX(50px);
-            }
-            100% {
-                transform: translateY(0) translateX(0);
-            }
+            0% { transform: translateY(0) translateX(0); }
+            25% { transform: translateY(-50px) translateX(50px); }
+            50% { transform: translateY(0) translateX(100px); }
+            75% { transform: translateY(50px) translateX(50px); }
+            100% { transform: translateY(0) translateX(0); }
         }
         
         /* Responsive adjustments */
@@ -715,7 +705,7 @@
                 <button id="modalAcceptBtn" class="accept-btn text-green-500 hover:text-green-600">
                     <i class="fas fa-check"></i> Accept
                 </button>
-                <button id="modalDeclineBtn" class="decline-btn text-red-500 hover:text-red-600">
+                <button id="modalDeclineBtn" class="decline-btn text-red-500 hover:text-red-red-600">
                     <i class="fas fa-times"></i> Decline
                 </button>
             </div>
@@ -752,19 +742,15 @@
                 const circle = document.createElement('div');
                 circle.className = 'circle';
                 
-                // Random size between 50px and 200px
                 const size = Math.random() * 150 + 50;
                 circle.style.width = `${size}px`;
                 circle.style.height = `${size}px`;
                 
-                // Random position
                 circle.style.left = `${Math.random() * 100}%`;
                 circle.style.top = `${Math.random() * 100}%`;
                 
-                // Random color
                 circle.style.background = colors[Math.floor(Math.random() * colors.length)];
                 
-                // Random animation duration and delay
                 const duration = Math.random() * 20 + 10;
                 const delay = Math.random() * 5;
                 circle.style.animationDuration = `${duration}s`;
@@ -779,7 +765,6 @@
             
             tabButtons.forEach(button => {
                 button.addEventListener('click', () => {
-                    // Remove active class from all buttons and contents
                     tabButtons.forEach(btn => {
                         btn.classList.remove('border-pink-500', 'text-pink-500');
                         btn.classList.add('border-transparent', 'text-gray-500');
@@ -789,7 +774,6 @@
                         content.classList.remove('active');
                     });
                     
-                    // Add active class to clicked button and corresponding content
                     button.classList.remove('border-transparent', 'text-gray-500');
                     button.classList.add('border-pink-500', 'text-pink-500');
                     
@@ -812,11 +796,9 @@
                     document.getElementById('chatUserName').textContent = userName;
                     document.getElementById('chatUserImage').src = userImage;
                     
-                    // Load chat messages (simulated)
                     const chatMessages = document.getElementById('chatMessages');
                     chatMessages.innerHTML = '';
                     
-                    // Sample messages
                     const messages = [
                         { text: "Hey there! How are you?", sent: false, time: "10:30 AM" },
                         { text: "I'm good, thanks! How about you?", sent: true, time: "10:32 AM" },
@@ -835,10 +817,8 @@
                         chatMessages.appendChild(messageDiv);
                     });
                     
-                    // Scroll to bottom
                     chatMessages.scrollTop = chatMessages.scrollHeight;
                     
-                    // Show chat view
                     chatList.classList.add('hidden');
                     chatView.classList.remove('hidden');
                 });
@@ -878,7 +858,6 @@
                     });
                     const result = await response.json();
                     if (result.success) {
-                        // Update view fields
                         document.getElementById('nameView').textContent = data.full_name;
                         document.getElementById('ageView').textContent = data.age ? ', ' + data.age : '';
                         document.getElementById('locationView').textContent = data.location;
@@ -886,7 +865,7 @@
                         
                         profileSection.classList.remove('edit-mode');
                         showNotification('Profile updated successfully');
-                        setTimeout(() => location.reload(), 1000); // Reload to confirm changes
+                        setTimeout(() => location.reload(), 1000);
                     } else {
                         showNotification('Failed to update profile');
                     }
@@ -900,34 +879,26 @@
             const profileImage = document.getElementById('profileImage');
             
             profileUpload.addEventListener('change', async (e) => {
-                console.log('Profile picture change event triggered');
                 const file = e.target.files[0];
                 if (file) {
-                    console.log('File selected:', file.name);
                     const formData = new FormData();
                     formData.append('file', file);
                     try {
-                        console.log('Sending fetch to /upload_profile_picture');
                         const response = await fetch('/upload_profile_picture', {
                             method: 'POST',
                             body: formData
                         });
-                        console.log('Response status:', response.status);
                         const result = await response.json();
-                        console.log('Response result:', result);
                         if (result.success) {
                             profileImage.src = result.url;
                             showNotification('Profile picture updated successfully');
-                            setTimeout(() => location.reload(), 1000); // Reload to confirm changes
+                            setTimeout(() => location.reload(), 1000);
                         } else {
                             showNotification('Failed to update profile picture: ' + result.error);
                         }
                     } catch (error) {
-                        console.error('Error in upload:', error);
                         showNotification('Error updating profile picture: ' + error.message);
                     }
-                } else {
-                    console.log('No file selected');
                 }
             });
             
@@ -936,22 +907,17 @@
             const photoSlider = document.querySelector('.photo-slider');
             
             photoUpload.addEventListener('change', async (e) => {
-                console.log('Photo upload change event triggered');
                 const files = e.target.files;
                 if (files.length > 0) {
                     for (let file of files) {
-                        console.log('File selected:', file.name);
                         const formData = new FormData();
                         formData.append('file', file);
                         try {
-                            console.log('Sending fetch to /upload_photo');
                             const response = await fetch('/upload_photo', {
                                 method: 'POST',
                                 body: formData
                             });
-                            console.log('Response status:', response.status);
                             const result = await response.json();
-                            console.log('Response result:', result);
                             if (result.success) {
                                 const photoDiv = document.createElement('div');
                                 photoDiv.className = 'flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative';
@@ -968,13 +934,10 @@
                                 showNotification('Failed to upload photo: ' + result.error);
                             }
                         } catch (error) {
-                            console.error('Error in upload:', error);
                             showNotification('Error uploading photo: ' + error.message);
                         }
                     }
-                    setTimeout(() => location.reload(), 1000); // Reload to confirm changes
-                } else {
-                    console.log('No files selected');
+                    setTimeout(() => location.reload(), 1000);
                 }
             });
             
@@ -994,7 +957,7 @@
                             }
                         });
                         showNotification('Photo deleted successfully');
-                        setTimeout(() => location.reload(), 1000); // Reload to confirm changes
+                        setTimeout(() => location.reload(), 1000);
                     } else {
                         showNotification('Failed to delete photo');
                     }
@@ -1026,7 +989,6 @@
                 document.body.style.overflow = '';
             });
             
-            // Close modal when clicking outside
             settingsModal.addEventListener('click', (e) => {
                 if (e.target === settingsModal) {
                     settingsModal.classList.add('hidden');
@@ -1045,9 +1007,7 @@
             }
 
             document.querySelectorAll('.toggle-container input[type="checkbox"]').forEach(toggle => {
-                // Initialize status
                 updateToggleStatus(toggle);
-
                 toggle.addEventListener('change', function() {
                     const settingName = this.closest('.flex').querySelector('span').textContent;
                     updateToggleStatus(this);
@@ -1058,7 +1018,6 @@
             // Dark mode toggle
             const darkModeToggle = document.getElementById('darkModeToggle');
             
-            // Check for saved user preference or use system preference
             if (localStorage.getItem('darkMode') === 'enabled' ||
                 (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
@@ -1095,13 +1054,11 @@
                     option.addEventListener('click', function() {
                         const lang = this.getAttribute('data-lang');
                         
-                        // Update selected language
                         selector.querySelectorAll('.language-option').forEach(opt => {
                             opt.classList.remove('selected');
                         });
                         this.classList.add('selected');
                         
-                        // Update display
                         toggle.innerHTML = `${this.textContent} <i class="fas fa-chevron-down ml-1 text-xs"></i>`;
                         options.classList.add('hidden');
                         
@@ -1110,7 +1067,6 @@
                 });
             });
             
-            // Close language selector when clicking outside
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('.language-selector')) {
                     document.querySelectorAll('.language-options').forEach(options => {
@@ -1216,7 +1172,6 @@
                 
                 document.body.appendChild(notification);
                 
-                // Auto-remove after 3 seconds
                 const autoRemove = setTimeout(() => {
                     notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
                     setTimeout(() => {
@@ -1224,7 +1179,6 @@
                     }, 300);
                 }, 3000);
                 
-                // Manual close
                 notification.querySelector('button').addEventListener('click', () => {
                     clearTimeout(autoRemove);
                     notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
@@ -1260,11 +1214,12 @@
                 }
             });
 
-            // Make connection cards clickable to view profile
+            // Connection card click handler
             document.querySelectorAll('.connection-card').forEach(card => {
                 card.addEventListener('click', async (e) => {
                     // Prevent triggering if clicking on buttons
                     if (e.target.closest('.accept-btn') || e.target.closest('.decline-btn')) {
+                        e.stopPropagation(); // Stop propagation to prevent modal from opening
                         return;
                     }
 
@@ -1283,7 +1238,6 @@
                             document.getElementById('modalUserOccupation').textContent = user.occupation;
                             document.getElementById('modalUserBio').textContent = user.bio || 'No bio available';
                             
-                            // Interests
                             const interestsContainer = document.getElementById('modalUserInterests');
                             interestsContainer.innerHTML = '';
                             user.interests.forEach(interest => {
@@ -1293,7 +1247,6 @@
                                 interestsContainer.appendChild(span);
                             });
 
-                            // Photos
                             const photosContainer = document.getElementById('modalUserPhotos');
                             photosContainer.innerHTML = '';
                             user.photos.forEach(photo => {
@@ -1303,12 +1256,10 @@
                                 photosContainer.appendChild(img);
                             });
 
-                            // Personality
                             const personality = user.personality;
                             document.getElementById('modalUserPersonality').textContent = 
                                 `Dominant: ${personality.dominant_type} (${personality.dominant_percentage}%), Secondary: ${personality.secondary_type || 'None'} (${personality.secondary_percentage}%)`;
 
-                            // Setup modal buttons with current user ID
                             document.getElementById('modalAcceptBtn').dataset.userId = currentUserId;
                             document.getElementById('modalDeclineBtn').dataset.userId = currentUserId;
 
@@ -1325,7 +1276,8 @@
             });
 
             // Modal accept/decline buttons
-            document.getElementById('modalAcceptBtn').addEventListener('click', async function() {
+            document.getElementById('modalAcceptBtn').addEventListener('click', async function(e) {
+                e.stopPropagation(); // Prevent any parent click events
                 const userId = this.dataset.userId;
                 showLoading();
                 try {
@@ -1337,7 +1289,7 @@
                     const result = await response.json();
                     hideLoading();
                     if (result.success) {
-                        document.querySelector(`.connection-card[data-user-id="${userId}"]`).remove();
+                        document.querySelector(`.connection-card[data-user-id="${userId}"]`)?.remove();
                         userProfileModal.classList.add('hidden');
                         document.body.style.overflow = '';
                         showNotification('Accepted!');
@@ -1360,7 +1312,8 @@
                 }
             });
 
-            document.getElementById('modalDeclineBtn').addEventListener('click', async function() {
+            document.getElementById('modalDeclineBtn').addEventListener('click', async function(e) {
+                e.stopPropagation(); // Prevent any parent click events
                 const userId = this.dataset.userId;
                 showLoading();
                 try {
@@ -1372,7 +1325,7 @@
                     const result = await response.json();
                     hideLoading();
                     if (result.success) {
-                        document.querySelector(`.connection-card[data-user-id="${userId}"]`).remove();
+                        document.querySelector(`.connection-card[data-user-id="${userId}"]`)?.remove();
                         userProfileModal.classList.add('hidden');
                         document.body.style.overflow = '';
                         showNotification('Declined');
@@ -1389,7 +1342,7 @@
             document.querySelectorAll('.accept-btn:not(#modalAcceptBtn)').forEach(button => {
                 button.addEventListener('click', async function(e) {
                     e.preventDefault();
-                    e.stopPropagation(); // Prevent triggering card click
+                    e.stopPropagation(); // Prevent card click
                     const userId = this.dataset.userId;
                     showLoading();
                     try {
@@ -1426,7 +1379,7 @@
             document.querySelectorAll('.decline-btn:not(#modalDeclineBtn)').forEach(button => {
                 button.addEventListener('click', async function(e) {
                     e.preventDefault();
-                    e.stopPropagation(); // Prevent triggering card click
+                    e.stopPropagation(); // Prevent card click
                     const userId = this.dataset.userId;
                     showLoading();
                     try {
