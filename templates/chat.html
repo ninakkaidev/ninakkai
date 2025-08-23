@@ -41,7 +41,7 @@ body {
   box-shadow: 0 2px 10px rgba(0,0,0,0.2);
   padding: 0.75rem 1rem;
   position: relative;
-  z-index: 100;
+  z-index: 1000;
   border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
@@ -280,9 +280,10 @@ body {
   justify-content: space-between;
   align-items: center;
   background-color: var(--card-dark);
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 20;
+  width: 100%;
+  z-index: 30;
 }
 
 .chat-back-btn {
@@ -369,12 +370,12 @@ body {
 
 .message.sent {
   justify-content: flex-end;
+  margin-right: 0.25rem;
 }
 
 .message-content {
   padding: 0.625rem 0.875rem;
   border-radius: 12px;
-  position: relative;
   word-wrap: break-word;
   line-height: 1.4;
   max-width: 100%;
@@ -782,18 +783,19 @@ body {
 
   .chat-area {
     height: 100%;
-    padding-top: 56px; /* Ensure header is visible */
+    padding-top: 70px; /* Increased to ensure header visibility */
   }
 
   .chat-header {
     position: fixed;
     top: 0;
     width: 100%;
-    z-index: 20;
+    z-index: 30;
+    background-color: var(--card-dark);
   }
 
   .messages-container {
-    padding-bottom: 100px;
+    padding: 0.75rem 1.25rem 100px 1.25rem; /* Adjusted for header and input */
   }
 
   .message-input-container {
@@ -806,7 +808,7 @@ body {
   }
 
   .message.sent {
-    margin-right: 0.5rem;
+    margin-right: 0.25rem; /* Tighter right alignment */
   }
 
   body.chat-mode .navbar {
@@ -864,7 +866,7 @@ body {
   }
   
   .messages-container {
-    padding: 0.75rem;
+    padding: 0.75rem 1rem 100px 1rem;
   }
   
   .emoji-picker {
@@ -877,7 +879,7 @@ body {
   }
 
   .message.sent {
-    margin-right: 0.5rem;
+    margin-right: 0.25rem;
   }
 }
 
