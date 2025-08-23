@@ -335,6 +335,19 @@
             50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
             100% { transform: translate(-50%, -50%) scale(1); }
         }
+
+        /* Connection Card Styles */
+        .connection-card {
+            cursor: pointer;
+        }
+
+        .connection-card:hover {
+            background-color: #f9fafb;
+        }
+
+        .dark .connection-card:hover {
+            background-color: #374151;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -451,7 +464,7 @@
                 <div id="connections" class="tab-content active">
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {% for user in pending_likers %}
-                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                        <div class="bg-gray-50 rounded-lg p-3 text-center connection-card" data-user-id="{{ user.id }}">
                             <div class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-2">
                                 <img src="{{ user.image }}" alt="{{ user.full_name }}" class="w-full h-full object-cover">
                             </div>
@@ -544,10 +557,6 @@
                             <span>Email</span>
                             <span class="text-gray-500 dark:text-gray-400">{{ profile.email }}</span>
                         </div>
-                        <div class="flex justify-between items-center dark:text-gray-300">
-                            <span>Phone</span>
-                            <span class="text-gray-500 dark:text-gray-400">+1 (555) 123-4567</span>
-                        </div>
                         <button id="changePasswordBtn" class="w-full text-left text-pink-500 font-medium mt-2 dark:text-pink-400">Change Password</button>
                     </div>
                 </div>
@@ -629,6 +638,50 @@
                         <button id="logoutBtn" class="w-full text-left text-red-500 dark:text-red-400">Log Out</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Profile View Modal -->
+    <div id="userProfileModal" class="fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 overflow-y-auto max-h-[80vh] dark:bg-gray-800">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold dark:text-white">User Profile</h3>
+                <button id="closeUserProfile" class="text-gray-500 hover:text-gray-700 dark:text-gray-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="text-center mb-4">
+                <div class="w-24 h-24 rounded-full overflow-hidden mx-auto mb-2">
+                    <img id="modalUserImage" src="" alt="User Profile" class="w-full h-full object-cover">
+                </div>
+                <h2 id="modalUserName" class="text-xl font-bold dark:text-white"></h2>
+                <p id="modalUserAge" class="text-gray-500 dark:text-gray-400"></p>
+                <p id="modalUserOccupation" class="text-gray-500 dark:text-gray-400"></p>
+            </div>
+            <div class="mb-4">
+                <h4 class="font-semibold mb-2 dark:text-white">About</h4>
+                <p id="modalUserBio" class="text-gray-700 dark:text-gray-300"></p>
+            </div>
+            <div class="mb-4">
+                <h4 class="font-semibold mb-2 dark:text-white">Interests</h4>
+                <div id="modalUserInterests" class="flex flex-wrap gap-2"></div>
+            </div>
+            <div class="mb-4">
+                <h4 class="font-semibold mb-2 dark:text-white">Photos</h4>
+                <div id="modalUserPhotos" class="flex overflow-x-auto gap-2 pb-2"></div>
+            </div>
+            <div class="mb-4">
+                <h4 class="font-semibold mb-2 dark:text-white">Personality</h4>
+                <p id="modalUserPersonality" class="text-gray-700 dark:text-gray-300"></p>
+            </div>
+            <div class="flex justify-center space-x-4">
+                <button id="modalAcceptBtn" class="accept-btn text-green-500 hover:text-green-600">
+                    <i class="fas fa-check"></i> Accept
+                </button>
+                <button id="modalDeclineBtn" class="decline-btn text-red-500 hover:text-red-600">
+                    <i class="fas fa-times"></i> Decline
+                </button>
             </div>
         </div>
     </div>
@@ -1032,37 +1085,7 @@
             
             // Change Password functionality
             const changePasswordBtn = document.getElementById('changePasswordBtn');
-            const changePasswordModal = document.createElement('div');
-            changePasswordModal.id = 'changePasswordModal';
-            changePasswordModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center hidden';
-            changePasswordModal.innerHTML = `
-                <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 dark:bg-gray-800">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-bold dark:text-white">Change Password</h3>
-                        <button class="close-password-modal text-gray-500 hover:text-gray-700 dark:text-gray-300">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Current Password</label>
-                            <input type="password" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">New Password</label>
-                            <input type="password" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Confirm New Password</label>
-                            <input type="password" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        </div>
-                        <button class="w-full bg-pink-500 text-white py-2 rounded-lg hover:bg-pink-600 mt-2">
-                            Update Password
-                        </button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(changePasswordModal);
+            const changePasswordModal = document.getElementById('changePasswordModal');
             
             changePasswordBtn.addEventListener('click', () => {
                 changePasswordModal.classList.remove('hidden');
@@ -1175,10 +1198,144 @@
                 });
             }
 
-            // Accept and Decline functionality for pending likers
-            document.querySelectorAll('.accept-btn').forEach(button => {
+            // User Profile Modal functionality
+            const userProfileModal = document.getElementById('userProfileModal');
+            const closeUserProfile = document.getElementById('closeUserProfile');
+            let currentUserId = null;
+
+            closeUserProfile.addEventListener('click', () => {
+                userProfileModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+
+            userProfileModal.addEventListener('click', (e) => {
+                if (e.target === userProfileModal) {
+                    userProfileModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+            });
+
+            // Make connection cards clickable to view profile
+            document.querySelectorAll('.connection-card').forEach(card => {
+                card.addEventListener('click', async (e) => {
+                    // Prevent triggering if clicking on buttons
+                    if (e.target.closest('.accept-btn') || e.target.closest('.decline-btn')) {
+                        return;
+                    }
+
+                    currentUserId = card.dataset.userId;
+                    try {
+                        const response = await fetch(`/user-profile/${currentUserId}`);
+                        const result = await response.json();
+                        if (result.success) {
+                            const user = result.user;
+
+                            document.getElementById('modalUserImage').src = user.image;
+                            document.getElementById('modalUserName').textContent = user.full_name;
+                            document.getElementById('modalUserAge').textContent = user.age ? `${user.age} years old` : '';
+                            document.getElementById('modalUserOccupation').textContent = user.occupation;
+                            document.getElementById('modalUserBio').textContent = user.bio || 'No bio available';
+                            
+                            // Interests
+                            const interestsContainer = document.getElementById('modalUserInterests');
+                            interestsContainer.innerHTML = '';
+                            user.interests.forEach(interest => {
+                                const span = document.createElement('span');
+                                span.className = 'bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full dark:bg-gray-700 dark:text-gray-300';
+                                span.textContent = interest;
+                                interestsContainer.appendChild(span);
+                            });
+
+                            // Photos
+                            const photosContainer = document.getElementById('modalUserPhotos');
+                            photosContainer.innerHTML = '';
+                            user.photos.forEach(photo => {
+                                const img = document.createElement('img');
+                                img.src = photo;
+                                img.className = 'w-24 h-24 object-cover rounded-lg';
+                                photosContainer.appendChild(img);
+                            });
+
+                            // Personality
+                            const personality = user.personality;
+                            document.getElementById('modalUserPersonality').textContent = 
+                                `Dominant: ${personality.dominant_type} (${personality.dominant_percentage}%), Secondary: ${personality.secondary_type || 'None'} (${personality.secondary_percentage}%)`;
+
+                            // Setup modal buttons with current user ID
+                            document.getElementById('modalAcceptBtn').dataset.userId = currentUserId;
+                            document.getElementById('modalDeclineBtn').dataset.userId = currentUserId;
+
+                            userProfileModal.classList.remove('hidden');
+                            document.body.style.overflow = 'hidden';
+                        } else {
+                            showNotification('Failed to load user profile');
+                        }
+                    } catch (error) {
+                        showNotification('Error loading user profile');
+                    }
+                });
+            });
+
+            // Modal accept/decline buttons
+            document.getElementById('modalAcceptBtn').addEventListener('click', async function() {
+                const userId = this.dataset.userId;
+                try {
+                    const response = await fetch('/like-user', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ matched_user_id: userId })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        document.querySelector(`.connection-card[data-user-id="${userId}"]`).remove();
+                        userProfileModal.classList.add('hidden');
+                        document.body.style.overflow = '';
+                        showNotification('Accepted!');
+                        if (result.is_match) {
+                            const popup = document.createElement('div');
+                            popup.className = 'popup';
+                            popup.textContent = 'Connection Successful!';
+                            document.body.appendChild(popup);
+                            setTimeout(() => {
+                                popup.remove();
+                            }, 2000);
+                            showNotification("It's a match! You can now chat.");
+                        }
+                    } else {
+                        showNotification(result.error || 'Failed to accept');
+                    }
+                } catch (error) {
+                    showNotification('Network error');
+                }
+            });
+
+            document.getElementById('modalDeclineBtn').addEventListener('click', async function() {
+                const userId = this.dataset.userId;
+                try {
+                    const response = await fetch('/pass-user', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ passed_user_id: userId })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        document.querySelector(`.connection-card[data-user-id="${userId}"]`).remove();
+                        userProfileModal.classList.add('hidden');
+                        document.body.style.overflow = '';
+                        showNotification('Declined');
+                    } else {
+                        showNotification(result.error || 'Failed to decline');
+                    }
+                } catch (error) {
+                    showNotification('Network error');
+                }
+            });
+
+            // Original accept/decline buttons (for direct action without modal)
+            document.querySelectorAll('.accept-btn:not(#modalAcceptBtn)').forEach(button => {
                 button.addEventListener('click', async function(e) {
                     e.preventDefault();
+                    e.stopPropagation(); // Prevent triggering card click
                     const userId = this.dataset.userId;
                     try {
                         const response = await fetch('/like-user', {
@@ -1188,7 +1345,7 @@
                         });
                         const result = await response.json();
                         if (result.success) {
-                            this.closest('.bg-gray-50').remove();
+                            this.closest('.connection-card').remove();
                             showNotification('Accepted!');
                             if (result.is_match) {
                                 const popup = document.createElement('div');
@@ -1209,9 +1366,10 @@
                 });
             });
 
-            document.querySelectorAll('.decline-btn').forEach(button => {
+            document.querySelectorAll('.decline-btn:not(#modalDeclineBtn)').forEach(button => {
                 button.addEventListener('click', async function(e) {
                     e.preventDefault();
+                    e.stopPropagation(); // Prevent triggering card click
                     const userId = this.dataset.userId;
                     try {
                         const response = await fetch('/pass-user', {
@@ -1221,7 +1379,7 @@
                         });
                         const result = await response.json();
                         if (result.success) {
-                            this.closest('.bg-gray-50').remove();
+                            this.closest('.connection-card').remove();
                             showNotification('Declined');
                         } else {
                             showNotification(result.error || 'Failed to decline');
