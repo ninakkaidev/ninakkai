@@ -348,9 +348,45 @@
         .dark .connection-card:hover {
             background-color: #374151;
         }
+
+        /* Loading State */
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ec4899;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
+    <!-- Loading State -->
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <p class="text-gray-800 text-center">Processing...</p>
+    </div>
+
     <!-- Background Animation -->
     <div class="bg-circles" id="bgCircles"></div>
     
@@ -1198,6 +1234,15 @@
                 });
             }
 
+            // Loading functions
+            function showLoading() {
+                document.getElementById('loading').style.display = 'flex';
+            }
+
+            function hideLoading() {
+                document.getElementById('loading').style.display = 'none';
+            }
+
             // User Profile Modal functionality
             const userProfileModal = document.getElementById('userProfileModal');
             const closeUserProfile = document.getElementById('closeUserProfile');
@@ -1224,9 +1269,11 @@
                     }
 
                     currentUserId = card.dataset.userId;
+                    showLoading();
                     try {
                         const response = await fetch(`/user-profile/${currentUserId}`);
                         const result = await response.json();
+                        hideLoading();
                         if (result.success) {
                             const user = result.user;
 
@@ -1271,6 +1318,7 @@
                             showNotification('Failed to load user profile');
                         }
                     } catch (error) {
+                        hideLoading();
                         showNotification('Error loading user profile');
                     }
                 });
@@ -1279,6 +1327,7 @@
             // Modal accept/decline buttons
             document.getElementById('modalAcceptBtn').addEventListener('click', async function() {
                 const userId = this.dataset.userId;
+                showLoading();
                 try {
                     const response = await fetch('/like-user', {
                         method: 'POST',
@@ -1286,6 +1335,7 @@
                         body: JSON.stringify({ matched_user_id: userId })
                     });
                     const result = await response.json();
+                    hideLoading();
                     if (result.success) {
                         document.querySelector(`.connection-card[data-user-id="${userId}"]`).remove();
                         userProfileModal.classList.add('hidden');
@@ -1305,12 +1355,14 @@
                         showNotification(result.error || 'Failed to accept');
                     }
                 } catch (error) {
+                    hideLoading();
                     showNotification('Network error');
                 }
             });
 
             document.getElementById('modalDeclineBtn').addEventListener('click', async function() {
                 const userId = this.dataset.userId;
+                showLoading();
                 try {
                     const response = await fetch('/pass-user', {
                         method: 'POST',
@@ -1318,6 +1370,7 @@
                         body: JSON.stringify({ passed_user_id: userId })
                     });
                     const result = await response.json();
+                    hideLoading();
                     if (result.success) {
                         document.querySelector(`.connection-card[data-user-id="${userId}"]`).remove();
                         userProfileModal.classList.add('hidden');
@@ -1327,6 +1380,7 @@
                         showNotification(result.error || 'Failed to decline');
                     }
                 } catch (error) {
+                    hideLoading();
                     showNotification('Network error');
                 }
             });
@@ -1337,6 +1391,7 @@
                     e.preventDefault();
                     e.stopPropagation(); // Prevent triggering card click
                     const userId = this.dataset.userId;
+                    showLoading();
                     try {
                         const response = await fetch('/like-user', {
                             method: 'POST',
@@ -1344,6 +1399,7 @@
                             body: JSON.stringify({ matched_user_id: userId })
                         });
                         const result = await response.json();
+                        hideLoading();
                         if (result.success) {
                             this.closest('.connection-card').remove();
                             showNotification('Accepted!');
@@ -1361,6 +1417,7 @@
                             showNotification(result.error || 'Failed to accept');
                         }
                     } catch (error) {
+                        hideLoading();
                         showNotification('Network error');
                     }
                 });
@@ -1371,6 +1428,7 @@
                     e.preventDefault();
                     e.stopPropagation(); // Prevent triggering card click
                     const userId = this.dataset.userId;
+                    showLoading();
                     try {
                         const response = await fetch('/pass-user', {
                             method: 'POST',
@@ -1378,6 +1436,7 @@
                             body: JSON.stringify({ passed_user_id: userId })
                         });
                         const result = await response.json();
+                        hideLoading();
                         if (result.success) {
                             this.closest('.connection-card').remove();
                             showNotification('Declined');
@@ -1385,6 +1444,7 @@
                             showNotification(result.error || 'Failed to decline');
                         }
                     } catch (error) {
+                        hideLoading();
                         showNotification('Network error');
                     }
                 });
