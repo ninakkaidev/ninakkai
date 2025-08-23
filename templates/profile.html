@@ -339,6 +339,14 @@
             background-color: #374151;
         }
 
+        /* Action Buttons Container */
+        .action-buttons {
+            margin-top: 0.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
         /* Loading State */
         .loading {
             display: none;
@@ -490,13 +498,15 @@
                 <div id="connections" class="tab-content active">
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {% for user in pending_likers %}
-                        <div class="bg-gray-50 rounded-lg p-3 text-center connection-card" data-user-id="{{ user.id }}">
-                            <div class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-2">
-                                <img src="{{ user.image }}" alt="{{ user.full_name }}" class="w-full h-full object-cover">
+                        <div class="connection-item">
+                            <div class="bg-gray-50 rounded-lg p-3 text-center connection-card" data-user-id="{{ user.id }}">
+                                <div class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-2">
+                                    <img src="{{ user.image }}" alt="{{ user.full_name }}" class="w-full h-full object-cover">
+                                </div>
+                                <h3 class="font-medium">{{ user.full_name }}</h3>
+                                <p class="text-gray-500 text-sm">{{ user.occupation }}</p>
                             </div>
-                            <h3 class="font-medium">{{ user.full_name }}</h3>
-                            <p class="text-gray-500 text-sm">{{ user.occupation }}</p>
-                            <div class="flex justify-center space-x-2 mt-2">
+                            <div class="action-buttons">
                                 <button class="accept-btn text-green-500 hover:text-green-600" data-user-id="{{ user.id }}">
                                     <i class="fas fa-check"></i> Accept
                                 </button>
@@ -705,7 +715,7 @@
                 <button id="modalAcceptBtn" class="accept-btn text-green-500 hover:text-green-600">
                     <i class="fas fa-check"></i> Accept
                 </button>
-                <button id="modalDeclineBtn" class="decline-btn text-red-500 hover:text-red-red-600">
+                <button id="modalDeclineBtn" class="decline-btn text-red-500 hover:text-red-600">
                     <i class="fas fa-times"></i> Decline
                 </button>
             </div>
@@ -1217,12 +1227,6 @@
             // Connection card click handler
             document.querySelectorAll('.connection-card').forEach(card => {
                 card.addEventListener('click', async (e) => {
-                    // Prevent triggering if clicking on buttons
-                    if (e.target.closest('.accept-btn') || e.target.closest('.decline-btn')) {
-                        e.stopPropagation(); // Stop propagation to prevent modal from opening
-                        return;
-                    }
-
                     currentUserId = card.dataset.userId;
                     showLoading();
                     try {
@@ -1277,7 +1281,7 @@
 
             // Modal accept/decline buttons
             document.getElementById('modalAcceptBtn').addEventListener('click', async function(e) {
-                e.stopPropagation(); // Prevent any parent click events
+                e.stopPropagation();
                 const userId = this.dataset.userId;
                 showLoading();
                 try {
@@ -1289,7 +1293,7 @@
                     const result = await response.json();
                     hideLoading();
                     if (result.success) {
-                        document.querySelector(`.connection-card[data-user-id="${userId}"]`)?.remove();
+                        document.querySelector(`.connection-item:has([data-user-id="${userId}"])`).remove();
                         userProfileModal.classList.add('hidden');
                         document.body.style.overflow = '';
                         showNotification('Accepted!');
@@ -1313,7 +1317,7 @@
             });
 
             document.getElementById('modalDeclineBtn').addEventListener('click', async function(e) {
-                e.stopPropagation(); // Prevent any parent click events
+                e.stopPropagation();
                 const userId = this.dataset.userId;
                 showLoading();
                 try {
@@ -1325,7 +1329,7 @@
                     const result = await response.json();
                     hideLoading();
                     if (result.success) {
-                        document.querySelector(`.connection-card[data-user-id="${userId}"]`)?.remove();
+                        document.querySelector(`.connection-item:has([data-user-id="${userId}"])`).remove();
                         userProfileModal.classList.add('hidden');
                         document.body.style.overflow = '';
                         showNotification('Declined');
@@ -1338,11 +1342,11 @@
                 }
             });
 
-            // Original accept/decline buttons (for direct action without modal)
+            // Original accept/decline buttons (now outside connection card)
             document.querySelectorAll('.accept-btn:not(#modalAcceptBtn)').forEach(button => {
                 button.addEventListener('click', async function(e) {
                     e.preventDefault();
-                    e.stopPropagation(); // Prevent card click
+                    e.stopPropagation();
                     const userId = this.dataset.userId;
                     showLoading();
                     try {
@@ -1354,7 +1358,7 @@
                         const result = await response.json();
                         hideLoading();
                         if (result.success) {
-                            this.closest('.connection-card').remove();
+                            this.closest('.connection-item').remove();
                             showNotification('Accepted!');
                             if (result.is_match) {
                                 const popup = document.createElement('div');
@@ -1379,7 +1383,7 @@
             document.querySelectorAll('.decline-btn:not(#modalDeclineBtn)').forEach(button => {
                 button.addEventListener('click', async function(e) {
                     e.preventDefault();
-                    e.stopPropagation(); // Prevent card click
+                    e.stopPropagation();
                     const userId = this.dataset.userId;
                     showLoading();
                     try {
@@ -1391,7 +1395,7 @@
                         const result = await response.json();
                         hideLoading();
                         if (result.success) {
-                            this.closest('.connection-card').remove();
+                            this.closest('.connection-item').remove();
                             showNotification('Declined');
                         } else {
                             showNotification(result.error || 'Failed to decline');
