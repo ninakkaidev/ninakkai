@@ -8,30 +8,21 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
 :root {
-  /* Primary Colors */
   --primary: #6c5ce7;
   --primary-dark: #5649c0;
   --primary-light: #a29bfe;
   --primary-gradient: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
   --button-gradient: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
   --button-hover-gradient: linear-gradient(135deg, #e84868 0%, #5e9edb 100%);
-
-  /* Accent & Secondary Colors */
   --secondary: #00b894;
   --secondary-dark: #00997e;
-
-  /* Gradient Styles */
   --gradient-blue-red: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
-
-  /* UI Background Colors */
   --light: #2d3436;
   --light-gray: #636e72;
   --gray: #b2bec3;
   --dark: #f5f6fa;
   --bg-dark: #1e272e;
   --card-dark: #2d3436;
-
-  /* Chat Message Backgrounds */
   --message-sent: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
   --message-received: #3c4852;
 }
@@ -50,7 +41,7 @@ body {
   box-shadow: 0 2px 10px rgba(0,0,0,0.2);
   padding: 0.75rem 1rem;
   position: relative;
-  z-index: 10;
+  z-index: 100;
   border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
@@ -275,6 +266,7 @@ body {
   transform: translateX(100%);
   transition: transform 0.3s ease;
   background-color: var(--card-dark);
+  z-index: 10;
 }
 
 .chat-area.active {
@@ -288,6 +280,9 @@ body {
   justify-content: space-between;
   align-items: center;
   background-color: var(--card-dark);
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 
 .chat-back-btn {
@@ -342,6 +337,8 @@ body {
   padding: 1rem 1.25rem;
   overflow-y: auto;
   background-color: var(--bg-dark);
+  display: flex;
+  flex-direction: column;
 }
 
 .date-divider {
@@ -363,15 +360,15 @@ body {
   max-width: 75%;
   margin-bottom: 0.75rem;
   position: relative;
+  display: flex;
 }
 
 .message.received {
-  margin-right: auto;
+  justify-content: flex-start;
 }
 
 .message.sent {
-  margin-left: auto;
-  margin-right: 1rem; /* Ensure messages stick to right */
+  justify-content: flex-end;
 }
 
 .message-content {
@@ -380,7 +377,6 @@ body {
   position: relative;
   word-wrap: break-word;
   line-height: 1.4;
-  width: fit-content;
   max-width: 100%;
 }
 
@@ -463,7 +459,7 @@ body {
 
 /* Message Input */
 .message-input-container {
-  padding: 0.5rem 0.875rem; /* Reduced padding for better visibility */
+  padding: 0.5rem;
   border-top: 1px solid rgba(255,255,255,0.1);
   background-color: var(--card-dark);
   position: sticky;
@@ -530,7 +526,7 @@ body {
 /* Emoji Picker */
 .emoji-picker {
   position: absolute;
-  bottom: 70px; /* Adjusted to appear above input */
+  bottom: 70px;
   right: 20px;
   width: 280px;
   background-color: var(--card-dark);
@@ -786,10 +782,18 @@ body {
 
   .chat-area {
     height: 100%;
+    padding-top: 56px; /* Ensure header is visible */
+  }
+
+  .chat-header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 20;
   }
 
   .messages-container {
-    padding-bottom: 100px; /* Increased padding for input visibility */
+    padding-bottom: 100px;
   }
 
   .message-input-container {
@@ -798,14 +802,13 @@ body {
     width: 100%;
     z-index: 100;
     background-color: var(--card-dark);
-    padding: 0.5rem; /* Adjusted for mobile */
+    padding: 0.5rem;
   }
 
   .message.sent {
-    margin-right: 0.5rem; /* Tighter right margin on mobile */
+    margin-right: 0.5rem;
   }
 
-  /* Adjustments for full height in mobile chat */
   body.chat-mode .navbar {
     display: none;
   }
@@ -870,11 +873,11 @@ body {
   }
 
   .message-input-container {
-    padding: 0.5rem; /* Ensure visibility on small screens */
+    padding: 0.5rem;
   }
 
   .message.sent {
-    margin-right: 0.5rem; /* Consistent right margin */
+    margin-right: 0.5rem;
   }
 }
 
@@ -1118,7 +1121,6 @@ body {
         if (!currentChatUserId) return;
         sidebar.classList.add('active');
         navigationHistory.push('profile');
-        // Load profile data
         try {
           const response = await fetch(`/user-profile/${currentChatUserId}`);
           const result = await response.json();
@@ -1148,7 +1150,6 @@ body {
       closeSidebar.addEventListener('click', () => {
         sidebar.classList.remove('active');
         navigationHistory.pop();
-        // Navigate to previous area
         const previousArea = navigationHistory[navigationHistory.length - 1];
         if (previousArea === 'chat') {
           document.querySelector('.chat-area').classList.add('active');
@@ -1176,9 +1177,7 @@ body {
           const result = await response.json();
           if (result.success) {
             messageInput.value = '';
-            // Append message to container
             appendMessage({ message, sender_id: 'me', timestamp: new Date().toISOString() }, true);
-            // Scroll to bottom
             const messagesContainer = document.getElementById('messages-container');
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
           }
@@ -1264,7 +1263,6 @@ body {
           document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
           this.classList.add('active');
           const userId = this.dataset.userId;
-          // Load user info for header
           try {
             const response = await fetch(`/user-profile/${userId}`);
             const result = await response.json();
