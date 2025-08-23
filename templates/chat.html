@@ -56,7 +56,7 @@ body {
 
 .navbar-brand {
   font-weight: 700;
-  background:  linear-gradient(135deg, #ff5275 0%, #76b6f5 100%) ;
+  background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -132,22 +132,6 @@ body {
   flex: 1;
   text-align: center;
   color: var(--dark);
-}
-
-.btn-new-chat {
-  background: var(--button-gradient);
-  color: white;
-  border-radius: 6px;
-  padding: 0.375rem 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border: none;
-  transition: all 0.3s ease;
-}
-
-.btn-new-chat:hover {
-  background: var(--button-hover-gradient);
-  transform: translateY(-1px);
 }
 
 .search-conversations {
@@ -596,44 +580,6 @@ body {
   transform: scale(1.2);
 }
 
-/* Attachment Menu */
-.attachment-menu {
-  position: absolute;
-  bottom: 60px;
-  left: 20px;
-  width: 180px;
-  background-color: var(--card-dark);
-  border-radius: 8px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-  padding: 0.75rem;
-  z-index: 1000;
-  display: none;
-  border: 1px solid rgba(255,255,255,0.1);
-}
-
-.attachment-option {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  background: transparent;
-  border: none;
-  padding: 0.5rem;
-  border-radius: 4px;
-  color: var(--dark);
-  font-size: 0.875rem;
-  transition: all 0.2s;
-}
-
-.attachment-option:hover {
-  background-color: rgba(255,255,255,0.1);
-  color: var(--primary-light);
-}
-
-.attachment-option i {
-  margin-right: 0.5rem;
-  font-size: 0.9375rem;
-}
-
 /* Profile Sidebar */
 .profile-sidebar {
   position: absolute;
@@ -905,11 +851,6 @@ body {
     width: 260px;
     right: 10px;
   }
-  
-  .attachment-menu {
-    width: 160px;
-    left: 10px;
-  }
 }
 
 /* Custom scrollbar */
@@ -936,7 +877,7 @@ body {
 <body>
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container">
-            <a class="navbar-brand" href="index.html">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
                 <span>നിനക്കായി-ForYou</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -945,17 +886,12 @@ body {
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="explore.html">
+                        <a class="nav-link" href="{{ url_for('explore') }}">
                             <i class="fas fa-search me-1"></i> Explore
                         </a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link" href="index.html">
-                          <i class="fas fa-sign-out-alt me-1"></i> Logout
-                      </a>
-                  </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="chat.html">
+                        <a class="nav-link active" href="{{ url_for('chat') }}">
                             <i class="fas fa-comment me-1"></i> Messages 
                             {% if unread_count > 0 %}
                             <span class="badge">{{ unread_count }}</span>
@@ -963,7 +899,7 @@ body {
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="profile.html">
+                        <a class="nav-link" href="{{ url_for('profile') }}">
                             <img src="https://randomuser.me/api/portraits/women/44.jpg" class="profile-pic-nav" alt="Profile" style="width: 32px; height: 32px; border-radius: 50%;">
                         </a>
                     </li>
@@ -981,7 +917,6 @@ body {
                     <div class="conversations-header">
                         <button class="btn btn-back conversations-back-btn" style="display: none;"><i class="fas fa-arrow-left"></i></button>
                         <h2>Messages</h2>
-                        <button class="btn btn-new-chat"><i class="fas fa-plus me-1"></i> New Chat</button>
                     </div>
                     
                     <div class="search-conversations">
@@ -1022,8 +957,6 @@ body {
                                 </div>
                             </div>
                             <div class="chat-actions">
-                                <button class="btn btn-call"><i class="fas fa-phone"></i></button>
-                                <button class="btn btn-video"><i class="fas fa-video"></i></button>
                                 <button class="btn btn-info"><i class="fas fa-info-circle"></i></button>
                             </div>
                         </div>
@@ -1038,7 +971,6 @@ body {
                             <div class="message-input">
                                 <div class="input-actions">
                                     <button class="btn btn-emoji"><i class="far fa-smile"></i></button>
-                                    <button class="btn btn-attach"><i class="fas fa-paperclip"></i></button>
                                 </div>
                                 <input type="text" id="message-input" placeholder="Type a message...">
                                 <button class="btn btn-send" id="send-button"><i class="fas fa-paper-plane"></i></button>
@@ -1109,26 +1041,6 @@ body {
         </div>
     </div>
 
-    <!-- Attachment Menu (hidden by default) -->
-    <div class="attachment-menu">
-        <button class="attachment-option">
-            <i class="fas fa-camera"></i>
-            <span>Photo</span>
-        </button>
-        <button class="attachment-option">
-            <i class="fas fa-video"></i>
-            <span>Video</span>
-        </button>
-        <button class="attachment-option">
-            <i class="fas fa-file"></i>
-            <span>Document</span>
-        </button>
-        <button class="attachment-option">
-            <i class="fas fa-map-marker-alt"></i>
-            <span>Location</span>
-        </button>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
       let currentChatUserId = null;
@@ -1141,32 +1053,15 @@ body {
       emojiBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         emojiPicker.style.display = emojiPicker.style.display === 'block' ? 'none' : 'block';
-        if (emojiPicker.style.display === 'block') {
-          document.querySelector('.attachment-menu').style.display = 'none';
-        }
       });
       
-      // Toggle Attachment Menu
-      const attachBtn = document.querySelector('.btn-attach');
-      const attachMenu = document.querySelector('.attachment-menu');
-      
-      attachBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        attachMenu.style.display = attachMenu.style.display === 'block' ? 'none' : 'block';
-        if (attachMenu.style.display === 'block') {
-          emojiPicker.style.display = 'none';
-        }
-      });
-      
-      // Close menus when clicking elsewhere
+      // Close emoji picker when clicking elsewhere
       document.addEventListener('click', () => {
         emojiPicker.style.display = 'none';
-        attachMenu.style.display = 'none';
       });
       
-      // Prevent clicks inside menus from closing them
+      // Prevent clicks inside emoji picker from closing it
       emojiPicker.addEventListener('click', (e) => e.stopPropagation());
-      attachMenu.addEventListener('click', (e) => e.stopPropagation());
       
       // Add emojis to picker
       const emojiContainer = document.querySelector('.emoji-container');
@@ -1388,7 +1283,7 @@ body {
           sidebar.classList.add('active');
           conversationsCol.classList.add('hidden');
         } else {
-          window.location.href = 'explore.html';  // Back to explore
+          window.location.href = "{{ url_for('explore') }}";  // Back to explore
         }
       });
     </script>
