@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>നിനakkayi-ForYou | Personal chat</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -27,12 +27,17 @@
   --message-received: #3c4852;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   background-color: var(--bg-dark);
   color: var(--dark);
   height: 100vh;
   overflow: hidden;
+  margin: 0;
 }
 
 /* Navbar */
@@ -283,7 +288,8 @@ body {
   position: fixed;
   top: 0;
   width: 100%;
-  z-index: 30;
+  height: 60px;
+  z-index: 40;
 }
 
 .chat-back-btn {
@@ -335,7 +341,7 @@ body {
 
 .messages-container {
   flex: 1;
-  padding: 1rem 1.25rem;
+  padding: 70px 0.5rem 100px 1.25rem;
   overflow-y: auto;
   background-color: var(--bg-dark);
   display: flex;
@@ -362,6 +368,7 @@ body {
   margin-bottom: 0.75rem;
   position: relative;
   display: flex;
+  width: fit-content;
 }
 
 .message.received {
@@ -370,7 +377,7 @@ body {
 
 .message.sent {
   justify-content: flex-end;
-  margin-right: 0.25rem;
+  margin-right: 0.1rem;
 }
 
 .message-content {
@@ -378,7 +385,6 @@ body {
   border-radius: 12px;
   word-wrap: break-word;
   line-height: 1.4;
-  max-width: 100%;
 }
 
 .message.received .message-content {
@@ -782,20 +788,21 @@ body {
   }
 
   .chat-area {
-    height: 100%;
-    padding-top: 70px; /* Increased to ensure header visibility */
+    height: 100vh;
+    padding-top: 80px;
   }
 
   .chat-header {
     position: fixed;
     top: 0;
     width: 100%;
-    z-index: 30;
+    height: 60px;
+    z-index: 40;
     background-color: var(--card-dark);
   }
 
   .messages-container {
-    padding: 0.75rem 1.25rem 100px 1.25rem; /* Adjusted for header and input */
+    padding: 70px 0.5rem 100px 1rem;
   }
 
   .message-input-container {
@@ -808,7 +815,7 @@ body {
   }
 
   .message.sent {
-    margin-right: 0.25rem; /* Tighter right alignment */
+    margin-right: 0.1rem;
   }
 
   body.chat-mode .navbar {
@@ -817,42 +824,6 @@ body {
 
   body.chat-mode .chat-container {
     height: 100vh;
-  }
-}
-
-@media (min-width: 992px) {
-  .conversations-col {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 100;
-    transform: translateX(0);
-    transition: transform 0.3s ease;
-  }
-  
-  .conversations-col.hidden {
-    transform: translateX(-100%);
-  }
-  
-  .chat-area-col {
-    padding-left: 0;
-    padding-right: 0;
-  }
-  
-  .profile-sidebar {
-    width: 100%;
-  }
-  
-  .chat-back-btn {
-    display: block;
-  }
-  
-  .conversations-header h2 {
-    text-align: left;
-    margin-left: 0.5rem;
-    color: var(--dark);
   }
 }
 
@@ -866,7 +837,7 @@ body {
   }
   
   .messages-container {
-    padding: 0.75rem 1rem 100px 1rem;
+    padding: 70px 0.5rem 100px 0.75rem;
   }
   
   .emoji-picker {
@@ -879,7 +850,7 @@ body {
   }
 
   .message.sent {
-    margin-right: 0.25rem;
+    margin-right: 0.1rem;
   }
 }
 
