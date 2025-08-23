@@ -274,7 +274,7 @@ body {
 }
 
 .chat-header {
-  padding: 0.875rem 1.25rem;
+  padding: 0.5rem 1rem;
   border-bottom: 1px solid rgba(255,255,255,0.1);
   display: flex;
   justify-content: space-between;
@@ -335,7 +335,7 @@ body {
 
 .messages-container {
   flex: 1;
-  padding: 1rem 1rem;
+  padding: 1.5rem 1rem;
   overflow-y: auto;
   background-color: var(--bg-dark);
   display: flex;
@@ -465,9 +465,10 @@ body {
   padding: 0.5rem;
   border-top: 1px solid rgba(255,255,255,0.1);
   background-color: var(--card-dark);
-  position: sticky;
+  position: fixed;
   bottom: 0;
-  z-index: 10;
+  width: 100%;
+  z-index: 100;
 }
 
 .message-input {
@@ -785,7 +786,7 @@ body {
 
   .chat-area {
     height: 100%;
-    padding-top: 80px; /* Increased for header visibility */
+    padding-top: 90px; /* Increased for header visibility */
   }
 
   .chat-header {
@@ -794,10 +795,11 @@ body {
     width: 100%;
     z-index: 40;
     background-color: var(--card-dark);
+    padding: 0.5rem 1rem; /* Adjusted for tighter fit */
   }
 
   .messages-container {
-    padding: 1rem 1rem 120px 1rem; /* Adjusted for header and input */
+    padding: 1.5rem 1rem 130px 1rem; /* Adjusted for header and input */
   }
 
   .message-input-container {
@@ -857,6 +859,10 @@ body {
     margin-left: 0.5rem;
     color: var(--dark);
   }
+
+  .messages-container {
+    padding-top: 1.5rem; /* Added to prevent overlap with chat-header */
+  }
 }
 
 @media (max-width: 576px) {
@@ -865,11 +871,11 @@ body {
   }
   
   .chat-header {
-    padding: 0.75rem;
+    padding: 0.5rem 1rem;
   }
   
   .messages-container {
-    padding: 1rem 1rem 120px 1rem;
+    padding: 1.5rem 1rem 130px 1rem;
   }
   
   .emoji-picker {
