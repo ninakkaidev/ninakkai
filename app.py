@@ -931,6 +931,35 @@ def chat():
         return redirect(url_for('auth'))
     try:
         current_user_id = session['user_id']
+        # Fetch user data
+        user = mongo_service.get_user_by_id(current_user_id)
+        if not user:
+            session.clear()
+            return redirect(url_for('auth', error='User not found. Please log in again.'))
+        
+        # Fetch quiz results
+        quiz_result = mongo_service.get_quiz_results(current_user_id)
+        if not quiz_result:
+            return redirect(url_for('questions', error='Please complete the quiz to access the chat page'))
+        
+        # Prepare user profile data (consistent with explore route)
+        profile = {
+            'id': user['id'],
+            'full_name': user['full_name'],
+            'email': user['email'],
+            'age': user.get('age'),
+            'gender': user.get('gender'),
+            'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+            'occupation': user.get('occupation', 'N/A'),
+            'bio': user.get('bio', 'No bio available'),
+            'interests': user.get('interests', []),
+            'dominant_type': quiz_result['scores']['dominant_type'],
+            'dominant_percentage': quiz_result['scores']['dominant_percentage'],
+            'secondary_type': quiz_result['scores']['secondary_type'],
+            'secondary_percentage': quiz_result['scores']['secondary_percentage']
+        }
+        
+        # Fetch matched users and conversations
         matched_user_ids = mongo_service.get_matched_users(current_user_id)
         unread_count = chat_service.get_unread_count(current_user_id)
         conversations = []
@@ -948,10 +977,11 @@ def chat():
                 }
                 conversations.append(conv)
         conversations.sort(key=lambda c: c['sort_time'], reverse=True)
-        return render_template('chat.html', conversations=conversations, unread_count=unread_count)
+        
+        return render_template('chat.html', profile=profile, conversations=conversations, unread_count=unread_count)
     except Exception as e:
         logger.error(f"Chat error: {str(e)}")
-        return render_template('chat.html', conversations=[])
+        return render_template('chat.html', profile={'image': 'https://randomuser.me/api/portraits/women/44.jpg'}, conversations=[], unread_count=0, error=str(e))
 
 @app.route('/messages/<other_user_id>', methods=['GET'])
 def get_messages(other_user_id):
@@ -1244,4 +1274,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True) 
+    app.run(host='0.0.0.0', port=5050, debug=True)
