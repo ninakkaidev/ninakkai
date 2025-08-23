@@ -531,7 +531,7 @@ class MongoService:
                     liked_users.append({
                         'id': user['id'],
                         'full_name': user['full_name'],
-                        'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+                        'image': user['image'],
                         'occupation': user.get('occupation', 'N/A')
                     })
             return liked_users
@@ -552,7 +552,7 @@ class MongoService:
                     pending_users.append({
                         'id': user['id'],
                         'full_name': user['full_name'],
-                        'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+                        'image': user['image'],
                         'occupation': user.get('occupation', 'N/A')
                     })
             return pending_users
@@ -634,9 +634,7 @@ class ChatService:
 mongo_service = MongoService()
 chat_service = ChatService()
 
-def send_verification_email(email: str, verification_token: str) -> Dict[str, Any
-
-]:
+def send_verification_email(email: str, verification_token: str) -> Dict[str, Any]:
     try:
         smtp_server = 'smtp.gmail.com'
         smtp_port = 587
@@ -1070,7 +1068,6 @@ def user_profile(user_id):
             'occupation': user.get('occupation', 'N/A'),
             'bio': user.get('bio', 'No bio available'),
             'interests': user.get('interests', []),
-            'photos': user.get('photos', []),
             'distance': 'N/A',
             'rating': '4.5',
             'match_percentage': 50,
