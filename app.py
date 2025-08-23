@@ -481,6 +481,27 @@ class MongoService:
             logger.error(f"Get liked users error: {str(e)}")
             return []
 
+    def get_pending_likers(self, user_id: str) -> List[Dict[str, Any]]:
+        try:
+            likers = self.likes.find({'matched_user_id': user_id})
+            liker_ids = [str(l['user_id']) for l in likers]
+            my_likes = [str(l['matched_user_id']) for l in self.likes.find({'user_id': user_id})]
+            pending_ids = [pid for pid in liker_ids if pid not in my_likes]
+            pending_users = []
+            for pid in pending_ids:
+                user = self.get_user_by_id(pid)
+                if user:
+                    pending_users.append({
+                        'id': user['id'],
+                        'full_name': user['full_name'],
+                        'image': user['image'],
+                        'occupation': user.get('occupation', 'N/A')
+                    })
+            return pending_users
+        except Exception as e:
+            logger.error(f"Get pending likers error: {str(e)}")
+            return []
+
 class ChatService:
     def __init__(self):
         self.uri = "mongodb+srv://infoqiooo:Gjresr7SikhBmM5U@cluster0.hyzcpcz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
@@ -499,7 +520,8 @@ class ChatService:
                 'sender_id': sender_id,
                 'receiver_id': receiver_id,
                 'message': message,
-                'timestamp': datetime.now(timezone.utc)
+                'timestamp': datetime.now(timezone.utc),
+                'read': False
             }
             result = self.messages.insert_one(msg_data)
             return {'success': True, 'message_id': str(result.inserted_id)}
@@ -514,6 +536,11 @@ class ChatService:
                 {'sender_id': user2, 'receiver_id': user1}
             ]}
             msgs = list(self.messages.find(query).sort('timestamp', 1))
+            # Mark as read for current user
+            self.messages.update_many(
+                {'receiver_id': user1, 'sender_id': user2, 'read': False},
+                {'$set': {'read': True}}
+            )
             for msg in msgs:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
@@ -539,6 +566,13 @@ class ChatService:
         except Exception as e:
             logger.error(f"Get last message error: {str(e)}")
             return None
+
+    def get_unread_count(self, user_id: str) -> int:
+        try:
+            return self.messages.count_documents({'receiver_id': user_id, 'read': False})
+        except Exception as e:
+            logger.error(f"Get unread count error: {str(e)}")
+            return 0
 
 mongo_service = MongoService()
 chat_service = ChatService()
@@ -898,6 +932,7 @@ def chat():
     try:
         current_user_id = session['user_id']
         matched_user_ids = mongo_service.get_matched_users(current_user_id)
+        unread_count = chat_service.get_unread_count(current_user_id)
         conversations = []
         for match_id in matched_user_ids:
             user = mongo_service.get_user_by_id(match_id)
@@ -913,7 +948,7 @@ def chat():
                 }
                 conversations.append(conv)
         conversations.sort(key=lambda c: c['sort_time'], reverse=True)
-        return render_template('chat.html', conversations=conversations)
+        return render_template('chat.html', conversations=conversations, unread_count=unread_count)
     except Exception as e:
         logger.error(f"Chat error: {str(e)}")
         return render_template('chat.html', conversations=[])
@@ -963,7 +998,7 @@ def profile():
     try:
         user = mongo_service.get_user_by_id(session['user_id'])
         if not user:
-            return render_template('profile.html', profile={}, liked_users=[])
+            return render_template('profile.html', profile={}, pending_likers=[])
         quiz_result = mongo_service.get_quiz_results(session['user_id'])
         profile = {
             'id': user['id'],
@@ -981,11 +1016,11 @@ def profile():
             'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
             'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0
         }
-        liked_users = mongo_service.get_liked_users(session['user_id'])
-        return render_template('profile.html', profile=profile, liked_users=liked_users)
+        pending_likers = mongo_service.get_pending_likers(session['user_id'])
+        return render_template('profile.html', profile=profile, pending_likers=pending_likers)
     except Exception as e:
         logger.error(f"Profile error: {str(e)}")
-        return render_template('profile.html', profile={}, liked_users=[])
+        return render_template('profile.html', profile={}, pending_likers=[])
 
 @app.route('/questions', methods=['GET'])
 def questions():
@@ -1209,4 +1244,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True)
+    app.run(host='0.0.0.0', port=5050, debug=True) 
