@@ -73,8 +73,45 @@ class MongoService:
         self.likes = self.db['likes']
         self.passes = self.db['passes']
 
+    def check_rate_limit(self, key: str, max_attempts: int, period: timedelta = timedelta(hours=1)) -> bool:
+        now = datetime.now(timezone.utc)
+        limit = self.db['rate_limits'].find_one({'key': key})
+        if limit:
+            if now - limit['last_reset'] > period:
+                self.db['rate_limits'].update_one(
+                    {'key': key},
+                    {'$set': {'attempts': 0, 'last_reset': now}}
+                )
+                attempts = 0
+            else:
+                attempts = limit['attempts']
+        else:
+            self.db['rate_limits'].insert_one({
+                'key': key,
+                'attempts': 0,
+                'last_reset': now
+            })
+            attempts = 0
+        return attempts < max_attempts
+
+    def inc_rate_limit(self, key: str):
+        self.db['rate_limits'].update_one(
+            {'key': key},
+            {'$inc': {'attempts': 1}}
+        )
+
+    def reset_rate_limit(self, key: str):
+        self.db['rate_limits'].update_one(
+            {'key': key},
+            {'$set': {'attempts': 0}}
+        )
+
     def create_user(self, email: str, password: str, full_name: str, age: int = None, gender: str = None, image: str = None, occupation: str = None, bio: str = None, interests: List[str] = None) -> Dict[str, Any]:
         try:
+            if age is not None and age < 18:
+                return {'success': False, 'error': 'You must be at least 18 years old to sign up'}
+            if gender not in ['male', 'female']:
+                return {'success': False, 'error': 'Invalid gender selection'}
             hashed_password = generate_password_hash(password)
             verification_token = secrets.token_urlsafe(32)
             default_image = 'https://randomuser.me/api/portraits/women/44.jpg'
@@ -714,33 +751,42 @@ def auth():
         form_type = request.form.get('form_type')
 
         if form_type == 'login':
-            email = request.form.get('email')
-            password = request.form.get('password')
-            if not email or not password:
-                error = 'Email and password are required'
+            ip = request.remote_addr
+            rate_key = f"login_{ip}"
+            if not mongo_service.check_rate_limit(rate_key, 10):
+                error = 'Too many failed login attempts. Please try again later.'
             else:
-                try:
-                    result = mongo_service.verify_user(email, password)
-                    if not result['success']:
-                        if result.get('needs_verification'):
+                email = request.form.get('email')
+                password = request.form.get('password')
+                if not email or not password:
+                    error = 'Email and password are required'
+                    mongo_service.inc_rate_limit(rate_key)
+                else:
+                    try:
+                        result = mongo_service.verify_user(email, password)
+                        if not result['success']:
+                            mongo_service.inc_rate_limit(rate_key)
+                            if result.get('needs_verification'):
+                                session.permanent = True
+                                session['email'] = email
+                                session['verification_pending'] = True
+                                session.modified = True
+                                verification_sent = True
+                                error = 'Please verify your email before logging in'
+                            else:
+                                error = result.get('error', 'Login failed. Please try again.')
+                        else:
+                            mongo_service.reset_rate_limit(rate_key)
                             session.permanent = True
                             session['email'] = email
-                            session['verification_pending'] = True
+                            session['user_id'] = result['user']['id']
                             session.modified = True
-                            verification_sent = True
-                            error = 'Please verify your email before logging in'
-                        else:
-                            error = result.get('error', 'Login failed. Please try again.')
-                    else:
-                        session.permanent = True
-                        session['email'] = email
-                        session['user_id'] = result['user']['id']
-                        session.modified = True
-                        logger.debug(f"Session set after login: {session}")
-                        return redirect(url_for('questions'))
-                except Exception as e:
-                    logger.error(f"Login error: {str(e)}")
-                    error = 'An error occurred during login. Please try again.'
+                            logger.debug(f"Session set after login: {session}")
+                            return redirect(url_for('questions'))
+                    except Exception as e:
+                        logger.error(f"Login error: {str(e)}")
+                        mongo_service.inc_rate_limit(rate_key)
+                        error = 'An error occurred during login. Please try again.'
         elif form_type == 'signup':
             data = {
                 'email': request.form.get('email'),
@@ -760,6 +806,8 @@ def auth():
                 error = 'Password must be at least 8 characters'
             elif data['password'] != request.form.get('confirm_password'):
                 error = 'Passwords do not match'
+            elif data['age'] is None or data['age'] < 18:
+                error = 'You must be at least 18 years old'
             else:
                 try:
                     existing_user = mongo_service.get_user_by_email(data['email'])
@@ -817,33 +865,39 @@ def auth():
                 logger.error(f"Resend verification error: {str(e)}")
                 error = 'An unexpected error occurred'
         elif form_type == 'forgot_password':
-            email = request.form.get('email')
-            if not email:
-                error = 'Email is required'
+            ip = request.remote_addr
+            rate_key = f"forgot_{ip}"
+            if not mongo_service.check_rate_limit(rate_key, 3):
+                error = 'Too many reset requests. Please try again later.'
             else:
-                try:
-                    user = mongo_service.get_user_by_email(email)
-                    if not user:
-                        error = 'No account found with this email'
-                    else:
-                        reset_token = secrets.token_urlsafe(32)
-                        expiry = datetime.now(timezone.utc) + timedelta(hours=1)
-                        update_result = mongo_service.update_user(user['id'], {
-                            'reset_token': reset_token,
-                            'reset_token_expiry': expiry
-                        })
-                        if not update_result['success']:
-                            error = 'Failed to generate reset token'
+                email = request.form.get('email')
+                if not email:
+                    error = 'Email is required'
+                else:
+                    try:
+                        user = mongo_service.get_user_by_email(email)
+                        if not user:
+                            error = 'No account found with this email'
                         else:
-                            email_result = send_reset_email(email, reset_token)
-                            if not email_result['success']:
-                                error = 'Failed to send reset email'
+                            reset_token = secrets.token_urlsafe(32)
+                            expiry = datetime.now(timezone.utc) + timedelta(hours=1)
+                            update_result = mongo_service.update_user(user['id'], {
+                                'reset_token': reset_token,
+                                'reset_token_expiry': expiry
+                            })
+                            if not update_result['success']:
+                                error = 'Failed to generate reset token'
                             else:
-                                reset_sent = True
-                                success = 'Password reset link sent to your email'
-                except Exception as e:
-                    logger.error(f"Forgot password error: {str(e)}")
-                    error = 'An error occurred during password reset request. Please try again.'
+                                email_result = send_reset_email(email, reset_token)
+                                if not email_result['success']:
+                                    error = 'Failed to send reset email'
+                                else:
+                                    mongo_service.inc_rate_limit(rate_key)
+                                    reset_sent = True
+                                    success = 'Password reset link sent to your email'
+                    except Exception as e:
+                        logger.error(f"Forgot password error: {str(e)}")
+                        error = 'An error occurred during password reset request. Please try again.'
 
     if request.cookies.get('email_verified') == '1':
         verification_success = True

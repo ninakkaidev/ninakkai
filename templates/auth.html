@@ -627,7 +627,7 @@
             <form method="POST" action="{{ url_for('auth') }}" id="forgotForm">
                 <input type="hidden" name="form_type" value="forgot_password">
                 <div class="input-group">
-                    <input type="email" name="email" id="forgotEmail" placeholder="Enter your email" required>
+                    <input type="email" name="email" id="forgotEmail" placeholder="Enter your email" required maxlength="100">
                 </div>
                 <button type="submit" class="submit-btn" id="forgotSubmitBtn">Send Reset Link</button>
             </form>
@@ -647,10 +647,10 @@
                 <form method="POST" action="{{ url_for('auth') }}" id="loginFormElement">
                     <input type="hidden" name="form_type" value="login">
                     <div class="input-group">
-                        <input type="email" name="email" placeholder="Email" required>
+                        <input type="email" name="email" placeholder="Email" required maxlength="100">
                     </div>
                     <div class="input-group">
-                        <input type="password" name="password" placeholder="Password" required>
+                        <input type="password" name="password" placeholder="Password" required maxlength="50">
                     </div>
                     <button type="submit" class="submit-btn" id="loginSubmitBtn">Login</button>
                     <a href="#" class="forgot-link" id="forgotLink">Forgot password?</a>
@@ -687,10 +687,10 @@
                         <!-- Step 1 -->
                         <div class="signup-step active" data-step="1">
                             <div class="input-group">
-                                <input type="text" name="full_name" placeholder="Full Name" required id="fullName">
+                                <input type="text" name="full_name" placeholder="Full Name" required id="fullName" maxlength="50">
                             </div>
                             <div class="input-group">
-                                <input type="email" name="email" placeholder="Email" required id="email">
+                                <input type="email" name="email" placeholder="Email" required id="email" maxlength="100">
                             </div>
                             <div class="form-nav">
                                 <div></div>
@@ -701,15 +701,13 @@
                         <!-- Step 2 -->
                         <div class="signup-step" data-step="2">
                             <div class="input-group">
-                                <input type="number" name="age" placeholder="Age" min="13" max="120" required id="age">
+                                <input type="number" name="age" placeholder="Age" min="18" max="120" required id="age">
                             </div>
                             <div class="input-group">
                                 <select name="gender" required id="gender">
                                     <option value="" disabled selected>Select Gender</option>
                                     <option value="male">Male</option>
                                     <option value="female">Female</option>
-                                    <option value="other">Other</option>
-                                    <option value="prefer-not-to-say">Prefer not to say</option>
                                 </select>
                             </div>
                             <div class="form-nav">
@@ -721,13 +719,13 @@
                         <!-- Step 3 -->
                         <div class="signup-step" data-step="3">
                             <div class="input-group">
-                                <input type="password" name="password" placeholder="Password" required id="password" minlength="8">
+                                <input type="password" name="password" placeholder="Password" required id="password" minlength="8" maxlength="50">
                                 <div class="password-strength">
                                     <div class="password-strength-bar" id="passwordStrengthBar"></div>
                                 </div>
                             </div>
                             <div class="input-group">
-                                <input type="password" name="confirm_password" placeholder="Confirm Password" required id="confirmPassword">
+                                <input type="password" name="confirm_password" placeholder="Confirm Password" required id="confirmPassword" maxlength="50">
                             </div>
                             <button type="submit" class="submit-btn" id="signupSubmitBtn">Sign Up</button>
                             <div class="form-nav">
@@ -882,8 +880,8 @@
                     } else if (currentStep === 2) {
                         const age = document.getElementById('age').value;
                         const gender = document.getElementById('gender').value;
-                        if (!age || age < 13 || age > 120 || !gender) {
-                            showError('Please enter a valid age (13-120) and select a gender');
+                        if (!age || age < 18 || age > 120 || !gender) {
+                            showError('Please enter a valid age (18-120) and select a gender');
                             return;
                         }
                     }
