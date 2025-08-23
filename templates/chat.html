@@ -900,7 +900,7 @@ body {
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('profile') }}">
-                            <img src="https://randomuser.me/api/portraits/women/44.jpg" class="profile-pic-nav" alt="Profile" style="width: 32px; height: 32px; border-radius: 50%;">
+                            <img src="{{ profile.image }}" class="profile-pic-nav" alt="Profile">
                         </a>
                     </li>
                 </ul>
@@ -1180,7 +1180,7 @@ body {
             const messagesContainer = document.getElementById('messages-container');
             messagesContainer.innerHTML = '';
             result.messages.forEach(msg => {
-              const isSent = msg.sender_id === '{{ session.user_id }}';  // Assume current user id
+              const isSent = msg.sender_id === '{{ session.user_id }}';
               appendMessage(msg, isSent);
             });
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -1247,7 +1247,7 @@ body {
               const user = result.user;
               document.getElementById('chat-partner-img').src = user.image;
               document.getElementById('chat-partner-name').textContent = user.full_name;
-              document.getElementById('chat-partner-status').textContent = 'Offline';  // Placeholder
+              document.getElementById('chat-partner-status').textContent = 'Offline';
             }
           } catch (error) {
             console.error('Error loading user:', error);
@@ -1283,7 +1283,7 @@ body {
           sidebar.classList.add('active');
           conversationsCol.classList.add('hidden');
         } else {
-          window.location.href = "{{ url_for('explore') }}";  // Back to explore
+          window.location.href = "{{ url_for('explore') }}";
         }
       });
     </script>
