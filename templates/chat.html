@@ -379,6 +379,8 @@ body {
   position: relative;
   word-wrap: break-word;
   line-height: 1.4;
+  width: fit-content; /* Auto adjust width to content */
+  max-width: 100%;
 }
 
 .message.received .message-content {
@@ -795,6 +797,15 @@ body {
     width: 100%;
     z-index: 100;
     background-color: var(--card-dark);
+  }
+
+  /* Adjustments for full height in mobile chat */
+  body.chat-mode .navbar {
+    display: none;
+  }
+
+  body.chat-mode .chat-container {
+    height: 100vh;
   }
 }
 
@@ -1256,6 +1267,7 @@ body {
           if (window.innerWidth <= 992) {
             conversationsCol.classList.add('hidden');
             chatArea.classList.add('active');
+            document.body.classList.add('chat-mode');
           } else {
             conversationsCol.classList.add('hidden');
             chatArea.classList.add('active');
@@ -1272,6 +1284,9 @@ body {
         const previousArea = navigationHistory[navigationHistory.length - 1];
         if (previousArea === 'profile') {
           sidebar.classList.add('active');
+        }
+        if (window.innerWidth <= 992) {
+          document.body.classList.remove('chat-mode');
         }
       });
       
