@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>നിനakkayi-ForYou | Personal chat</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -27,17 +27,12 @@
   --message-received: #3c4852;
 }
 
-* {
-  box-sizing: border-box;
-}
-
 body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   background-color: var(--bg-dark);
   color: var(--dark);
   height: 100vh;
   overflow: hidden;
-  margin: 0;
 }
 
 /* Navbar */
@@ -288,7 +283,6 @@ body {
   position: fixed;
   top: 0;
   width: 100%;
-  height: 60px;
   z-index: 40;
 }
 
@@ -341,7 +335,7 @@ body {
 
 .messages-container {
   flex: 1;
-  padding: 70px 0.5rem 100px 1.25rem;
+  padding: 1rem 1rem;
   overflow-y: auto;
   background-color: var(--bg-dark);
   display: flex;
@@ -368,7 +362,7 @@ body {
   margin-bottom: 0.75rem;
   position: relative;
   display: flex;
-  width: fit-content;
+  align-self: flex-start;
 }
 
 .message.received {
@@ -377,6 +371,7 @@ body {
 
 .message.sent {
   justify-content: flex-end;
+  align-self: flex-end;
   margin-right: 0.1rem;
 }
 
@@ -385,6 +380,7 @@ body {
   border-radius: 12px;
   word-wrap: break-word;
   line-height: 1.4;
+  max-width: 100%;
 }
 
 .message.received .message-content {
@@ -788,21 +784,20 @@ body {
   }
 
   .chat-area {
-    height: 100vh;
-    padding-top: 80px;
+    height: 100%;
+    padding-top: 80px; /* Increased for header visibility */
   }
 
   .chat-header {
     position: fixed;
     top: 0;
     width: 100%;
-    height: 60px;
     z-index: 40;
     background-color: var(--card-dark);
   }
 
   .messages-container {
-    padding: 70px 0.5rem 100px 1rem;
+    padding: 1rem 1rem 120px 1rem; /* Adjusted for header and input */
   }
 
   .message-input-container {
@@ -815,15 +810,52 @@ body {
   }
 
   .message.sent {
-    margin-right: 0.1rem;
+    margin-right: 0.1rem; /* Tighter right alignment */
+    align-self: flex-end;
   }
 
   body.chat-mode .navbar {
-    display: none;
+    display: none; /* Hide navbar in chat mode */
   }
 
   body.chat-mode .chat-container {
     height: 100vh;
+  }
+}
+
+@media (min-width: 992px) {
+  .conversations-col {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+  }
+  
+  .conversations-col.hidden {
+    transform: translateX(-100%);
+  }
+  
+  .chat-area-col {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  
+  .profile-sidebar {
+    width: 100%;
+  }
+  
+  .chat-back-btn {
+    display: block;
+  }
+  
+  .conversations-header h2 {
+    text-align: left;
+    margin-left: 0.5rem;
+    color: var(--dark);
   }
 }
 
@@ -837,7 +869,7 @@ body {
   }
   
   .messages-container {
-    padding: 70px 0.5rem 100px 0.75rem;
+    padding: 1rem 1rem 120px 1rem;
   }
   
   .emoji-picker {
@@ -851,6 +883,7 @@ body {
 
   .message.sent {
     margin-right: 0.1rem;
+    align-self: flex-end;
   }
 }
 
