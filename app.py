@@ -15,6 +15,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+import pytz
 
 # Configure Cloudinary with explicit credentials and enhanced logging
 def configure_cloudinary():
@@ -25,7 +26,6 @@ def configure_cloudinary():
             api_secret='FfJnI44v31rzfPvp7-K9lnI5BDM',
             secure=True
         )
-        # Verify configuration by checking required fields
         config = cloudinary.config()
         if not (config.cloud_name and config.api_key and config.api_secret):
             raise Exception("Cloudinary configuration incomplete: missing cloud_name, api_key, or api_secret")
@@ -77,7 +77,11 @@ class MongoService:
         now = datetime.now(timezone.utc)
         limit = self.db['rate_limits'].find_one({'key': key})
         if limit:
-            if now - limit['last_reset'] > period:
+            last_reset = limit['last_reset']
+            # Ensure last_reset is offset-aware
+            if last_reset.tzinfo is None:
+                last_reset = pytz.UTC.localize(last_reset)
+            if now - last_reset > period:
                 self.db['rate_limits'].update_one(
                     {'key': key},
                     {'$set': {'attempts': 0, 'last_reset': now}}
@@ -103,7 +107,7 @@ class MongoService:
     def reset_rate_limit(self, key: str):
         self.db['rate_limits'].update_one(
             {'key': key},
-            {'$set': {'attempts': 0}}
+            {'$set': {'attempts': 0, 'last_reset': datetime.now(timezone.utc)}}
         )
 
     def create_user(self, email: str, password: str, full_name: str, age: int = None, gender: str = None, image: str = None, occupation: str = None, bio: str = None, interests: List[str] = None) -> Dict[str, Any]:
@@ -601,6 +605,9 @@ class ChatService:
             for msg in msgs:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
+                # Ensure timestamp is offset-aware
+                if msg['timestamp'].tzinfo is None:
+                    msg['timestamp'] = pytz.UTC.localize(msg['timestamp'])
                 msg['timestamp'] = msg['timestamp'].isoformat()
             return msgs
         except Exception as e:
@@ -617,7 +624,8 @@ class ChatService:
             if msg:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
-                msg['timestamp'] = msg['timestamp']
+                if msg['timestamp'].tzinfo is None:
+                    msg['timestamp'] = pytz.UTC.localize(msg['timestamp'])
                 return msg
             return None
         except Exception as e:
@@ -634,9 +642,7 @@ class ChatService:
 mongo_service = MongoService()
 chat_service = ChatService()
 
-def send_verification_email(email: str, verification_token: str) -> Dict[str, Any
-
-]:
+def send_verification_email(email: str, verification_token: str) -> Dict[str, Any]:
     try:
         smtp_server = 'smtp.gmail.com'
         smtp_port = 587
@@ -712,6 +718,11 @@ def log_response(response):
 @app.before_request
 def log_session_info():
     logger.debug(f"Before request - Route: {request.path}, Session: {session}, Cookies: {request.cookies}, Secret Key: {app.secret_key[:4]}...")
+    # Ensure all session datetimes are offset-aware
+    for key, value in session.items():
+        if isinstance(value, datetime) and value.tzinfo is None:
+            session[key] = pytz.UTC.localize(value)
+            session.modified = True
 
 @app.route('/')
 def index():
@@ -882,7 +893,7 @@ def auth():
                             error = 'No account found with this email'
                         else:
                             reset_token = secrets.token_urlsafe(32)
-                            expiry = datetime.now(timezone.utc) + timedelta(hours=1)
+                            expiry = datetime.now(timezone.utc)
                             update_result = mongo_service.update_user(user['id'], {
                                 'reset_token': reset_token,
                                 'reset_token_expiry': expiry
@@ -1132,7 +1143,7 @@ def chat():
                     'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
                     'last_message': last_msg['message'] if last_msg else 'Start chatting!',
                     'time': last_msg['timestamp'].strftime('%H:%M') if last_msg else '',
-                    'sort_time': last_msg['timestamp'] if last_msg else datetime.min
+                    'sort_time': last_msg['timestamp'] if last_msg else datetime.min.replace(tzinfo=timezone.utc)
                 }
                 conversations.append(conv)
         conversations.sort(key=lambda c: c['sort_time'], reverse=True)
