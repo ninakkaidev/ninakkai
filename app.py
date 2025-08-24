@@ -723,6 +723,72 @@ def send_reset_email(email: str, reset_token: str) -> Dict[str, Any]:
         logger.error(f"Failed to send reset email to {email}: {str(e)}")
         return {'success': False, 'error': str(e)}
 
+def has_liked_user(self, user_id: str, matched_user_id: str) -> bool:
+    """Check if a user has already liked another user"""
+    try:
+        like = self.likes.find_one({'user_id': user_id, 'matched_user_id': matched_user_id})
+        return bool(like)
+    except Exception as e:
+        logger.error(f"Has liked user error: {str(e)}")
+        return False
+
+def has_passed_user(self, user_id: str, passed_user_id: str) -> bool:
+    """Check if a user has already passed on another user"""
+    try:
+        passed = self.passes.find_one({'user_id': user_id, 'passed_user_id': passed_user_id})
+        return bool(passed)
+    except Exception as e:
+        logger.error(f"Has passed user error: {str(e)}")
+        return False
+
+def get_filtered_matches(self, user_id: str) -> List[Dict[str, Any]]:
+    """Get matches excluding liked and passed users"""
+    try:
+        user_quiz = self.get_quiz_results(user_id)
+        if not user_quiz:
+            return []
+        
+        # Get all users that current user has liked or passed on
+        liked_users = [str(like['matched_user_id']) for like in self.likes.find({'user_id': user_id})]
+        passed_users = [str(passed['passed_user_id']) for like in self.passes.find({'user_id': user_id})]
+        excluded_users = set(liked_users + passed_users)
+        
+        user_scores = user_quiz['scores']
+        dominant_type = user_scores['dominant_type']
+        
+        # Get all potential matches excluding the ones user has already interacted with
+        all_users = self.quiz_results.find({'user_id': {'$ne': user_id, '$nin': list(excluded_users)}})
+        
+        matches = []
+        for other_user in all_users:
+            other_scores = other_user['scores']
+            match_percentage = self._calculate_match_percentage(user_scores, other_scores)
+            
+            if other_scores['dominant_type'] == dominant_type or other_scores.get('secondary_type') == dominant_type:
+                user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
+                if user_data:
+                    matches.append({
+                        'id': str(user_data['_id']),
+                        'full_name': user_data['full_name'],
+                        'age': user_data.get('age'),
+                        'gender': user_data.get('gender'),
+                        'image': user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+                        'occupation': user_data.get('occupation', 'N/A'),
+                        'bio': user_data.get('bio', 'No bio available'),
+                        'interests': user_data.get('interests', []),
+                        'distance': 'N/A',
+                        'rating': '4.5',
+                        'dominant_type': other_scores['dominant_type'],
+                        'match_percentage': match_percentage,
+                        'liked': False  # Will be updated by frontend if needed
+                    })
+        
+        return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:20]
+    except Exception as e:
+        logger.error(f"Get filtered matches error: {str(e)}")
+        return []
+
+
 @app.after_request
 def log_response(response):
     logger.debug(f"Response - Route: {request.path}, Status: {response.status_code}, Set-Cookie: {response.headers.get('Set-Cookie', 'None')}")
@@ -1026,7 +1092,8 @@ def explore():
         if not quiz_result:
             return redirect(url_for('questions', error='Please complete the quiz to access the explore page'))
         
-        matches = mongo_service.find_matches(session['user_id'])
+        # Use filtered matches instead of all matches
+        matches = mongo_service.get_filtered_matches(session['user_id'])
         
         profile = {
             'id': user['id'],
