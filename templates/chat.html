@@ -1056,6 +1056,24 @@
       const message = messageInput.value.trim();
       if (!message || !currentChatUserId) return;
       
+      // Optimistic UI update
+      const tempId = 'temp-' + Date.now();
+      const optimisticMsg = {
+        id: tempId,
+        sender_id: '{{ session.user_id }}',
+        receiver_id: currentChatUserId,
+        message: message,
+        timestamp: new Date().toISOString(),
+        read: false
+      };
+      const messagesContainer = document.getElementById('messages-container');
+      const messageDiv = createMessageElement(optimisticMsg, true);
+      messagesContainer.appendChild(messageDiv);
+      scrollToBottom();
+
+      // Clear input
+      messageInput.value = '';
+      
       // Send message via Socket.IO for real-time delivery
       const room = ['{{ session.user_id }}', currentChatUserId].sort().join('_');
       socket.emit('message', {
@@ -1063,44 +1081,6 @@
         sender_id: '{{ session.user_id }}',
         receiver_id: currentChatUserId,
         message: message
-      });
-      
-      // Clear input
-      messageInput.value = '';
-      
-      // Add message to UI immediately
-      const messagesContainer = document.getElementById('messages-container');
-      const messageDiv = createMessageElement({
-        id: 'temp-' + Date.now(),
-        sender_id: '{{ session.user_id }}',
-        receiver_id: currentChatUserId,
-        message: message,
-        timestamp: new Date().toISOString(),
-        read: false
-      }, true);
-      
-      messagesContainer.appendChild(messageDiv);
-      scrollToBottom();
-      
-      // Also send to server for persistence
-      fetch('/send_message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to_user_id: currentChatUserId,
-          message: message
-        })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (!data.success) {
-          console.error('Failed to save message:', data.error);
-        }
-      })
-      .catch(error => {
-        console.error('Error saving message:', error);
       });
     }
 
@@ -1212,9 +1192,22 @@
           (msg.receiver_id === currentChatUserId && msg.sender_id === '{{ session.user_id }}')) {
         
         const isSent = msg.sender_id === '{{ session.user_id }}';
-        const messageElement = createMessageElement(msg, isSent);
-        
         const messagesContainer = document.getElementById('messages-container');
+
+        if (isSent) {
+          // For sent messages, update the optimistic temp message
+          const lastMessage = messagesContainer.lastElementChild;
+          if (lastMessage && lastMessage.dataset.messageId.startsWith('temp-')) {
+            lastMessage.dataset.messageId = msg.id;
+            // Update time if needed
+            const timeSpan = lastMessage.querySelector('.message-time');
+            timeSpan.textContent = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+            return; // Don't add a new element
+          }
+        }
+
+        // Add the message element
+        const messageElement = createMessageElement(msg, isSent);
         messagesContainer.appendChild(messageElement);
         
         // If the message is from the current chat user, scroll to bottom
@@ -1300,10 +1293,29 @@
           chatArea.style.display = 'flex';
         }
       }
+      adjustHeight();
     }
 
     window.addEventListener('resize', handleResize);
     handleResize();
+
+    // Adjust height for keyboard on mobile
+    const navbar = document.querySelector('.navbar');
+    const chatContainer = document.querySelector('.chat-container');
+
+    function adjustHeight() {
+      if (document.body.classList.contains('chat-mode')) {
+        chatContainer.style.height = `${window.innerHeight}px`;
+      } else {
+        chatContainer.style.height = `${window.innerHeight - navbar.offsetHeight}px`;
+      }
+      scrollToBottom();
+    }
+
+    window.addEventListener('resize', adjustHeight);
+    messageInput.addEventListener('focus', () => {
+      setTimeout(scrollToBottom, 300); // Scroll after keyboard opens
+    });
 
     document.querySelectorAll('.conversation').forEach(conv => {
       conv.addEventListener('click', async function() {
