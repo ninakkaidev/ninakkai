@@ -32,7 +32,6 @@
       overflow: hidden;
     }
 
-    /* Navbar */
     .navbar {
       background-color: var(--card-dark);
       box-shadow: 0 2px 10px rgba(0,0,0,0.2);
@@ -75,7 +74,6 @@
       border: 2px solid var(--text-gray);
     }
 
-    /* Chat Container */
     .chat-container {
       height: calc(100vh - 56px);
       overflow: hidden;
@@ -89,7 +87,6 @@
       border: 1px solid rgba(255,255,255,0.05);
     }
 
-    /* Welcome Screen */
     .welcome-screen {
       display: flex;
       flex-direction: column;
@@ -125,7 +122,6 @@
       line-height: 1.6;
     }
 
-    /* Conversations List */
     .conversations-header {
       padding: 1rem 1.25rem;
       border-bottom: 1px solid rgba(255,255,255,0.1);
@@ -269,7 +265,6 @@
       transform: translateY(-50%);
     }
 
-    /* Chat Area */
     .chat-area {
       display: flex;
       flex-direction: column;
@@ -339,7 +334,6 @@
       background-color: var(--bg-dark);
       display: flex;
       flex-direction: column;
-      /* Enable smooth scrolling */
       scroll-behavior: smooth;
     }
 
@@ -437,7 +431,6 @@
       margin-bottom: 0.75rem;
     }
 
-    /* Message Input */
     .message-input-container {
       padding: 0.5rem;
       border-top: 1px solid rgba(255,255,255,0.1);
@@ -473,7 +466,6 @@
       color: var(--text-gray);
     }
 
-    /* Hide browser's back button in input */
     .message-input input::-webkit-search-cancel-button,
     .message-input input::-webkit-clear-button {
       display: none;
@@ -505,7 +497,6 @@
       background: linear-gradient(135deg, #e84868 0%, #5e9edb 100%);
     }
 
-    /* Emoji Picker */
     .emoji-picker {
       position: absolute;
       bottom: 65px;
@@ -557,7 +548,6 @@
       transform: scale(1.2);
     }
 
-    /* Profile Sidebar */
     .profile-sidebar {
       position: absolute;
       top: 0;
@@ -696,7 +686,6 @@
       background: linear-gradient(135deg, #e84868 0%, #5e9edb 100%);
     }
 
-    /* New message indicator */
     .new-message-notice {
       position: absolute;
       bottom: 70px;
@@ -713,7 +702,6 @@
       box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
 
-    /* Responsive Styles */
     @media (max-width: 992px) {
       .conversations-col {
         position: absolute;
@@ -807,7 +795,6 @@
       }
     }
 
-    /* Custom Scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
     }
@@ -890,7 +877,7 @@
             <p class="welcome-text">Select a conversation to start chatting and connect with your matches.</p>
           </div>
 
-          <div class="chat-area" style="display: none;">
+          <div class="chat-area">
             <div class="chat-header">
               <button class="btn chat-back-btn"><i class="fas fa-arrow-left"></i></button>
               <div class="chat-partner">
@@ -1056,7 +1043,6 @@
       const message = messageInput.value.trim();
       if (!message || !currentChatUserId) return;
       
-      // Optimistic UI update
       const tempId = 'temp-' + Date.now();
       const optimisticMsg = {
         id: tempId,
@@ -1071,10 +1057,8 @@
       messagesContainer.appendChild(messageDiv);
       scrollToBottom();
 
-      // Clear input
       messageInput.value = '';
       
-      // Send message via Socket.IO for real-time delivery
       const room = ['{{ session.user_id }}', currentChatUserId].sort().join('_');
       socket.emit('message', {
         room: room,
@@ -1138,9 +1122,17 @@
           });
           scrollToBottom();
           
-          if (window.innerWidth >= 993) {
-            document.querySelector('.chat-area').style.display = 'flex';
-            document.querySelector('.welcome-screen').style.display = 'none';
+          // Show chat area
+          const chatArea = document.querySelector('.chat-area');
+          const welcomeScreen = document.querySelector('.welcome-screen');
+          if (window.innerWidth <= 992) {
+            document.querySelector('.conversations-col').classList.add('hidden');
+            chatArea.classList.add('active');
+            chatArea.style.display = 'flex';
+            document.body.classList.add('chat-mode');
+          } else {
+            chatArea.style.display = 'flex';
+            welcomeScreen.style.display = 'none';
           }
         }
       } catch (error) {
@@ -1170,7 +1162,6 @@
             const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
             if (messageElement) messageElement.remove();
             
-            // Also emit socket event to notify other user
             socket.emit('delete', { 
               room: ['{{ session.user_id }}', currentChatUserId].sort().join('_'),
               message_id: messageId 
@@ -1185,9 +1176,8 @@
       }
     }
 
-    // Socket Events for real-time messaging
+    // Socket Events
     socket.on('new_message', (msg) => {
-      // Only process if this message is for the current chat
       if ((msg.sender_id === currentChatUserId && msg.receiver_id === '{{ session.user_id }}') || 
           (msg.receiver_id === currentChatUserId && msg.sender_id === '{{ session.user_id }}')) {
         
@@ -1195,26 +1185,21 @@
         const messagesContainer = document.getElementById('messages-container');
 
         if (isSent) {
-          // For sent messages, update the optimistic temp message
           const lastMessage = messagesContainer.lastElementChild;
           if (lastMessage && lastMessage.dataset.messageId.startsWith('temp-')) {
             lastMessage.dataset.messageId = msg.id;
-            // Update time if needed
             const timeSpan = lastMessage.querySelector('.message-time');
             timeSpan.textContent = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-            return; // Don't add a new element
+            return;
           }
         }
 
-        // Add the message element
         const messageElement = createMessageElement(msg, isSent);
         messagesContainer.appendChild(messageElement);
         
-        // If the message is from the current chat user, scroll to bottom
         if (msg.sender_id === currentChatUserId) {
           scrollToBottom();
         } else if (!isSent) {
-          // If message is received and not in current view, show notification
           showNewMessageNotice();
         }
       }
@@ -1242,7 +1227,6 @@
       if (messageElement) messageElement.remove();
     });
 
-    // New message notification
     function showNewMessageNotice() {
       if (!newMessageNotice) {
         newMessageNotice = document.createElement('button');
@@ -1276,15 +1260,22 @@
       if (window.innerWidth <= 992) {
         chatBackBtn.style.display = 'block';
         conversationsBackBtn.style.display = 'block';
-        chatArea.style.display = 'none';
-        welcomeScreen.style.display = 'none';
-        conversationsCol.style.width = '';
-        document.querySelector('.chat-area-col').style.width = '';
+        if (!currentChatUserId) {
+          chatArea.style.display = 'none';
+          welcomeScreen.style.display = 'none';
+          conversationsCol.classList.remove('hidden');
+        } else {
+          chatArea.style.display = 'flex';
+          chatArea.classList.add('active');
+          conversationsCol.classList.add('hidden');
+          document.body.classList.add('chat-mode');
+        }
       } else {
         chatBackBtn.style.display = 'none';
         conversationsBackBtn.style.display = 'none';
         conversationsCol.style.width = '30%';
         document.querySelector('.chat-area-col').style.width = '70%';
+        conversationsCol.classList.remove('hidden');
         if (!currentChatUserId) {
           welcomeScreen.style.display = 'flex';
           chatArea.style.display = 'none';
@@ -1299,7 +1290,6 @@
     window.addEventListener('resize', handleResize);
     handleResize();
 
-    // Adjust height for keyboard on mobile
     const navbar = document.querySelector('.navbar');
     const chatContainer = document.querySelector('.chat-container');
 
@@ -1314,7 +1304,7 @@
 
     window.addEventListener('resize', adjustHeight);
     messageInput.addEventListener('focus', () => {
-      setTimeout(scrollToBottom, 300); // Scroll after keyboard opens
+      setTimeout(scrollToBottom, 300);
     });
 
     document.querySelectorAll('.conversation').forEach(conv => {
@@ -1334,18 +1324,9 @@
         } catch (error) {
           console.error('Error loading user:', error);
         }
-        loadMessages(userId);
+        await loadMessages(userId);
         const room = ['{{ session.user_id }}', userId].sort().join('_');
         socket.emit('join', { room: room });
-        if (window.innerWidth <= 992) {
-          conversationsCol.classList.add('hidden');
-          chatArea.classList.add('active');
-          chatArea.style.display = 'flex';
-          document.body.classList.add('chat-mode');
-        } else {
-          chatArea.style.display = 'flex';
-          welcomeScreen.style.display = 'none';
-        }
         navigationHistory.push('chat');
       });
     });
@@ -1373,7 +1354,6 @@
       window.location.href = "{{ url_for('explore') }}";
     });
 
-    // Initialize socket connection for current user
     socket.emit('join', { room: 'user_{{ session.user_id }}' });
   </script>
 </body>
