@@ -1,6 +1,7 @@
 from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_session import Session
 from pymongo import MongoClient
 from typing import Dict, Any, Optional, List
 from bson import ObjectId
@@ -17,8 +18,39 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 import pytz
+from functools import wraps
 
-# Configure Cloudinary with explicit credentials and enhanced logging
+# Configure logging
+logging.getLogger('pymongo').setLevel(logging.WARNING)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Initialize Flask app
+app = Flask(__name__,
+            static_url_path='/static',
+            static_folder='static',
+            template_folder='templates')
+app.config.update(
+    SECRET_KEY=os.environ.get('FLASK_SECRET_KEY', 'your-secure-fixed-secret-key-here'),
+    SESSION_TYPE='filesystem',  # Ensure session persistence
+    SESSION_PERMANENT=True,
+    PERMANENT_SESSION_LIFETIME=timedelta(days=1),
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SECURE=False,  # Set to False for local development
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_NAME='for_you_session',
+    SESSION_COOKIE_PATH='/',
+    SESSION_COOKIE_DOMAIN=None
+)
+
+# Initialize CORS and Socket.IO
+CORS(app, supports_credentials=True)
+socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False)
+
+# Initialize Flask-Session
+Session(app)
+
+# Configure Cloudinary
 def configure_cloudinary():
     try:
         cloudinary.config(
@@ -29,36 +61,12 @@ def configure_cloudinary():
         )
         config = cloudinary.config()
         if not (config.cloud_name and config.api_key and config.api_secret):
-            raise Exception("Cloudinary configuration incomplete: missing cloud_name, api_key, or api_secret")
+            raise Exception("Cloudinary configuration incomplete")
         logger.info("Cloudinary configured successfully")
     except Exception as e:
         logger.error(f"Failed to configure Cloudinary: {str(e)}")
         raise Exception(f"Cloudinary configuration failed: {str(e)}")
 
-# Configure logging
-logging.getLogger('pymongo').setLevel(logging.WARNING)
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-app = Flask(__name__,
-            static_url_path='/static',
-            static_folder='static',
-            template_folder='templates')
-CORS(app)
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secure-fixed-secret-key-here')
-app.permanent_session_lifetime = timedelta(days=1)
-app.config.update(
-    SESSION_COOKIE_SAMESITE='Lax',
-    SESSION_COOKIE_SECURE=False,  # Set to False for local development
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_NAME='for_you_session',
-    SESSION_COOKIE_PATH='/',
-    SESSION_COOKIE_DOMAIN=None
-)
-
-socketio = SocketIO(app, cors_allowed_origins="*")
-
-# Initialize Cloudinary
 configure_cloudinary()
 
 class MongoService:
@@ -70,21 +78,23 @@ class MongoService:
             logger.info("MongoDB connection successful")
         except Exception as e:
             logger.error(f"MongoDB connection failed: {str(e)}")
+            raise
         self.db = self.client['ninakkai']
         self.users = self.db['users']
         self.quiz_results = self.db['quiz_results']
         self.likes = self.db['likes']
         self.passes = self.db['passes']
+        self.rate_limits = self.db['rate_limits']
 
     def check_rate_limit(self, key: str, max_attempts: int, period: timedelta = timedelta(hours=1)) -> bool:
         now = datetime.now(timezone.utc)
-        limit = self.db['rate_limits'].find_one({'key': key})
+        limit = self.rate_limits.find_one({'key': key})
         if limit:
             last_reset = limit['last_reset']
             if last_reset.tzinfo is None:
                 last_reset = pytz.UTC.localize(last_reset)
             if now - last_reset > period:
-                self.db['rate_limits'].update_one(
+                self.rate_limits.update_one(
                     {'key': key},
                     {'$set': {'attempts': 0, 'last_reset': now}}
                 )
@@ -92,7 +102,7 @@ class MongoService:
             else:
                 attempts = limit['attempts']
         else:
-            self.db['rate_limits'].insert_one({
+            self.rate_limits.insert_one({
                 'key': key,
                 'attempts': 0,
                 'last_reset': now
@@ -101,13 +111,13 @@ class MongoService:
         return attempts < max_attempts
 
     def inc_rate_limit(self, key: str):
-        self.db['rate_limits'].update_one(
+        self.rate_limits.update_one(
             {'key': key},
             {'$inc': {'attempts': 1}}
         )
 
     def reset_rate_limit(self, key: str):
-        self.db['rate_limits'].update_one(
+        self.rate_limits.update_one(
             {'key': key},
             {'$set': {'attempts': 0, 'last_reset': datetime.now(timezone.utc)}}
         )
@@ -116,7 +126,7 @@ class MongoService:
         try:
             if age is not None and age < 18:
                 return {'success': False, 'error': 'You must be at least 18 years old to sign up'}
-            if gender not in ['male', 'female']:
+            if gender not in ['male', 'female', None]:
                 return {'success': False, 'error': 'Invalid gender selection'}
             hashed_password = generate_password_hash(password)
             verification_token = secrets.token_urlsafe(32)
@@ -224,6 +234,7 @@ class MongoService:
                 'user': user
             }
         except Exception as e:
+            logger.error(f"Verify user error: {str(e)}")
             return {'success': False, 'error': str(e)}
 
     def verify_email(self, token: str) -> Dict[str, Any]:
@@ -294,6 +305,7 @@ class MongoService:
                 'scores': scores
             }
         except Exception as e:
+            logger.error(f"Save quiz results error: {str(e)}")
             return {'success': False, 'error': str(e)}
 
     def get_quiz_results(self, user_id: str) -> Optional[Dict[str, Any]]:
@@ -374,7 +386,6 @@ class MongoService:
         try:
             if self.has_liked_user(user_id, matched_user_id):
                 return {'success': False, 'error': 'Already liked'}
-            logger.info(f"Processing like from user {user_id} to {matched_user_id}")
             like_data = {
                 'user_id': user_id,
                 'matched_user_id': matched_user_id,
@@ -390,7 +401,6 @@ class MongoService:
 
     def pass_user(self, user_id: str, passed_user_id: str) -> Dict[str, Any]:
         try:
-            logger.info(f"Processing pass from user {user_id} to {passed_user_id}")
             pass_data = {
                 'user_id': user_id,
                 'passed_user_id': passed_user_id,
@@ -585,7 +595,6 @@ class MongoService:
             return {'success': False, 'error': str(e)}
 
     def has_liked_user(self, user_id: str, matched_user_id: str) -> bool:
-        """Check if a user has already liked another user"""
         try:
             like = self.likes.find_one({'user_id': user_id, 'matched_user_id': matched_user_id})
             return bool(like)
@@ -594,7 +603,6 @@ class MongoService:
             return False
 
     def has_passed_user(self, user_id: str, passed_user_id: str) -> bool:
-        """Check if a user has already passed on another user"""
         try:
             passed = self.passes.find_one({'user_id': user_id, 'passed_user_id': passed_user_id})
             return bool(passed)
@@ -603,28 +611,20 @@ class MongoService:
             return False
 
     def get_filtered_matches(self, user_id: str) -> List[Dict[str, Any]]:
-        """Get matches excluding liked and passed users"""
         try:
             user_quiz = self.get_quiz_results(user_id)
             if not user_quiz:
                 return []
-            
-            # Get all users that current user has liked or passed on
             liked_users = [str(like['matched_user_id']) for like in self.likes.find({'user_id': user_id})]
             passed_users = [str(passed['passed_user_id']) for passed in self.passes.find({'user_id': user_id})]
             excluded_users = set(liked_users + passed_users)
-            
             user_scores = user_quiz['scores']
             dominant_type = user_scores['dominant_type']
-            
-            # Get all potential matches excluding the ones user has already interacted with
             all_users = self.quiz_results.find({'user_id': {'$ne': user_id, '$nin': list(excluded_users)}})
-            
             matches = []
             for other_user in all_users:
                 other_scores = other_user['scores']
                 match_percentage = self._calculate_match_percentage(user_scores, other_scores)
-                
                 if other_scores['dominant_type'] == dominant_type or other_scores.get('secondary_type') == dominant_type:
                     user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
                     if user_data:
@@ -641,16 +641,14 @@ class MongoService:
                             'rating': '4.5',
                             'dominant_type': other_scores['dominant_type'],
                             'match_percentage': match_percentage,
-                            'liked': False  # Since filtered, always False
+                            'liked': False
                         })
-            
             return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:20]
         except Exception as e:
             logger.error(f"Get filtered matches error: {str(e)}")
             return []
 
     def unlike_user(self, user_id: str, matched_user_id: str) -> Dict[str, Any]:
-        """Remove a like from a user"""
         try:
             result = self.likes.delete_one({'user_id': user_id, 'matched_user_id': matched_user_id})
             is_match = self.is_matched(user_id, matched_user_id)
@@ -661,14 +659,16 @@ class MongoService:
 
 class ChatService:
     def __init__(self):
-        self.uri = "mongodb+srv://infoqiooo:Gjresr7SikhBmM5U@cluster0.hyzcpcz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+        # Use the same MongoDB URI as MongoService for consistency
+        self.uri = os.getenv('MONGODB_URI', "mongodb+srv://ninakkaiforyou:9t2GADiJUf8xFhDZ@cluster0.fdoiudh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
         self.client = MongoClient(self.uri)
         try:
             self.client.admin.command('ping')
             logger.info("Chat MongoDB connection successful")
         except Exception as e:
             logger.error(f"Chat MongoDB connection failed: {str(e)}")
-        self.db = self.client['chat_db']
+            raise
+        self.db = self.client['ninakkai']
         self.messages = self.db['messages']
 
     def send_message(self, sender_id: str, receiver_id: str, message: str) -> Dict[str, Any]:
@@ -681,6 +681,7 @@ class ChatService:
                 'read': False
             }
             result = self.messages.insert_one(msg_data)
+            logger.info(f"Message sent, message_id: {str(result.inserted_id)}")
             return {'success': True, 'message_id': str(result.inserted_id)}
         except Exception as e:
             logger.error(f"Send message error: {str(e)}")
@@ -697,13 +698,18 @@ class ChatService:
                 {'receiver_id': user1, 'sender_id': user2, 'read': False},
                 {'$set': {'read': True}}
             )
+            result = []
             for msg in msgs:
-                msg['id'] = str(msg['_id'])
-                del msg['_id']
-                if msg['timestamp'].tzinfo is None:
-                    msg['timestamp'] = pytz.UTC.localize(msg['timestamp'])
-                msg['timestamp'] = msg['timestamp'].isoformat()
-            return msgs
+                msg_data = {
+                    'id': str(msg['_id']),
+                    'sender_id': msg['sender_id'],
+                    'receiver_id': msg['receiver_id'],
+                    'message': msg['message'],
+                    'timestamp': pytz.UTC.localize(msg['timestamp']).isoformat() if msg['timestamp'].tzinfo is None else msg['timestamp'].isoformat(),
+                    'read': msg['read']
+                }
+                result.append(msg_data)
+            return result
         except Exception as e:
             logger.error(f"Get messages error: {str(e)}")
             return []
@@ -716,11 +722,15 @@ class ChatService:
             ]}
             msg = self.messages.find_one(query, sort=[('timestamp', -1)])
             if msg:
-                msg['id'] = str(msg['_id'])
-                del msg['_id']
-                if msg['timestamp'].tzinfo is None:
-                    msg['timestamp'] = pytz.UTC.localize(msg['timestamp'])
-                return msg
+                msg_data = {
+                    'id': str(msg['_id']),
+                    'sender_id': msg['sender_id'],
+                    'receiver_id': msg['receiver_id'],
+                    'message': msg['message'],
+                    'timestamp': pytz.UTC.localize(msg['timestamp']) if msg['timestamp'].tzinfo is None else msg['timestamp'],
+                    'read': msg['read']
+                }
+                return msg_data
             return None
         except Exception as e:
             logger.error(f"Get last message error: {str(e)}")
@@ -736,6 +746,7 @@ class ChatService:
     def delete_message(self, message_id: str) -> Dict[str, Any]:
         try:
             result = self.messages.delete_one({'_id': ObjectId(message_id)})
+            logger.info(f"Message deleted, message_id: {message_id}, success: {result.deleted_count > 0}")
             return {'success': result.deleted_count > 0}
         except Exception as e:
             logger.error(f"Delete message error: {str(e)}")
@@ -812,6 +823,15 @@ def send_reset_email(email: str, reset_token: str) -> Dict[str, Any]:
         logger.error(f"Failed to send reset email to {email}: {str(e)}")
         return {'success': False, 'error': str(e)}
 
+def require_login(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            logger.warning(f"Unauthorized access to {request.path}")
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.after_request
 def log_response(response):
     logger.debug(f"Response - Route: {request.path}, Status: {response.status_code}, Set-Cookie: {response.headers.get('Set-Cookie', 'None')}")
@@ -828,7 +848,6 @@ def log_session_info():
 @app.route('/')
 def index():
     logger.debug(f"Session in index: {session}")
-    logger.debug(f"Incoming cookies: {request.cookies}")
     if 'user_id' in session:
         quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
         return redirect(url_for('explore') if quiz_completed else url_for('questions'))
@@ -849,7 +868,6 @@ def favicon():
 @app.route('/auth', methods=['GET', 'POST'])
 def auth():
     logger.debug(f"Session in auth: {session}")
-    logger.debug(f"Incoming cookies: {request.cookies}")
     error = None
     success = None
     verification_sent = False
@@ -1073,9 +1091,8 @@ def reset_password_endpoint(token):
             return render_template('reset_password.html', token=token, error='Failed to update password')
 
 @app.route('/change_password', methods=['POST'])
+@require_login
 def change_password():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     data = request.get_json()
     current_password = data.get('current_password')
     new_password = data.get('new_password')
@@ -1090,9 +1107,8 @@ def change_password():
     return jsonify(result)
 
 @app.route('/delete_account', methods=['POST'])
+@require_login
 def delete_account():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     result = mongo_service.delete_account(session['user_id'])
     if result['success']:
         session.clear()
@@ -1115,7 +1131,6 @@ def explore():
         if not quiz_result:
             return redirect(url_for('questions', error='Please complete the quiz to access the explore page'))
         
-        # Use filtered matches instead of all matches
         matches = mongo_service.get_filtered_matches(session['user_id'])
         
         profile = {
@@ -1134,42 +1149,31 @@ def explore():
             'secondary_percentage': quiz_result['scores']['secondary_percentage']
         }
         
-        discovery = matches
-        nearby = matches
-        
-        return render_template('explore.html', profile=profile, matches=matches, discovery=discovery, nearby=nearby, error=None)
+        return render_template('explore.html', profile=profile, matches=matches, discovery=matches, nearby=matches, error=None)
     except Exception as e:
         logger.error(f"Explore error: {str(e)}")
         return render_template('explore.html', profile={}, matches=[], discovery=[], nearby=[], error='An error occurred while loading the explore page. Please try again.')
 
 @app.route('/like-user', methods=['POST'])
+@require_login
 def like_user():
-    logger.info(f"Like-user route called with session: {session}")
-    if 'user_id' not in session:
-        logger.warning("Unauthorized access to /like-user")
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    try:
-        data = request.get_json()
-        matched_user_id = data.get('matched_user_id')
-        logger.info(f"Received like request for user_id: {session['user_id']}, matched_user_id: {matched_user_id}")
-        if not matched_user_id:
-            logger.warning("No matched_user_id provided in /like-user")
-            return jsonify({'success': False, 'error': 'No user ID provided'}), 400
-        result = mongo_service.like_user(session['user_id'], matched_user_id)
-        if result['success']:
-            logger.info(f"Like successful for user_id: {session['user_id']}, matched_user_id: {matched_user_id}")
-            return jsonify(result), 200
-        else:
-            logger.error(f"Like failed: {result.get('error', 'Unknown error')}")
-            return jsonify({'success': False, 'error': result.get('error', 'Failed to like user')}), 500
-    except Exception as e:
-        logger.error(f"Like user endpoint error: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+    data = request.get_json()
+    matched_user_id = data.get('matched_user_id')
+    if not matched_user_id:
+        logger.warning("No matched_user_id provided in /like-user")
+        return jsonify({'success': False, 'error': 'No user ID provided'}), 400
+    result = mongo_service.like_user(session['user_id'], matched_user_id)
+    if result['success'] and result['is_match']:
+        room = sorted([session['user_id'], matched_user_id])
+        socketio.emit('new_match', {
+            'user_id': session['user_id'],
+            'matched_user_id': matched_user_id
+        }, room=f'user_{matched_user_id}')
+    return jsonify(result)
 
 @app.route('/unlike-user', methods=['POST'])
+@require_login
 def unlike_user_endpoint():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     data = request.get_json()
     matched_user_id = data.get('matched_user_id')
     if not matched_user_id:
@@ -1178,83 +1182,60 @@ def unlike_user_endpoint():
     return jsonify(result)
 
 @app.route('/pass-user', methods=['POST'])
+@require_login
 def pass_user():
-    logger.info(f"Pass-user route called with session: {session}")
-    if 'user_id' not in session:
-        logger.warning("Unauthorized access to /pass-user")
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    try:
-        data = request.get_json()
-        passed_user_id = data.get('passed_user_id')
-        logger.info(f"Received pass request for user_id: {session['user_id']}, passed_user_id: {passed_user_id}")
-        if not passed_user_id:
-            logger.warning("No passed_user_id provided in /pass-user")
-            return jsonify({'success': False, 'error': 'No user ID provided'}), 400
-        result = mongo_service.pass_user(session['user_id'], passed_user_id)
-        if result['success']:
-            logger.info(f"Pass successful for user_id: {session['user_id']}, passed_user_id: {passed_user_id}")
-            return jsonify({'success': True}), 200
-        else:
-            logger.error(f"Pass failed: {result.get('error', 'Unknown error')}")
-            return jsonify({'success': False, 'error': result.get('error', 'Failed to pass user')}), 500
-    except Exception as e:
-        logger.error(f"Pass user endpoint error: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+    data = request.get_json()
+    passed_user_id = data.get('passed_user_id')
+    if not passed_user_id:
+        logger.warning("No passed_user_id provided in /pass-user")
+        return jsonify({'success': False, 'error': 'No user ID provided'}), 400
+    result = mongo_service.pass_user(session['user_id'], passed_user_id)
+    return jsonify({'success': True})
 
 @app.route('/search-matches')
+@require_login
 def search_matches():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    try:
-        query = request.args.get('q', '')
-        if not query:
-            return jsonify({'success': False, 'error': 'No search query provided'}), 400
-        matches = mongo_service.search_matches(query, session['user_id'])
-        return jsonify({'success': True, 'matches': matches}), 200
-    except Exception as e:
-        logger.error(f"Search matches endpoint error: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+    query = request.args.get('q', '')
+    if not query:
+        return jsonify({'success': False, 'error': 'No search query provided'}), 400
+    matches = mongo_service.search_matches(query, session['user_id'])
+    return jsonify({'success': True, 'matches': matches})
 
 @app.route('/user-profile/<user_id>')
+@require_login
 def user_profile(user_id):
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    try:
-        user = mongo_service.get_user_by_id(user_id)
-        if not user:
-            return jsonify({'success': False, 'error': 'User not found'}), 404
-        quiz_result = mongo_service.get_quiz_results(user_id)
-        profile = {
-            'id': user['id'],
-            'full_name': user['full_name'],
-            'age': user.get('age'),
-            'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-            'occupation': user.get('occupation', 'N/A'),
-            'bio': user.get('bio', 'No bio available'),
-            'interests': user.get('interests', []),
-            'photos': user.get('photos', []),
-            'distance': 'N/A',
-            'rating': '4.5',
-            'match_percentage': 50,
-            'liked': mongo_service.has_liked_user(session['user_id'], user_id),
-            'personality': {
-                'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
-                'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0,
-                'secondary_type': quiz_result['scores']['secondary_type'] if quiz_result else 'N/A',
-                'secondary_percentage': quiz_result['scores']['secondary_percentage'] if quiz_result else 0
-            }
+    user = mongo_service.get_user_by_id(user_id)
+    if not user:
+        return jsonify({'success': False, 'error': 'User not found'}), 404
+    quiz_result = mongo_service.get_quiz_results(user_id)
+    profile = {
+        'id': user['id'],
+        'full_name': user['full_name'],
+        'age': user.get('age'),
+        'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+        'occupation': user.get('occupation', 'N/A'),
+        'bio': user.get('bio', 'No bio available'),
+        'interests': user.get('interests', []),
+        'photos': user.get('photos', []),
+        'distance': 'N/A',
+        'rating': '4.5',
+        'match_percentage': 50,
+        'liked': mongo_service.has_liked_user(session['user_id'], user_id),
+        'personality': {
+            'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
+            'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0,
+            'secondary_type': quiz_result['scores']['secondary_type'] if quiz_result else 'N/A',
+            'secondary_percentage': quiz_result['scores']['secondary_percentage'] if quiz_result else 0
         }
-        return jsonify({'success': True, 'user': profile}), 200
-    except Exception as e:
-        logger.error(f"User profile endpoint error: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+    }
+    return jsonify({'success': True, 'user': profile})
 
 @app.route('/chat')
 def chat():
     logger.debug(f"Session in chat: {session}")
     if 'user_id' not in session:
         logger.debug("No user_id in session for /chat")
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth', error='Please log in to access the chat page'))
     try:
         current_user_id = session['user_id']
         user = mongo_service.get_user_by_id(current_user_id)
@@ -1306,100 +1287,69 @@ def chat():
         return render_template('chat.html', profile={'image': 'https://randomuser.me/api/portraits/women/44.jpg'}, conversations=[], unread_count=0, error=str(e))
 
 @app.route('/messages/<other_user_id>', methods=['GET'])
+@require_login
 def get_messages(other_user_id):
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     current_user_id = session['user_id']
     if not mongo_service.is_matched(current_user_id, other_user_id):
+        logger.warning(f"User {current_user_id} attempted to access messages with unmatched user {other_user_id}")
         return jsonify({'success': False, 'error': 'Not matched'}), 403
     try:
         messages = chat_service.get_messages(current_user_id, other_user_id)
-        return jsonify({'success': True, 'messages': messages}), 200
+        logger.info(f"Messages retrieved for user {current_user_id} and {other_user_id}, count: {len(messages)}")
+        return jsonify({'success': True, 'messages': messages})
     except Exception as e:
         logger.error(f"Get messages endpoint error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/send_message', methods=['POST'])
+@require_login
 def send_message():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    try:
-        data = request.get_json()
-        to_user_id = data.get('to_user_id')
-        message = data.get('message')
-        if not to_user_id or not message:
-            return jsonify({'success': False, 'error': 'Missing parameters'}), 400
-        current_user_id = session['user_id']
-        if not mongo_service.is_matched(current_user_id, to_user_id):
-            return jsonify({'success': False, 'error': 'Not matched'}), 403
-        result = chat_service.send_message(current_user_id, to_user_id, message)
-        if result['success']:
-            return jsonify({'success': True}), 200
-        else:
-            return jsonify({'success': False, 'error': result.get('error', 'Failed to send message')}), 500
-    except Exception as e:
-        logger.error(f"Send message endpoint error: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/delete_message', methods=['POST'])
-def delete_message_endpoint():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     data = request.get_json()
-    message_id = data.get('message_id')
-    if not message_id:
-        return jsonify({'success': False, 'error': 'No message ID provided'}), 400
-    result = chat_service.delete_message(message_id)
-    return jsonify(result)
-
-@socketio.on('join')
-def on_join(data):
-    room = data['room']
-    join_room(room)
-
-@socketio.on('leave')
-def on_leave(data):
-    room = data['room']
-    leave_room(room)
-
-@socketio.on('message')
-def handle_message(data):
-    room = data['room']
-    sender_id = data['sender_id']
-    receiver_id = data['receiver_id']
-    message = data['message']
-    result = chat_service.send_message(sender_id, receiver_id, message)
+    to_user_id = data.get('to_user_id')
+    message = data.get('message')
+    if not to_user_id or not message:
+        logger.warning("Missing parameters in /send_message")
+        return jsonify({'success': False, 'error': 'Missing parameters'}), 400
+    current_user_id = session['user_id']
+    if not mongo_service.is_matched(current_user_id, to_user_id):
+        logger.warning(f"User {current_user_id} attempted to send message to unmatched user {to_user_id}")
+        return jsonify({'success': False, 'error': 'Not matched'}), 403
+    result = chat_service.send_message(current_user_id, to_user_id, message)
     if result['success']:
+        room = sorted([current_user_id, to_user_id])
         msg = {
             'id': result['message_id'],
-            'sender_id': sender_id,
-            'receiver_id': receiver_id,
+            'sender_id': current_user_id,
+            'receiver_id': to_user_id,
             'message': message,
             'timestamp': datetime.now(timezone.utc).isoformat(),
             'read': False
         }
-        emit('new_message', msg, to=room)
+        socketio.emit('new_message', msg, room=f'room_{"_".join(room)}')
+        socketio.emit('new_message', msg, room=f'user_{to_user_id}')
+        logger.info(f"Message sent from {current_user_id} to {to_user_id}, message_id: {result['message_id']}")
+        return jsonify({'success': True, 'message_id': result['message_id']})
+    return jsonify({'success': False, 'error': result.get('error', 'Failed to send message')}), 500
 
-@socketio.on('typing')
-def handle_typing(data):
-    room = data['room']
-    sender_id = data['sender_id']
-    emit('user_typing', {'user_id': sender_id}, to=room, include_self=False)
-
-@socketio.on('delete')
-def handle_delete(data):
-    room = data['room']
-    message_id = data['message_id']
+@app.route('/delete_message', methods=['POST'])
+@require_login
+def delete_message_endpoint():
+    data = request.get_json()
+    message_id = data.get('message_id')
+    if not message_id:
+        logger.warning("No message_id provided in /delete_message")
+        return jsonify({'success': False, 'error': 'No message ID provided'}), 400
     result = chat_service.delete_message(message_id)
     if result['success']:
-        emit('message_deleted', {'message_id': message_id}, to=room)
+        logger.info(f"Message deleted by user {session['user_id']}, message_id: {message_id}")
+    return jsonify(result)
 
 @app.route('/profile')
 def profile():
     logger.debug(f"Session in profile: {session}")
     if 'user_id' not in session:
         logger.debug("No user_id in session for /profile")
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth', error='Please log in to access the profile page'))
     try:
         user = mongo_service.get_user_by_id(session['user_id'])
         if not user:
@@ -1430,29 +1380,24 @@ def profile():
 @app.route('/questions', methods=['GET'])
 def questions():
     logger.debug(f"Session in questions: {session}")
-    logger.debug(f"Incoming cookies: {request.cookies}")
     if 'user_id' not in session:
         logger.debug("No user_id in session for /questions")
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth', error='Please log in to access the questions page'))
     quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
     if quiz_completed:
         return redirect(url_for('explore'))
-    logger.debug(f"Rendering questions.html for user_id: {session['user_id']}")
     return render_template('questions.html')
 
 @app.route('/submit-quiz', methods=['POST'])
+@require_login
 def submit_quiz():
-    logger.debug(f"Session in submit-quiz: {session}")
-    if 'user_id' not in session:
-        logger.debug("No user_id in session for /submit-quiz")
-        return redirect(url_for('auth'))
+    data = request.get_json()
+    answers = data.get('answers', [])
+    if not answers:
+        logger.warning("No answers provided in /submit-quiz")
+        return jsonify({'success': False, 'error': 'No answers provided'}), 400
     
     try:
-        data = request.get_json()
-        answers = data.get('answers', [])
-        if not answers:
-            return jsonify({'success': False, 'error': 'No answers provided'}), 400
-        
         processed_answers = []
         required_questions = [
             {
@@ -1528,9 +1473,9 @@ def submit_quiz():
         quiz_data = {'answers': processed_answers}
         result = mongo_service.save_quiz_results(session['user_id'], quiz_data)
         if result['success']:
-            return jsonify({'success': True}), 200
-        else:
-            return jsonify({'success': False, 'error': result.get('error', 'Failed to save quiz results')}), 500
+            logger.info(f"Quiz submitted successfully for user {session['user_id']}")
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'error': result.get('error', 'Failed to save quiz results')}), 500
     except Exception as e:
         logger.error(f"Submit quiz error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1545,41 +1490,27 @@ def logout():
     return resp
 
 @app.route('/upload_profile_picture', methods=['POST'])
+@require_login
 def upload_profile_picture():
-    logger.info("Upload profile picture request received")
-    if 'user_id' not in session:
-        logger.warning("Unauthorized access to upload_profile_picture")
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     file = request.files.get('file')
     if not file:
         logger.warning("No file provided in upload_profile_picture")
         return jsonify({'success': False, 'error': 'No file provided'}), 400
     try:
-        logger.info("Attempting to upload profile picture to Cloudinary")
-        config = cloudinary.config()
-        if not (config.cloud_name and config.api_key and config.api_secret):
-            logger.error("Cloudinary configuration missing")
-            return jsonify({'success': False, 'error': 'Cloudinary configuration missing'}), 500
         upload_result = cloudinary.uploader.upload(file, folder="profile_pictures")
         url = upload_result['secure_url']
-        logger.info(f"Uploaded profile picture URL: {url}")
         update_result = mongo_service.update_user(session['user_id'], {'image': url})
         if update_result['success']:
-            logger.info("User profile picture updated successfully in database")
-            return jsonify({'success': True, 'url': url}), 200
-        else:
-            logger.error("Failed to update user profile picture in database")
-            return jsonify({'success': False, 'error': 'Failed to update profile picture in database'}), 500
+            logger.info(f"Profile picture uploaded for user {session['user_id']}")
+            return jsonify({'success': True, 'url': url})
+        return jsonify({'success': False, 'error': 'Failed to update profile picture in database'}), 500
     except Exception as e:
         logger.error(f"Upload profile picture error: {str(e)}")
         return jsonify({'success': False, 'error': f"Upload failed: {str(e)}"}), 500
 
 @app.route('/upload_photo', methods=['POST'])
+@require_login
 def upload_photo():
-    logger.info("Upload photo request received")
-    if 'user_id' not in session:
-        logger.warning("Unauthorized access to upload_photo")
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     file = request.files.get('file')
     if not file:
         logger.warning("No file provided in upload_photo")
@@ -1589,62 +1520,8 @@ def upload_photo():
         logger.warning("Maximum photos limit reached")
         return jsonify({'success': False, 'error': 'Maximum 7 photos allowed'}), 400
     try:
-        logger.info("Attempting to upload photo to Cloudinary")
-        config = cloudinary.config()
-        if not (config.cloud_name and config.api_key and config.api_secret):
-            logger.error("Cloudinary configuration missing")
-            return jsonify({'success': False, 'error': 'Cloudinary configuration missing'}), 500
         upload_result = cloudinary.uploader.upload(file, folder="user_photos")
         url = upload_result['secure_url']
-        logger.info(f"Uploaded photo URL: {url}")
         photos = user.get('photos', []) + [url]
         update_result = mongo_service.update_user(session['user_id'], {'photos': photos})
-        if update_result['success']:
-            logger.info("User photos updated successfully in database")
-            return jsonify({'success': True, 'url': url}), 200
-        else:
-            logger.error("Failed to update user photos in database")
-            return jsonify({'success': False, 'error': 'Failed to update photos in database'}), 500
-    except Exception as e:
-        logger.error(f"Upload photo error: {str(e)}")
-        return jsonify({'success': False, 'error': f"Upload failed: {str(e)}"}), 500
-
-@app.route('/delete_photo', methods=['POST'])
-def delete_photo():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    data = request.get_json()
-    url = data.get('url')
-    if not url:
-        return jsonify({'success': False, 'error': 'No URL provided'}), 400
-    user = mongo_service.get_user_by_id(session['user_id'])
-    photos = user.get('photos', [])
-    if url in photos:
-        photos.remove(url)
-        mongo_service.update_user(session['user_id'], {'photos': photos})
-        return jsonify({'success': True}), 200
-    return jsonify({'success': False, 'error': 'Photo not found'}), 404
-
-@app.route('/update_profile', methods=['POST'])
-def update_profile():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    data = request.get_json()
-    update_data = {}
-    if 'full_name' in data:
-        update_data['full_name'] = data['full_name']
-    if 'age' in data:
-        update_data['age'] = int(data['age'])
-    if 'bio' in data:
-        update_data['bio'] = data['bio']
-    if 'location' in data:
-        update_data['location'] = data['location']
-    if 'interests' in data:
-        update_data['interests'] = data['interests']
-    if update_data:
-        result = mongo_service.update_user(session['user_id'], update_data)
-        return jsonify(result)
-    return jsonify({'success': True}), 200
-
-if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5050, debug=True)
+        if update_result
