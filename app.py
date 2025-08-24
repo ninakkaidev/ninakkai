@@ -1,5 +1,6 @@
 from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory, jsonify
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from pymongo import MongoClient
 from typing import Dict, Any, Optional, List
 from bson import ObjectId
@@ -54,6 +55,8 @@ app.config.update(
     SESSION_COOKIE_PATH='/',
     SESSION_COOKIE_DOMAIN=None
 )
+
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Initialize Cloudinary
 configure_cloudinary()
@@ -730,6 +733,14 @@ class ChatService:
             logger.error(f"Get unread count error: {str(e)}")
             return 0
 
+    def delete_message(self, message_id: str) -> Dict[str, Any]:
+        try:
+            result = self.messages.delete_one({'_id': ObjectId(message_id)})
+            return {'success': result.deleted_count > 0}
+        except Exception as e:
+            logger.error(f"Delete message error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
 mongo_service = MongoService()
 chat_service = ChatService()
 
@@ -1330,6 +1341,59 @@ def send_message():
         logger.error(f"Send message endpoint error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/delete_message', methods=['POST'])
+def delete_message_endpoint():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    message_id = data.get('message_id')
+    if not message_id:
+        return jsonify({'success': False, 'error': 'No message ID provided'}), 400
+    result = chat_service.delete_message(message_id)
+    return jsonify(result)
+
+@socketio.on('join')
+def on_join(data):
+    room = data['room']
+    join_room(room)
+
+@socketio.on('leave')
+def on_leave(data):
+    room = data['room']
+    leave_room(room)
+
+@socketio.on('message')
+def handle_message(data):
+    room = data['room']
+    sender_id = data['sender_id']
+    receiver_id = data['receiver_id']
+    message = data['message']
+    result = chat_service.send_message(sender_id, receiver_id, message)
+    if result['success']:
+        msg = {
+            'id': result['message_id'],
+            'sender_id': sender_id,
+            'receiver_id': receiver_id,
+            'message': message,
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'read': False
+        }
+        emit('new_message', msg, to=room)
+
+@socketio.on('typing')
+def handle_typing(data):
+    room = data['room']
+    sender_id = data['sender_id']
+    emit('user_typing', {'user_id': sender_id}, to=room, include_self=False)
+
+@socketio.on('delete')
+def handle_delete(data):
+    room = data['room']
+    message_id = data['message_id']
+    result = chat_service.delete_message(message_id)
+    if result['success']:
+        emit('message_deleted', {'message_id': message_id}, to=room)
+
 @app.route('/profile')
 def profile():
     logger.debug(f"Session in profile: {session}")
@@ -1583,4 +1647,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5050, debug=True)

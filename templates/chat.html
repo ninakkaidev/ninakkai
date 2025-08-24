@@ -6,6 +6,7 @@
   <title>നിനakkayi-ForYou | Personal chat</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
   <style>
 :root {
   --primary: #6c5ce7;
@@ -411,6 +412,7 @@ body {
   background-color: var(--bg-dark);
   display: flex;
   flex-direction: column;
+  height: calc(100% - 100px);
 }
 
 .date-divider {
@@ -529,6 +531,17 @@ body {
 .message-actions button:hover {
   background-color: rgba(255,255,255,0.1);
   color: var(--primary-light);
+}
+
+.typing-indicator {
+  display: none;
+  font-size: 0.8125rem;
+  color: var(--gray);
+  padding: 0.625rem 0.875rem;
+  border-radius: 12px;
+  background-color: var(--message-received);
+  align-self: flex-start;
+  margin-bottom: 0.75rem;
 }
 
 /* Message Input */
@@ -1252,8 +1265,11 @@ body {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+      const socket = io();
       let currentChatUserId = null;
       let navigationHistory = ['conversations'];
+      let typingTimeout;
+      let isTyping = false;
 
       // Toggle Emoji Picker
       const emojiBtn = document.querySelector('.btn-emoji');
@@ -1345,26 +1361,17 @@ body {
       const messageInput = document.getElementById('message-input');
       const sendBtn = document.getElementById('send-button');
       
-      async function sendMessage() {
+      function sendMessage() {
         const message = messageInput.value.trim();
         if (!message || !currentChatUserId) return;
-        
-        try {
-          const response = await fetch('/send_message', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ to_user_id: currentChatUserId, message })
-          });
-          const result = await response.json();
-          if (result.success) {
-            messageInput.value = '';
-            appendMessage({ message, sender_id: 'me', timestamp: new Date().toISOString() }, true);
-            const messagesContainer = document.getElementById('messages-container');
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-          }
-        } catch (error) {
-          console.error('Error sending message:', error);
-        }
+        const room = [ '{{ session.user_id }}', currentChatUserId ].sort().join('_');
+        socket.emit('message', {
+          room: room,
+          sender_id: '{{ session.user_id }}',
+          receiver_id: currentChatUserId,
+          message: message
+        });
+        messageInput.value = '';
       }
       
       messageInput.addEventListener('keypress', (e) => {
@@ -1374,6 +1381,22 @@ body {
       });
       
       sendBtn.addEventListener('click', sendMessage);
+      
+      // Typing event
+      messageInput.addEventListener('input', () => {
+        if (!isTyping && currentChatUserId) {
+          isTyping = true;
+          const room = [ '{{ session.user_id }}', currentChatUserId ].sort().join('_');
+          socket.emit('typing', {
+            room: room,
+            sender_id: '{{ session.user_id }}'
+          });
+        }
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+          isTyping = false;
+        }, 3000);
+      });
       
       // Load messages for user
       async function loadMessages(userId) {
@@ -1405,6 +1428,7 @@ body {
         const messagesContainer = document.getElementById('messages-container');
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+        messageDiv.dataset.messageId = msg.id;
         messageDiv.innerHTML = `
           <div class="message-content">
             <p>${msg.message}</p>
@@ -1412,12 +1436,57 @@ body {
             <div class="message-actions">
               <button title="Reply"><i class="fas fa-reply"></i></button>
               <button title="React"><i class="far fa-smile"></i></button>
+              <button title="Delete" onclick="deleteMessage('${msg.id}')"><i class="fas fa-trash"></i></button>
               <button title="More"><i class="fas fa-ellipsis-h"></i></button>
             </div>
           </div>
         `;
         messagesContainer.appendChild(messageDiv);
       }
+      
+      function deleteMessage(messageId) {
+        if (confirm('Delete this message for everyone?')) {
+          const room = [ '{{ session.user_id }}', currentChatUserId ].sort().join('_');
+          socket.emit('delete', {
+            room: room,
+            message_id: messageId
+          });
+        }
+      }
+      
+      // Socket events
+      socket.on('new_message', (msg) => {
+        const isSent = msg.sender_id === '{{ session.user_id }}';
+        appendMessage(msg, isSent);
+        const messagesContainer = document.getElementById('messages-container');
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      });
+
+      socket.on('user_typing', (data) => {
+        if (data.user_id !== '{{ session.user_id }}') {
+          const typingIndicator = document.querySelector('.typing-indicator');
+          if (typingIndicator) {
+            typingIndicator.style.display = 'block';
+          } else {
+            const newTyping = document.createElement('div');
+            newTyping.className = 'typing-indicator';
+            newTyping.textContent = 'Typing...';
+            document.getElementById('messages-container').appendChild(newTyping);
+          }
+          clearTimeout(typingTimeout);
+          typingTimeout = setTimeout(() => {
+            const typingIndicator = document.querySelector('.typing-indicator');
+            if (typingIndicator) typingIndicator.style.display = 'none';
+          }, 3000);
+        }
+      });
+
+      socket.on('message_deleted', (data) => {
+        const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
+        if (messageElement) {
+          messageElement.remove();
+        }
+      });
       
       // Responsive behavior
       const conversationsCol = document.querySelector('.conversations-col');
@@ -1484,6 +1553,9 @@ body {
           }
           loadMessages(userId);
           
+          const room = [ '{{ session.user_id }}', userId ].sort().join('_');
+          socket.emit('join', { room: room });
+          
           if (window.innerWidth <= 992) {
             // Mobile behavior
             conversationsCol.classList.add('hidden');
@@ -1501,6 +1573,10 @@ body {
       
       // Back button in chat area
       chatBackBtn.addEventListener('click', () => {
+        if (currentChatUserId) {
+          const room = [ '{{ session.user_id }}', currentChatUserId ].sort().join('_');
+          socket.emit('leave', { room: room });
+        }
         if (window.innerWidth <= 992) {
           // Mobile behavior
           chatArea.classList.remove('active');
