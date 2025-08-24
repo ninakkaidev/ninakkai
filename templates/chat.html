@@ -540,6 +540,8 @@ body {
   z-index: 100;
   display: flex;
   align-items: center;
+  position: sticky;
+  bottom: 0;
 }
 
 .message-input {
@@ -888,11 +890,16 @@ body {
   .messages-container {
     padding: 1rem 1rem 0.5rem 1rem;
     height: calc(100% - 100px);
+    overflow-y: auto;
+    flex: 1;
   }
 
   .message-input-container {
-    position: relative;
+    position: sticky;
+    bottom: 0;
     height: 55px;
+    z-index: 100;
+    background-color: var(--card-dark);
   }
 
   .message.sent {
@@ -971,6 +978,7 @@ body {
   .messages-container {
     padding: 1rem 1rem 0.5rem 1rem;
     height: calc(100% - 100px);
+    overflow-y: auto;
   }
   
   .message-input-container {
@@ -996,6 +1004,7 @@ body {
   .messages-container {
     padding: 1rem 1rem 0.5rem 1rem;
     height: calc(100% - 100px);
+    overflow-y: auto;
   }
   
   .emoji-picker {
@@ -1006,6 +1015,9 @@ body {
   .message-input-container {
     padding: 0.4rem;
     height: 55px;
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
   }
 
   .message.sent {
@@ -1054,8 +1066,10 @@ body {
 }
 
 .message-input-container {
-  position: relative;
-  width: 100%;
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  background-color: var(--card-dark);
 }
   </style>
 </head>
