@@ -47,6 +47,7 @@
             font-weight: bold;
             font-size: 14px;
             border: 3px solid #ec4899;
+            z-index: 10;
         }
 
         ::-webkit-scrollbar {
@@ -81,37 +82,6 @@
             background-color: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        @media (max-width: 640px) {
-            .discovery-card img {
-                height: 200px;
-            }
-            
-            .nearby-card {
-                flex-direction: column;
-            }
-            
-            .nearby-card > div {
-                width: 100% !important;
-            }
-            
-            .nearby-card img {
-                height: 150px;
-            }
-            
-            #searchBox {
-                position: absolute;
-                top: 100%;
-                left: 0;
-                right: 0;
-                padding: 0.5rem 1rem;
-                background-color: rgba(255, 255, 255, 0.95);
-            }
-            
-            #searchBox input {
-                width: 100%;
-            }
         }
 
         .search-box-transition {
@@ -166,13 +136,109 @@
             50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
             100% { transform: translate(-50%, -50%) scale(1); }
         }
+
+        /* Image styling for consistent appearance */
+        .profile-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            object-position: center center;
+        }
+
+        /* Discovery section specific styling */
+        .discovery-profile {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .discovery-profile::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60%;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .discovery-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px;
+            z-index: 2;
+        }
+
+        .discovery-rating {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+            z-index: 10;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .profile-image {
+                height: 200px;
+            }
+            
+            #searchBox {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                padding: 0.5rem 1rem;
+                background-color: rgba(255, 255, 255, 0.95);
+            }
+            
+            #searchBox input {
+                width: 100%;
+            }
+
+            .discovery-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+        }
+
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .profile-image {
+                height: 280px;
+            }
+            
+            .discovery-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 16px;
+            }
+        }
+
+        @media (min-width: 1025px) {
+            .profile-image {
+                height: 300px;
+            }
+            
+            .discovery-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 20px;
+            }
+        }
     </style>
 </head>
 <body>
     <!-- Loading State -->
     <div class="loading" id="loading">
         <div class="loading-spinner"></div>
-        <p class="text-gray-800 text-center">Finding your matches...</p>
+        <p class="text-white text-center">Finding your matches...</p>
     </div>
 
     <!-- Header -->
@@ -212,17 +278,17 @@
         {% endif %}
 
         <!-- Most Matched Suggestions Section -->
-        <div id="matches-section" class="mb-6">
+        <div id="matches-section" class="mb-8">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-gray-800">Most Matched Suggestions</h2>
                 <button id="see-all-matches" class="text-pink-500 text-sm font-medium">See All</button>
             </div>
-            <div id="matches-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div id="matches-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                 {% if matches %}
                     {% for match in matches %}
                     <div class="bg-white rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="{{ match.id }}">
                         <div class="match-percentage">{{ match.match_percentage }}%</div>
-                        <img src="{{ match.image }}" alt="Profile" class="w-full h-48 md:h-64 object-cover">
+                        <img src="{{ match.image }}" alt="Profile" class="profile-image">
                         <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
                             <div class="flex justify-between items-end">
                                 <div>
@@ -237,84 +303,41 @@
                     </div>
                     {% endfor %}
                 {% else %}
-                    <p class="text-gray-600">No matches found. Try completing your quiz!</p>
+                    <p class="text-gray-600 col-span-full">No matches found. Try completing your quiz!</p>
                 {% endif %}
             </div>
         </div>
 
-        <!-- Discovery Section -->
-        <div id="discovery-section" class="mb-6">
+        <!-- Discovery Section with new styling -->
+        <div id="discovery-section" class="mb-8">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-gray-800">Discover People</h2>
                 <button id="see-all-discovery" class="text-pink-500 text-sm font-medium">See All</button>
             </div>
-            <div id="discovery-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div id="discovery-grid" class="discovery-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
                 {% if discovery %}
                     {% for match in discovery %}
-                    <div class="bg-white rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="{{ match.id }}">
-                        <img src="{{ match.image }}" alt="Profile" class="w-full h-48 md:h-64 object-cover">
-                        <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-                            <div class="flex justify-between items-end">
-                                <div>
-                                    <h3 class="text-white font-bold">{{ match.full_name }}, {{ match.age|default('N/A') }}</h3>
-                                    <p class="text-gray-300 text-sm">{{ match.distance }}</p>
-                                </div>
-                                <button class="bg-pink-500 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:bg-pink-600 transition like-button" data-user-id="{{ match.id }}">
-                                    <i class="fas fa-heart"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="absolute top-3 right-3 bg-white bg-opacity-80 rounded-full px-2 py-1 flex items-center">
+                    <div class="discovery-profile discovery-card" data-user-id="{{ match.id }}">
+                        <img src="{{ match.image }}" alt="Profile" class="profile-image">
+                        <div class="discovery-rating">
                             <i class="fas fa-star text-yellow-500 text-xs mr-1"></i>
                             <span class="text-xs font-medium">{{ match.rating }}</span>
                         </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <p class="text-gray-600">No people to discover. Try completing your quiz!</p>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Nearby Section -->
-        <div id="nearby-section" class="mb-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800">Near You</h2>
-                <button id="see-all-nearby" class="text-pink-500 text-sm font-medium">See All</button>
-            </div>
-            <div id="nearby-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {% if nearby %}
-                    {% for match in nearby %}
-                    <div class="bg-white rounded-xl shadow-sm overflow-hidden flex nearby-card" data-user-id="{{ match.id }}">
-                        <div class="w-1/3">
-                            <img src="{{ match.image }}" alt="Profile" class="w-full h-full object-cover">
-                        </div>
-                        <div class="w-2/3 p-4 flex flex-col justify-between">
-                            <div>
-                                <h3 class="font-bold text-lg">{{ match.full_name }}, {{ match.age|default('N/A') }}</h3>
-                                <p class="text-gray-600 text-sm mb-2">{{ match.occupation }} • {{ match.distance }}</p>
-                                <div class="flex items-center mb-2">
-                                    <i class="fas fa-star text-yellow-500 text-xs mr-1"></i>
-                                    <span class="text-xs font-medium">{{ match.rating }}</span>
+                        <div class="discovery-content">
+                            <div class="flex justify-between items-end">
+                                <div>
+                                    <h3 class="text-white font-bold text-sm md:text-base">{{ match.full_name }}, {{ match.age|default('N/A') }}</h3>
+                                    <p class="text-gray-300 text-xs md:text-sm">{{ match.distance }}</p>
                                 </div>
-                                <p class="text-gray-700 text-sm line-clamp-2">{{ match.bio }}</p>
-                            </div>
-                            <div class="flex justify-between mt-3">
-                                <button class="text-gray-500 hover:text-pink-500 pass-button" data-user-id="{{ match.id }}">
-                                    <i class="fas fa-times-circle text-xl"></i>
-                                </button>
-                                <button class="text-blue-500 hover:text-blue-600 chat-button" data-user-id="{{ match.id }}">
-                                    <i class="fas fa-comment text-xl"></i>
-                                </button>
-                                <button class="text-pink-500 hover:text-pink-600 like-button" data-user-id="{{ match.id }}">
-                                    <i class="fas fa-heart text-xl"></i>
+                                <button class="bg-pink-500 text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center hover:bg-pink-600 transition like-button" data-user-id="{{ match.id }}">
+                                    <i class="fas fa-heart text-xs md:text-sm"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
                     {% endfor %}
                 {% else %}
-                    <p class="text-gray-600">No nearby matches found. Try completing your quiz!</p>
+                    <p class="text-gray-600 col-span-full">No people to discover. Try completing your quiz!</p>
                 {% endif %}
             </div>
         </div>
@@ -345,7 +368,6 @@
             const loading = document.getElementById('loading');
             const matchesSection = document.getElementById('matches-section');
             const discoverySection = document.getElementById('discovery-section');
-            const nearbySection = document.getElementById('nearby-section');
             const errorMessage = document.getElementById('error-message');
             const errorText = document.getElementById('error-text');
 
@@ -418,45 +440,6 @@
                 });
             });
 
-            // Pass button functionality
-            document.querySelectorAll('.pass-button').forEach(button => {
-                button.addEventListener('click', async function(e) {
-                    e.preventDefault();
-                    const card = this.closest('.nearby-card');
-                    const userId = this.dataset.userId;
-                    showLoading();
-                    try {
-                        const response = await fetch('/pass-user', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ passed_user_id: userId })
-                        });
-                        const result = await response.json();
-                        hideLoading();
-                        if (result.success) {
-                            card.style.transform = 'translateX(-100%)';
-                            card.style.opacity = '0';
-                            setTimeout(() => card.remove(), 300);
-                            showNotification('Passed');
-                        } else {
-                            showError(result.error || 'Failed to pass user');
-                        }
-                    } catch (error) {
-                        hideLoading();
-                        showError('Network error while passing user');
-                    }
-                });
-            });
-
-            // Chat button functionality
-            document.querySelectorAll('.chat-button').forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const userId = this.dataset.userId;
-                    window.location.href = `/chat?with=${userId}`;
-                });
-            });
-
             // Header scroll effect
             const header = document.getElementById('mainHeader');
             window.addEventListener('scroll', () => {
@@ -482,7 +465,6 @@
                 showLoading();
                 matchesSection.classList.add('opacity-50');
                 discoverySection.classList.add('opacity-50');
-                nearbySection.classList.add('opacity-50');
 
                 try {
                     const response = await fetch(`/search-matches?q=${encodeURIComponent(query)}`);
@@ -498,7 +480,6 @@
                     hideLoading();
                     matchesSection.classList.remove('opacity-50');
                     discoverySection.classList.remove('opacity-50');
-                    nearbySection.classList.remove('opacity-50');
                 }
             });
 
@@ -508,7 +489,7 @@
                 matchesGrid.innerHTML = matches.length ? matches.map(match => `
                     <div class="bg-white rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="${match.id}">
                         <div class="match-percentage">${match.match_percentage}%</div>
-                        <img src="${match.image}" alt="${match.full_name}" class="w-full h-48 md:h-64 object-cover">
+                        <img src="${match.image}" alt="${match.full_name}" class="profile-image">
                         <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
                             <div class="flex justify-between items-end">
                                 <div>
@@ -521,7 +502,7 @@
                             </div>
                         </div>
                     </div>
-                `).join('') : '<p class="text-gray-600">No matches found for your search.</p>';
+                `).join('') : '<p class="text-gray-600 col-span-full">No matches found for your search.</p>';
             }
 
             // Profile viewer
@@ -657,7 +638,7 @@
             window.addEventListener('load', hideLoading);
 
             // See All buttons (placeholder)
-            document.querySelectorAll('#see-all-matches, #see-all-discovery, #see-all-nearby').forEach(btn => {
+            document.querySelectorAll('#see-all-matches, #see-all-discovery').forEach(btn => {
                 btn.addEventListener('click', () => {
                     showError('See All functionality coming soon!');
                 });
