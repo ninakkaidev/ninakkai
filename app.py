@@ -1524,4 +1524,62 @@ def upload_photo():
         url = upload_result['secure_url']
         photos = user.get('photos', []) + [url]
         update_result = mongo_service.update_user(session['user_id'], {'photos': photos})
-        if update_result
+        if update_result['success']:
+            logger.info(f"Photo uploaded for user {session['user_id']}")
+            return jsonify({'success': True, 'url': url})
+        return jsonify({'success': False, 'error': 'Failed to update photos in database'}), 500
+    except Exception as e:
+        logger.error(f"Upload photo error: {str(e)}")
+        return jsonify({'success': False, 'error': f"Upload failed: {str(e)}"}), 500
+
+@socketio.on('connect')
+def handle_connect():
+    if 'user_id' in session:
+        user_id = session['user_id']
+        join_room(f'user_{user_id}')
+        logger.info(f"User {user_id} connected to Socket.IO")
+        emit('connection_status', {'status': 'connected', 'user_id': user_id})
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    if 'user_id' in session:
+        user_id = session['user_id']
+        leave_room(f'user_{user_id}')
+        logger.info(f"User {user_id} disconnected from Socket.IO")
+
+@socketio.on('join_chat')
+def handle_join_chat(data):
+    if 'user_id' not in session:
+        logger.warning("Unauthorized attempt to join chat")
+        emit('error', {'error': 'Unauthorized'})
+        return
+    other_user_id = data.get('other_user_id')
+    if not other_user_id:
+        logger.warning("No other_user_id provided in join_chat")
+        emit('error', {'error': 'No user ID provided'})
+        return
+    if not mongo_service.is_matched(session['user_id'], other_user_id):
+        logger.warning(f"User {session['user_id']} attempted to join chat with unmatched user {other_user_id}")
+        emit('error', {'error': 'Not matched'})
+        return
+    room = sorted([session['user_id'], other_user_id])
+    join_room(f'room_{"_".join(room)}')
+    logger.info(f"User {session['user_id']} joined chat room with {other_user_id}")
+
+@socketio.on('leave_chat')
+def handle_leave_chat(data):
+    if 'user_id' not in session:
+        logger.warning("Unauthorized attempt to leave chat")
+        emit('error', {'error': 'Unauthorized'})
+        return
+    other_user_id = data.get('other_user_id')
+    if not other_user_id:
+        logger.warning("No other_user_id provided in leave_chat")
+        emit('error', {'error': 'No user ID provided'})
+        return
+    room = sorted([session['user_id'], other_user_id])
+    leave_room(f'room_{"_".join(room)}')
+    logger.info(f"User {session['user_id']} left chat room with {other_user_id}")
+
+if __name__ == '__main__':
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
