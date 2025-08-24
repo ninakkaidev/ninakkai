@@ -369,6 +369,8 @@ class MongoService:
 
     def like_user(self, user_id: str, matched_user_id: str) -> Dict[str, Any]:
         try:
+            if self.has_liked_user(user_id, matched_user_id):
+                return {'success': False, 'error': 'Already liked'}
             logger.info(f"Processing like from user {user_id} to {matched_user_id}")
             like_data = {
                 'user_id': user_id,
@@ -423,7 +425,8 @@ class MongoService:
                         'distance': 'N/A',
                         'rating': '4.5',
                         'dominant_type': other_user['scores']['dominant_type'],
-                        'match_percentage': match_percentage
+                        'match_percentage': match_percentage,
+                        'liked': self.has_liked_user(user_id, str(user_data['_id']))
                     })
             return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:10]
         except Exception as e:
@@ -578,6 +581,81 @@ class MongoService:
             logger.error(f"Delete account error: {str(e)}")
             return {'success': False, 'error': str(e)}
 
+    def has_liked_user(self, user_id: str, matched_user_id: str) -> bool:
+        """Check if a user has already liked another user"""
+        try:
+            like = self.likes.find_one({'user_id': user_id, 'matched_user_id': matched_user_id})
+            return bool(like)
+        except Exception as e:
+            logger.error(f"Has liked user error: {str(e)}")
+            return False
+
+    def has_passed_user(self, user_id: str, passed_user_id: str) -> bool:
+        """Check if a user has already passed on another user"""
+        try:
+            passed = self.passes.find_one({'user_id': user_id, 'passed_user_id': passed_user_id})
+            return bool(passed)
+        except Exception as e:
+            logger.error(f"Has passed user error: {str(e)}")
+            return False
+
+    def get_filtered_matches(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get matches excluding liked and passed users"""
+        try:
+            user_quiz = self.get_quiz_results(user_id)
+            if not user_quiz:
+                return []
+            
+            # Get all users that current user has liked or passed on
+            liked_users = [str(like['matched_user_id']) for like in self.likes.find({'user_id': user_id})]
+            passed_users = [str(passed['passed_user_id']) for passed in self.passes.find({'user_id': user_id})]
+            excluded_users = set(liked_users + passed_users)
+            
+            user_scores = user_quiz['scores']
+            dominant_type = user_scores['dominant_type']
+            
+            # Get all potential matches excluding the ones user has already interacted with
+            all_users = self.quiz_results.find({'user_id': {'$ne': user_id, '$nin': list(excluded_users)}})
+            
+            matches = []
+            for other_user in all_users:
+                other_scores = other_user['scores']
+                match_percentage = self._calculate_match_percentage(user_scores, other_scores)
+                
+                if other_scores['dominant_type'] == dominant_type or other_scores.get('secondary_type') == dominant_type:
+                    user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
+                    if user_data:
+                        matches.append({
+                            'id': str(user_data['_id']),
+                            'full_name': user_data['full_name'],
+                            'age': user_data.get('age'),
+                            'gender': user_data.get('gender'),
+                            'image': user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+                            'occupation': user_data.get('occupation', 'N/A'),
+                            'bio': user_data.get('bio', 'No bio available'),
+                            'interests': user_data.get('interests', []),
+                            'distance': 'N/A',
+                            'rating': '4.5',
+                            'dominant_type': other_scores['dominant_type'],
+                            'match_percentage': match_percentage,
+                            'liked': False  # Since filtered, always False
+                        })
+            
+            return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:20]
+        except Exception as e:
+            logger.error(f"Get filtered matches error: {str(e)}")
+            return []
+
+    def unlike_user(self, user_id: str, matched_user_id: str) -> Dict[str, Any]:
+        """Remove a like from a user"""
+        try:
+            result = self.likes.delete_one({'user_id': user_id, 'matched_user_id': matched_user_id})
+            is_match = self.is_matched(user_id, matched_user_id)
+            return {'success': result.deleted_count > 0, 'is_match': is_match}
+        except Exception as e:
+            logger.error(f"Unlike user error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
 class ChatService:
     def __init__(self):
         self.uri = "mongodb+srv://infoqiooo:Gjresr7SikhBmM5U@cluster0.hyzcpcz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
@@ -722,72 +800,6 @@ def send_reset_email(email: str, reset_token: str) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Failed to send reset email to {email}: {str(e)}")
         return {'success': False, 'error': str(e)}
-
-def has_liked_user(self, user_id: str, matched_user_id: str) -> bool:
-    """Check if a user has already liked another user"""
-    try:
-        like = self.likes.find_one({'user_id': user_id, 'matched_user_id': matched_user_id})
-        return bool(like)
-    except Exception as e:
-        logger.error(f"Has liked user error: {str(e)}")
-        return False
-
-def has_passed_user(self, user_id: str, passed_user_id: str) -> bool:
-    """Check if a user has already passed on another user"""
-    try:
-        passed = self.passes.find_one({'user_id': user_id, 'passed_user_id': passed_user_id})
-        return bool(passed)
-    except Exception as e:
-        logger.error(f"Has passed user error: {str(e)}")
-        return False
-
-def get_filtered_matches(self, user_id: str) -> List[Dict[str, Any]]:
-    """Get matches excluding liked and passed users"""
-    try:
-        user_quiz = self.get_quiz_results(user_id)
-        if not user_quiz:
-            return []
-        
-        # Get all users that current user has liked or passed on
-        liked_users = [str(like['matched_user_id']) for like in self.likes.find({'user_id': user_id})]
-        passed_users = [str(passed['passed_user_id']) for like in self.passes.find({'user_id': user_id})]
-        excluded_users = set(liked_users + passed_users)
-        
-        user_scores = user_quiz['scores']
-        dominant_type = user_scores['dominant_type']
-        
-        # Get all potential matches excluding the ones user has already interacted with
-        all_users = self.quiz_results.find({'user_id': {'$ne': user_id, '$nin': list(excluded_users)}})
-        
-        matches = []
-        for other_user in all_users:
-            other_scores = other_user['scores']
-            match_percentage = self._calculate_match_percentage(user_scores, other_scores)
-            
-            if other_scores['dominant_type'] == dominant_type or other_scores.get('secondary_type') == dominant_type:
-                user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
-                if user_data:
-                    matches.append({
-                        'id': str(user_data['_id']),
-                        'full_name': user_data['full_name'],
-                        'age': user_data.get('age'),
-                        'gender': user_data.get('gender'),
-                        'image': user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-                        'occupation': user_data.get('occupation', 'N/A'),
-                        'bio': user_data.get('bio', 'No bio available'),
-                        'interests': user_data.get('interests', []),
-                        'distance': 'N/A',
-                        'rating': '4.5',
-                        'dominant_type': other_scores['dominant_type'],
-                        'match_percentage': match_percentage,
-                        'liked': False  # Will be updated by frontend if needed
-                    })
-        
-        return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:20]
-    except Exception as e:
-        logger.error(f"Get filtered matches error: {str(e)}")
-        return []
-
 
 @app.after_request
 def log_response(response):
@@ -1143,6 +1155,17 @@ def like_user():
         logger.error(f"Like user endpoint error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/unlike-user', methods=['POST'])
+def unlike_user_endpoint():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    matched_user_id = data.get('matched_user_id')
+    if not matched_user_id:
+        return jsonify({'success': False, 'error': 'No user ID provided'}), 400
+    result = mongo_service.unlike_user(session['user_id'], matched_user_id)
+    return jsonify(result)
+
 @app.route('/pass-user', methods=['POST'])
 def pass_user():
     logger.info(f"Pass-user route called with session: {session}")
@@ -1202,6 +1225,7 @@ def user_profile(user_id):
             'distance': 'N/A',
             'rating': '4.5',
             'match_percentage': 50,
+            'liked': mongo_service.has_liked_user(session['user_id'], user_id),
             'personality': {
                 'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
                 'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0,

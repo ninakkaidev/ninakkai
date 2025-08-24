@@ -470,66 +470,77 @@
                 });
             }
 
-            // Like button functionality
-            document.querySelectorAll('.like-button').forEach(button => {
-                button.addEventListener('click', async function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    const userId = this.dataset.userId;
-                    const isAlreadyLiked = this.dataset.liked === 'true';
-                    
-                    if (isAlreadyLiked) {
-                        showNotification('You already liked this user');
-                        return;
-                    }
-                    
-                    showLoading();
-                    try {
-                        const response = await fetch('/like-user', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ matched_user_id: userId })
-                        });
-                        const result = await response.json();
-                        hideLoading();
+            // Like button functionality with toggle
+            function attachLikeButtonListeners() {
+                document.querySelectorAll('.like-button').forEach(button => {
+                    button.addEventListener('click', async function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
                         
-                        if (result.success) {
-                            // Store in localStorage
-                            likedUsers[userId] = true;
-                            localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
+                        const userId = this.dataset.userId;
+                        const isLiked = this.dataset.liked === 'true';
+                        const endpoint = isLiked ? '/unlike-user' : '/like-user';
+                        const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
+                        
+                        showLoading();
+                        try {
+                            const response = await fetch(endpoint, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(isLiked ? { matched_user_id: userId } : { matched_user_id: userId })
+                            });
+                            const result = await response.json();
+                            hideLoading();
                             
-                            // Update UI
-                            this.classList.add('liked-button');
-                            this.classList.remove('bg-pink-500', 'hover:bg-pink-600');
-                            this.innerHTML = '<i class="fas fa-check"></i>';
-                            this.dataset.liked = 'true';
-                            
-                            showNotification('Liked! We\'ll let them know');
-                            
-                            if (result.is_match) {
-                                showMatchPopup();
-                                showNotification("It's a match! You can now chat.");
-                            }
-                            
-                            // Remove the card from view after a short delay
-                            setTimeout(() => {
-                                const card = this.closest('.discovery-card');
-                                if (card) {
-                                    card.style.opacity = '0';
-                                    card.style.transition = 'opacity 0.5s ease';
-                                    setTimeout(() => card.remove(), 500);
+                            if (result.success) {
+                                if (isLiked) {
+                                    delete likedUsers[userId];
+                                } else {
+                                    likedUsers[userId] = true;
                                 }
-                            }, 1500);
-                        } else {
-                            showError(result.error || 'Failed to like user');
+                                localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
+                                
+                                // Update UI
+                                if (isLiked) {
+                                    this.classList.remove('liked-button');
+                                    this.classList.add('bg-pink-500', 'hover:bg-pink-600');
+                                    this.innerHTML = '<i class="fas fa-heart"></i>';
+                                    this.dataset.liked = 'false';
+                                } else {
+                                    this.classList.add('liked-button');
+                                    this.classList.remove('bg-pink-500', 'hover:bg-pink-600');
+                                    this.innerHTML = '<i class="fas fa-check"></i>';
+                                    this.dataset.liked = 'true';
+                                }
+                                
+                                showNotification(actionMessage);
+                                
+                                if (!isLiked && result.is_match) {
+                                    showMatchPopup();
+                                    showNotification("It's a match! You can now chat.");
+                                }
+                                
+                                // For like, remove card; for unlike, keep it
+                                if (!isLiked) {
+                                    setTimeout(() => {
+                                        const card = this.closest('.discovery-card');
+                                        if (card) {
+                                            card.style.opacity = '0';
+                                            card.style.transition = 'opacity 0.5s ease';
+                                            setTimeout(() => card.remove(), 500);
+                                        }
+                                    }, 1500);
+                                }
+                            } else {
+                                showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
+                            }
+                        } catch (error) {
+                            hideLoading();
+                            showError(`Network error while ${isLiked ? 'unliking' : 'liking'} user`);
                         }
-                    } catch (error) {
-                        hideLoading();
-                        showError('Network error while liking user');
-                    }
+                    });
                 });
-            });
+            }
 
             // Header scroll effect
             window.addEventListener('scroll', () => {
@@ -586,10 +597,10 @@
                                     <h3 class="text-white font-bold">${match.full_name}, ${match.age || 'N/A'}</h3>
                                     <p class="text-gray-300 text-sm">${match.occupation} • ${match.distance}</p>
                                 </div>
-                                <button class="like-button ${likedUsers[match.id] ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition" 
+                                <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition" 
                                         data-user-id="${match.id}" 
-                                        data-liked="${likedUsers[match.id] || false}">
-                                    <i class="fas ${likedUsers[match.id] ? 'fa-check' : 'fa-heart'}"></i>
+                                        data-liked="${match.liked}">
+                                    <i class="fas ${match.liked ? 'fa-check' : 'fa-heart'}"></i>
                                 </button>
                             </div>
                         </div>
@@ -634,10 +645,10 @@
                                         <h2 class="text-2xl font-bold">${profile.user.full_name}, ${profile.user.age || 'N/A'}</h2>
                                         <p class="text-gray-600">${profile.user.occupation} • ${profile.user.distance}</p>
                                     </div>
-                                    <button class="like-button ${likedUsers[userId] ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-12 h-12 flex items-center justify-center transition" 
+                                    <button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-12 h-12 flex items-center justify-center transition" 
                                             data-user-id="${userId}" 
-                                            data-liked="${likedUsers[userId] || false}">
-                                        <i class="fas ${likedUsers[userId] ? 'fa-check' : 'fa-heart'} text-xl"></i>
+                                            data-liked="${profile.user.liked}">
+                                        <i class="fas ${profile.user.liked ? 'fa-check' : 'fa-heart'} text-xl"></i>
                                     </button>
                                 </div>
                                 <div class="mb-6">
@@ -659,10 +670,10 @@
                                     <button class="bg-gray-200 text-gray-800 rounded-full px-6 py-3 flex-1 mr-2 hover:bg-gray-300 transition pass-button" data-user-id="${userId}">
                                         <i class="fas fa-times mr-2"></i> Pass
                                     </button>
-                                    <button class="like-button ${likedUsers[userId] ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full px-6 py-3 flex-1 ml-2 transition" 
+                                    <button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full px-6 py-3 flex-1 ml-2 transition" 
                                             data-user-id="${userId}" 
-                                            data-liked="${likedUsers[userId] || false}">
-                                        <i class="fas ${likedUsers[userId] ? 'fa-check' : 'fa-heart'} mr-2"></i> ${likedUsers[userId] ? 'Liked' : 'Like'}
+                                            data-liked="${profile.user.liked}">
+                                        <i class="fas ${profile.user.liked ? 'fa-check' : 'fa-heart'} mr-2"></i> ${profile.user.liked ? 'Liked' : 'Like'}
                                     </button>
                                 </div>
                             </div>
@@ -689,15 +700,13 @@
                     btn.addEventListener('click', async function(e) {
                         e.stopPropagation();
                         
-                        const isAlreadyLiked = this.dataset.liked === 'true';
-                        if (isAlreadyLiked) {
-                            showNotification('You already liked this user');
-                            return;
-                        }
+                        const isLiked = this.dataset.liked === 'true';
+                        const endpoint = isLiked ? '/unlike-user' : '/like-user';
+                        const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
                         
                         showLoading();
                         try {
-                            const response = await fetch('/like-user', {
+                            const response = await fetch(endpoint, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ matched_user_id: userId })
@@ -706,39 +715,59 @@
                             hideLoading();
                             
                             if (result.success) {
-                                // Store in localStorage
-                                likedUsers[userId] = true;
+                                if (isLiked) {
+                                    delete likedUsers[userId];
+                                } else {
+                                    likedUsers[userId] = true;
+                                }
                                 localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
                                 
-                                // Update all like buttons for this user
+                                // Update all like buttons for this user, including this one
+                                profileViewer.querySelectorAll('.like-button').forEach(b => {
+                                    if (isLiked) {
+                                        b.classList.remove('liked-button');
+                                        b.classList.add('bg-pink-500', 'hover:bg-pink-600');
+                                        b.innerHTML = '<i class="fas fa-heart mr-2"></i> Like'; // For bottom button
+                                        b.dataset.liked = 'false';
+                                    } else {
+                                        b.classList.add('liked-button');
+                                        b.classList.remove('bg-pink-500', 'hover:bg-pink-600');
+                                        b.innerHTML = '<i class="fas fa-check mr-2"></i> Liked';
+                                        b.dataset.liked = 'true';
+                                    }
+                                });
+                                
+                                // Update main page buttons as well
                                 updateLikeButtons();
                                 
-                                showNotification('Liked! We\'ll let them know');
+                                showNotification(actionMessage);
                                 
-                                if (result.is_match) {
+                                if (!isLiked && result.is_match) {
                                     showMatchPopup();
                                     showNotification("It's a match! You can now chat.");
                                 }
                                 
-                                // Close profile viewer after a short delay
-                                setTimeout(() => {
-                                    profileViewer.remove();
-                                    mainHeader.style.display = 'flex';
-                                    
-                                    // Remove the card from the main view
-                                    const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
-                                    if (card) {
-                                        card.style.opacity = '0';
-                                        card.style.transition = 'opacity 0.5s ease';
-                                        setTimeout(() => card.remove(), 500);
-                                    }
-                                }, 1500);
+                                // For like, close viewer and remove card; for unlike, keep viewer open
+                                if (!isLiked) {
+                                    setTimeout(() => {
+                                        profileViewer.remove();
+                                        mainHeader.style.display = 'flex';
+                                        
+                                        // Remove the card from the main view
+                                        const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
+                                        if (card) {
+                                            card.style.opacity = '0';
+                                            card.style.transition = 'opacity 0.5s ease';
+                                            setTimeout(() => card.remove(), 500);
+                                        }
+                                    }, 1500);
+                                }
                             } else {
-                                showError(result.error || 'Failed to like user');
+                                showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
                             }
                         } catch (error) {
                             hideLoading();
-                            showError('Network error while liking user');
+                            showError(`Network error while ${isLiked ? 'unliking' : 'liking'} user`);
                         }
                     });
                 });
@@ -776,68 +805,6 @@
                 });
             }
 
-            function attachLikeButtonListeners() {
-                document.querySelectorAll('.like-button').forEach(button => {
-                    button.addEventListener('click', async function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        
-                        const userId = this.dataset.userId;
-                        const isAlreadyLiked = this.dataset.liked === 'true';
-                        
-                        if (isAlreadyLiked) {
-                            showNotification('You already liked this user');
-                            return;
-                        }
-                        
-                        showLoading();
-                        try {
-                            const response = await fetch('/like-user', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ matched_user_id: userId })
-                            });
-                            const result = await response.json();
-                            hideLoading();
-                            
-                            if (result.success) {
-                                // Store in localStorage
-                                likedUsers[userId] = true;
-                                localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
-                                
-                                // Update UI
-                                this.classList.add('liked-button');
-                                this.classList.remove('bg-pink-500', 'hover:bg-pink-600');
-                                this.innerHTML = '<i class="fas fa-check"></i>';
-                                this.dataset.liked = 'true';
-                                
-                                showNotification('Liked! We\'ll let them know');
-                                
-                                if (result.is_match) {
-                                    showMatchPopup();
-                                    showNotification("It's a match! You can now chat.");
-                                }
-                                
-                                // Remove the card from view after a short delay
-                                setTimeout(() => {
-                                    const card = this.closest('.discovery-card');
-                                    if (card) {
-                                        card.style.opacity = '0';
-                                        card.style.transition = 'opacity 0.5s ease';
-                                        setTimeout(() => card.remove(), 500);
-                                    }
-                                }, 1500);
-                            } else {
-                                showError(result.error || 'Failed to like user');
-                            }
-                        } catch (error) {
-                            hideLoading();
-                            showError('Network error while liking user');
-                        }
-                    });
-                });
-            }
-
             // Profile card click handler
             document.querySelectorAll('.discovery-card').forEach(card => {
                 card.addEventListener('click', function(e) {
@@ -852,6 +819,7 @@
             window.addEventListener('load', () => {
                 hideLoading();
                 updateLikeButtons();
+                attachLikeButtonListeners();
             });
 
             // See All buttons (placeholder)
