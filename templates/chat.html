@@ -840,6 +840,11 @@ body {
   .chat-area-col {
     padding-left: 0;
     padding-right: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
   }
   
   .chat-area {
@@ -847,10 +852,13 @@ body {
     top: 0;
     left: 0;
     width: 100%;
+    height: 100%;
     transform: translateX(100%);
     transition: transform 0.3s ease;
     background-color: var(--card-dark);
     z-index: 10;
+    display: flex !important;
+    flex-direction: column;
   }
   
   .chat-area.active {
@@ -872,28 +880,19 @@ body {
   }
 
   .chat-header {
-    position: fixed;
-    top: 0;
-    width: 100%;
+    position: relative;
     height: 45px;
-    z-index: 40;
-    background-color: var(--card-dark);
     padding: 0.5rem 0.75rem;
   }
 
   .messages-container {
-    padding: 3rem 1rem 2.5rem 1rem;
-    height: calc(100vh - 90px);
+    padding: 1rem 1rem 0.5rem 1rem;
+    height: calc(100% - 100px);
   }
 
   .message-input-container {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    height: 45px;
-    z-index: 100;
-    background-color: var(--card-dark);
-    padding: 0.4rem;
+    position: relative;
+    height: 55px;
   }
 
   .message.sent {
@@ -918,10 +917,12 @@ body {
   .chat-container .container {
     max-width: 100%;
     padding: 0;
+    height: 100%;
   }
   
   .chat-container .row {
     margin: 0;
+    height: 100%;
   }
   
   .conversations-col {
@@ -937,6 +938,7 @@ body {
     width: 70%;
     padding: 0;
     position: relative;
+    height: 100%;
   }
   
   .chat-area {
@@ -950,6 +952,12 @@ body {
   
   .welcome-screen {
     display: flex;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
   }
   
   .chat-back-btn {
@@ -986,8 +994,8 @@ body {
   }
   
   .messages-container {
-    padding: 3rem 1rem 2.5rem 1rem;
-    height: calc(100vh - 90px);
+    padding: 1rem 1rem 0.5rem 1rem;
+    height: calc(100% - 100px);
   }
   
   .emoji-picker {
@@ -997,7 +1005,7 @@ body {
 
   .message-input-container {
     padding: 0.4rem;
-    height: 45px;
+    height: 55px;
   }
 
   .message.sent {
@@ -1046,10 +1054,8 @@ body {
 }
 
 .message-input-container {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  position: relative;
+  width: 100%;
 }
   </style>
 </head>
@@ -1297,7 +1303,7 @@ body {
             const interestsContainer = document.getElementById('sidebar-interests');
             interestsContainer.innerHTML = '';
             user.interests.forEach(interest => {
-              const span =.createElement('span');
+              const span = document.createElement('span');
               span.className = 'interest';
               span.textContent = interest;
               interestsContainer.appendChild(span);
@@ -1471,7 +1477,9 @@ body {
             chatArea.style.display = 'flex';
             document.body.classList.add('chat-mode');
           } else {
-            // Desktop behavior - already handled in loadMessages
+            // Desktop behavior - show chat area
+            chatArea.style.display = 'flex';
+            welcomeScreen.style.display = 'none';
           }
           navigationHistory.push('chat');
         });
@@ -1489,6 +1497,9 @@ body {
           chatArea.style.display = 'none';
           welcomeScreen.style.display = 'flex';
           currentChatUserId = null;
+          
+          // Remove active class from conversation
+          document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
         }
         navigationHistory.pop();
         const previousArea = navigationHistory[navigationHistory.length - 1];
@@ -1506,6 +1517,17 @@ body {
           conversationsCol.classList.add('hidden');
         } else {
           window.location.href = "{{ url_for('explore') }}";
+        }
+      });
+      
+      // Initialize the layout
+      document.addEventListener('DOMContentLoaded', function() {
+        handleResize();
+        
+        // Set initial state for desktop
+        if (window.innerWidth >= 993) {
+          document.querySelector('.welcome-screen').style.display = 'flex';
+          document.querySelector('.chat-area').style.display = 'none';
         }
       });
     </script>
