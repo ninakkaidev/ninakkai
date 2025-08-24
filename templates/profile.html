@@ -403,464 +403,7 @@
 
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-4">
-        <!-- Profile Header -->
-        <div class="bg-gradient-to-r from-indigo-100 via-white to-pink-100 rounded-xl shadow-md p-6 mb-6 relative">
-            <div class="flex flex-col md:flex-row items-center md:items-start">
-                <!-- Profile Picture -->
-                <div class="relative mb-4 md:mb-0 md:mr-6">
-                    <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-pink-200 relative">
-                        <img id="profileImage" src="{{ profile.image }}" alt="Profile" class="w-full h-full object-cover">
-                        <label class="profile-pic-upload">
-                            <i class="fas fa-camera text-sm"></i>
-                            <input type="file" id="profileUpload" accept="image/*" class="hidden">
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- Profile Info -->
-                <div class="flex-grow text-center md:text-left">
-                    <div class="mb-4">
-                        <h2 class="text-2xl font-bold flex items-center justify-center md:justify-start">
-                            <span id="nameView" class="view-field">{{ profile.full_name }}</span>
-                            <input id="nameEdit" type="text" value="{{ profile.full_name }}" class="edit-field w-full border rounded px-2 py-1">
-                            <span id="ageView" class="view-field ml-2 text-gray-600">{% if profile.age %}, {{ profile.age }}{% endif %}</span>
-                            <input id="ageEdit" type="number" value="{{ profile.age }}" class="edit-field w-16 border rounded px-2 py-1 ml-2">
-                            <button id="editProfileBtn" class="ml-2 text-pink-500 hover:text-pink-600">
-                                <i class="fas fa-pencil-alt text-sm"></i>
-                            </button>
-                        </h2>
-                        <div class="text-gray-600 mb-2">
-                            <span id="locationView" class="view-field">{{ profile.location }}</span>
-                            <input id="locationEdit" type="text" value="{{ profile.location }}" class="edit-field w-full border rounded px-2 py-1">
-                        </div>
-                        <div class="flex justify-center md:justify-start space-x-2">
-                            {% for interest in profile.interests %}
-                            <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">{{ interest }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Bio -->
-            <div class="mt-6">
-                <h3 class="font-semibold mb-2">About Me</h3>
-                <p id="bioView" class="view-field text-gray-700">{{ profile.bio }}</p>
-                <textarea id="bioEdit" class="edit-field w-full border rounded px-3 py-2 h-24">{{ profile.bio }}</textarea>
-            </div>
-            
-            <!-- Edit Buttons (shown only in edit mode) -->
-            <div id="editButtons" class="edit-field flex justify-end space-x-2 mt-4">
-                <button id="cancelEditBtn" class="px-4 py-2 border rounded-lg text-gray-7
-System: I apologize for the incomplete response. The provided `profile.html` code you shared is already complete and includes all necessary sections, including the fixed "Accept" and "Decline" buttons with proper event listeners. Since you mentioned the code was incomplete, I’ll assume you were referring to potential issues with functionality (e.g., the buttons not working as expected) or a missing feature not immediately apparent in the code. Below, I’ll provide the complete, unmodified `profile.html` code as you shared, ensuring it retains the original theme and structure. I’ll also explain the button functionality, verify its correctness, and provide debugging steps in case the buttons are still not working.
-
-<xaiArtifact artifact_id="8aabecf5-ff08-4463-94c3-2e4ecaec4849" artifact_version_id="4458ab85-9981-449b-9865-f5fb37f2f630" title="profile.html" contentType="text/html">
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ninakkayi-ForYou | My Profile</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        /* Custom styles */
-        body {
-            padding-bottom: 70px; /* Space for bottom navigation */
-            position: relative;
-            overflow-x: hidden;
-            transition: background-color 0.3s ease;
-        }
-        
-        .profile-pic-upload {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.5);
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: hsl(0, 0%, 100%);
-            cursor: pointer;
-        }
-        
-        .photo-slider {
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE and Edge */
-        }
-        
-        .photo-slider::-webkit-scrollbar {
-            display: none; /* Chrome, Safari, Opera */
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        .notification-item.unread {
-            background-color: #f3f4f6;
-        }
-        
-        .settings-option:hover {
-            background-color: #f9fafb;
-        }
-        
-        .chat-message.sent {
-            background-color: #404150;
-            color: white;
-            margin-left: auto;
-            border-bottom-right-radius: 0;
-        }
-        
-        .chat-message.received {
-            background-color: #f3f4f6;
-            margin-right: auto;
-            border-bottom-left-radius: 0;
-        }
-        
-        .edit-field {
-            display: none;
-        }
-        
-        .edit-mode .view-field {
-            display: none;
-        }
-        
-        .edit-mode .edit-field {
-            display: block;
-        }
-        
-        /* Background animation */
-        .bg-circles {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            overflow: hidden;
-        }
-        
-        .circle {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(31, 113, 212, 0.812);
-            animation: move 15s infinite linear;
-        }
-        
-        @keyframes move {
-            0% { transform: translateY(0) translateX(0); }
-            25% { transform: translateY(-50px) translateX(50px); }
-            50% { transform: translateY(0) translateX(100px); }
-            75% { transform: translateY(50px) translateX(50px); }
-            100% { transform: translateY(0) translateX(0); }
-        }
-        
-        /* Responsive adjustments */
-        @media (max-width: 640px) {
-            .photo-slider {
-                -webkit-overflow-scrolling: touch;
-            }
-            
-            .circle {
-                animation-duration: 20s;
-            }
-            
-            .chat-message {
-                max-width: 80% !important;
-            }
-        }
-        
-        /* Dark mode styles */
-        .dark body {
-            background-color: #111827;
-            color: #f3f4f6;
-        }
-        
-        .dark .bg-white {
-            background-color: #1f2937 !important;
-            color: #f3f4f6;
-        }
-        
-        .dark .text-gray-800 {
-            color: #f3f4f6 !important;
-        }
-        
-        .dark .bg-gray-100 {
-            background-color: #111827 !important;
-        }
-        
-        .dark .bg-gray-50 {
-            background-color: #374151 !important;
-        }
-        
-        .dark .text-gray-500 {
-            color: #9ca3af !important;
-        }
-        
-        .dark .border-gray-200 {
-            border-color: #374151 !important;
-        }
-        
-        .dark .notification-item.unread {
-            background-color: #374151 !important;
-        }
-        
-        .dark .chat-message.received {
-            background-color: #374151 !important;
-        }
-        
-        /* Settings Modal Styles */
-        #settingsModal {
-            transition: opacity 0.3s ease;
-        }
-        
-        #settingsModal .settings-option {
-            transition: background-color 0.2s ease;
-        }
-        
-        .dark #settingsModal .settings-option:hover {
-            background-color: #374151 !important;
-        }
-        
-        /* Language Selector Styles */
-        .language-selector {
-            position: relative;
-        }
-        
-        .language-options {
-            position: absolute;
-            right: 0;
-            top: 100%;
-            width: 150px;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            z-index: 10;
-            display: none;
-        }
-        
-        .dark .language-options {
-            background-color: #1f2937;
-            border-color: #374151;
-        }
-        
-        .language-options.active {
-            display: block;
-        }
-        
-        .language-option {
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-        }
-        
-        .language-option:hover {
-            background-color: #f9fafb;
-        }
-        
-        .dark .language-option:hover {
-            background-color: #374151;
-        }
-        
-        .language-option.selected {
-            color: #ec4899;
-            font-weight: 500;
-        }
-        
-        /* Change Password Modal */
-        #changePasswordModal {
-            transition: all 0.3s ease;
-        }
-        
-        /* Confirmation Dialog */
-        .confirmation-dialog {
-            transition: all 0.3s ease;
-        }
-        
-        .dark .confirmation-dialog div {
-            background-color: #1f2937;
-            color: #f3f4f6;
-        }
-
-        /* Updated Toggle Styles */
-        .toggle-container {
-            display: flex;
-            align-items: center;
-        }
-
-        .toggle-label {
-            position: relative;
-            display: inline-block;
-            width: 44px;
-            height: 24px;
-            background-color: #d1d5db;
-            border-radius: 9999px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .toggle-label:hover {
-            background-color: #9ca3af;
-        }
-
-        .toggle-label.peer-checked {
-            background-color: #ec4899;
-        }
-
-        .toggle-label.peer-checked:hover {
-            background-color: #db2777;
-        }
-
-        .toggle-knob {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 20px;
-            height: 20px;
-            background-color: white;
-            border-radius: 50%;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-            transform: translateX(0);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .toggle-label.peer-checked .toggle-knob {
-            transform: translateX(20px);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-        }
-
-        .toggle-status {
-            min-width: 30px;
-            transition: color 0.3s ease;
-        }
-
-        .dark .toggle-label {
-            background-color: #4b5563;
-        }
-
-        .dark .toggle-label:hover {
-            background-color: #6b7280;
-        }
-
-        .dark .toggle-label.peer-checked {
-            background-color: #ec4899;
-        }
-
-        .dark .toggle-label.peer-checked:hover {
-            background-color: #db2777;
-        }
-
-        .toggle-label:focus-within {
-            outline: 2px solid #ec4899;
-            outline-offset: 2px;
-        }
-
-        /* Popup Animation */
-        .popup {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.2);
-            animation: popupAnim 1s ease;
-            z-index: 1002;
-        }
-
-        @keyframes popupAnim {
-            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(1); }
-        }
-
-        /* Connection Card Styles */
-        .connection-card {
-            cursor: pointer;
-        }
-
-        .connection-card:hover {
-            background-color: #f9fafb;
-        }
-
-        .dark .connection-card:hover {
-            background-color: #374151;
-        }
-
-        /* Action Buttons Container */
-        .action-buttons {
-            margin-top: 0.5rem;
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-        }
-
-        /* Loading State */
-        .loading {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1001;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }
-
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #ec4899;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 1rem;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
-</head>
-<body class="bg-gray-100 text-gray-800">
-    <!-- Loading State -->
-    <div class="loading" id="loading">
-        <div class="loading-spinner"></div>
-        <p class="text-gray-800 text-center">Processing...</p>
-    </div>
-
-    <!-- Background Animation -->
-    <div class="bg-circles" id="bgCircles"></div>
-    
-    <!-- Header -->
-    <header class="bg-white shadow-sm sticky top-0 z-10">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <a href="/explore" class="text-gray-600 hover:text-pink-500">
-                <i class="fas fa-arrow-left text-xl"></i>
-            </a>
-            <h1 class="text-xl font-bold text-neutral-900">My Profile</h1>
-            <button id="settingsBtn" class="text-gray-600 hover:text-pink-500">
-                <i class="fas fa-cog text-xl"></i>
-            </button>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="container mx-auto px-4 py-4">
-        <!-- Profile Header -->
+        <!-- Profile Header (only one instance) -->
         <div class="bg-gradient-to-r from-indigo-100 via-white to-pink-100 rounded-xl shadow-md p-6 mb-6 relative">
             <div class="flex flex-col md:flex-row items-center md:items-start">
                 <!-- Profile Picture -->
@@ -1740,12 +1283,14 @@ System: I apologize for the incomplete response. The provided `profile.html` cod
             document.getElementById('modalAcceptBtn').addEventListener('click', async function(e) {
                 e.stopPropagation();
                 const userId = this.dataset.userId;
+                console.log('Modal Accept clicked for user:', userId); // Debug log
                 showLoading();
                 try {
                     const response = await fetch('/like-user', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ matched_user_id: userId })
+                        body: JSON.stringify({ matched_user_id: userId }),
+                        credentials: 'include' // Ensure session cookies are sent
                     });
                     const result = await response.json();
                     hideLoading();
@@ -1770,18 +1315,21 @@ System: I apologize for the incomplete response. The provided `profile.html` cod
                 } catch (error) {
                     hideLoading();
                     showNotification('Network error');
+                    console.error('Accept error:', error); // Debug log
                 }
             });
 
             document.getElementById('modalDeclineBtn').addEventListener('click', async function(e) {
                 e.stopPropagation();
                 const userId = this.dataset.userId;
+                console.log('Modal Decline clicked for user:', userId); // Debug log
                 showLoading();
                 try {
                     const response = await fetch('/pass-user', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ passed_user_id: userId })
+                        body: JSON.stringify({ passed_user_id: userId }),
+                        credentials: 'include' // Ensure session cookies are sent
                     });
                     const result = await response.json();
                     hideLoading();
@@ -1796,6 +1344,7 @@ System: I apologize for the incomplete response. The provided `profile.html` cod
                 } catch (error) {
                     hideLoading();
                     showNotification('Network error');
+                    console.error('Decline error:', error); // Debug log
                 }
             });
 
@@ -1805,12 +1354,14 @@ System: I apologize for the incomplete response. The provided `profile.html` cod
                     e.preventDefault();
                     e.stopPropagation();
                     const userId = this.dataset.userId;
+                    console.log('List Accept clicked for user:', userId); // Debug log
                     showLoading();
                     try {
                         const response = await fetch('/like-user', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ matched_user_id: userId })
+                            body: JSON.stringify({ matched_user_id: userId }),
+                            credentials: 'include' // Ensure session cookies are sent
                         });
                         const result = await response.json();
                         hideLoading();
@@ -1833,6 +1384,7 @@ System: I apologize for the incomplete response. The provided `profile.html` cod
                     } catch (error) {
                         hideLoading();
                         showNotification('Network error');
+                        console.error('Accept error:', error); // Debug log
                     }
                 });
             });
@@ -1842,12 +1394,14 @@ System: I apologize for the incomplete response. The provided `profile.html` cod
                     e.preventDefault();
                     e.stopPropagation();
                     const userId = this.dataset.userId;
+                    console.log('List Decline clicked for user:', userId); // Debug log
                     showLoading();
                     try {
                         const response = await fetch('/pass-user', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ passed_user_id: userId })
+                            body: JSON.stringify({ passed_user_id: userId }),
+                            credentials: 'include' // Ensure session cookies are sent
                         });
                         const result = await response.json();
                         hideLoading();
@@ -1860,6 +1414,7 @@ System: I apologize for the incomplete response. The provided `profile.html` cod
                     } catch (error) {
                         hideLoading();
                         showNotification('Network error');
+                        console.error('Decline error:', error); // Debug log
                     }
                 });
             });

@@ -547,7 +547,7 @@ class MongoService:
 
     def get_pending_likers(self, user_id: str) -> List[Dict[str, Any]]:
         try:
-            likers = self.likes.find({'matched_user_id': user_id})
+            likers = self.likes.find({'matched_user_id': user_id, 'user_id': {'$ne': user_id}})  # Exclude self to prevent duplicate own profile
             liker_ids = [str(l['user_id']) for l in likers]
             my_likes = [str(l['matched_user_id']) for l in self.likes.find({'user_id': user_id})]
             passed = [str(p['passed_user_id']) for p in self.passes.find({'user_id': user_id})]
