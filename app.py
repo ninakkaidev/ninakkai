@@ -217,7 +217,6 @@ class MongoService:
                 }
             user['id'] = str(user['_id'])
             del user['_id']
-            del user['password']
             return {
                 'success': True,
                 'user': user
@@ -548,7 +547,8 @@ class MongoService:
             likers = self.likes.find({'matched_user_id': user_id})
             liker_ids = [str(l['user_id']) for l in likers]
             my_likes = [str(l['matched_user_id']) for l in self.likes.find({'user_id': user_id})]
-            pending_ids = [pid for pid in liker_ids if pid not in my_likes]
+            passed = [str(p['passed_user_id']) for p in self.passes.find({'user_id': user_id})]
+            pending_ids = [pid for pid in liker_ids if pid not in my_likes and pid not in passed]
             pending_users = []
             for pid in pending_ids:
                 user = self.get_user_by_id(pid)
