@@ -34,6 +34,7 @@ body {
   color: var(--dark);
   height: 100vh;
   overflow: hidden;
+  margin: 0;
 }
 
 /* Navbar */
@@ -546,36 +547,45 @@ body {
 
 /* Message Input */
 .message-input-container {
-  padding: 0.4rem;
+  padding: 0.5rem;
   border-top: 1px solid rgba(255,255,255,0.1);
   background-color: var(--card-dark);
-  height: 55px;
-  z-index: 100;
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  z-index: 1000;
   display: flex;
   align-items: center;
+  min-height: 60px;
 }
 
 .message-input {
   display: flex;
   align-items: center;
   background-color: rgba(255,255,255,0.05);
-  border-radius: 6px;
-  padding: 0.3rem 0.7rem;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
   width: 100%;
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .message-input input {
   flex: 1;
   border: none;
   background: transparent;
-  padding: 0.4rem;
+  padding: 0.5rem;
   outline: none;
   font-size: 0.875rem;
   color: var(--dark);
+  z-index: 1001;
 }
 
 .message-input input::placeholder {
   color: var(--gray);
+}
+
+.message-input input:focus {
+  outline: none;
 }
 
 .input-actions {
@@ -588,12 +598,13 @@ body {
   border: none;
   color: var(--gray);
   font-size: 0.875rem;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1001;
 }
 
 .input-actions button:hover {
@@ -615,14 +626,14 @@ body {
 /* Emoji Picker */
 .emoji-picker {
   position: absolute;
-  bottom: 55px;
+  bottom: 65px;
   right: 20px;
   width: 280px;
   background-color: var(--card-dark);
   border-radius: 8px;
   box-shadow: 0 5px 15px rgba(0,0,0,0.2);
   padding: 0.75rem;
-  z-index: 1000;
+  z-index: 1002;
   display: none;
   border: 1px solid rgba(255,255,255,0.1);
 }
@@ -900,14 +911,16 @@ body {
 
   .messages-container {
     padding: 1rem 1rem 0.5rem 1rem;
-    height: calc(100% - 100px);
+    height: calc(100% - 105px);
     overflow-y: auto;
     flex: 1;
   }
 
   .message-input-container {
-    height: 55px;
-    z-index: 100;
+    position: sticky;
+    bottom: 0;
+    min-height: 60px;
+    z-index: 1000;
     background-color: var(--card-dark);
   }
 
@@ -986,13 +999,15 @@ body {
   
   .messages-container {
     padding: 1rem 1rem 0.5rem 1rem;
-    height: calc(100% - 100px);
+    height: calc(100% - 105px);
     overflow-y: auto;
   }
   
   .message-input-container {
-    position: relative;
-    height: 55px;
+    position: sticky;
+    bottom: 0;
+    min-height: 60px;
+    z-index: 1000;
   }
   
   .chat-header {
@@ -1012,7 +1027,7 @@ body {
   
   .messages-container {
     padding: 1rem 1rem 0.5rem 1rem;
-    height: calc(100% - 100px);
+    height: calc(100% - 105px);
     overflow-y: auto;
   }
   
@@ -1022,9 +1037,9 @@ body {
   }
 
   .message-input-container {
-    padding: 0.4rem;
-    height: 55px;
-    z-index: 100;
+    padding: 0.5rem;
+    min-height: 60px;
+    z-index: 1000;
   }
 
   .message.sent {
@@ -1063,18 +1078,6 @@ body {
   opacity: 1;
   transform: translateX(0);
   transition: opacity 300ms, transform 300ms;
-}
-
-/* Ensure message input is always visible */
-.message-input-wrapper {
-  position: relative;
-  width: 100%;
-  height: 55px;
-}
-
-.message-input-container {
-  z-index: 100;
-  background-color: var(--card-dark);
 }
   </style>
 </head>
@@ -1273,13 +1276,21 @@ body {
       });
       
       // Close emoji picker when clicking elsewhere
-      document.addEventListener('click', () => {
-        emojiPicker.style.display = 'none';
+      document.addEventListener('click', (e) => {
+        if (!emojiPicker.contains(e.target) && !emojiBtn.contains(e.target)) {
+          emojiPicker.style.display = 'none';
+        }
       });
       
       // Prevent clicks inside emoji picker from closing it
       emojiPicker.addEventListener('click', (e) => e.stopPropagation());
       
+      // Prevent input clicks from triggering navigation
+      const messageInput = document.getElementById('message-input');
+      messageInput.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+
       // Add emojis to picker
       const emojiContainer = document.querySelector('.emoji-container');
       if (emojiContainer) {
@@ -1295,9 +1306,8 @@ body {
       // Insert emoji into input
       document.querySelectorAll('.emoji-container span').forEach(emoji => {
         emoji.addEventListener('click', () => {
-          const input = document.getElementById('message-input');
-          input.value += emoji.textContent;
-          input.focus();
+          messageInput.value += emoji.textContent;
+          messageInput.focus();
         });
       });
       
@@ -1350,7 +1360,6 @@ body {
       });
       
       // Send message
-      const messageInput = document.getElementById('message-input');
       const sendBtn = document.getElementById('send-button');
       
       function sendMessage() {
