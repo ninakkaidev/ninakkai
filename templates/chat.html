@@ -99,6 +99,90 @@ body {
   border: 1px solid rgba(255,255,255,0.05);
 }
 
+/* Welcome screen for desktop */
+.welcome-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 2rem;
+  background: linear-gradient(rgba(30, 39, 46, 0.8), rgba(30, 39, 46, 0.9)), 
+              url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%231e272e"/><path d="M0 50 L100 50 M50 0 L50 100" stroke="%23343f4b" stroke-width="1"/></svg>');
+  background-size: 300px;
+  border-radius: 8px;
+}
+
+.welcome-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  background: var(--button-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.welcome-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--dark);
+}
+
+.welcome-text {
+  color: var(--gray);
+  max-width: 400px;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.welcome-animation {
+  width: 200px;
+  height: 200px;
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.welcome-animation::before,
+.welcome-animation::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid var(--primary-light);
+  animation: pulse 2s linear infinite;
+}
+
+.welcome-animation::before {
+  width: 100%;
+  height: 100%;
+  opacity: 0.3;
+}
+
+.welcome-animation::after {
+  width: 70%;
+  height: 70%;
+  top: 15%;
+  left: 15%;
+  opacity: 0.5;
+  animation-delay: 0.5s;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.1;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.3;
+  }
+}
+
 /* Conversations List */
 .conversations-header {
   padding: 1rem 1.25rem;
@@ -259,18 +343,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  transform: translateX(100%);
-  transition: transform 0.3s ease;
   background-color: var(--card-dark);
-  z-index: 10;
-}
-
-.chat-area.active {
-  transform: translateX(0);
 }
 
 .chat-header {
@@ -280,9 +353,6 @@ body {
   justify-content: space-between;
   align-items: center;
   background-color: var(--card-dark);
-  position: fixed;
-  top: 0;
-  width: 100%;
   height: 45px;
   z-index: 40;
 }
@@ -336,7 +406,7 @@ body {
 
 .messages-container {
   flex: 1;
-  padding: 3rem 1rem 2.5rem 1rem;
+  padding: 1rem 1rem 0.5rem 1rem;
   overflow-y: auto;
   background-color: var(--bg-dark);
   display: flex;
@@ -466,11 +536,10 @@ body {
   padding: 0.4rem;
   border-top: 1px solid rgba(255,255,255,0.1);
   background-color: var(--card-dark);
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  height: 45px;
+  height: 55px;
   z-index: 100;
+  display: flex;
+  align-items: center;
 }
 
 .message-input {
@@ -479,6 +548,7 @@ body {
   background-color: rgba(255,255,255,0.05);
   border-radius: 6px;
   padding: 0.3rem 0.7rem;
+  width: 100%;
 }
 
 .message-input input {
@@ -772,6 +842,21 @@ body {
     padding-right: 0;
   }
   
+  .chat-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    background-color: var(--card-dark);
+    z-index: 10;
+  }
+  
+  .chat-area.active {
+    transform: translateX(0);
+  }
+  
   .profile-sidebar {
     width: 100%;
   }
@@ -784,10 +869,6 @@ body {
     text-align: left;
     margin-left: 0.5rem;
     color: var(--dark);
-  }
-
-  .chat-area {
-    height: 100%;
   }
 
   .chat-header {
@@ -827,45 +908,71 @@ body {
   body.chat-mode .chat-container {
     height: 100vh;
   }
+  
+  .welcome-screen {
+    display: none;
+  }
 }
 
-@media (min-width: 992px) {
-  .conversations-col {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 100;
-    transform: translateX(0);
-    transition: transform 0.3s ease;
+@media (min-width: 993px) {
+  .chat-container .container {
+    max-width: 100%;
+    padding: 0;
   }
   
-  .conversations-col.hidden {
-    transform: translateX(-100%);
+  .chat-container .row {
+    margin: 0;
+  }
+  
+  .conversations-col {
+    position: relative;
+    width: 30%;
+    height: 100%;
+    transform: translateX(0);
+    border-radius: 0;
+    border-right: 1px solid rgba(255,255,255,0.1);
   }
   
   .chat-area-col {
-    padding-left: 0;
-    padding-right: 0;
+    width: 70%;
+    padding: 0;
+    position: relative;
   }
   
-  .profile-sidebar {
-    width: 100%;
+  .chat-area {
+    position: relative;
+    transform: translateX(0);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border-radius: 0;
+  }
+  
+  .welcome-screen {
+    display: flex;
   }
   
   .chat-back-btn {
-    display: block;
+    display: none !important;
   }
   
-  .conversations-header h2 {
-    text-align: left;
-    margin-left: 0.5rem;
-    color: var(--dark);
+  .conversations-back-btn {
+    display: none !important;
   }
-
+  
   .messages-container {
-    padding: 3rem 1rem 2.5rem 1rem;
+    padding: 1rem 1rem 0.5rem 1rem;
+    height: calc(100% - 100px);
+  }
+  
+  .message-input-container {
+    position: relative;
+    height: 55px;
+  }
+  
+  .chat-header {
+    position: relative;
+    height: 45px;
   }
 }
 
@@ -917,6 +1024,32 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--dark);
+}
+
+/* Animation for chat transitions */
+.chat-transition-enter {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.chat-transition-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+/* Ensure message input is always visible */
+.message-input-wrapper {
+  position: relative;
+  width: 100%;
+  height: 55px;
+}
+
+.message-input-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
 }
   </style>
 </head>
@@ -991,7 +1124,17 @@ body {
                 
                 <!-- Chat Area -->
                 <div class="col-lg-8 h-100 chat-area-col">
-                    <div class="chat-area">
+                    <!-- Welcome Screen (shown when no chat is selected on desktop) -->
+                    <div class="welcome-screen">
+                        <div class="welcome-animation"></div>
+                        <div class="welcome-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <h2 class="welcome-title">Your Messages</h2>
+                        <p class="welcome-text">Select a conversation from the list to start chatting. Connect with people who share your interests and build meaningful connections.</p>
+                    </div>
+                    
+                    <div class="chat-area" style="display: none;">
                         <!-- Chat Header -->
                         <div class="chat-header">
                             <button class="btn btn-back chat-back-btn"><i class="fas fa-arrow-left"></i></button>
@@ -1154,7 +1297,7 @@ body {
             const interestsContainer = document.getElementById('sidebar-interests');
             interestsContainer.innerHTML = '';
             user.interests.forEach(interest => {
-              const span = document.createElement('span');
+              const span =.createElement('span');
               span.className = 'interest';
               span.textContent = interest;
               interestsContainer.appendChild(span);
@@ -1226,6 +1369,12 @@ body {
               appendMessage(msg, isSent);
             });
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Show chat area and hide welcome screen on desktop
+            if (window.innerWidth >= 993) {
+              document.querySelector('.chat-area').style.display = 'flex';
+              document.querySelector('.welcome-screen').style.display = 'none';
+            }
           }
         } catch (error) {
           console.error('Error loading messages:', error);
@@ -1253,27 +1402,47 @@ body {
       // Responsive behavior
       const conversationsCol = document.querySelector('.conversations-col');
       const chatArea = document.querySelector('.chat-area');
+      const welcomeScreen = document.querySelector('.welcome-screen');
       const chatBackBtn = document.querySelector('.chat-back-btn');
       const conversationsBackBtn = document.querySelector('.conversations-back-btn');
       
-      if (window.innerWidth <= 992) {
-        chatBackBtn.style.display = 'block';
-        conversationsBackBtn.style.display = 'block';
-      } else {
-        chatBackBtn.style.display = 'block';
-        conversationsBackBtn.style.display = 'none';
-        chatArea.classList.remove('active');
-      }
-      
-      window.addEventListener('resize', () => {
+      function handleResize() {
         if (window.innerWidth <= 992) {
+          // Mobile view
           chatBackBtn.style.display = 'block';
           conversationsBackBtn.style.display = 'block';
+          chatArea.style.display = 'none';
+          welcomeScreen.style.display = 'none';
+          
+          // Reset desktop layout
+          conversationsCol.classList.remove('hidden');
+          conversationsCol.style.width = '';
+          document.querySelector('.chat-area-col').style.width = '';
         } else {
-          chatBackBtn.style.display = 'block';
+          // Desktop view
+          chatBackBtn.style.display = 'none';
           conversationsBackBtn.style.display = 'none';
+          
+          // Set split view layout
+          conversationsCol.style.width = '30%';
+          document.querySelector('.chat-area-col').style.width = '70%';
+          
+          // Show welcome screen if no chat is selected
+          if (!currentChatUserId) {
+            welcomeScreen.style.display = 'flex';
+            chatArea.style.display = 'none';
+          } else {
+            welcomeScreen.style.display = 'none';
+            chatArea.style.display = 'flex';
+          }
         }
-      });
+      }
+      
+      // Initial setup
+      handleResize();
+      
+      // Listen for resize events
+      window.addEventListener('resize', handleResize);
       
       // Click conversation to open chat
       document.querySelectorAll('.conversation').forEach(conv => {
@@ -1294,13 +1463,15 @@ body {
             console.error('Error loading user:', error);
           }
           loadMessages(userId);
+          
           if (window.innerWidth <= 992) {
+            // Mobile behavior
             conversationsCol.classList.add('hidden');
             chatArea.classList.add('active');
+            chatArea.style.display = 'flex';
             document.body.classList.add('chat-mode');
           } else {
-            conversationsCol.classList.add('hidden');
-            chatArea.classList.add('active');
+            // Desktop behavior - already handled in loadMessages
           }
           navigationHistory.push('chat');
         });
@@ -1308,15 +1479,21 @@ body {
       
       // Back button in chat area
       chatBackBtn.addEventListener('click', () => {
-        chatArea.classList.remove('active');
-        conversationsCol.classList.remove('hidden');
+        if (window.innerWidth <= 992) {
+          // Mobile behavior
+          chatArea.classList.remove('active');
+          conversationsCol.classList.remove('hidden');
+          document.body.classList.remove('chat-mode');
+        } else {
+          // Desktop behavior - show welcome screen
+          chatArea.style.display = 'none';
+          welcomeScreen.style.display = 'flex';
+          currentChatUserId = null;
+        }
         navigationHistory.pop();
         const previousArea = navigationHistory[navigationHistory.length - 1];
         if (previousArea === 'profile') {
           sidebar.classList.add('active');
-        }
-        if (window.innerWidth <= 992) {
-          document.body.classList.remove('chat-mode');
         }
       });
       
