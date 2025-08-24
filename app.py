@@ -78,7 +78,6 @@ class MongoService:
         limit = self.db['rate_limits'].find_one({'key': key})
         if limit:
             last_reset = limit['last_reset']
-            # Ensure last_reset is offset-aware
             if last_reset.tzinfo is None:
                 last_reset = pytz.UTC.localize(last_reset)
             if now - last_reset > period:
@@ -370,6 +369,7 @@ class MongoService:
 
     def like_user(self, user_id: str, matched_user_id: str) -> Dict[str, Any]:
         try:
+            logger.info(f"Processing like from user {user_id} to {matched_user_id}")
             like_data = {
                 'user_id': user_id,
                 'matched_user_id': matched_user_id,
@@ -377,6 +377,7 @@ class MongoService:
             }
             result = self.likes.insert_one(like_data)
             is_match = self.is_matched(user_id, matched_user_id)
+            logger.info(f"Like successful, like_id: {str(result.inserted_id)}, is_match: {is_match}")
             return {'success': True, 'like_id': str(result.inserted_id), 'is_match': is_match}
         except Exception as e:
             logger.error(f"Like user error: {str(e)}")
@@ -384,12 +385,14 @@ class MongoService:
 
     def pass_user(self, user_id: str, passed_user_id: str) -> Dict[str, Any]:
         try:
+            logger.info(f"Processing pass from user {user_id} to {passed_user_id}")
             pass_data = {
                 'user_id': user_id,
                 'passed_user_id': passed_user_id,
                 'timestamp': datetime.now(timezone.utc)
             }
             result = self.passes.insert_one(pass_data)
+            logger.info(f"Pass successful, pass_id: {str(result.inserted_id)}")
             return {'success': True, 'pass_id': str(result.inserted_id)}
         except Exception as e:
             logger.error(f"Pass user error: {str(e)}")
@@ -605,7 +608,6 @@ class ChatService:
             for msg in msgs:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
-                # Ensure timestamp is offset-aware
                 if msg['timestamp'].tzinfo is None:
                     msg['timestamp'] = pytz.UTC.localize(msg['timestamp'])
                 msg['timestamp'] = msg['timestamp'].isoformat()
@@ -718,7 +720,6 @@ def log_response(response):
 @app.before_request
 def log_session_info():
     logger.debug(f"Before request - Route: {request.path}, Session: {session}, Cookies: {request.cookies}, Secret Key: {app.secret_key[:4]}...")
-    # Ensure all session datetimes are offset-aware
     for key, value in session.items():
         if isinstance(value, datetime) and value.tzinfo is None:
             session[key] = pytz.UTC.localize(value)
@@ -893,7 +894,7 @@ def auth():
                             error = 'No account found with this email'
                         else:
                             reset_token = secrets.token_urlsafe(32)
-                            expiry = datetime.now(timezone.utc)
+                            expiry = datetime.now(timezone.utc) + timedelta(hours=1)
                             update_result = mongo_service.update_user(user['id'], {
                                 'reset_token': reset_token,
                                 'reset_token_expiry': expiry
@@ -1017,16 +1018,21 @@ def explore():
 @app.route('/like-user', methods=['POST'])
 def like_user():
     if 'user_id' not in session:
+        logger.warning("Unauthorized access to /like-user")
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     try:
         data = request.get_json()
         matched_user_id = data.get('matched_user_id')
+        logger.info(f"Received like request for user_id: {session['user_id']}, matched_user_id: {matched_user_id}")
         if not matched_user_id:
+            logger.warning("No matched_user_id provided in /like-user")
             return jsonify({'success': False, 'error': 'No user ID provided'}), 400
         result = mongo_service.like_user(session['user_id'], matched_user_id)
         if result['success']:
+            logger.info(f"Like successful for user_id: {session['user_id']}, matched_user_id: {matched_user_id}")
             return jsonify(result), 200
         else:
+            logger.error(f"Like failed: {result.get('error', 'Unknown error')}")
             return jsonify({'success': False, 'error': result.get('error', 'Failed to like user')}), 500
     except Exception as e:
         logger.error(f"Like user endpoint error: {str(e)}")
@@ -1035,16 +1041,21 @@ def like_user():
 @app.route('/pass-user', methods=['POST'])
 def pass_user():
     if 'user_id' not in session:
+        logger.warning("Unauthorized access to /pass-user")
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     try:
         data = request.get_json()
         passed_user_id = data.get('passed_user_id')
+        logger.info(f"Received pass request for user_id: {session['user_id']}, passed_user_id: {passed_user_id}")
         if not passed_user_id:
+            logger.warning("No passed_user_id provided in /pass-user")
             return jsonify({'success': False, 'error': 'No user ID provided'}), 400
         result = mongo_service.pass_user(session['user_id'], passed_user_id)
         if result['success']:
+            logger.info(f"Pass successful for user_id: {session['user_id']}, passed_user_id: {passed_user_id}")
             return jsonify({'success': True}), 200
         else:
+            logger.error(f"Pass failed: {result.get('error', 'Unknown error')}")
             return jsonify({'success': False, 'error': result.get('error', 'Failed to pass user')}), 500
     except Exception as e:
         logger.error(f"Pass user endpoint error: {str(e)}")
