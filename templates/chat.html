@@ -35,6 +35,7 @@ body {
   height: 100vh;
   overflow: hidden;
   margin: 0;
+  overscroll-behavior: none;
 }
 
 /* Navbar */
@@ -413,6 +414,7 @@ body {
   background-color: var(--bg-dark);
   display: flex;
   flex-direction: column;
+  overscroll-behavior-y: contain;
 }
 
 .date-divider {
@@ -544,6 +546,34 @@ body {
   margin-bottom: 0.75rem;
 }
 
+/* Reply Quote */
+.reply-quote {
+  background: rgba(255,255,255,0.1);
+  padding: 0.5rem;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--gray);
+  border-left: 3px solid var(--primary-light);
+}
+
+.reply-quote.sent {
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.8);
+}
+
+.reply-quote.received {
+  background: rgba(0,0,0,0.1);
+  color: rgba(255,255,255,0.7);
+}
+
+.reply-quote p {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Message Input */
 .message-input-container {
   padding: 0.5rem;
@@ -554,8 +584,40 @@ body {
   width: 100%;
   z-index: 1000;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   min-height: 60px;
+}
+
+.reply-preview {
+  display: none;
+  background: rgba(255,255,255,0.05);
+  padding: 0.5rem;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  position: relative;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.reply-preview-content {
+  font-size: 0.8125rem;
+  color: var(--gray);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cancel-reply {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  background: transparent;
+  border: none;
+  color: var(--gray);
+  font-size: 0.75rem;
+}
+
+.cancel-reply:hover {
+  color: var(--primary-light);
 }
 
 .message-input {
@@ -1185,6 +1247,10 @@ body {
                         
                         <!-- Message Input -->
                         <div class="message-input-container">
+                            <div class="reply-preview" id="reply-preview">
+                                <div class="reply-preview-content" id="reply-preview-content"></div>
+                                <button class="cancel-reply" id="cancel-reply"><i class="fas fa-times"></i></button>
+                            </div>
                             <div class="message-input">
                                 <div class="input-actions">
                                     <button class="btn btn-emoji"><i class="far fa-smile"></i></button>
@@ -1267,6 +1333,7 @@ body {
       let onlineTimeout;
       let isTyping = false;
       let newMessageNotice = null;
+      let repliedTo = null;
 
       // Toggle Emoji Picker
       const emojiBtn = document.querySelector('.btn-emoji');
@@ -1372,9 +1439,11 @@ body {
           room: room,
           sender_id: '{{ session.user_id }}',
           receiver_id: currentChatUserId,
-          message: message
+          message: message,
+          replied_to: repliedTo
         });
         messageInput.value = '';
+        clearReply();
       }
       
       messageInput.addEventListener('keypress', (e) => {
@@ -1432,18 +1501,34 @@ body {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
         messageDiv.dataset.messageId = msg.id;
-        messageDiv.innerHTML = `
+        let contentHtml = `
           <div class="message-content">
             <p>${msg.message}</p>
             <span class="message-time">${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</span>
             <div class="message-actions">
-              <button title="Reply"><i class="fas fa-reply"></i></button>
+              <button class="reply-btn" data-message-id="${msg.id}" title="Reply"><i class="fas fa-reply"></i></button>
               <button title="React"><i class="far fa-smile"></i></button>
               <button title="Delete" onclick="deleteMessage('${msg.id}')"><i class="fas fa-trash"></i></button>
               <button title="More"><i class="fas fa-ellipsis-h"></i></button>
             </div>
           </div>
         `;
+        messageDiv.innerHTML = contentHtml;
+        
+        // Add reply quote if exists
+        if (msg.replied_to) {
+          const repliedMsgElement = document.querySelector(`[data-message-id="${msg.replied_to}"]`);
+          if (repliedMsgElement) {
+            const repliedText = repliedMsgElement.querySelector('p').textContent;
+            const repliedClass = repliedMsgElement.classList.contains('sent') ? 'sent' : 'received';
+            const senderName = repliedClass === 'sent' ? 'You' : document.getElementById('chat-partner-name').textContent;
+            const quoteDiv = document.createElement('div');
+            quoteDiv.className = `reply-quote ${repliedClass}`;
+            quoteDiv.innerHTML = `<p>${senderName}: ${repliedText}</p>`;
+            messageDiv.querySelector('.message-content').insertBefore(quoteDiv, messageDiv.querySelector('p'));
+          }
+        }
+        
         messagesContainer.appendChild(messageDiv);
         const isAtBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight <= 50;
         if (isAtBottom) {
@@ -1452,7 +1537,26 @@ body {
           createNewMessageNotice();
           newMessageNotice.style.display = 'block';
         }
+        
+        // Add reply button listener
+        messageDiv.querySelector('.reply-btn').addEventListener('click', () => {
+          startReply(msg.id, msg.message);
+        });
       }
+      
+      function startReply(messageId, messageText) {
+        repliedTo = messageId;
+        document.getElementById('reply-preview-content').textContent = messageText;
+        document.getElementById('reply-preview').style.display = 'block';
+        messageInput.focus();
+      }
+      
+      function clearReply() {
+        repliedTo = null;
+        document.getElementById('reply-preview').style.display = 'none';
+      }
+      
+      document.getElementById('cancel-reply').addEventListener('click', clearReply);
       
       function createNewMessageNotice() {
         if (!newMessageNotice) {
