@@ -148,6 +148,14 @@
             color: #9ca3af !important;
         }
         
+        .dark .text-gray-600 {
+            color: #9ca3af !important;
+        }
+        
+        .dark .text-gray-700 {
+            color: #d1d5db !important;
+        }
+        
         .dark .border-gray-200 {
             border-color: #374151 !important;
         }
@@ -403,7 +411,7 @@
 
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-4">
-        <!-- Profile Header (only one instance) -->
+        <!-- Profile Header -->
         <div class="bg-gradient-to-r from-indigo-100 via-white to-pink-100 rounded-xl shadow-md p-6 mb-6 relative">
             <div class="flex flex-col md:flex-row items-center md:items-start">
                 <!-- Profile Picture -->
@@ -678,6 +686,24 @@
         </div>
     </div>
 
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 dark:bg-gray-800">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold dark:text-white">Change Password</h3>
+                <button class="close-password-modal text-gray-500 hover:text-gray-700 dark:text-gray-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="changePasswordForm">
+                <input type="password" id="currentPassword" placeholder="Current Password" class="w-full border rounded px-3 py-2 mb-3 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <input type="password" id="newPassword" placeholder="New Password" class="w-full border rounded px-3 py-2 mb-3 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <input type="password" id="confirmNewPassword" placeholder="Confirm New Password" class="w-full border rounded px-3 py-2 mb-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <button type="submit" class="w-full bg-pink-500 text-white py-2 rounded-lg hover:bg-pink-600">Save</button>
+            </form>
+        </div>
+    </div>
+
     <!-- User Profile View Modal -->
     <div id="userProfileModal" class="fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center hidden">
         <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 overflow-y-auto max-h-[80vh] dark:bg-gray-800">
@@ -827,7 +853,7 @@
                         chatMessages.appendChild(messageDiv);
                     });
                     
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                   chatMessages.scrollTop = chatMessages.scrollHeight;
                     
                     chatList.classList.add('hidden');
                     chatView.classList.remove('hidden');
@@ -864,7 +890,8 @@
                     const response = await fetch('/update_profile', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
+                        body: JSON.stringify(data),
+                        credentials: 'include'
                     });
                     const result = await response.json();
                     if (result.success) {
@@ -896,7 +923,8 @@
                     try {
                         const response = await fetch('/upload_profile_picture', {
                             method: 'POST',
-                            body: formData
+                            body: formData,
+                            credentials: 'include'
                         });
                         const result = await response.json();
                         if (result.success) {
@@ -925,7 +953,8 @@
                         try {
                             const response = await fetch('/upload_photo', {
                                 method: 'POST',
-                                body: formData
+                                body: formData,
+                                credentials: 'include'
                             });
                             const result = await response.json();
                             if (result.success) {
@@ -957,7 +986,8 @@
                     const response = await fetch('/delete_photo', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ url: url })
+                        body: JSON.stringify({ url: url }),
+                        credentials: 'include'
                     });
                     const result = await response.json();
                     if (result.success) {
@@ -1088,18 +1118,55 @@
             // Change Password functionality
             const changePasswordBtn = document.getElementById('changePasswordBtn');
             const changePasswordModal = document.getElementById('changePasswordModal');
-            
+            const closePasswordModal = document.querySelector('.close-password-modal');
+            const changePasswordForm = document.getElementById('changePasswordForm');
+
             changePasswordBtn.addEventListener('click', () => {
                 changePasswordModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
             });
             
-            changePasswordModal.querySelector('.close-password-modal').addEventListener('click', () => {
+            closePasswordModal.addEventListener('click', () => {
                 changePasswordModal.classList.add('hidden');
+                document.body.style.overflow = '';
             });
             
-            changePasswordModal.querySelector('button:not(.close-password-modal)').addEventListener('click', () => {
-                changePasswordModal.classList.add('hidden');
-                showNotification('Password changed successfully');
+            changePasswordModal.addEventListener('click', (e) => {
+                if (e.target === changePasswordModal) {
+                    changePasswordModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            changePasswordForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+                
+                if (newPassword !== confirmNewPassword) {
+                    showNotification('New passwords do not match');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/change_password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+                        credentials: 'include'
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('Password changed successfully');
+                        changePasswordModal.classList.add('hidden');
+                        document.body.style.overflow = '';
+                    } else {
+                        showNotification(result.error || 'Failed to change password');
+                    }
+                } catch (error) {
+                    showNotification('Error changing password');
+                }
             });
             
             // Log Out functionality
@@ -1112,11 +1179,23 @@
                     'Cancel'
                 );
                 
-                confirmation.querySelector('.confirm-btn').addEventListener('click', () => {
-                    showNotification('Logged out successfully');
+                confirmation.querySelector('.confirm-btn').addEventListener('click', async () => {
+                    try {
+                        const response = await fetch('/logout', {
+                            method: 'GET',
+                            credentials: 'include'
+                        });
+                        if (response.ok) {
+                            showNotification('Logged out successfully');
+                            window.location.href = '/';
+                        } else {
+                            showNotification('Failed to log out');
+                        }
+                    } catch (error) {
+                        showNotification('Error logging out');
+                    }
                     confirmation.remove();
                     settingsModal.classList.add('hidden');
-                    window.location.href = '/logout';
                 });
                 
                 confirmation.querySelector('.cancel-btn').addEventListener('click', () => {
@@ -1135,8 +1214,23 @@
                     'text-red-500'
                 );
                 
-                confirmation.querySelector('.confirm-btn').addEventListener('click', () => {
-                    showNotification('Account deleted successfully');
+                confirmation.querySelector('.confirm-btn').addEventListener('click', async () => {
+                    try {
+                        const response = await fetch('/delete_account', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include'
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            showNotification('Account deleted successfully');
+                            window.location.href = '/';
+                        } else {
+                            showNotification(result.error || 'Failed to delete account');
+                        }
+                    } catch (error) {
+                        showNotification('Error deleting account');
+                    }
                     confirmation.remove();
                     settingsModal.classList.add('hidden');
                 });
@@ -1230,7 +1324,9 @@
                     currentUserId = card.dataset.userId;
                     showLoading();
                     try {
-                        const response = await fetch(`/user-profile/${currentUserId}`);
+                        const response = await fetch(`/user-profile/${currentUserId}`, {
+                            credentials: 'include'
+                        });
                         const result = await response.json();
                         hideLoading();
                         if (result.success) {
@@ -1283,14 +1379,13 @@
             document.getElementById('modalAcceptBtn').addEventListener('click', async function(e) {
                 e.stopPropagation();
                 const userId = this.dataset.userId;
-                console.log('Modal Accept clicked for user:', userId); // Debug log
                 showLoading();
                 try {
                     const response = await fetch('/like-user', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ matched_user_id: userId }),
-                        credentials: 'include' // Ensure session cookies are sent
+                        credentials: 'include'
                     });
                     const result = await response.json();
                     hideLoading();
@@ -1315,21 +1410,19 @@
                 } catch (error) {
                     hideLoading();
                     showNotification('Network error');
-                    console.error('Accept error:', error); // Debug log
                 }
             });
 
             document.getElementById('modalDeclineBtn').addEventListener('click', async function(e) {
                 e.stopPropagation();
                 const userId = this.dataset.userId;
-                console.log('Modal Decline clicked for user:', userId); // Debug log
                 showLoading();
                 try {
                     const response = await fetch('/pass-user', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ passed_user_id: userId }),
-                        credentials: 'include' // Ensure session cookies are sent
+                        credentials: 'include'
                     });
                     const result = await response.json();
                     hideLoading();
@@ -1344,7 +1437,6 @@
                 } catch (error) {
                     hideLoading();
                     showNotification('Network error');
-                    console.error('Decline error:', error); // Debug log
                 }
             });
 
@@ -1354,14 +1446,13 @@
                     e.preventDefault();
                     e.stopPropagation();
                     const userId = this.dataset.userId;
-                    console.log('List Accept clicked for user:', userId); // Debug log
                     showLoading();
                     try {
                         const response = await fetch('/like-user', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ matched_user_id: userId }),
-                            credentials: 'include' // Ensure session cookies are sent
+                            credentials: 'include'
                         });
                         const result = await response.json();
                         hideLoading();
@@ -1384,7 +1475,6 @@
                     } catch (error) {
                         hideLoading();
                         showNotification('Network error');
-                        console.error('Accept error:', error); // Debug log
                     }
                 });
             });
@@ -1394,14 +1484,13 @@
                     e.preventDefault();
                     e.stopPropagation();
                     const userId = this.dataset.userId;
-                    console.log('List Decline clicked for user:', userId); // Debug log
                     showLoading();
                     try {
                         const response = await fetch('/pass-user', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ passed_user_id: userId }),
-                            credentials: 'include' // Ensure session cookies are sent
+                            credentials: 'include'
                         });
                         const result = await response.json();
                         hideLoading();
@@ -1414,7 +1503,6 @@
                     } catch (error) {
                         hideLoading();
                         showNotification('Network error');
-                        console.error('Decline error:', error); // Debug log
                     }
                 });
             });

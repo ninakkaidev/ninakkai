@@ -547,7 +547,7 @@ class MongoService:
 
     def get_pending_likers(self, user_id: str) -> List[Dict[str, Any]]:
         try:
-            likers = self.likes.find({'matched_user_id': user_id, 'user_id': {'$ne': user_id}})  # Exclude self to prevent duplicate own profile
+            likers = self.likes.find({'matched_user_id': user_id, 'user_id': {'$ne': user_id}})
             liker_ids = [str(l['user_id']) for l in likers]
             my_likes = [str(l['matched_user_id']) for l in self.likes.find({'user_id': user_id})]
             passed = [str(p['passed_user_id']) for p in self.passes.find({'user_id': user_id})]
@@ -566,6 +566,17 @@ class MongoService:
         except Exception as e:
             logger.error(f"Get pending likers error: {str(e)}")
             return []
+
+    def delete_account(self, user_id: str) -> Dict[str, Any]:
+        try:
+            self.users.delete_one({'_id': ObjectId(user_id)})
+            self.likes.delete_many({'$or': [{'user_id': user_id}, {'matched_user_id': user_id}]})
+            self.passes.delete_many({'$or': [{'user_id': user_id}, {'passed_user_id': user_id}]})
+            self.quiz_results.delete_many({'user_id': user_id})
+            return {'success': True}
+        except Exception as e:
+            logger.error(f"Delete account error: {str(e)}")
+            return {'success': False, 'error': str(e)}
 
 class ChatService:
     def __init__(self):
@@ -972,6 +983,32 @@ def reset_password_endpoint(token):
         else:
             return render_template('reset_password.html', token=token, error='Failed to update password')
 
+@app.route('/change_password', methods=['POST'])
+def change_password():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+    if not current_password or not new_password:
+        return jsonify({'success': False, 'error': 'Missing passwords'}), 400
+    user = mongo_service.get_user_by_id(session['user_id'])
+    if not check_password_hash(user['password'], current_password):
+        return jsonify({'success': False, 'error': 'Incorrect current password'}), 400
+    if len(new_password) < 8:
+        return jsonify({'success': False, 'error': 'New password must be at least 8 characters'}), 400
+    result = mongo_service.update_password(session['user_id'], new_password)
+    return jsonify(result)
+
+@app.route('/delete_account', methods=['POST'])
+def delete_account():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    result = mongo_service.delete_account(session['user_id'])
+    if result['success']:
+        session.clear()
+    return jsonify(result)
+
 @app.route('/explore')
 def explore():
     logger.debug(f"Session in explore: {session}")
@@ -1017,6 +1054,7 @@ def explore():
 
 @app.route('/like-user', methods=['POST'])
 def like_user():
+    logger.info(f"Like-user route called with session: {session}")
     if 'user_id' not in session:
         logger.warning("Unauthorized access to /like-user")
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
@@ -1040,6 +1078,7 @@ def like_user():
 
 @app.route('/pass-user', methods=['POST'])
 def pass_user():
+    logger.info(f"Pass-user route called with session: {session}")
     if 'user_id' not in session:
         logger.warning("Unauthorized access to /pass-user")
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
