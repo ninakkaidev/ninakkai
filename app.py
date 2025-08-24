@@ -1280,13 +1280,8 @@ def chat():
                 }
                 conversations.append(conv)
         conversations.sort(key=lambda c: c['sort_time'], reverse=True)
-
-        ua_string = request.user_agent.string.lower()
-        is_mobile = any(term in ua_string for term in ['mobile', 'android', 'iphone', 'ipad'])
-        if is_mobile:
-            return render_template('chat_mobile.html', profile=profile, conversations=conversations, unread_count=unread_count)
-        else:
-            return render_template('chat_desktop.html', profile=profile, conversations=conversations, unread_count=unread_count)
+        
+        return render_template('chat.html', profile=profile, conversations=conversations, unread_count=unread_count)
     except Exception as e:
         logger.error(f"Chat error: {str(e)}")
         return render_template('chat.html', profile={'image': 'https://randomuser.me/api/portraits/women/44.jpg'}, conversations=[], unread_count=0, error=str(e))
@@ -1585,20 +1580,6 @@ def handle_leave_chat(data):
     room = sorted([session['user_id'], other_user_id])
     leave_room(f'room_{"_".join(room)}')
     logger.info(f"User {session['user_id']} left chat room with {other_user_id}")
-
-@socketio.on('typing')
-def handle_typing(data):
-    other_user_id = data['other_user_id']
-    sender_id = data['sender_id']
-    room = sorted([sender_id, other_user_id])
-    emit('user_typing', {'sender_id': sender_id}, room=f'room_{"_".join(room)}')
-
-@socketio.on('delete_message')
-def handle_delete_message(data):
-    message_id = data['message_id']
-    other_user_id = data['other_user_id']
-    room = sorted([session['user_id'], other_user_id])
-    emit('message_deleted', {'message_id': message_id}, room=f'room_{"_".join(room)}')
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)
