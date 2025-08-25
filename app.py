@@ -836,7 +836,7 @@ def index():
         return render_template('index.html')
     except Exception as e:
         logger.error(f"Error rendering index.html: {str(e)}")
-        return render_template('error.html', error='Template not found'), 404
+        return 'Template not found', 404
 
 @app.route('/favicon.ico')
 def favicon():
@@ -844,7 +844,7 @@ def favicon():
         return send_from_directory(app.static_folder, 'favicon.ico', mimetype='image/vnd.microsoft.icon')
     except Exception as e:
         logger.error(f"Error serving favicon.ico: {str(e)}")
-        return render_template('error.html', error='Favicon not found'), 404
+        return 'Favicon not found', 404
 
 @app.route('/auth', methods=['GET', 'POST'])
 def auth():
