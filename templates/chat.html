@@ -997,8 +997,8 @@
     };
 
     // Initialize Socket.IO
-    const socket = io({
-      transports: ['websocket', 'polling'],
+    const socket = io('/', {
+      transports: ['polling', 'websocket'],
       reconnectionAttempts: 5,
       reconnectionDelay: 1000
     });
@@ -1349,6 +1349,8 @@
     const chatBackBtn = document.querySelector('.chat-back-btn');
     const conversationsBackBtn = document.querySelector('.conversations-back-btn');
     const messagesContainer = document.getElementById('messages-container');
+    const navbar = document.querySelector('.navbar');
+    const chatContainer = document.querySelector('.chat-container');
 
     messagesContainer.addEventListener('scroll', () => {
       const isAtBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight <= 50;
@@ -1398,9 +1400,6 @@
     const debouncedHandleResize = debounce(handleResize, 100);
     window.addEventListener('resize', debouncedHandleResize);
     handleResize();
-
-    const navbar = document.querySelector('.navbar');
-    const chatContainer = document.querySelector('.chat-container');
 
     function adjustHeight() {
       if (document.body.classList.contains('chat-mode')) {
