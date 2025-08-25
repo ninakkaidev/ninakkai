@@ -1154,7 +1154,7 @@ def like_user():
         logger.info(f"Received like request for user_id: {session['user_id']}, matched_user_id: {matched_user_id}")
         if not matched_user_id:
             logger.warning("No matched_user_id provided in /like-user")
-            return jsonify({'success': False, 'error': 'No user ID provided'}), 400
+            return jsonify({'success': False, 'error': 'No matched user ID provided'}), 400
         result = mongo_service.like_user(session['user_id'], matched_user_id)
         if result['success']:
             logger.info(f"Like successful for user_id: {session['user_id']}, matched_user_id: {matched_user_id}")
