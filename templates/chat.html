@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>നിനakkayi-ForYou | Personal Chat</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -30,6 +30,7 @@
       height: 100vh;
       margin: 0;
       overflow: hidden;
+      touch-action: manipulation; /* Improve mobile touch responsiveness */
     }
 
     .navbar {
@@ -37,6 +38,7 @@
       box-shadow: 0 2px 10px rgba(0,0,0,0.2);
       padding: 0.75rem 1rem;
       border-bottom: 1px solid rgba(255,255,255,0.1);
+      z-index: 1000;
     }
 
     .navbar-brand {
@@ -64,6 +66,8 @@
       right: 2px;
       font-size: 0.6rem;
       background: var(--gradient);
+      padding: 2px 6px;
+      border-radius: 50%;
     }
 
     .profile-pic-nav {
@@ -72,6 +76,7 @@
       border-radius: 50%;
       object-fit: cover;
       border: 2px solid var(--text-gray);
+      loading: lazy;
     }
 
     .chat-container {
@@ -183,6 +188,7 @@
       padding: 0.875rem 1rem;
       border-bottom: 1px solid rgba(255,255,255,0.05);
       cursor: pointer;
+      transition: background-color 0.2s;
     }
 
     .conversation:hover {
@@ -200,6 +206,7 @@
       object-fit: cover;
       border: 2px solid var(--text-gray);
       margin-right: 0.875rem;
+      loading: lazy;
     }
 
     .online-status {
@@ -300,6 +307,7 @@
       object-fit: cover;
       margin-right: 0.75rem;
       border: 2px solid var(--text-gray);
+      loading: lazy;
     }
 
     .chat-partner-info h4 {
@@ -498,9 +506,9 @@
     }
 
     .emoji-picker {
-      position: absolute;
-      bottom: 65px;
-      right: 20px;
+      position: fixed;
+      bottom: 70px;
+      right: 10px;
       width: 280px;
       background-color: var(--card-dark);
       border-radius: 8px;
@@ -549,7 +557,7 @@
     }
 
     .profile-sidebar {
-      position: absolute;
+      position: fixed;
       top: 0;
       right: 0;
       width: 100%;
@@ -601,6 +609,7 @@
       object-fit: cover;
       border: 3px solid var(--text-gray);
       margin-bottom: 0.75rem;
+      loading: lazy;
     }
 
     .sidebar-profile h3 {
@@ -687,8 +696,8 @@
     }
 
     .new-message-notice {
-      position: absolute;
-      bottom: 70px;
+      position: fixed;
+      bottom: 80px;
       right: 20px;
       background: var(--gradient);
       color: white;
@@ -704,7 +713,7 @@
 
     @media (max-width: 992px) {
       .conversations-col {
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
         width: 100%;
@@ -717,10 +726,11 @@
       }
 
       .chat-area {
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
         width: 100%;
+        height: 100%;
         transform: translateX(100%);
         transition: transform 0.3s ease;
         z-index: 10;
@@ -749,9 +759,16 @@
       .welcome-screen {
         display: none;
       }
-      
+
       .profile-sidebar {
         width: 100%;
+      }
+
+      .emoji-picker {
+        bottom: 70px;
+        right: 10px;
+        width: 90%;
+        max-width: 300px;
       }
     }
 
@@ -778,7 +795,7 @@
       .chat-back-btn, .conversations-back-btn {
         display: none !important;
       }
-      
+
       .profile-sidebar {
         width: 350px;
       }
@@ -790,8 +807,8 @@
       }
 
       .emoji-picker {
-        width: 260px;
-        right: 10px;
+        width: 95%;
+        right: 5px;
       }
     }
 
@@ -848,10 +865,13 @@
             <h2>Messages</h2>
           </div>
           <div class="search-conversations">
-            <input type="text" placeholder="Search conversations...">
+            <input type="text" placeholder="Search conversations..." id="search-conversations">
             <i class="fas fa-search"></i>
           </div>
           <div class="conversations-list">
+            {% if conversations|length == 0 %}
+            <div class="welcome-text text-center p-3">No conversations yet. Start chatting with your matches!</div>
+            {% else %}
             {% for conv in conversations %}
             <div class="conversation" data-user-id="{{ conv.id }}">
               <div class="conversation-pic">
@@ -867,6 +887,7 @@
               </div>
             </div>
             {% endfor %}
+            {% endif %}
           </div>
         </div>
 
@@ -960,7 +981,22 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Initialize Socket.IO with explicit URL
+    // Utility Functions
+    const debounce = (func, wait) => {
+      let timeout;
+      return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    };
+
+    const sanitizeHTML = (str) => {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    };
+
+    // Initialize Socket.IO
     const socket = io('http://localhost:5050', {
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 5,
@@ -973,7 +1009,7 @@
     let isTyping = false;
     let newMessageNotice = null;
 
-    // Socket.IO Error Handling
+    // Socket.IO Handlers
     socket.on('connect', () => {
       console.log('Socket.IO connected:', socket.id);
       socket.emit('join', { room: 'user_{{ session.user_id }}' });
@@ -1035,16 +1071,16 @@
         const result = await response.json();
         if (result.success) {
           const user = result.user;
-          document.getElementById('sidebar-img').src = user.image;
-          document.getElementById('sidebar-name').textContent = user.full_name;
-          document.getElementById('sidebar-personality').textContent = user.personality.dominant_type;
-          document.getElementById('sidebar-compatibility-score').textContent = `${user.match_percentage}%`;
-          document.getElementById('sidebar-bio').textContent = user.bio;
+          document.getElementById('sidebar-img').src = user.image || 'https://randomuser.me/api/portraits/women/44.jpg';
+          document.getElementById('sidebar-name').textContent = user.full_name || 'Unknown';
+          document.getElementById('sidebar-personality').textContent = user.personality.dominant_type || 'N/A';
+          document.getElementById('sidebar-compatibility-score').textContent = `${user.match_percentage || 50}%`;
+          document.getElementById('sidebar-bio').textContent = user.bio || 'No bio available';
           document.getElementById('sidebar-age').textContent = `${user.age || 'N/A'} years old`;
-          document.getElementById('sidebar-distance').textContent = user.distance;
+          document.getElementById('sidebar-distance').textContent = user.distance || 'N/A';
           const interestsContainer = document.getElementById('sidebar-interests');
           interestsContainer.innerHTML = '';
-          user.interests.forEach(interest => {
+          (user.interests || []).forEach(interest => {
             const span = document.createElement('span');
             span.className = 'interest';
             span.textContent = interest;
@@ -1074,13 +1110,13 @@
         console.warn('Cannot send message: Empty or no user selected');
         return;
       }
-      
+
       const tempId = 'temp-' + Date.now();
       const optimisticMsg = {
         id: tempId,
         sender_id: '{{ session.user_id }}',
         receiver_id: currentChatUserId,
-        message: message,
+        message: sanitizeHTML(message),
         timestamp: new Date().toISOString(),
         read: false
       };
@@ -1090,7 +1126,7 @@
       scrollToBottom();
 
       messageInput.value = '';
-      
+
       const room = ['{{ session.user_id }}', currentChatUserId].sort().join('_');
       socket.emit('message', {
         room: room,
@@ -1104,9 +1140,9 @@
       const messageDiv = document.createElement('div');
       messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
       messageDiv.dataset.messageId = msg.id;
-      
-      const formattedTime = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-      
+
+      const formattedTime = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
       messageDiv.innerHTML = `
         <div class="message-content">
           <p>${msg.message}</p>
@@ -1116,7 +1152,7 @@
           </div>
         </div>
       `;
-      
+
       return messageDiv;
     }
 
@@ -1142,6 +1178,10 @@
     // Load Messages
     async function loadMessages(userId) {
       console.log('Loading messages for user:', userId);
+      if (currentChatUserId) {
+        const oldRoom = ['{{ session.user_id }}', currentChatUserId].sort().join('_');
+        socket.emit('leave', { room: oldRoom });
+      }
       currentChatUserId = userId;
       try {
         const response = await fetch(`/messages/${userId}`);
@@ -1155,12 +1195,22 @@
             messagesContainer.appendChild(messageElement);
           });
           scrollToBottom();
-          
+
+          // Update chat header
+          const responseProfile = await fetch(`/user-profile/${userId}`);
+          const resultProfile = await responseProfile.json();
+          if (resultProfile.success) {
+            const user = resultProfile.user;
+            document.getElementById('chat-partner-img').src = user.image || 'https://randomuser.me/api/portraits/women/44.jpg';
+            document.getElementById('chat-partner-name').textContent = user.full_name || 'Unknown';
+            document.getElementById('chat-partner-status').textContent = 'Offline';
+          }
+
           // Show chat area
           const chatArea = document.querySelector('.chat-area');
           const welcomeScreen = document.querySelector('.welcome-screen');
           const conversationsCol = document.querySelector('.conversations-col');
-          
+
           chatArea.style.display = 'flex';
           if (window.innerWidth <= 992) {
             console.log('Mobile view: Showing chat area, hiding conversations');
@@ -1173,6 +1223,10 @@
             welcomeScreen.style.display = 'none';
             conversationsCol.classList.remove('hidden');
           }
+
+          const room = ['{{ session.user_id }}', userId].sort().join('_');
+          console.log('Joining room:', room);
+          socket.emit('join', { room: room });
         } else {
           console.error('Failed to load messages:', result.error);
           alert('Failed to load messages. Please try again.');
@@ -1205,11 +1259,9 @@
           if (data.success) {
             const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
             if (messageElement) messageElement.remove();
-            
-            socket.emit('delete', { 
-              room: ['{{ session.user_id }}', currentChatUserId].sort().join('_'),
-              message_id: messageId 
-            });
+
+            const room = ['{{ session.user_id }}', currentChatUserId].sort().join('_');
+            socket.emit('delete', { room: room, message_id: messageId });
           } else {
             console.error('Failed to delete message:', data.error);
             alert('Failed to delete message.');
@@ -1225,7 +1277,7 @@
     // Socket Events
     socket.on('new_message', (msg) => {
       console.log('Received new message:', msg);
-      if ((msg.sender_id === currentChatUserId && msg.receiver_id === '{{ session.user_id }}') || 
+      if ((msg.sender_id === currentChatUserId && msg.receiver_id === '{{ session.user_id }}') ||
           (msg.receiver_id === currentChatUserId && msg.sender_id === '{{ session.user_id }}')) {
         
         const isSent = msg.sender_id === '{{ session.user_id }}';
@@ -1236,14 +1288,14 @@
           if (lastMessage && lastMessage.dataset.messageId.startsWith('temp-')) {
             lastMessage.dataset.messageId = msg.id;
             const timeSpan = lastMessage.querySelector('.message-time');
-            timeSpan.textContent = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+            timeSpan.textContent = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             return;
           }
         }
 
         const messageElement = createMessageElement(msg, isSent);
         messagesContainer.appendChild(messageElement);
-        
+
         if (msg.sender_id === currentChatUserId) {
           scrollToBottom();
         } else if (!isSent) {
@@ -1307,6 +1359,7 @@
 
     function handleResize() {
       console.log('Window resized, width:', window.innerWidth);
+      adjustHeight();
       if (window.innerWidth <= 992) {
         chatBackBtn.style.display = 'block';
         conversationsBackBtn.style.display = 'block';
@@ -1315,6 +1368,7 @@
           chatArea.style.display = 'none';
           welcomeScreen.style.display = 'none';
           conversationsCol.classList.remove('hidden');
+          document.body.classList.remove('chat-mode');
         } else {
           console.log('Mobile view: Chat selected, showing chat area');
           chatArea.style.display = 'flex';
@@ -1339,10 +1393,10 @@
           chatArea.style.display = 'flex';
         }
       }
-      adjustHeight();
     }
 
-    window.addEventListener('resize', handleResize);
+    const debouncedHandleResize = debounce(handleResize, 100);
+    window.addEventListener('resize', debouncedHandleResize);
     handleResize();
 
     const navbar = document.querySelector('.navbar');
@@ -1368,30 +1422,7 @@
         console.log('Conversation clicked, userId:', this.dataset.userId);
         document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
         this.classList.add('active');
-        const userId = this.dataset.userId;
-        try {
-          const response = await fetch(`/user-profile/${userId}`);
-          const result = await response.json();
-          if (result.success) {
-            console.log('User profile loaded:', result.user);
-            const user = result.user;
-            document.getElementById('chat-partner-img').src = user.image;
-            document.getElementById('chat-partner-name').textContent = user.full_name;
-            document.getElementById('chat-partner-status').textContent = 'Offline';
-          } else {
-            console.error('Failed to load user profile:', result.error);
-            alert('Failed to load user profile. Please try again.');
-            return;
-          }
-        } catch (error) {
-          console.error('Error loading user profile:', error);
-          alert('Error loading user profile. Please check your connection.');
-          return;
-        }
-        await loadMessages(userId);
-        const room = ['{{ session.user_id }}', userId].sort().join('_');
-        console.log('Joining room:', room);
-        socket.emit('join', { room: room });
+        await loadMessages(this.dataset.userId);
         navigationHistory.push('chat');
       });
     });
@@ -1423,6 +1454,52 @@
       navigationHistory.pop();
       window.location.href = "{{ url_for('explore') }}";
     });
+
+    // Search Conversations
+    const searchInput = document.getElementById('search-conversations');
+    searchInput.addEventListener('input', debounce(async () => {
+      const query = searchInput.value.trim();
+      if (query) {
+        try {
+          const response = await fetch(`/search-matches?q=${encodeURIComponent(query)}`);
+          const result = await response.json();
+          if (result.success) {
+            const conversationsList = document.querySelector('.conversations-list');
+            conversationsList.innerHTML = '';
+            result.matches.forEach(match => {
+              const convDiv = document.createElement('div');
+              convDiv.className = 'conversation';
+              convDiv.dataset.userId = match.id;
+              convDiv.innerHTML = `
+                <div class="conversation-pic">
+                  <img src="${match.image}" alt="Profile">
+                  <span class="online-status"></span>
+                </div>
+                <div class="conversation-info">
+                  <div class="conversation-header">
+                    <h5>${match.full_name}</h5>
+                    <span class="time"></span>
+                  </div>
+                  <p class="last-message">Start chatting!</p>
+                </div>
+              `;
+              convDiv.addEventListener('click', async () => {
+                document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
+                convDiv.classList.add('active');
+                await loadMessages(match.id);
+                navigationHistory.push('chat');
+              });
+              conversationsList.appendChild(convDiv);
+            });
+          }
+        } catch (error) {
+          console.error('Error searching conversations:', error);
+        }
+      } else {
+        // Reload original conversations
+        location.reload();
+      }
+    }, 300));
   </script>
 </body>
 </html>
