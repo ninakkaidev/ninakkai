@@ -1,6 +1,5 @@
-from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory, jsonify
+from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory, jsonify, Response
 from flask_cors import CORS
-from flask_socketio import SocketIO, emit, join_room, leave_room
 from pymongo import MongoClient
 from typing import Dict, Any, Optional, List
 from bson import ObjectId
@@ -17,6 +16,8 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 import pytz
+import json
+from queue import Queue
 
 # Configure Cloudinary with explicit credentials and enhanced logging
 def configure_cloudinary():
@@ -56,10 +57,10 @@ app.config.update(
     SESSION_COOKIE_DOMAIN=None
 )
 
-socketio = SocketIO(app, cors_allowed_origins="*")
-
 # Initialize Cloudinary
 configure_cloudinary()
+
+user_queues = {}
 
 class MongoService:
     def __init__(self):
@@ -681,7 +682,15 @@ class ChatService:
                 'read': False
             }
             result = self.messages.insert_one(msg_data)
-            return {'success': True, 'message_id': str(result.inserted_id)}
+            msg_data['id'] = str(result.inserted_id)
+            msg_data['timestamp'] = msg_data['timestamp'].isoformat()
+            for uid in [sender_id, receiver_id]:
+                if uid in user_queues:
+                    user_queues[uid].put({
+                        'event': 'new_message',
+                        'data': msg_data
+                    })
+            return {'success': True, 'message_id': msg_data['id']}
         except Exception as e:
             logger.error(f"Send message error: {str(e)}")
             return {'success': False, 'error': str(e)}
@@ -1249,6 +1258,37 @@ def user_profile(user_id):
         logger.error(f"User profile endpoint error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/stream')
+def stream():
+    if 'user_id' not in session:
+        return 'Unauthorized', 401
+
+    def generate():
+        q = user_queues.setdefault(session['user_id'], Queue())
+        try:
+            while True:
+                msg = q.get()
+                yield f"data: {json.dumps(msg)}\n\n"
+        except GeneratorExit:
+            pass
+
+    return Response(generate(), mimetype='text/event-stream')
+
+@app.route('/send_typing', methods=['POST'])
+def send_typing():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    to_user_id = data.get('to_user_id')
+    if not to_user_id:
+        return jsonify({'success': False, 'error': 'Missing to_user_id'}), 400
+    if to_user_id in user_queues:
+        user_queues[to_user_id].put({
+            'event': 'user_typing',
+            'data': {'sender_id': session['user_id']}
+        })
+    return jsonify({'success': True})
+
 @app.route('/chat')
 def chat():
     logger.debug(f"Session in chat: {session}")
@@ -1349,50 +1389,25 @@ def delete_message_endpoint():
     message_id = data.get('message_id')
     if not message_id:
         return jsonify({'success': False, 'error': 'No message ID provided'}), 400
-    result = chat_service.delete_message(message_id)
-    return jsonify(result)
-
-@socketio.on('join')
-def on_join(data):
-    room = data['room']
-    join_room(room)
-
-@socketio.on('leave')
-def on_leave(data):
-    room = data['room']
-    leave_room(room)
-
-@socketio.on('message')
-def handle_message(data):
-    room = data['room']
-    sender_id = data['sender_id']
-    receiver_id = data['receiver_id']
-    message = data['message']
-    result = chat_service.send_message(sender_id, receiver_id, message)
-    if result['success']:
-        msg = {
-            'id': result['message_id'],
-            'sender_id': sender_id,
-            'receiver_id': receiver_id,
-            'message': message,
-            'timestamp': datetime.now(timezone.utc).isoformat(),
-            'read': False
-        }
-        emit('new_message', msg, to=room)
-
-@socketio.on('typing')
-def handle_typing(data):
-    room = data['room']
-    sender_id = data['sender_id']
-    emit('user_typing', {'user_id': sender_id}, to=room, include_self=False)
-
-@socketio.on('delete')
-def handle_delete(data):
-    room = data['room']
-    message_id = data['message_id']
-    result = chat_service.delete_message(message_id)
-    if result['success']:
-        emit('message_deleted', {'message_id': message_id}, to=room)
+    try:
+        msg = chat_service.messages.find_one({'_id': ObjectId(message_id)})
+        if msg and msg['sender_id'] == session['user_id']:
+            result = chat_service.delete_message(message_id)
+            if result['success']:
+                for uid in [msg['sender_id'], msg['receiver_id']]:
+                    if uid in user_queues:
+                        user_queues[uid].put({
+                            'event': 'message_deleted',
+                            'data': {'message_id': message_id}
+                        })
+                return jsonify({'success': True})
+            else:
+                return jsonify({'success': False, 'error': 'Failed to delete'})
+        else:
+            return jsonify({'success': False, 'error': 'Not authorized or not found'})
+    except Exception as e:
+        logger.error(f"Delete message error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/profile')
 def profile():
@@ -1647,4 +1662,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5050, debug=True)
+    app.run(host='0.0.0.0', port=5050, debug=True)
