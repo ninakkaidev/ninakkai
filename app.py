@@ -836,7 +836,7 @@ def index():
         return render_template('index.html')
     except Exception as e:
         logger.error(f"Error rendering index.html: {str(e)}")
-        return 'Template not found', 404
+        return render_template('error.html', error='Template not found'), 404
 
 @app.route('/favicon.ico')
 def favicon():
@@ -844,7 +844,7 @@ def favicon():
         return send_from_directory(app.static_folder, 'favicon.ico', mimetype='image/vnd.microsoft.icon')
     except Exception as e:
         logger.error(f"Error serving favicon.ico: {str(e)}")
-        return 'Favicon not found', 404
+        return render_template('error.html', error='Favicon not found'), 404
 
 @app.route('/auth', methods=['GET', 'POST'])
 def auth():
@@ -1172,7 +1172,7 @@ def unlike_user_endpoint():
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     data = request.get_json()
     matched_user_id = data.get('matched_user_id')
-   if not matched_user_id:
+    if not matched_user_id:
         return jsonify({'success': False, 'error': 'No user ID provided'}), 400
     result = mongo_service.unlike_user(session['user_id'], matched_user_id)
     return jsonify(result)
