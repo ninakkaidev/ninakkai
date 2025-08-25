@@ -997,7 +997,7 @@
     };
 
     // Initialize Socket.IO
-    const socket = io('http://localhost:5050', {
+    const socket = io({
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 5,
       reconnectionDelay: 1000
