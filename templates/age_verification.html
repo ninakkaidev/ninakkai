@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Age Verification - Ninakkai</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #video { border: 1px solid #ccc; }
+        #canvas { display: none; }
+        #message { color: red; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Age Verification</h1>
+    <p>We don't show this picture in your profile or store them in our server so don't worry.</p>
+    <video id="video" width="320" height="240" autoplay></video>
+    <button id="capture">Take Photo</button>
+    <canvas id="canvas" width="320" height="240"></canvas>
+    <div id="message"></div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const capture = document.getElementById('capture');
+        const message = document.getElementById('message');
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                message.textContent = 'Error accessing webcam: ' + err;
+            });
+
+        capture.addEventListener('click', () => {
+            canvas.getContext('2d').drawImage(video, 0, 0, 320, 240);
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                formData.append('image', blob, 'photo.jpg');
+                fetch('/age-verification', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '/questions';
+                    } else {
+                        message.textContent = data.error;
+                    }
+                })
+                .catch(err => {
+                    message.textContent = 'Error: ' + err;
+                });
+            }, 'image/jpeg');
+        });
+    </script>
+</body>
+</html>

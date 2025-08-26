@@ -18,6 +18,7 @@ import cloudinary.api
 import pytz
 import json
 from queue import Queue
+import http.client
 
 # Configure Cloudinary with explicit credentials and enhanced logging
 def configure_cloudinary():
@@ -140,6 +141,7 @@ class MongoService:
                 'location': '',
                 'profile_complete': False,
                 'email_verified': False,
+                'age_verified': False,  # Added age_verified field
                 'verification_token': verification_token,
                 'created_at': datetime.now(timezone.utc)
             }
@@ -905,6 +907,9 @@ def auth():
                             session['user_id'] = result['user']['id']
                             session.modified = True
                             logger.debug(f"Session set after login: {session}")
+                            user = result['user']
+                            if not user.get('age_verified', False):
+                                return redirect(url_for('age_verification'))
                             return redirect(url_for('questions'))
                     except Exception as e:
                         logger.error(f"Login error: {str(e)}")
@@ -1046,12 +1051,62 @@ def verify_email_endpoint():
         session['verification_pending'] = False
         session.modified = True
         logger.debug(f"Session set after email verification: {session}")
-        resp = make_response(redirect(url_for('questions')))
+        user = mongo_service.get_user_by_id(result['user_id'])
+        target = 'age_verification' if not user.get('age_verified', False) else 'questions'
+        resp = make_response(redirect(url_for(target)))
         resp.set_cookie('email_verified', '1', max_age=60, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
         return resp
     except Exception as e:
         logger.error(f"Verification error: {str(e)}")
         return redirect(url_for('auth', error='An unexpected error occurred during verification.'))
+
+@app.route('/age-verification', methods=['GET', 'POST'])
+def age_verification():
+    if 'user_id' not in session:
+        return redirect(url_for('auth'))
+    user = mongo_service.get_user_by_id(session['user_id'])
+    if user.get('age_verified', False):
+        quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
+        return redirect(url_for('explore') if quiz_completed else url_for('questions'))
+    if request.method == 'GET':
+        return render_template('age_verification.html')
+    if request.method == 'POST':
+        file = request.files.get('image')
+        if not file:
+            return jsonify({'success': False, 'error': 'No image provided'}), 400
+        try:
+            # Upload to Cloudinary temporarily
+            upload_result = cloudinary.uploader.upload(file, folder="temp_age_verify")
+            url = upload_result['secure_url']
+            public_id = upload_result['public_id']
+            # Send to Age Detector API
+            conn = http.client.HTTPSConnection("age-detector.p.rapidapi.com")
+            payload = json.dumps({"url": url})
+            headers = {
+                'x-rapidapi-key': "3ced0e7048msh6cc7c5758e8cc09p1ab6bajsn7456d8d95695",
+                'x-rapidapi-host': "age-detector.p.rapidapi.com",
+                'Content-Type': "application/json"
+            }
+            conn.request("POST", "/age-detection", payload, headers)
+            res = conn.getresponse()
+            data = res.read().decode("utf-8")
+            ages = json.loads(data)
+            # Delete the temporary image from Cloudinary
+            cloudinary.uploader.destroy(public_id)
+            if not ages:
+                return jsonify({'success': False, 'error': 'No face detected. Please try again.'}), 400
+            age = ages[0]['age']
+            if age >= 18:
+                mongo_service.update_user(session['user_id'], {'age_verified': True})
+                return jsonify({'success': True}), 200
+            else:
+                return jsonify({'success': False, 'error': 'You must be at least 18 years old. If you think this is a mistake, contact joel@ninakkai.com'}), 403
+        except Exception as e:
+            # Attempt to delete if public_id exists
+            if 'public_id' in locals():
+                cloudinary.uploader.destroy(public_id)
+            logger.error(f"Age verification error: {str(e)}")
+            return jsonify({'success': False, 'error': 'Verification failed. Please try again.'}), 500
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password_endpoint(token):
@@ -1119,6 +1174,9 @@ def explore():
         if not user:
             session.clear()
             return redirect(url_for('auth', error='User not found. Please log in again.'))
+        
+        if not user.get('age_verified', False):
+            return redirect(url_for('age_verification'))
         
         quiz_result = mongo_service.get_quiz_results(session['user_id'])
         if not quiz_result:
@@ -1295,6 +1353,9 @@ def chat():
     if 'user_id' not in session:
         logger.debug("No user_id in session for /chat")
         return redirect(url_for('auth'))
+    user = mongo_service.get_user_by_id(session['user_id'])
+    if not user.get('age_verified', False):
+        return redirect(url_for('age_verification'))
     try:
         current_user_id = session['user_id']
         user = mongo_service.get_user_by_id(current_user_id)
@@ -1415,6 +1476,9 @@ def profile():
     if 'user_id' not in session:
         logger.debug("No user_id in session for /profile")
         return redirect(url_for('auth'))
+    user = mongo_service.get_user_by_id(session['user_id'])
+    if not user.get('age_verified', False):
+        return redirect(url_for('age_verification'))
     try:
         user = mongo_service.get_user_by_id(session['user_id'])
         if not user:
@@ -1449,6 +1513,9 @@ def questions():
     if 'user_id' not in session:
         logger.debug("No user_id in session for /questions")
         return redirect(url_for('auth'))
+    user = mongo_service.get_user_by_id(session['user_id'])
+    if not user.get('age_verified', False):
+        return redirect(url_for('age_verification'))
     quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
     if quiz_completed:
         return redirect(url_for('explore'))
