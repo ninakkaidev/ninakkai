@@ -14,7 +14,7 @@
         }
 
         html.dark body {
-            background: #1a202c;
+            background: #111827;
         }
 
         .container {
@@ -55,7 +55,8 @@
         }
 
         html.dark .match-percentage {
-            background-color: rgba(26, 32, 44, 0.9);
+            background-color: rgba(31, 41, 55, 0.9);
+            color: #f3f4f6;
         }
 
         ::-webkit-scrollbar {
@@ -68,7 +69,7 @@
         }
 
         html.dark ::-webkit-scrollbar-track {
-            background: #2d3748;
+            background: #374151;
         }
 
         ::-webkit-scrollbar-thumb {
@@ -77,7 +78,7 @@
         }
 
         html.dark ::-webkit-scrollbar-thumb {
-            background: #a0aec0;
+            background: #6b7280;
         }
 
         ::-webkit-scrollbar-thumb:hover {
@@ -85,7 +86,7 @@
         }
 
         html.dark ::-webkit-scrollbar-thumb:hover {
-            background: #cbd5e0;
+            background: #9ca3af;
         }
 
         #mainHeader {
@@ -105,7 +106,7 @@
         }
 
         html.dark .scrolled-header {
-            background-color: rgba(26, 32, 44, 0.95);
+            background-color: rgba(17, 24, 39, 0.95);
             box-shadow: 0 1px 3px rgba(255,255,255,0.1);
         }
 
@@ -138,7 +139,7 @@
         }
 
         html.dark .loading-spinner {
-            border: 4px solid #2d3748;
+            border: 4px solid #374151;
             border-top: 4px solid #ec4899;
         }
 
@@ -162,7 +163,8 @@
         }
 
         html.dark .popup {
-            background: #2d3748;
+            background: #1f2937;
+            color: #f3f4f6;
             box-shadow: 0 0 20px rgba(255,255,255,0.1);
         }
 
@@ -238,7 +240,8 @@
         }
 
         html.dark .discovery-rating {
-            background-color: rgba(26, 32, 44, 0.9);
+            background-color: rgba(31, 41, 55, 0.9);
+            color: #f3f4f6;
         }
 
         /* Liked state styling */
@@ -259,7 +262,18 @@
         }
 
         html.dark .profile-viewer {
-            background: #1a202c;
+            background: #111827;
+        }
+
+        /* Bottom navigation styling */
+        .bottom-nav {
+            background-color: white;
+            box-shadow: 0 -1px 3px rgba(0,0,0,0.1);
+        }
+
+        html.dark .bottom-nav {
+            background-color: #1f2937;
+            box-shadow: 0 -1px 3px rgba(255,255,255,0.1);
         }
 
         /* Responsive adjustments */
@@ -282,7 +296,7 @@
             }
             
             html.dark #searchBox {
-                background-color: rgba(26, 32, 44, 0.95);
+                background-color: rgba(17, 24, 39, 0.95);
             }
 
             #searchBox input {
@@ -326,7 +340,7 @@
         }
     </style>
 </head>
-<body class="bg-white dark:bg-gray-900">
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100">
     <!-- Loading State -->
     <div class="loading" id="loading">
         <div class="loading-spinner"></div>
@@ -443,7 +457,7 @@
     </main>
 
     <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-lg z-10">
+    <nav class="bottom-nav fixed bottom-0 left-0 right-0 z-10">
         <div class="container mx-auto px-4">
             <div class="flex justify-around py-3">
                 <a href="{{ url_for('chat') }}" class="text-gray-500 dark:text-gray-300 hover:text-pink-500 flex flex-col items-center">
@@ -708,7 +722,7 @@
                         mainHeader.style.display = 'none';
                         
                         const profileViewer = document.createElement('div');
-                        profileViewer.className = 'profile-viewer bg-white dark:bg-gray-900';
+                        profileViewer.className = 'profile-viewer bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100';
                         profileViewer.innerHTML = `
                             <div class="relative">
                                 <img src="${profile.user.image}" alt="${profile.user.full_name}" class="profile-viewer-image">
@@ -738,25 +752,27 @@
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Personality Types</h3>
                                     <p class="text-gray-700 dark:text-gray-300">Dominant: ${profile.user.personality.dominant_type} (${profile.user.personality.dominant_percentage}%)</p>
-                                    <p class="text-gray-700 dark:text-gray-300">Secondary: ${profile.user.personality.secondary_type} (${profile.user.personality.secondary_percentage}%)</p>
+                                    <p class="text-gray-700 dark:text-gray-300">Secondary: ${profile.user.personality.secondary_type || 'None'} (${profile.user.personality.secondary_percentage || '0'}%)</p>
                                 </div>
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Personality Details</h3>
-                                    <p class="text-gray-700 dark:text-gray-300"><strong>${profile.user.personality_info.title}</strong></p>
-                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.personality_info.description}</p>
-                                    <p class="text-gray-700 dark:text-gray-300"><em>${profile.user.personality_info.tagline}</em></p>
-                                    <p class="text-gray-700 dark:text-gray-300"><strong>Strengths:</strong> ${profile.user.personality_info.strengths.join(', ')}</p>
-                                    <p class="text-gray-700 dark:text-gray-300"><strong>Compatibility:</strong> ${profile.user.personality_info.compatibility.join(', ')}</p>
+                                    ${profile.user.personality_info ? `
+                                        <p class="text-gray-700 dark:text-gray-300"><strong>${profile.user.personality_info.title || 'Personality Information'}</strong></p>
+                                        <p class="text-gray-700 dark:text-gray-300">${profile.user.personality_info.description || 'No description available'}</p>
+                                        <p class="text-gray-700 dark:text-gray-300"><em>${profile.user.personality_info.tagline || ''}</em></p>
+                                        <p class="text-gray-700 dark:text-gray-300"><strong>Strengths:</strong> ${profile.user.personality_info.strengths ? profile.user.personality_info.strengths.join(', ') : 'Not specified'}</p>
+                                        <p class="text-gray-700 dark:text-gray-300"><strong>Compatibility:</strong> ${profile.user.personality_info.compatibility ? profile.user.personality_info.compatibility.join(', ') : 'Not specified'}</p>
+                                    ` : '<p class="text-gray-700 dark:text-gray-300">No personality information available</p>'}
                                 </div>
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Interests</h3>
                                     <div class="flex flex-wrap gap-2">
-                                        ${profile.user.interests.length ? profile.user.interests.map(interest => `<span class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-3 py-1 rounded-full text-sm">${interest}</span>`).join('') : '<span class="text-gray-600 dark:text-gray-400">No interests listed</span>'}
+                                        ${profile.user.interests && profile.user.interests.length ? profile.user.interests.map(interest => `<span class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-3 py-1 rounded-full text-sm">${interest}</span>`).join('') : '<span class="text-gray-600 dark:text-gray-400">No interests listed</span>'}
                                     </div>
                                 </div>
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Photos</h3>
-                                    ${profile.user.photos.length ? `
+                                    ${profile.user.photos && profile.user.photos.length ? `
                                         <div class="grid grid-cols-2 gap-4">
                                             ${profile.user.photos.map(photo => `<img src="${photo}" alt="User photo" class="rounded-lg object-cover h-40 w-full">`).join('')}
                                         </div>
