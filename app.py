@@ -1306,11 +1306,11 @@ def user_profile(user_id):
         if not user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
         quiz_result = mongo_service.get_quiz_results(user_id)
-        personalities = {
+        third_person_personalities = {
             '🌿 Nurturer': {
                 'dominant_type': '🌿 Nurturer',
-                'title': '“You are a Nurturer.”',
-                'description': 'You’re gentle, loyal, and always ready to hold space for someone you love. You build relationships with quiet strength and warmth.',
+                'title': '“This person is a Nurturer.”',
+                'description': 'They’re gentle, loyal, and always ready to hold space for someone they love. They build relationships with quiet strength and warmth.',
                 'tagline': '“Soft-hearted, deep-rooted.”',
                 'strengths': ['Gentle', 'Loyal', 'Empathetic'],
                 'compatibility': ['🛡️ Protector', '👂 Listener'],
@@ -1318,8 +1318,8 @@ def user_profile(user_id):
             },
             '🛡️ Protector': {
                 'dominant_type': '🛡️ Protector',
-                'title': '“You are a Protector.”',
-                'description': 'You’re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — and showing up when it matters.',
+                'title': '“This person is a Protector.”',
+                'description': 'They’re grounded, trustworthy, and always ready to stand up for the people they care about. Love means loyalty — and showing up when it matters.',
                 'tagline': '“Safe. Steady. Yours.”',
                 'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
                 'compatibility': ['🌿 Nurturer', '🌙 Dreamer'],
@@ -1327,17 +1327,17 @@ def user_profile(user_id):
             },
             '🌙 Dreamer': {
                 'dominant_type': '🌙 Dreamer',
-                'title': '“You are a Dreamer.”',
-                'description': 'You feel deeply and love boldly. You seek the kind of connection that feels written in the stars. You crave the kind of love that makes your soul glow.',
-                'tagline': '“Romance is your religion.”',
+                'title': '“This person is a Dreamer.”',
+                'description': 'They feel deeply and love boldly. They seek the kind of connection that feels written in the stars. They crave the kind of love that makes their soul glow.',
+                'tagline': '“Romance is their religion.”',
                 'strengths': ['Deep', 'Bold', 'Soulful'],
                 'compatibility': ['💘 Romantic', '🌟 Idealist'],
                 'color': '#9C27B0'
             },
             '👂 Listener': {
                 'dominant_type': '👂 Listener',
-                'title': '“You are a Listener.”',
-                'description': 'Calm and thoughtful, you hear more than what’s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
+                'title': '“This person is a Listener.”',
+                'description': 'Calm and thoughtful, they hear more than what’s said. They bring comfort in silence and meaning in presence. They understand that real love sometimes just means being there.',
                 'tagline': '“Still waters, true heart.”',
                 'strengths': ['Calm', 'Thoughtful', 'Present'],
                 'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
@@ -1345,8 +1345,8 @@ def user_profile(user_id):
             },
             '💘 Romantic': {
                 'dominant_type': '💘 Romantic',
-                'title': '“You are a Romantic.”',
-                'description': 'You lead with your heart, express love freely, and long for emotional electricity. You don’t just fall in love — you dive in.',
+                'title': '“This person is a Romantic.”',
+                'description': 'They lead with their heart, express love freely, and long for emotional electricity. They don’t just fall in love — they dive in.',
                 'tagline': '“Loving loudly. Feeling deeply.”',
                 'strengths': ['Heart-led', 'Expressive', 'Passionate'],
                 'compatibility': ['🌙 Dreamer', '🌟 Idealist'],
@@ -1354,8 +1354,8 @@ def user_profile(user_id):
             },
             '🌟 Idealist': {
                 'dominant_type': '🌟 Idealist',
-                'title': '“You are an Idealist.”',
-                'description': 'You believe love should feel right — clear, mutual, and beautifully real. You wait for the one who understands your soul.',
+                'title': '“This person is an Idealist.”',
+                'description': 'They believe love should feel right — clear, mutual, and beautifully real. They wait for the one who understands their soul.',
                 'tagline': '“Only real love will do.”',
                 'strengths': ['Believer', 'Clear', 'Soul-seeking'],
                 'compatibility': ['🌙 Dreamer', '💘 Romantic'],
@@ -1363,9 +1363,9 @@ def user_profile(user_id):
             },
         }
         dominant_type = quiz_result['scores']['dominant_type'] if quiz_result else 'N/A'
-        personality_info = personalities.get(dominant_type, {
+        personality_info = third_person_personalities.get(dominant_type, {
             'dominant_type': dominant_type,
-            'title': f'You are a {dominant_type.replace(" ", "")}.',
+            'title': f'This person is a {dominant_type.replace(" ", "")}.',
             'description': 'Description not available.',
             'tagline': '',
             'strengths': [],
@@ -1868,7 +1868,7 @@ def upload_profile_picture():
     if 'user_id' not in session:
         logger.warning("Unauthorized access to upload_profile_picture")
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    file = request.files.get('file')
+    file = request.files.get('image')
     if not file:
         logger.warning("No file provided in upload_profile_picture")
         return jsonify({'success': False, 'error': 'No file provided'}), 400
