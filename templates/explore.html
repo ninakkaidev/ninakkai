@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +11,10 @@
             padding-bottom: 70px;
             background: white;
             position: relative;
+        }
+
+        html.dark body {
+            background: #1a202c;
         }
 
         .container {
@@ -50,6 +54,10 @@
             z-index: 10;
         }
 
+        html.dark .match-percentage {
+            background-color: rgba(26, 32, 44, 0.9);
+        }
+
         ::-webkit-scrollbar {
             height: 4px;
         }
@@ -59,13 +67,25 @@
             border-radius: 10px;
         }
 
+        html.dark ::-webkit-scrollbar-track {
+            background: #2d3748;
+        }
+
         ::-webkit-scrollbar-thumb {
             background: #888;
             border-radius: 10px;
         }
 
+        html.dark ::-webkit-scrollbar-thumb {
+            background: #a0aec0;
+        }
+
         ::-webkit-scrollbar-thumb:hover {
             background: #555;
+        }
+
+        html.dark ::-webkit-scrollbar-thumb:hover {
+            background: #cbd5e0;
         }
 
         #mainHeader {
@@ -82,6 +102,11 @@
             background-color: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        html.dark .scrolled-header {
+            background-color: rgba(26, 32, 44, 0.95);
+            box-shadow: 0 1px 3px rgba(255,255,255,0.1);
         }
 
         .search-box-transition {
@@ -112,6 +137,11 @@
             margin-bottom: 1rem;
         }
 
+        html.dark .loading-spinner {
+            border: 4px solid #2d3748;
+            border-top: 4px solid #ec4899;
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -129,6 +159,11 @@
             box-shadow: 0 0 20px rgba(0,0,0,0.2);
             animation: popupAnim 1s ease;
             z-index: 1002;
+        }
+
+        html.dark .popup {
+            background: #2d3748;
+            box-shadow: 0 0 20px rgba(255,255,255,0.1);
         }
 
         @keyframes popupAnim {
@@ -159,6 +194,10 @@
             overflow: hidden;
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        html.dark .discovery-profile {
+            box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
         }
 
         .discovery-profile::before {
@@ -194,6 +233,10 @@
             z-index: 10;
         }
 
+        html.dark .discovery-rating {
+            background-color: rgba(26, 32, 44, 0.9);
+        }
+
         /* Liked state styling */
         .liked-button {
             background-color: #10b981 !important;
@@ -209,6 +252,10 @@
             overflow-y: auto;
             display: flex;
             flex-direction: column;
+        }
+
+        html.dark .profile-viewer {
+            background: #1a202c;
         }
 
         /* Responsive adjustments */
@@ -230,6 +277,10 @@
                 background-color: rgba(255, 255, 255, 0.95);
             }
             
+            html.dark #searchBox {
+                background-color: rgba(26, 32, 44, 0.95);
+            }
+
             #searchBox input {
                 width: 100%;
             }
@@ -271,11 +322,11 @@
         }
     </style>
 </head>
-<body>
+<body class="bg-white dark:bg-gray-900">
     <!-- Loading State -->
     <div class="loading" id="loading">
         <div class="loading-spinner"></div>
-        <p class="text-white text-center">Finding your matches...</p>
+        <p class="text-white dark:text-gray-300 text-center">Finding your matches...</p>
     </div>
 
     <!-- Header -->
@@ -292,11 +343,14 @@
                     <i class="fas fa-search text-xl"></i>
                 </button>
                 <div id="searchBox" class="hidden md:block search-box-transition">
-                    <input type="text" id="searchInput" placeholder="Search by name or interests..." class="border border-gray-300 rounded-full px-4 py-1 focus:outline-none focus:ring-2 focus:ring-pink-500" />
+                    <input type="text" id="searchInput" placeholder="Search by name or interests..." class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-full px-4 py-1 focus:outline-none focus:ring-2 focus:ring-pink-500" />
                 </div>
                 <div class="w-8 h-8 rounded-full bg-pink-500 overflow-hidden">
                     <img src="{{ profile.image }}" alt="Profile" class="w-full h-full object-cover">
                 </div>
+                <button id="darkModeToggle" class="text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-moon text-xl"></i>
+                </button>
             </div>
         </div>
     </header>
@@ -305,11 +359,11 @@
     <main class="container mx-auto px-4 py-6 mt-16">
         <!-- Error Message -->
         {% if error %}
-        <div id="error-message" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <div id="error-message" class="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded relative mb-4" role="alert">
             <span id="error-text">{{ error }}</span>
         </div>
         {% else %}
-        <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <div id="error-message" class="hidden bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded relative mb-4" role="alert">
             <span id="error-text"></span>
         </div>
         {% endif %}
@@ -317,14 +371,14 @@
         <!-- Most Matched Suggestions Section -->
         <div id="matches-section" class="mb-8">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800">Most Matched Suggestions</h2>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Most Matched Suggestions</h2>
                 <button id="see-all-matches" class="text-pink-500 text-sm font-medium">See All</button>
             </div>
             <div id="matches-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                 {% if matches %}
                     {% for match in matches %}
-                    <div class="bg-white rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="{{ match.id }}">
-                        <div class="match-percentage">{{ match.match_percentage }}%</div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="{{ match.id }}">
+                        <div class="match-percentage text-gray-800 dark:text-gray-100">{{ match.match_percentage }}%</div>
                         <img src="{{ match.image }}" alt="Profile" class="profile-image">
                         <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
                             <div class="flex justify-between items-end">
@@ -342,7 +396,7 @@
                     </div>
                     {% endfor %}
                 {% else %}
-                    <p class="text-gray-600 col-span-full">No matches found. Try completing your quiz!</p>
+                    <p class="text-gray-600 dark:text-gray-400 col-span-full">No matches found. Try completing your quiz!</p>
                 {% endif %}
             </div>
         </div>
@@ -350,7 +404,7 @@
         <!-- Discovery Section with new styling -->
         <div id="discovery-section" class="mb-8">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800">Discover People</h2>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Discover People</h2>
                 <button id="see-all-discovery" class="text-pink-500 text-sm font-medium">See All</button>
             </div>
             <div id="discovery-grid" class="discovery-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
@@ -358,7 +412,7 @@
                     {% for match in discovery %}
                     <div class="discovery-profile discovery-card" data-user-id="{{ match.id }}">
                         <img src="{{ match.image }}" alt="Profile" class="profile-image">
-                        <div class="discovery-rating">
+                        <div class="discovery-rating text-gray-800 dark:text-gray-100">
                             <i class="fas fa-star text-yellow-500 text-xs mr-1"></i>
                             <span class="text-xs font-medium">{{ match.rating }}</span>
                         </div>
@@ -378,17 +432,17 @@
                     </div>
                     {% endfor %}
                 {% else %}
-                    <p class="text-gray-600 col-span-full">No people to discover. Try completing your quiz!</p>
+                    <p class="text-gray-600 dark:text-gray-400 col-span-full">No people to discover. Try completing your quiz!</p>
                 {% endif %}
             </div>
         </div>
     </main>
 
     <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg z-10">
+    <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-lg z-10">
         <div class="container mx-auto px-4">
             <div class="flex justify-around py-3">
-                <a href="{{ url_for('chat') }}" class="text-gray-500 hover:text-pink-500 flex flex-col items-center">
+                <a href="{{ url_for('chat') }}" class="text-gray-500 dark:text-gray-400 hover:text-pink-500 flex flex-col items-center">
                     <i class="fas fa-comments text-xl"></i>
                     <span class="text-xs mt-1">Chat</span>
                 </a>
@@ -396,7 +450,7 @@
                     <i class="fas fa-compass text-xl"></i>
                     <span class="text-xs mt-1">Explore</span>
                 </a>
-                <a href="{{ url_for('profile') }}" class="text-gray-500 hover:text-pink-500 flex flex-col items-center">
+                <a href="{{ url_for('profile') }}" class="text-gray-500 dark:text-gray-400 hover:text-pink-500 flex flex-col items-center">
                     <i class="fas fa-user text-xl"></i>
                     <span class="text-xs mt-1">Profile</span>
                 </a>
@@ -412,6 +466,28 @@
             const errorMessage = document.getElementById('error-message');
             const errorText = document.getElementById('error-text');
             const mainHeader = document.getElementById('mainHeader');
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            
+            // Dark mode persistence
+            if (localStorage.theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                darkModeToggle.innerHTML = '<i class="fas fa-sun text-xl"></i>';
+            } else {
+                document.documentElement.classList.remove('dark');
+                darkModeToggle.innerHTML = '<i class="fas fa-moon text-xl"></i>';
+            }
+
+            darkModeToggle.addEventListener('click', () => {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.theme = 'light';
+                    darkModeToggle.innerHTML = '<i class="fas fa-moon text-xl"></i>';
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.theme = 'dark';
+                    darkModeToggle.innerHTML = '<i class="fas fa-sun text-xl"></i>';
+                }
+            });
             
             // Store liked users in localStorage to persist across page refreshes
             let likedUsers = JSON.parse(localStorage.getItem('likedUsers') || '{}');
@@ -432,7 +508,7 @@
 
             function showNotification(message) {
                 const notification = document.createElement('div');
-                notification.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-30';
+                notification.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-4 py-2 rounded-lg shadow-lg z-30';
                 notification.textContent = message;
                 document.body.appendChild(notification);
                 
@@ -444,7 +520,7 @@
 
             function showMatchPopup() {
                 const popup = document.createElement('div');
-                popup.className = 'popup';
+                popup.className = 'popup text-gray-800 dark:text-gray-100';
                 popup.textContent = 'Connection Successful!';
                 document.body.appendChild(popup);
                 setTimeout(() => {
@@ -588,8 +664,8 @@
             function updateMatches(matches) {
                 const matchesGrid = document.getElementById('matches-grid');
                 matchesGrid.innerHTML = matches.length ? matches.map(match => `
-                    <div class="bg-white rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="${match.id}">
-                        <div class="match-percentage">${match.match_percentage}%</div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="${match.id}">
+                        <div class="match-percentage text-gray-800 dark:text-gray-100">${match.match_percentage}%</div>
                         <img src="${match.image}" alt="${match.full_name}" class="profile-image">
                         <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
                             <div class="flex justify-between items-end">
@@ -605,7 +681,7 @@
                             </div>
                         </div>
                     </div>
-                `).join('') : '<p class="text-gray-600 col-span-full">No matches found for your search.</p>';
+                `).join('') : '<p class="text-gray-600 dark:text-gray-400 col-span-full">No matches found for your search.</p>';
                 
                 // Reattach event listeners to new buttons
                 attachLikeButtonListeners();
@@ -628,22 +704,22 @@
                         mainHeader.style.display = 'none';
                         
                         const profileViewer = document.createElement('div');
-                        profileViewer.className = 'profile-viewer';
+                        profileViewer.className = 'profile-viewer bg-white dark:bg-gray-900';
                         profileViewer.innerHTML = `
                             <div class="relative">
                                 <img src="${profile.user.image}" alt="${profile.user.full_name}" class="profile-viewer-image">
-                                <button class="absolute top-4 left-4 bg-white bg-opacity-80 rounded-full w-10 h-10 flex items-center justify-center close-profile">
-                                    <i class="fas fa-arrow-left text-gray-800"></i>
+                                <button class="absolute top-4 left-4 bg-white dark:bg-gray-800 bg-opacity-80 rounded-full w-10 h-10 flex items-center justify-center close-profile">
+                                    <i class="fas fa-arrow-left text-gray-800 dark:text-gray-100"></i>
                                 </button>
-                                <div class="absolute bottom-4 left-4 bg-white bg-opacity-80 rounded-full px-3 py-1">
-                                    <span class="font-bold text-gray-800">${profile.user.match_percentage}% Match</span>
+                                <div class="absolute bottom-4 left-4 bg-white dark:bg-gray-800 bg-opacity-80 rounded-full px-3 py-1">
+                                    <span class="font-bold text-gray-800 dark:text-gray-100">${profile.user.match_percentage}% Match</span>
                                 </div>
                             </div>
                             <div class="p-6 flex-1">
                                 <div class="flex justify-between items-start mb-4">
                                     <div>
-                                        <h2 class="text-2xl font-bold">${profile.user.full_name}, ${profile.user.age || 'N/A'}</h2>
-                                        <p class="text-gray-600">${profile.user.occupation} • ${profile.user.distance}</p>
+                                        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">${profile.user.full_name}, ${profile.user.age || 'N/A'}</h2>
+                                        <p class="text-gray-600 dark:text-gray-400">${profile.user.occupation} • ${profile.user.distance}</p>
                                     </div>
                                     <button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-12 h-12 flex items-center justify-center transition" 
                                             data-user-id="${userId}" 
@@ -652,22 +728,22 @@
                                     </button>
                                 </div>
                                 <div class="mb-6">
-                                    <h3 class="text-lg font-bold mb-2">About</h3>
-                                    <p class="text-gray-700">${profile.user.bio}</p>
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">About</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.bio}</p>
                                 </div>
                                 <div class="mb-6">
-                                    <h3 class="text-lg font-bold mb-2">Personality Type</h3>
-                                    <p class="text-gray-700">Dominant: ${profile.user.personality.dominant_type} (${profile.user.personality.dominant_percentage}%)</p>
-                                    <p class="text-gray-700">Secondary: ${profile.user.personality.secondary_type} (${profile.user.personality.secondary_percentage}%)</p>
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Personality Type</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">Dominant: ${profile.user.personality.dominant_type} (${profile.user.personality.dominant_percentage}%)</p>
+                                    <p class="text-gray-700 dark:text-gray-300">Secondary: ${profile.user.personality.secondary_type} (${profile.user.personality.secondary_percentage}%)</p>
                                 </div>
                                 <div class="mb-6">
-                                    <h3 class="text-lg font-bold mb-2">Interests</h3>
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Interests</h3>
                                     <div class="flex flex-wrap gap-2">
-                                        ${profile.user.interests.length ? profile.user.interests.map(interest => `<span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">${interest}</span>`).join('') : '<span class="text-gray-600">No interests listed</span>'}
+                                        ${profile.user.interests.length ? profile.user.interests.map(interest => `<span class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-3 py-1 rounded-full text-sm">${interest}</span>`).join('') : '<span class="text-gray-600 dark:text-gray-400">No interests listed</span>'}
                                     </div>
                                 </div>
                                 <div class="flex justify-between mt-8">
-                                    <button class="bg-gray-200 text-gray-800 rounded-full px-6 py-3 flex-1 mr-2 hover:bg-gray-300 transition pass-button" data-user-id="${userId}">
+                                    <button class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-full px-6 py-3 flex-1 mr-2 hover:bg-gray-300 dark:hover:bg-gray-600 transition pass-button" data-user-id="${userId}">
                                         <i class="fas fa-times mr-2"></i> Pass
                                     </button>
                                     <button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full px-6 py-3 flex-1 ml-2 transition" 

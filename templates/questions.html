@@ -320,6 +320,93 @@
       text-align: center;
     }
 
+    .personality-results {
+      display: none;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 30px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+      color: white;
+      text-align: center;
+    }
+
+    .personality-type {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .personality-title {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+
+    .personality-description {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      margin-bottom: 25px;
+    }
+
+    .strengths-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 25px;
+    }
+
+    .strength-pill {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+    }
+
+    .compatibility-section {
+      margin-top: 30px;
+    }
+
+    .compatibility-title {
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+    }
+
+    .compatibility-types {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .compatibility-type {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 10px 20px;
+      border-radius: 10px;
+    }
+
+    .btn-meet-matches {
+      background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
+      color: white;
+      border: none;
+      padding: 12px 40px;
+      font-size: 1.1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 30px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-meet-matches:hover {
+      background: linear-gradient(135deg, #76b6f5 0%, #ff5275 100%);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+
     @media (max-width: 768px) {
       .intro-container {
         margin: 50px auto;
@@ -355,6 +442,23 @@
       .answers button {
         font-size: 1rem;
         padding: 10px 15px;
+      }
+
+      .personality-results {
+        margin: 30px auto;
+        padding: 20px;
+      }
+
+      .personality-type {
+        font-size: 2rem;
+      }
+
+      .personality-title {
+        font-size: 1.5rem;
+      }
+
+      .personality-description {
+        font-size: 1rem;
       }
     }
 
@@ -420,6 +524,38 @@
         padding: 8px 20px;
         font-size: 0.9rem;
       }
+
+      .personality-results {
+        margin: 20px auto;
+        padding: 15px;
+      }
+
+      .personality-type {
+        font-size: 1.8rem;
+      }
+
+      .personality-title {
+        font-size: 1.3rem;
+      }
+
+      .personality-description {
+        font-size: 0.9rem;
+      }
+
+      .strength-pill {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+      }
+
+      .compatibility-type {
+        font-size: 0.9rem;
+        padding: 8px 15px;
+      }
+
+      .btn-meet-matches {
+        padding: 10px 30px;
+        font-size: 1rem;
+      }
     }
 
     @keyframes slideIn {
@@ -471,11 +607,26 @@
   </div>
 
   <div class="final-screen" id="final-screen">
-    <h2>🎉 Match Found!</h2>
-    <p>Based on your answers, we've discovered people who connect deeply with your energy.</p>
-    <p>Get ready to meet your potential matches!</p>
-    <button class="btn-start-over" id="btn-explore">Meet Your Partner</button>
+    <h2>🎉 Quiz Completed!</h2>
+    <p>We're analyzing your answers to discover your unique personality type.</p>
+    <p>Get ready to learn more about yourself and meet compatible partners!</p>
+    <button class="btn-start-over" id="btn-see-results">See Your Results</button>
   </div>
+</div>
+
+<div class="personality-results" id="personality-results">
+  <div class="personality-type" id="personality-type"></div>
+  <div class="personality-title" id="personality-title"></div>
+  <div class="personality-description" id="personality-description"></div>
+  
+  <div class="strengths-container" id="strengths-container"></div>
+  
+  <div class="compatibility-section">
+    <div class="compatibility-title">You're most compatible with:</div>
+    <div class="compatibility-types" id="compatibility-types"></div>
+  </div>
+  
+  <button class="btn-meet-matches" id="btn-meet-matches">Meet Your Matches</button>
 </div>
 
 <script>
@@ -489,13 +640,20 @@
     const progressBar = document.getElementById('progress-bar');
     const finalScreen = document.getElementById('final-screen');
     const btnStart = document.getElementById('btn-start');
-    const btnExplore = document.getElementById('btn-explore');
+    const btnSeeResults = document.getElementById('btn-see-results');
     const optionalSection = document.getElementById('optional-section');
     const btnYes = document.getElementById('btn-yes');
     const btnNo = document.getElementById('btn-no');
     const sectionTitle = document.getElementById('section-title');
     const sectionDescription = document.getElementById('section-description');
     const rankInstructions = document.getElementById('rank-instructions');
+    const personalityResults = document.getElementById('personality-results');
+    const personalityType = document.getElementById('personality-type');
+    const personalityTitle = document.getElementById('personality-title');
+    const personalityDescription = document.getElementById('personality-description');
+    const strengthsContainer = document.getElementById('strengths-container');
+    const compatibilityTypes = document.getElementById('compatibility-types');
+    const btnMeetMatches = document.getElementById('btn-meet-matches');
 
     // Quiz Data
     const requiredQuestions = [
@@ -604,7 +762,7 @@
         types: ["🛡️ Protector", "👂 Listener", "🌟 Idealist", "🌿 Nurturer"]
       },
       { 
-        question: "What’s your approach to planning a future with someone?", 
+        question: "What's your approach to planning a future with someone?", 
         answers: [
           "Dream big and figure it out later",
           "Set clear goals and timelines",
@@ -650,8 +808,9 @@
     // Initialize
     loadSavedAnswers();
     btnStart.addEventListener('click', startQuiz);
-    btnExplore.addEventListener('click', () => {
-      console.log('Meet Your Partner clicked, redirecting to explore');
+    btnSeeResults.addEventListener('click', showPersonalityResults);
+    btnMeetMatches.addEventListener('click', () => {
+      console.log('Meet Your Matches clicked, redirecting to explore');
       window.location.href = '{{ url_for("explore") }}';
     });
     btnYes.addEventListener('click', () => {
@@ -823,11 +982,6 @@
           console.log('Quiz submitted successfully, clearing session storage');
           sessionStorage.removeItem('quiz_answers');
           showFinalScreen();
-          // Auto-redirect after 2 seconds
-          setTimeout(() => {
-            console.log('Auto-redirecting to explore after final screen');
-            window.location.href = '{{ url_for("explore") }}';
-          }, 2000);
         } else {
           console.error('Quiz submission failed:', data.error);
           alert('Error submitting quiz: ' + (data.error || 'Unknown error'));
@@ -844,15 +998,72 @@
       optionalSection.style.display = 'none';
       finalScreen.style.display = 'block';
       finalScreen.classList.add('animate__animated', 'animate__fadeIn');
+      setTimeout(() => {
+        finalScreen.classList.remove('animate__animated', 'animate__fadeIn');
+      }, 1000);
+    }
+
+    function showPersonalityResults() {
+      console.log('Showing personality results');
+      finalScreen.style.display = 'none';
+      personalityResults.style.display = 'block';
+      
+      // Fetch personality results from server
+      fetch('{{ url_for("personality_results") }}')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            displayPersonalityInfo(data.personality_info);
+          } else {
+            console.error('Failed to fetch personality results');
+            // Redirect to explore if results aren't available
+            window.location.href = '{{ url_for("explore") }}';
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching personality results:', error);
+          window.location.href = '{{ url_for("explore") }}';
+        });
+    }
+
+    function displayPersonalityInfo(personalityInfo) {
+      personalityType.textContent = personalityInfo.dominant_type;
+      personalityTitle.textContent = personalityInfo.title;
+      personalityDescription.textContent = personalityInfo.description;
+      
+      // Set dynamic color based on personality type
+      document.documentElement.style.setProperty('--personality-color', personalityInfo.color);
+      
+      // Display strengths
+      strengthsContainer.innerHTML = '';
+      personalityInfo.strengths.forEach(strength => {
+        const strengthPill = document.createElement('div');
+        strengthPill.className = 'strength-pill';
+        strengthPill.textContent = strength;
+        strengthsContainer.appendChild(strengthPill);
+      });
+      
+      // Display compatibility types
+      compatibilityTypes.innerHTML = '';
+      personalityInfo.compatibility.forEach(type => {
+        const typeElement = document.createElement('div');
+        typeElement.className = 'compatibility-type';
+        typeElement.textContent = type;
+        compatibilityTypes.appendChild(typeElement);
+      });
+      
+      // Animate results
+      personalityResults.classList.add('animate__animated', 'animate__fadeIn');
+      setTimeout(() => {
+        personalityResults.classList.remove('animate__animated', 'animate__fadeIn');
+      }, 1000);
+      
       // Trigger confetti
       confetti({
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 }
       });
-      setTimeout(() => {
-        finalScreen.classList.remove('animate__animated', 'animate__fadeIn');
-      }, 1000);
     }
   });
 </script>

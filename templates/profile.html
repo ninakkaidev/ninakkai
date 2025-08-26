@@ -182,7 +182,7 @@
         }
         
         /* Language Selector Styles */
-        .language-selector {
+        .language-selector-selector {
             position: relative;
         }
         
@@ -455,6 +455,22 @@
                 <h3 class="font-semibold mb-2">About Me</h3>
                 <p id="bioView" class="view-field text-gray-700">{{ profile.bio }}</p>
                 <textarea id="bioEdit" class="edit-field w-full border rounded px-3 py-2 h-24">{{ profile.bio }}</textarea>
+            </div>
+
+            <!-- Personality Description -->
+            <div class="mt-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-semibold mb-2">My Personality</h3>
+                    <button id="updatePersonalityBtn" class="text-pink-500 hover:text-pink-600">
+                        <i class="fas fa-pencil-alt text-sm"></i> Update
+                    </button>
+                </div>
+                {% if profile.personality_info %}
+                <p class="text-gray-700">{{ profile.personality_info | safe }}</p>
+                {% else %}
+                <p class="text-gray-700">Complete the quiz to discover your personality!</p>
+                <a href="/questions" class="text-pink-500 font-medium">Take Quiz</a>
+                {% endif %}
             </div>
             
             <!-- Edit Buttons (shown only in edit mode) -->
@@ -1506,6 +1522,14 @@
                     }
                 });
             });
+
+            // Update Personality button
+            const updatePersonalityBtn = document.getElementById('updatePersonalityBtn');
+            if (updatePersonalityBtn) {
+                updatePersonalityBtn.addEventListener('click', () => {
+                    window.location.href = '/questions?retake=true';
+                });
+            }
         });
     </script>
 </body>
