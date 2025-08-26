@@ -212,6 +212,10 @@
             pointer-events: none;
         }
 
+        html.dark .discovery-profile::before {
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+        }
+
         .discovery-content {
             position: absolute;
             bottom: 0;
@@ -348,7 +352,7 @@
                 <div class="w-8 h-8 rounded-full bg-pink-500 overflow-hidden">
                     <img src="{{ profile.image }}" alt="Profile" class="w-full h-full object-cover">
                 </div>
-                <button id="darkModeToggle" class="text-gray-500 dark:text-gray-400">
+                <button id="darkModeToggle" class="text-gray-500 dark:text-gray-300">
                     <i class="fas fa-moon text-xl"></i>
                 </button>
             </div>
@@ -442,7 +446,7 @@
     <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-lg z-10">
         <div class="container mx-auto px-4">
             <div class="flex justify-around py-3">
-                <a href="{{ url_for('chat') }}" class="text-gray-500 dark:text-gray-400 hover:text-pink-500 flex flex-col items-center">
+                <a href="{{ url_for('chat') }}" class="text-gray-500 dark:text-gray-300 hover:text-pink-500 flex flex-col items-center">
                     <i class="fas fa-comments text-xl"></i>
                     <span class="text-xs mt-1">Chat</span>
                 </a>
@@ -450,7 +454,7 @@
                     <i class="fas fa-compass text-xl"></i>
                     <span class="text-xs mt-1">Explore</span>
                 </a>
-                <a href="{{ url_for('profile') }}" class="text-gray-500 dark:text-gray-400 hover:text-pink-500 flex flex-col items-center">
+                <a href="{{ url_for('profile') }}" class="text-gray-500 dark:text-gray-300 hover:text-pink-500 flex flex-col items-center">
                     <i class="fas fa-user text-xl"></i>
                     <span class="text-xs mt-1">Profile</span>
                 </a>
@@ -732,15 +736,33 @@
                                     <p class="text-gray-700 dark:text-gray-300">${profile.user.bio}</p>
                                 </div>
                                 <div class="mb-6">
-                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Personality Type</h3>
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Personality Types</h3>
                                     <p class="text-gray-700 dark:text-gray-300">Dominant: ${profile.user.personality.dominant_type} (${profile.user.personality.dominant_percentage}%)</p>
                                     <p class="text-gray-700 dark:text-gray-300">Secondary: ${profile.user.personality.secondary_type} (${profile.user.personality.secondary_percentage}%)</p>
+                                </div>
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Personality Details</h3>
+                                    <p class="text-gray-700 dark:text-gray-300"><strong>${profile.user.personality_info.title}</strong></p>
+                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.personality_info.description}</p>
+                                    <p class="text-gray-700 dark:text-gray-300"><em>${profile.user.personality_info.tagline}</em></p>
+                                    <p class="text-gray-700 dark:text-gray-300"><strong>Strengths:</strong> ${profile.user.personality_info.strengths.join(', ')}</p>
+                                    <p class="text-gray-700 dark:text-gray-300"><strong>Compatibility:</strong> ${profile.user.personality_info.compatibility.join(', ')}</p>
                                 </div>
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Interests</h3>
                                     <div class="flex flex-wrap gap-2">
                                         ${profile.user.interests.length ? profile.user.interests.map(interest => `<span class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-3 py-1 rounded-full text-sm">${interest}</span>`).join('') : '<span class="text-gray-600 dark:text-gray-400">No interests listed</span>'}
                                     </div>
+                                </div>
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Photos</h3>
+                                    ${profile.user.photos.length ? `
+                                        <div class="grid grid-cols-2 gap-4">
+                                            ${profile.user.photos.map(photo => `<img src="${photo}" alt="User photo" class="rounded-lg object-cover h-40 w-full">`).join('')}
+                                        </div>
+                                    ` : `
+                                        <p class="text-gray-700 dark:text-gray-300">No pictures uploaded yet</p>
+                                    `}
                                 </div>
                                 <div class="flex justify-between mt-8">
                                     <button class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-full px-6 py-3 flex-1 mr-2 hover:bg-gray-300 dark:hover:bg-gray-600 transition pass-button" data-user-id="${userId}">
