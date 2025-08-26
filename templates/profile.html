@@ -334,6 +334,11 @@
             100% { transform: translate(-50%, -50%) scale(1); }
         }
 
+        .dark .popup {
+            background-color: #1f2937;
+            color: #f3f4f6;
+        }
+
         /* Connection Card Styles */
         .connection-card {
             cursor: pointer;
@@ -383,6 +388,23 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        .dark .loading {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .dark .loading-spinner {
+            border: 4px solid #374151;
+            border-top: 4px solid #ec4899;
+        }
+
+        /* Override gradients in dark mode */
+        .dark .bg-gradient-to-r.from-indigo-100.via-white.to-pink-100 {
+            background-image: linear-gradient(to right, var(--tw-gradient-stops)) !important;
+            --tw-gradient-from: #312e81 var(--tw-gradient-from-position);
+            --tw-gradient-to: #831843 var(--tw-gradient-to-position);
+            --tw-gradient-stops: var(--tw-gradient-from), #111827 var(--tw-gradient-via-position), var(--tw-gradient-to);
         }
     </style>
 </head>
