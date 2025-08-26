@@ -992,7 +992,7 @@ def auth():
             except Exception as e:
                 logger.error(f"Resend verification error: {str(e)}")
                 error = 'An unexpected error occurred'
-        elif form_type = 'forgot_password':
+        elif form_type == 'forgot_password':
             ip = request.remote_addr
             rate_key = f"forgot_{ip}"
             if not mongo_service.check_rate_limit(rate_key, 3):
