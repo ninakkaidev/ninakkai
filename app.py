@@ -992,7 +992,7 @@ def auth():
             except Exception as e:
                 logger.error(f"Resend verification error: {str(e)}")
                 error = 'An unexpected error occurred'
-        elif form_type == 'forgot_password':
+        elif form_type = 'forgot_password':
             ip = request.remote_addr
             rate_key = f"forgot_{ip}"
             if not mongo_service.check_rate_limit(rate_key, 3):
@@ -1089,6 +1089,9 @@ def age_verification():
             }
             conn.request("POST", "/age-detection", payload, headers)
             res = conn.getresponse()
+            if res.status != 200:
+                error_data = res.read().decode("utf-8", errors='ignore')
+                raise Exception(f"API error {res.status} {res.reason}: {error_data}")
             data = res.read().decode("utf-8")
             ages = json.loads(data)
             # Delete the temporary image from Cloudinary
