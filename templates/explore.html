@@ -414,7 +414,7 @@
                     </div>
                     {% endfor %}
                 {% else %}
-                    <p class="text-gray-600 dark:text-gray-400 col-span-full">No matches found. Try completing your quiz!</p>
+                    <p class="text-gray-600 dark:text-gray-300 col-span-full">No matches found. Try completing your quiz!</p>
                 {% endif %}
             </div>
         </div>
@@ -450,7 +450,7 @@
                     </div>
                     {% endfor %}
                 {% else %}
-                    <p class="text-gray-600 dark:text-gray-400 col-span-full">No people to discover. Try completing your quiz!</p>
+                    <p class="text-gray-600 dark:text-gray-300 col-span-full">No people to discover. Try completing your quiz!</p>
                 {% endif %}
             </div>
         </div>
@@ -699,7 +699,7 @@
                             </div>
                         </div>
                     </div>
-                `).join('') : '<p class="text-gray-600 dark:text-gray-400 col-span-full">No matches found for your search.</p>';
+                `).join('') : '<p class="text-gray-600 dark:text-gray-300 col-span-full">No matches found for your search.</p>';
                 
                 // Reattach event listeners to new buttons
                 attachLikeButtonListeners();
@@ -737,7 +737,7 @@
                                 <div class="flex justify-between items-start mb-4">
                                     <div>
                                         <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">${profile.user.full_name}, ${profile.user.age || 'N/A'}</h2>
-                                        <p class="text-gray-600 dark:text-gray-400">${profile.user.occupation} • ${profile.user.distance}</p>
+                                        <p class="text-gray-600 dark:text-gray-300">${profile.user.occupation} • ${profile.user.distance}</p>
                                     </div>
                                     <button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-12 h-12 flex items-center justify-center transition" 
                                             data-user-id="${userId}" 
@@ -767,7 +767,7 @@
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Interests</h3>
                                     <div class="flex flex-wrap gap-2">
-                                        ${profile.user.interests && profile.user.interests.length ? profile.user.interests.map(interest => `<span class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-3 py-1 rounded-full text-sm">${interest}</span>`).join('') : '<span class="text-gray-600 dark:text-gray-400">No interests listed</span>'}
+                                        ${profile.user.interests && profile.user.interests.length ? profile.user.interests.map(interest => `<span class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-3 py-1 rounded-full text-sm">${interest}</span>`).join('') : '<span class="text-gray-600 dark:text-gray-300">No interests listed</span>'}
                                     </div>
                                 </div>
                                 <div class="mb-6">
