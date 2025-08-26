@@ -311,6 +311,18 @@ class MongoService:
             logger.error(f"Get quiz results error: {str(e)}")
             return None
 
+    def delete_quiz_results(self, user_id: str) -> Dict[str, Any]:
+        try:
+            self.quiz_results.delete_many({'user_id': user_id})
+            self.users.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$set': {'profile_complete': False}}
+            )
+            return {'success': True}
+        except Exception as e:
+            logger.error(f"Delete quiz results error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
     def find_matches(self, user_id: str) -> List[Dict[str, Any]]:
         try:
             user_quiz = self.get_quiz_results(user_id)
@@ -1112,7 +1124,7 @@ def age_verification():
             return jsonify({'success': False, 'error': 'Verification failed. Please try again.'}), 500
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
-def reset_password_endpoint(token):
+def reset_password_endpoint():
     if request.method == 'GET':
         user = mongo_service.get_user_by_reset_token(token)
         if not user:
@@ -1487,6 +1499,81 @@ def profile():
         if not user:
             return render_template('profile.html', profile={}, pending_likers=[])
         quiz_result = mongo_service.get_quiz_results(session['user_id'])
+        # Define personalities dict
+        personalities = {
+            '🌿 Nurturer': {
+                'dominant_type': '🌿 Nurturer',
+                'title': '“You are a Nurturer.”',
+                'description': 'You’re gentle, loyal, and always ready to hold space for someone you love. You build relationships with quiet strength and warmth.',
+                'tagline': '“Soft-hearted, deep-rooted.”',
+                'strengths': ['Gentle', 'Loyal', 'Empathetic'],
+                'compatibility': ['🛡️ Protector', '👂 Listener'],
+                'color': '#4CAF50'
+            },
+            '🛡️ Protector': {
+                'dominant_type': '🛡️ Protector',
+                'title': '“You are a Protector.”',
+                'description': 'You’re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — and showing up when it matters.',
+                'tagline': '“Safe. Steady. Yours.”',
+                'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
+                'compatibility': ['🌿 Nurturer', '🌙 Dreamer'],
+                'color': '#2196F3'
+            },
+            '🌙 Dreamer': {
+                'dominant_type': '🌙 Dreamer',
+                'title': '“You are a Dreamer.”',
+                'description': 'You feel deeply and love boldly. You seek the kind of connection that feels written in the stars. You crave the kind of love that makes your soul glow.',
+                'tagline': '“Romance is your religion.”',
+                'strengths': ['Deep', 'Bold', 'Soulful'],
+                'compatibility': ['💘 Romantic', '🌟 Idealist'],
+                'color': '#9C27B0'
+            },
+            '👂 Listener': {
+                'dominant_type': '👂 Listener',
+                'title': '“You are a Listener.”',
+                'description': 'Calm and thoughtful, you hear more than what’s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
+                'tagline': '“Still waters, true heart.”',
+                'strengths': ['Calm', 'Thoughtful', 'Present'],
+                'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
+                'color': '#03A9F4'
+            },
+            '💘 Romantic': {
+                'dominant_type': '💘 Romantic',
+                'title': '“You are a Romantic.”',
+                'description': 'You lead with your heart, express love freely, and long for emotional electricity. You don’t just fall in love — you dive in.',
+                'tagline': '“Loving loudly. Feeling deeply.”',
+                'strengths': ['Heart-led', 'Expressive', 'Passionate'],
+                'compatibility': ['🌙 Dreamer', '🌟 Idealist'],
+                'color': '#E91E63'
+            },
+            '🌟 Idealist': {
+                'dominant_type': '🌟 Idealist',
+                'title': '“You are an Idealist.”',
+                'description': 'You believe love should feel right — clear, mutual, and beautifully real. You wait for the one who understands your soul.',
+                'tagline': '“Only real love will do.”',
+                'strengths': ['Believer', 'Clear', 'Soul-seeking'],
+                'compatibility': ['🌙 Dreamer', '💘 Romantic'],
+                'color': '#FFEB3B'
+            },
+        }
+        dominant_type = quiz_result['scores']['dominant_type'] if quiz_result else 'N/A'
+        personality = personalities.get(dominant_type, {
+            'dominant_type': dominant_type,
+            'title': f'You are a {dominant_type.replace(" ", "")}.',
+            'description': 'Description not available.',
+            'tagline': '',
+            'strengths': [],
+            'compatibility': [],
+            'color': '#000000'
+        })
+        # Format personality_info as HTML
+        personality_info = f"""
+        <strong>{personality['title']}</strong><br>
+        {personality['description']}<br>
+        <em>{personality['tagline']}</em><br>
+        <strong>Strengths:</strong> {', '.join(personality['strengths'])}<br>
+        <strong>Compatibility:</strong> {', '.join(personality['compatibility'])}
+        """
         profile = {
             'id': user['id'],
             'email': user['email'],
@@ -1500,8 +1587,9 @@ def profile():
             'photos': user.get('photos', []),
             'location': user.get('location', ''),
             'quiz_completed': bool(quiz_result),
-            'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
-            'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0
+            'dominant_type': dominant_type,
+            'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0,
+            'personality_info': personality_info
         }
         pending_likers = mongo_service.get_pending_likers(session['user_id'])
         return render_template('profile.html', profile=profile, pending_likers=pending_likers)
@@ -1519,6 +1607,9 @@ def questions():
     user = mongo_service.get_user_by_id(session['user_id'])
     if not user.get('age_verified', False):
         return redirect(url_for('age_verification'))
+    retake = request.args.get('retake') == 'true'
+    if retake:
+        mongo_service.delete_quiz_results(session['user_id'])
     quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
     if quiz_completed:
         return redirect(url_for('explore'))
