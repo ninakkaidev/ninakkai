@@ -178,43 +178,6 @@
       transition: width 0.5s ease;
     }
 
-    .final-screen {
-      display: none;
-      text-align: center;
-      animation: fadeIn 1s ease;
-      max-width: 700px;
-      margin: 50px auto;
-      padding: 30px;
-    }
-
-    .final-screen h2 {
-      color: #ffffff;
-      font-weight: 700;
-      font-size: 2.2rem;
-      margin-bottom: 20px;
-    }
-
-    .final-screen p {
-      font-size: 1.1rem;
-      margin-bottom: 25px;
-      color: #ffffff;
-    }
-
-    .btn-start-over {
-      background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
-      color: #fff;
-      padding: 12px 40px;
-      border: none;
-      border-radius: 50px;
-      transition: all 0.3s ease;
-      font-size: 1.1rem;
-    }
-
-    .btn-start-over:hover {
-      background: linear-gradient(135deg, #76b6f5 0%, #ff5275 100%);
-      transform: scale(1.05);
-    }
-
     .optional-section {
       margin-top: 20px;
       padding: 20px;
@@ -605,13 +568,6 @@
       </div>
     </div>
   </div>
-
-  <div class="final-screen" id="final-screen">
-    <h2>🎉 Quiz Completed!</h2>
-    <p>We're analyzing your answers to discover your unique personality type.</p>
-    <p>Get ready to learn more about yourself and meet compatible partners!</p>
-    <button class="btn-start-over" id="btn-see-results">See Your Results</button>
-  </div>
 </div>
 
 <div class="personality-results" id="personality-results">
@@ -638,10 +594,8 @@
     const questionElement = document.getElementById('question');
     const answersElement = document.getElementById('answers');
     const progressBar = document.getElementById('progress-bar');
-    const finalScreen = document.getElementById('final-screen');
-    const btnStart = document.getElementById('btn-start');
-    const btnSeeResults = document.getElementById('btn-see-results');
     const optionalSection = document.getElementById('optional-section');
+    const btnStart = document.getElementById('btn-start');
     const btnYes = document.getElementById('btn-yes');
     const btnNo = document.getElementById('btn-no');
     const sectionTitle = document.getElementById('section-title');
@@ -808,7 +762,6 @@
     // Initialize
     loadSavedAnswers();
     btnStart.addEventListener('click', startQuiz);
-    btnSeeResults.addEventListener('click', showPersonalityResults);
     btnMeetMatches.addEventListener('click', () => {
       console.log('Meet Your Matches clicked, redirecting to explore');
       window.location.href = '{{ url_for("explore") }}';
@@ -981,7 +934,24 @@
         if (data.success) {
           console.log('Quiz submitted successfully, clearing session storage');
           sessionStorage.removeItem('quiz_answers');
-          showFinalScreen();
+          // Directly fetch and show personality results
+          fetch('{{ url_for("personality_results") }}')
+            .then(personalityResponse => personalityResponse.json())
+            .then(personalityData => {
+              if (personalityData.success) {
+                qaContainer.style.display = 'none';
+                optionalSection.style.display = 'none';
+                displayPersonalityInfo(personalityData.personality_info);
+                personalityResults.style.display = 'block';
+              } else {
+                console.error('Failed to fetch personality results');
+                window.location.href = '{{ url_for("explore") }}';
+              }
+            })
+            .catch(error => {
+              console.error('Error fetching personality results:', error);
+              window.location.href = '{{ url_for("explore") }}';
+            });
         } else {
           console.error('Quiz submission failed:', data.error);
           alert('Error submitting quiz: ' + (data.error || 'Unknown error'));
@@ -990,40 +960,6 @@
         console.error('Quiz submission error:', error);
         alert('An error occurred while submitting the quiz. Please try again.');
       }
-    }
-
-    function showFinalScreen() {
-      console.log('Showing final screen');
-      qaContainer.style.display = 'none';
-      optionalSection.style.display = 'none';
-      finalScreen.style.display = 'block';
-      finalScreen.classList.add('animate__animated', 'animate__fadeIn');
-      setTimeout(() => {
-        finalScreen.classList.remove('animate__animated', 'animate__fadeIn');
-      }, 1000);
-    }
-
-    function showPersonalityResults() {
-      console.log('Showing personality results');
-      finalScreen.style.display = 'none';
-      personalityResults.style.display = 'block';
-      
-      // Fetch personality results from server
-      fetch('{{ url_for("personality_results") }}')
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            displayPersonalityInfo(data.personality_info);
-          } else {
-            console.error('Failed to fetch personality results');
-            // Redirect to explore if results aren't available
-            window.location.href = '{{ url_for("explore") }}';
-          }
-        })
-        .catch(error => {
-          console.error('Error fetching personality results:', error);
-          window.location.href = '{{ url_for("explore") }}';
-        });
     }
 
     function displayPersonalityInfo(personalityInfo) {
@@ -1068,4 +1004,4 @@
   });
 </script>
 </body>
-</html> 
+</html>
