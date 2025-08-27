@@ -530,9 +530,6 @@
                 <button class="tab-btn flex-1 py-3 font-medium text-center border-b-2 border-pink-500 text-pink-500" data-tab="connections">
                     Connections ({{ pending_likers|length }})
                 </button>
-                <button class="tab-btn flex-1 py-3 font-medium text-center border-b-2 border-transparent text-gray-500 hover:text-pink-500" data-tab="chats">
-                    Chats
-                </button>
                 <button class="tab-btn flex-1 py-3 font-medium text-center border-b-2 border-transparent text-gray-500 hover:text-pink-500" data-tab="notifications">
                     Notifications
                 </button>
@@ -571,49 +568,54 @@
                     {% endif %}
                 </div>
                 
-                <!-- Chats Tab -->
-                <div id="chats" class="tab-content">
-                    <!-- Chat list -->
-                    <div class="space-y-3">
-                        <!-- No real data, so empty -->
-                    </div>
-                    
-                    <!-- Chat view (hidden by default) -->
-                    <div id="chatView" class="hidden h-64">
-                        <div class="flex items-center border-b pb-3 mb-3">
-                            <button id="backToChats" class="mr-2 text-gray-600">
-                                <i class="fas fa-arrow-left"></i>
-                            </button>
-                            <div class="w-10 h-10 rounded-full overflow-hidden mr-3">
-                                <img id="chatUserImage" src="" alt="" class="w-full h-full object-cover">
-                            </div>
-                            <div>
-                                <h3 id="chatUserName" class="font-medium"></h3>
-                                <p id="chatUserStatus" class="text-xs text-gray-500">Online</p>
-                            </div>
-                        </div>
-                        
-                        <div id="chatMessages" class="h-64 overflow-y-auto mb-3 space-y-2">
-                            <!-- Messages will be loaded here -->
-                        </div>
-                        
-                        <div class="flex">
-                            <input type="text" placeholder="Type a message..." class="flex-grow border rounded-l-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500">
-                            <button class="bg-pink-500 text-white px-4 py-2 rounded-r-lg hover:bg-pink-600">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
                 <!-- Notifications Tab -->
                 <div id="notifications" class="tab-content">
                     <div class="space-y-3">
-                        <!-- No real data, so empty -->
+                        <!-- Sample Notifications -->
+                        <div class="notification-item unread flex items-center p-3 border-b">
+                            <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center mr-3">
+                                <i class="fas fa-heart text-pink-500"></i>
+                            </div>
+                            <div>
+                                <p>Your match John uploaded a new picture</p>
+                                <p class="text-xs text-gray-500">2 hours ago</p>
+                            </div>
+                            <div class="ml-auto bg-blue-500 w-2 h-2 rounded-full"></div>
+                        </div>
+                        <div class="notification-item unread flex items-center p-3 border-b">
+                            <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center mr-3">
+                                <i class="fas fa-user-plus text-pink-500"></i>
+                            </div>
+                            <div>
+                                <p>You have a new match suggestion: Jane</p>
+                                <p class="text-xs text-gray-500">1 day ago</p>
+                            </div>
+                            <div class="ml-auto bg-blue-500 w-2 h-2 rounded-full"></div>
+                        </div>
+                        <div class="notification-item unread flex items-center p-3 border-b">
+                            <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center mr-3">
+                                <i class="fas fa-heart text-pink-500"></i>
+                            </div>
+                            <div>
+                                <p>Your match Sarah uploaded a new picture</p>
+                                <p class="text-xs text-gray-500">3 hours ago</p>
+                            </div>
+                            <div class="ml-auto bg-blue-500 w-2 h-2 rounded-full"></div>
+                        </div>
+                        <div class="notification-item unread flex items-center p-3 border-b">
+                            <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center mr-3">
+                                <i class="fas fa-user-plus text-pink-500"></i>
+                            </div>
+                            <div>
+                                <p>You have a new match suggestion: Michael</p>
+                                <p class="text-xs text-gray-500">Yesterday</p>
+                            </div>
+                            <div class="ml-auto bg-blue-500 w-2 h-2 rounded-full"></div>
+                        </div>
                     </div>
                     
                     <div class="text-center mt-4">
-                        <button class="text-pink-500 font-medium">Clear All Notifications</button>
+                        <button id="clearNotificationsBtn" class="text-pink-500 font-medium">Clear All Notifications</button>
                     </div>
                 </div>
             </div>
@@ -856,53 +858,6 @@
                 });
             });
             
-            // Chat functionality
-            const chatItems = document.querySelectorAll('#chats .flex.items-center.p-3');
-            const chatList = document.querySelector('#chats > div:first-child');
-            const chatView = document.getElementById('chatView');
-            const backToChats = document.getElementById('backToChats');
-            
-            chatItems.forEach(item => {
-                item.addEventListener('click', () => {
-                    const userName = item.querySelector('h3').textContent;
-                    const userImage = item.querySelector('img').src;
-                    
-                    document.getElementById('chatUserName').textContent = userName;
-                    document.getElementById('chatUserImage').src = userImage;
-                    
-                    const chatMessages = document.getElementById('chatMessages');
-                    chatMessages.innerHTML = '';
-                    
-                    const messages = [
-                        { text: "Hey there! How are you?", sent: false, time: "10:30 AM" },
-                        { text: "I'm good, thanks! How about you?", sent: true, time: "10:32 AM" },
-                        { text: "Doing well! Want to grab coffee this weekend?", sent: false, time: "10:33 AM" },
-                        { text: "That sounds great! How about Saturday at 2pm?", sent: true, time: "10:35 AM" },
-                        { text: "Perfect! See you then at Central Perk", sent: false, time: "10:36 AM" }
-                    ];
-                    
-                    messages.forEach(msg => {
-                        const messageDiv = document.createElement('div');
-                        messageDiv.className = `chat-message rounded-lg px-3 py-2 max-w-xs ${msg.sent ? 'sent' : 'received'}`;
-                        messageDiv.innerHTML = `
-                            <p>${msg.text}</p>
-                            <p class="text-xs opacity-70 mt-1 text-right">${msg.time}</p>
-                        `;
-                        chatMessages.appendChild(messageDiv);
-                    });
-                    
-                   chatMessages.scrollTop = chatMessages.scrollHeight;
-                    
-                    chatList.classList.add('hidden');
-                    chatView.classList.remove('hidden');
-                });
-            });
-            
-            backToChats.addEventListener('click', () => {
-                chatList.classList.remove('hidden');
-                chatView.classList.add('hidden');
-            });
-            
             // Profile edit functionality
             const editProfileBtn = document.getElementById('editProfileBtn');
             const cancelEditBtn = document.getElementById('cancelEditBtn');
@@ -1050,6 +1005,13 @@
                     this.classList.remove('unread');
                     this.querySelector('.rounded-full')?.remove();
                 });
+            });
+
+            // Clear Notifications
+            const clearNotificationsBtn = document.getElementById('clearNotificationsBtn');
+            clearNotificationsBtn.addEventListener('click', () => {
+                document.querySelectorAll('.notification-item').forEach(item => item.remove());
+                showNotification('All notifications cleared');
             });
             
             // Settings modal
