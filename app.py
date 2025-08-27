@@ -1102,7 +1102,7 @@ def verify_email_endpoint():
         session.permanent = True
         session['email'] = result['email']
         session['user_id'] = result['user_id']
-       session['verification_pending'] = False
+        session['verification_pending'] = False
         session.modified = True
         logger.debug(f"Session set after email verification: {session}")
         user = mongo_service.get_user_by_id(result['user_id'])
