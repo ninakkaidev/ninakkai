@@ -1156,7 +1156,7 @@
         const tempId = 'temp-' + Date.now();
         const optimisticMsg = {
           id: tempId,
-          sender_id: '{{ session.user_id }}',
+          sender_id: '{{ current_user_id }}',
           receiver_id: currentChatUserId,
           message: sanitizeHTML(message),
           timestamp: new Date().toISOString(),
@@ -1250,7 +1250,7 @@
             const messagesContainer = document.getElementById('messages-container');
             messagesContainer.innerHTML = '';
             result.messages.forEach(msg => {
-              const messageElement = createMessageElement(msg, msg.sender_id === '{{ session.user_id }}');
+              const messageElement = createMessageElement(msg, msg.sender_id === '{{ current_user_id }}');
               messagesContainer.appendChild(messageElement);
             });
             scrollToBottom();
@@ -1364,9 +1364,9 @@
           const eventType = data.event;
           const msg = data.data;
           if (eventType === 'new_message') {
-            if ((msg.sender_id === currentChatUserId && msg.receiver_id === '{{ session.user_id }}') ||
-                (msg.receiver_id === currentChatUserId && msg.sender_id === '{{ session.user_id }}')) {
-              const isSent = msg.sender_id === '{{ session.user_id }}';
+            if ((msg.sender_id === currentChatUserId && msg.receiver_id === '{{ current_user_id }}') ||
+                (msg.receiver_id === currentChatUserId && msg.sender_id === '{{ current_user_id }}')) {
+              const isSent = msg.sender_id === '{{ current_user_id }}';
               const messagesContainer = document.getElementById('messages-container');
               if (isSent) {
                 const tempMessages = messagesContainer.querySelectorAll('[data-message-id^="temp-"]');

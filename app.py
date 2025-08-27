@@ -1476,7 +1476,7 @@ def chat():
     logger.debug(f"Session in chat: {session}")
     if 'user_id' not in session:
         logger.debug("No user_id in session for /chat")
-        return redirect(url_for('auth'))
+        return redirect(url_for('auth', error='Please log in to access the chat page'))
     user = mongo_service.get_user_by_id(session['user_id'])
     if not user.get('age_verified', False):
         return redirect(url_for('age_verification'))
@@ -1527,10 +1527,10 @@ def chat():
                 conversations.append(conv)
         conversations.sort(key=lambda c: c['sort_time'], reverse=True)
         
-        return render_template('chat.html', profile=profile, conversations=conversations, unread_count=unread_count)
+        return render_template('chat.html', profile=profile, conversations=conversations, unread_count=unread_count, current_user_id=current_user_id)
     except Exception as e:
         logger.error(f"Chat error: {str(e)}")
-        return render_template('chat.html', profile={'image': 'https://randomuser.me/api/portraits/women/44.jpg'}, conversations=[], unread_count=0, error=str(e))
+        return render_template('chat.html', profile={'image': 'https://randomuser.me/api/portraits/women/44.jpg'}, conversations=[], unread_count=0, error=str(e), current_user_id='')
 
 @app.route('/messages/<other_user_id>', methods=['GET'])
 def get_messages(other_user_id):
@@ -1902,6 +1902,7 @@ def personality_results():
         'dominant_type': dominant_type,
         'title': f'You are a {dominant_type.replace(" ", "")}.',
         'description': 'Description not available.',
+        'tagline': '',
         'strengths': [],
         'compatibility': [],
         'color': '#000000'
