@@ -571,47 +571,20 @@
                 <!-- Notifications Tab -->
                 <div id="notifications" class="tab-content">
                     <div class="space-y-3">
-                        <!-- Sample Notifications -->
-                        <div class="notification-item unread flex items-center p-3 border-b">
+                        {% for notif in notifications %}
+                        <div class="notification-item {% if not notif.read %}unread{% endif %} flex items-center p-3 border-b" data-id="{{ notif.id }}">
                             <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center mr-3">
-                                <i class="fas fa-heart text-pink-500"></i>
+                                <i class="fas fa-{% if notif.type == 'like' %}heart{% elif notif.type == 'match' %}user-plus{% else %}bell{% endif %} text-pink-500"></i>
                             </div>
                             <div>
-                                <p>Your match John uploaded a new picture</p>
-                                <p class="text-xs text-gray-500">2 hours ago</p>
+                                <p>{{ notif.message }}</p>
+                                <p class="text-xs text-gray-500">{{ notif.timestamp }}</p>
                             </div>
+                            {% if not notif.read %}
                             <div class="ml-auto bg-blue-500 w-2 h-2 rounded-full"></div>
+                            {% endif %}
                         </div>
-                        <div class="notification-item unread flex items-center p-3 border-b">
-                            <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center mr-3">
-                                <i class="fas fa-user-plus text-pink-500"></i>
-                            </div>
-                            <div>
-                                <p>You have a new match suggestion: Jane</p>
-                                <p class="text-xs text-gray-500">1 day ago</p>
-                            </div>
-                            <div class="ml-auto bg-blue-500 w-2 h-2 rounded-full"></div>
-                        </div>
-                        <div class="notification-item unread flex items-center p-3 border-b">
-                            <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center mr-3">
-                                <i class="fas fa-heart text-pink-500"></i>
-                            </div>
-                            <div>
-                                <p>Your match Sarah uploaded a new picture</p>
-                                <p class="text-xs text-gray-500">3 hours ago</p>
-                            </div>
-                            <div class="ml-auto bg-blue-500 w-2 h-2 rounded-full"></div>
-                        </div>
-                        <div class="notification-item unread flex items-center p-3 border-b">
-                            <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center mr-3">
-                                <i class="fas fa-user-plus text-pink-500"></i>
-                            </div>
-                            <div>
-                                <p>You have a new match suggestion: Michael</p>
-                                <p class="text-xs text-gray-500">Yesterday</p>
-                            </div>
-                            <div class="ml-auto bg-blue-500 w-2 h-2 rounded-full"></div>
-                        </div>
+                        {% endfor %}
                     </div>
                     
                     <div class="text-center mt-4">
@@ -1001,17 +974,42 @@
 
             // Notification functionality
             document.querySelectorAll('.notification-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    this.classList.remove('unread');
-                    this.querySelector('.rounded-full')?.remove();
+                item.addEventListener('click', async function() {
+                    if (this.classList.contains('unread')) {
+                        const notifId = this.dataset.id;
+                        try {
+                            const response = await fetch('/mark_notification_read', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ notif_id: notifId }),
+                                credentials: 'include'
+                            });
+                            if (response.ok) {
+                                this.classList.remove('unread');
+                                this.querySelector('.rounded-full')?.remove();
+                            }
+                        } catch (error) {
+                            console.error('Error marking read:', error);
+                        }
+                    }
                 });
             });
 
             // Clear Notifications
             const clearNotificationsBtn = document.getElementById('clearNotificationsBtn');
-            clearNotificationsBtn.addEventListener('click', () => {
-                document.querySelectorAll('.notification-item').forEach(item => item.remove());
-                showNotification('All notifications cleared');
+            clearNotificationsBtn.addEventListener('click', async () => {
+                try {
+                    const response = await fetch('/clear_notifications', {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+                    if (response.ok) {
+                        document.querySelectorAll('.notification-item').forEach(item => item.remove());
+                        showNotification('All notifications cleared');
+                    }
+                } catch (error) {
+                    console.error('Error clearing notifications:', error);
+                }
             });
             
             // Settings modal

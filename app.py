@@ -78,6 +78,7 @@ class MongoService:
         self.quiz_results = self.db['quiz_results']
         self.likes = self.db['likes']
         self.passes = self.db['passes']
+        self.notifications = self.db['notifications']
 
     def check_rate_limit(self, key: str, max_attempts: int, period: timedelta = timedelta(hours=1)) -> bool:
         now = datetime.now(timezone.utc)
@@ -401,7 +402,13 @@ class MongoService:
                 'timestamp': datetime.now(timezone.utc)
             }
             result = self.likes.insert_one(like_data)
+            liker = self.get_user_by_id(user_id)
+            liked = self.get_user_by_id(matched_user_id)
+            self.add_notification(matched_user_id, f"{liker['full_name']} liked your profile", 'like', user_id)
             is_match = self.is_matched(user_id, matched_user_id)
+            if is_match:
+                self.add_notification(user_id, f"You matched with {liked['full_name']}", 'match', matched_user_id)
+                self.add_notification(matched_user_id, f"You matched with {liker['full_name']}", 'match', user_id)
             logger.info(f"Like successful, like_id: {str(result.inserted_id)}, is_match: {is_match}")
             return {'success': True, 'like_id': str(result.inserted_id), 'is_match': is_match}
         except Exception as e:
@@ -602,6 +609,7 @@ class MongoService:
             self.likes.delete_many({'$or': [{'user_id': user_id}, {'matched_user_id': user_id}]})
             self.passes.delete_many({'$or': [{'user_id': user_id}, {'passed_user_id': user_id}]})
             self.quiz_results.delete_many({'user_id': user_id})
+            self.notifications.delete_many({'user_id': user_id})
             return {'success': True}
         except Exception as e:
             logger.error(f"Delete account error: {str(e)}")
@@ -694,6 +702,55 @@ class MongoService:
             return {'success': result.modified_count > 0}
         except Exception as e:
             logger.error(f"Block user error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
+    def add_notification(self, user_id: str, message: str, type: str = 'general', related_id: str = None) -> Dict[str, Any]:
+        try:
+            notif_data = {
+                'user_id': user_id,
+                'message': message,
+                'type': type,
+                'related_id': related_id,
+                'read': False,
+                'timestamp': datetime.now(timezone.utc)
+            }
+            result = self.notifications.insert_one(notif_data)
+            return {'success': True, 'notif_id': str(result.inserted_id)}
+        except Exception as e:
+            logger.error(f"Add notification error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
+    def get_notifications(self, user_id: str) -> List[Dict[str, Any]]:
+        try:
+            notifs = list(self.notifications.find({'user_id': user_id}).sort('timestamp', -1))
+            for n in notifs:
+                n['id'] = str(n['_id'])
+                del n['_id']
+                if n['timestamp'].tzinfo is None:
+                    n['timestamp'] = pytz.UTC.localize(n['timestamp'])
+                n['timestamp'] = n['timestamp'].isoformat()
+            return notifs
+        except Exception as e:
+            logger.error(f"Get notifications error: {str(e)}")
+            return []
+
+    def mark_notification_read(self, notif_id: str, user_id: str) -> Dict[str, Any]:
+        try:
+            result = self.notifications.update_one(
+                {'_id': ObjectId(notif_id), 'user_id': user_id},
+                {'$set': {'read': True}}
+            )
+            return {'success': result.modified_count > 0}
+        except Exception as e:
+            logger.error(f"Mark notification read error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
+    def clear_notifications(self, user_id: str) -> Dict[str, Any]:
+        try:
+            result = self.notifications.delete_many({'user_id': user_id})
+            return {'success': True, 'deleted_count': result.deleted_count}
+        except Exception as e:
+            logger.error(f"Clear notifications error: {str(e)}")
             return {'success': False, 'error': str(e)}
 
 class ChatService:
@@ -1218,6 +1275,24 @@ def delete_account():
         session.clear()
     return jsonify(result)
 
+@app.route('/mark_notification_read', methods=['POST'])
+def mark_notification_read():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    notif_id = data.get('notif_id')
+    if not notif_id:
+        return jsonify({'success': False, 'error': 'No notification ID provided'}), 400
+    result = mongo_service.mark_notification_read(notif_id, session['user_id'])
+    return jsonify(result)
+
+@app.route('/clear_notifications', methods=['POST'])
+def clear_notifications():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    result = mongo_service.clear_notifications(session['user_id'])
+    return jsonify(result)
+
 @app.route('/explore')
 def explore():
     logger.debug(f"Session in explore: {session}")
@@ -1606,7 +1681,7 @@ def profile():
     try:
         user = mongo_service.get_user_by_id(session['user_id'])
         if not user:
-            return render_template('profile.html', profile={}, pending_likers=[])
+            return render_template('profile.html', profile={}, pending_likers=[], notifications=[])
         quiz_result = mongo_service.get_quiz_results(session['user_id'])
         # Define personalities dict
         personalities = {
@@ -1701,10 +1776,11 @@ def profile():
             'personality_info': personality_info
         }
         pending_likers = mongo_service.get_pending_likers(session['user_id'])
-        return render_template('profile.html', profile=profile, pending_likers=pending_likers)
+        notifications = mongo_service.get_notifications(session['user_id'])
+        return render_template('profile.html', profile=profile, pending_likers=pending_likers, notifications=notifications)
     except Exception as e:
         logger.error(f"Profile error: {str(e)}")
-        return render_template('profile.html', profile={}, pending_likers=[])
+        return render_template('profile.html', profile={}, pending_likers=[], notifications=[])
 
 @app.route('/questions', methods=['GET'])
 def questions():
@@ -1961,6 +2037,10 @@ def upload_photo():
         photos = user.get('photos', []) + [url]
         update_result = mongo_service.update_user(session['user_id'], {'photos': photos})
         if update_result['success']:
+            # Notify matched users
+            matches = mongo_service.get_matched_users(session['user_id'])
+            for match_id in matches:
+                mongo_service.add_notification(match_id, f"{user['full_name']} uploaded a new picture", 'new_photo', session['user_id'])
             logger.info("User photos updated successfully in database")
             return jsonify({'success': True, 'url': url}), 200
         else:
