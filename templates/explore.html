@@ -165,7 +165,6 @@
         html.dark .popup {
             background: #1f2937;
             color: #f3f4f6;
-            box-shadow: 0 0 20px rgba(255,255,255,0.1);
         }
 
         @keyframes popupAnim {
@@ -340,7 +339,7 @@
         }
     </style>
 </head>
-<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-white">
     <!-- Loading State -->
     <div class="loading" id="loading">
         <div class="loading-spinner"></div>
@@ -396,13 +395,13 @@
                 {% if matches %}
                     {% for match in matches %}
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="{{ match.id }}">
-                        <div class="match-percentage text-gray-800 dark:text-gray-100">{{ match.match_percentage }}%</div>
+                        <div class="match-percentage text-gray-800 dark:text-white">{{ match.match_percentage }}%</div>
                         <img src="{{ match.image }}" alt="Profile" class="profile-image">
                         <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
                             <div class="flex justify-between items-end">
                                 <div>
                                     <h3 class="text-white font-bold">{{ match.full_name }}, {{ match.age|default('N/A') }}</h3>
-                                    <p class="text-gray-300 text-sm">{{ match.occupation }} • {{ match.distance }}</p>
+                                    <p class="text-gray-300 dark:text-white text-sm">{{ match.occupation }} • {{ match.distance }}</p>
                                 </div>
                                 <button class="like-button {% if match.liked %}liked-button{% else %}bg-pink-500 hover:bg-pink-600{% endif %} text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition" 
                                         data-user-id="{{ match.id }}" 
@@ -430,7 +429,7 @@
                     {% for match in discovery %}
                     <div class="discovery-profile discovery-card" data-user-id="{{ match.id }}">
                         <img src="{{ match.image }}" alt="Profile" class="profile-image">
-                        <div class="discovery-rating text-gray-800 dark:text-gray-100">
+                        <div class="discovery-rating text-gray-800 dark:text-white">
                             <i class="fas fa-star text-yellow-500 text-xs mr-1"></i>
                             <span class="text-xs font-medium">{{ match.rating }}</span>
                         </div>
@@ -438,7 +437,7 @@
                             <div class="flex justify-between items-end">
                                 <div>
                                     <h3 class="text-white font-bold text-sm md:text-base">{{ match.full_name }}, {{ match.age|default('N/A') }}</h3>
-                                    <p class="text-gray-300 text-xs md:text-sm">{{ match.distance }}</p>
+                                    <p class="text-gray-300 dark:text-white text-xs md:text-sm">{{ match.distance }}</p>
                                 </div>
                                 <button class="like-button {% if match.liked %}liked-button{% else %}bg-pink-500 hover:bg-pink-600{% endif %} text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center transition" 
                                         data-user-id="{{ match.id }}" 
@@ -538,7 +537,7 @@
 
             function showMatchPopup() {
                 const popup = document.createElement('div');
-                popup.className = 'popup text-gray-800 dark:text-gray-100';
+                popup.className = 'popup text-gray-800 dark:text-white';
                 popup.textContent = 'Connection Successful!';
                 document.body.appendChild(popup);
                 setTimeout(() => {
@@ -683,13 +682,13 @@
                 const matchesGrid = document.getElementById('matches-grid');
                 matchesGrid.innerHTML = matches.length ? matches.map(match => `
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="${match.id}">
-                        <div class="match-percentage text-gray-800 dark:text-gray-100">${match.match_percentage}%</div>
+                        <div class="match-percentage text-gray-800 dark:text-white">${match.match_percentage}%</div>
                         <img src="${match.image}" alt="${match.full_name}" class="profile-image">
                         <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
                             <div class="flex justify-between items-end">
                                 <div>
                                     <h3 class="text-white font-bold">${match.full_name}, ${match.age || 'N/A'}</h3>
-                                    <p class="text-gray-300 text-sm">${match.occupation} • ${match.distance}</p>
+                                    <p class="text-gray-300 dark:text-white text-sm">${match.occupation} • ${match.distance}</p>
                                 </div>
                                 <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition" 
                                         data-user-id="${match.id}" 
@@ -722,15 +721,15 @@
                         mainHeader.style.display = 'none';
                         
                         const profileViewer = document.createElement('div');
-                        profileViewer.className = 'profile-viewer bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100';
+                        profileViewer.className = 'profile-viewer bg-white dark:bg-gray-900 text-gray-800 dark:text-white';
                         profileViewer.innerHTML = `
                             <div class="relative">
                                 <img src="${profile.user.image}" alt="${profile.user.full_name}" class="profile-viewer-image">
                                 <button class="absolute top-4 left-4 bg-white dark:bg-gray-800 bg-opacity-80 rounded-full w-10 h-10 flex items-center justify-center close-profile">
-                                    <i class="fas fa-arrow-left text-gray-800 dark:text-gray-100"></i>
+                                    <i class="fas fa-arrow-left text-gray-800 dark:text-white"></i>
                                 </button>
                                 <div class="absolute bottom-4 left-4 bg-white dark:bg-gray-800 bg-opacity-80 rounded-full px-3 py-1">
-                                    <span class="font-bold text-gray-800 dark:text-gray-100">${profile.user.match_percentage}% Match</span>
+                                    <span class="font-bold text-gray-800 dark:text-white">${profile.user.match_percentage}% Match</span>
                                 </div>
                             </div>
                             <div class="p-6 flex-1">
@@ -767,7 +766,7 @@
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-white">Interests</h3>
                                     <div class="flex flex-wrap gap-2">
-                                        ${profile.user.interests && profile.user.interests.length ? profile.user.interests.map(interest => `<span class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-3 py-1 rounded-full text-sm">${interest}</span>`).join('') : '<span class="text-gray-600 dark:text-white">No interests listed</span>'}
+                                        ${profile.user.interests && profile.user.interests.length ? profile.user.interests.map(interest => `<span class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-1 rounded-full text-sm">${interest}</span>`).join('') : '<span class="text-gray-600 dark:text-white">No interests listed</span>'}
                                     </div>
                                 </div>
                                 <div class="mb-6">
@@ -781,7 +780,7 @@
                                     `}
                                 </div>
                                 <div class="flex justify-between mt-8">
-                                    <button class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-full px-6 py-3 flex-1 mr-2 hover:bg-gray-300 dark:hover:bg-gray-600 transition pass-button" data-user-id="${userId}">
+                                    <button class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-full px-6 py-3 flex-1 mr-2 hover:bg-gray-300 dark:hover:bg-gray-600 transition pass-button" data-user-id="${userId}">
                                         <i class="fas fa-times mr-2"></i> Pass
                                     </button>
                                     <button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full px-6 py-3 flex-1 ml-2 transition" 
