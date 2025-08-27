@@ -746,6 +746,25 @@
         transform: translateX(0);
       }
 
+      .chat-area.active .chat-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 100;
+      }
+
+      .chat-area.active .messages-container {
+        padding-top: 60px; /* Adjust based on chat-header height */
+      }
+
+      .chat-area.active .message-input-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+      }
+
       .chat-back-btn, .conversations-back-btn {
         display: block;
       }
