@@ -1355,7 +1355,7 @@ def user_profile(user_id):
             '🌟 Idealist': {
                 'dominant_type': '🌟 Idealist',
                 'title': '“This person is an Idealist.”',
-                'description': 'They believe love should feel right — clear, mutual, and beautifully real. They wait for the one who understands their soul.',
+                'description': 'They believe love should feel right — clear, mutual, and beautifully real. You wait for the one who understands your soul.',
                 'tagline': '“Only real love will do.”',
                 'strengths': ['Believer', 'Clear', 'Soul-seeking'],
                 'compatibility': ['🌙 Dreamer', '💘 Romantic'],
@@ -1573,9 +1573,9 @@ def profile():
                 'title': '“You are a Nurturer.”',
                 'description': 'You’re gentle, loyal, and always ready to hold space for someone you love. You build relationships with quiet strength and warmth.',
                 'tagline': '“Soft-hearted, deep-rooted.”',
-                'strengths': ['Gentle', 'Loyal', 'Empathetic'],
-                'compatibility': ['🛡️ Protector', '👂 Listener'],
-                'color': '#4CAF50'
+                'strengths': ['Gentle', 'Loyal', 'Empathetic'],  # Add some strengths
+                'compatibility': ['🛡️ Protector', '👂 Listener'],  # Examples
+                'color': '#4CAF50'  # Green
             },
             '🛡️ Protector': {
                 'dominant_type': '🛡️ Protector',
@@ -1584,7 +1584,7 @@ def profile():
                 'tagline': '“Safe. Steady. Yours.”',
                 'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
                 'compatibility': ['🌿 Nurturer', '🌙 Dreamer'],
-                'color': '#2196F3'
+                'color': '#2196F3'  # Blue
             },
             '🌙 Dreamer': {
                 'dominant_type': '🌙 Dreamer',
@@ -1593,7 +1593,7 @@ def profile():
                 'tagline': '“Romance is your religion.”',
                 'strengths': ['Deep', 'Bold', 'Soulful'],
                 'compatibility': ['💘 Romantic', '🌟 Idealist'],
-                'color': '#9C27B0'
+                'color': '#9C27B0'  # Purple
             },
             '👂 Listener': {
                 'dominant_type': '👂 Listener',
@@ -1602,7 +1602,7 @@ def profile():
                 'tagline': '“Still waters, true heart.”',
                 'strengths': ['Calm', 'Thoughtful', 'Present'],
                 'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
-                'color': '#03A9F4'
+                'color': '#03A9F4'  # Light Blue
             },
             '💘 Romantic': {
                 'dominant_type': '💘 Romantic',
@@ -1611,7 +1611,7 @@ def profile():
                 'tagline': '“Loving loudly. Feeling deeply.”',
                 'strengths': ['Heart-led', 'Expressive', 'Passionate'],
                 'compatibility': ['🌙 Dreamer', '🌟 Idealist'],
-                'color': '#E91E63'
+                'color': '#E91E63'  # Pink
             },
             '🌟 Idealist': {
                 'dominant_type': '🌟 Idealist',
@@ -1620,7 +1620,7 @@ def profile():
                 'tagline': '“Only real love will do.”',
                 'strengths': ['Believer', 'Clear', 'Soul-seeking'],
                 'compatibility': ['🌙 Dreamer', '💘 Romantic'],
-                'color': '#FFEB3B'
+                'color': '#FFEB3B'  # Yellow
             },
         }
         dominant_type = quiz_result['scores']['dominant_type'] if quiz_result else 'N/A'

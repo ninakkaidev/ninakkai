@@ -1096,21 +1096,24 @@
             // Dark mode toggle
             const darkModeToggle = document.getElementById('darkModeToggle');
             
-            if (localStorage.getItem('darkMode') === 'enabled' ||
-                (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            if (localStorage.theme === 'dark') {
                 document.documentElement.classList.add('dark');
                 darkModeToggle.checked = true;
+                updateToggleStatus(darkModeToggle);
+            } else {
+                document.documentElement.classList.remove('dark');
+                darkModeToggle.checked = false;
                 updateToggleStatus(darkModeToggle);
             }
             
             darkModeToggle.addEventListener('change', function() {
                 if (this.checked) {
                     document.documentElement.classList.add('dark');
-                    localStorage.setItem('darkMode', 'enabled');
+                    localStorage.theme = 'dark';
                     showNotification('Dark mode enabled');
                 } else {
                     document.documentElement.classList.remove('dark');
-                    localStorage.setItem('darkMode', 'disabled');
+                    localStorage.theme = 'light';
                     showNotification('Dark mode disabled');
                 }
                 updateToggleStatus(this);
