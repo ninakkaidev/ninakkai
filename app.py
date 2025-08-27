@@ -20,6 +20,7 @@ import json
 import http.client
 from ably import AblyRealtime
 import asyncio
+import threading
 
 # Configure Cloudinary with explicit credentials and enhanced logging
 def configure_cloudinary():
@@ -62,9 +63,25 @@ app.config.update(
 # Initialize Cloudinary
 configure_cloudinary()
 
-# Initialize Ably
+# Initialize Ably in a background thread with persistent event loop
 ABLY_KEY = 's-nj5w.0r1nYg:3n84JwFzqeKWgZFhYRs0Ir_ZK8JZPXcVmzhpzGLzCaw'
-ably_client = AblyRealtime(key=ABLY_KEY)
+ably_loop = asyncio.new_event_loop()
+def run_ably_loop():
+    asyncio.set_event_loop(ably_loop)
+    ably_loop.run_forever()
+ably_thread = threading.Thread(target=run_ably_loop, daemon=True)
+ably_thread.start()
+
+ably_client = None
+async def _create_ably_client():
+    return AblyRealtime(key=ABLY_KEY)
+
+def get_ably_client():
+    global ably_client
+    if ably_client is None:
+        fut = asyncio.run_coroutine_threadsafe(_create_ably_client(), ably_loop)
+        ably_client = fut.result()
+    return ably_client
 
 class MongoService:
     def __init__(self):
@@ -727,8 +744,13 @@ class ChatService:
             msg_data['id'] = str(result.inserted_id)
             msg_data['timestamp'] = msg_data['timestamp'].isoformat()
             # Publish to both sender and receiver via Ably
-            await ably_client.channels.get(f"user:{receiver_id}").publish('new_message', msg_data)
-            await ably_client.channels.get(f"user:{sender_id}").publish('new_message', msg_data)
+            client = get_ably_client()
+            channel_receiver = client.channels.get(f"user:{receiver_id}")
+            fut_receiver = asyncio.run_coroutine_threadsafe(channel_receiver.publish('new_message', msg_data), ably_loop)
+            fut_receiver.result()
+            channel_sender = client.channels.get(f"user:{sender_id}")
+            fut_sender = asyncio.run_coroutine_threadsafe(channel_sender.publish('new_message', msg_data), ably_loop)
+            fut_sender.result()
             return {'success': True, 'message_id': msg_data['id']}
         except Exception as e:
             logger.error(f"Send message error: {str(e)}")
@@ -750,7 +772,10 @@ class ChatService:
                 {'$set': {'read': True}}
             )
             if updated.modified_count > 0:
-                await ably_client.channels.get(f"user:{user2}").publish('messages_read', {'conversation_id': user1})
+                client = get_ably_client()
+                channel = client.channels.get(f"user:{user2}")
+                fut = asyncio.run_coroutine_threadsafe(channel.publish('messages_read', {'conversation_id': user1}), ably_loop)
+                fut.result()
             for msg in msgs:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
@@ -801,8 +826,13 @@ class ChatService:
                 result = self.messages.delete_one({'_id': ObjectId(message_id)})
                 if result.deleted_count > 0:
                     # Publish to both via Ably
-                    await ably_client.channels.get(f"user:{msg['receiver_id']}").publish('message_deleted', {'message_id': message_id})
-                    await ably_client.channels.get(f"user:{msg['sender_id']}").publish('message_deleted', {'message_id': message_id})
+                    client = get_ably_client()
+                    channel_receiver = client.channels.get(f"user:{msg['receiver_id']}")
+                    fut_receiver = asyncio.run_coroutine_threadsafe(channel_receiver.publish('message_deleted', {'message_id': message_id}), ably_loop)
+                    fut_receiver.result()
+                    channel_sender = client.channels.get(f"user:{msg['sender_id']}")
+                    fut_sender = asyncio.run_coroutine_threadsafe(channel_sender.publish('message_deleted', {'message_id': message_id}), ably_loop)
+                    fut_sender.result()
                     return {'success': True}
             return {'success': False}
         except Exception as e:
@@ -1350,9 +1380,10 @@ def send_typing():
     to_user_id = data.get('to_user_id')
     if not to_user_id:
         return jsonify({'success': False, 'error': 'Missing to_user_id'}), 400
-    async def pub_typing():
-        await ably_client.channels.get(f"user:{to_user_id}").publish('user_typing', {'sender_id': session['user_id']})
-    asyncio.run(pub_typing())
+    client = get_ably_client()
+    channel = client.channels.get(f"user:{to_user_id}")
+    fut = asyncio.run_coroutine_threadsafe(channel.publish('user_typing', {'sender_id': session['user_id']}), ably_loop)
+    fut.result()
     return jsonify({'success': True})
 
 @app.route('/chat')
