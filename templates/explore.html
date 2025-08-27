@@ -778,11 +778,13 @@
                 
                 // Reattach event listeners to new buttons
                 attachLikeButtonListeners();
+                attachProfileClickListeners();
             }
 
             // Profile viewer
             function openProfileViewer(userId) {
                 showLoading();
+                document.body.style.overflow = 'hidden';
                 
                 fetch(`/user-profile/${userId}`)
                     .then(response => response.json())
@@ -790,6 +792,7 @@
                         hideLoading();
                         if (!profile.success) {
                             showError(profile.error || 'Failed to load profile');
+                            document.body.style.overflow = '';
                             return;
                         }
                         
@@ -873,6 +876,7 @@
                         profileViewer.querySelector('.close-profile').addEventListener('click', () => {
                             profileViewer.remove();
                             mainHeader.style.display = 'flex';
+                            document.body.style.overflow = '';
                         });
                         
                         // Attach event listeners to buttons in profile viewer
@@ -881,6 +885,7 @@
                     .catch(error => {
                         hideLoading();
                         showError('Network error while loading profile');
+                        document.body.style.overflow = '';
                     });
             }
 
@@ -941,6 +946,7 @@
                                     setTimeout(() => {
                                         profileViewer.remove();
                                         mainHeader.style.display = 'flex';
+                                        document.body.style.overflow = '';
                                         
                                         // Remove the card from the main view
                                         const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
@@ -976,6 +982,7 @@
                             showNotification('Passed');
                             profileViewer.remove();
                             mainHeader.style.display = 'flex';
+                            document.body.style.overflow = '';
                             
                             // Remove the card from the main view
                             const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
@@ -995,13 +1002,15 @@
             }
 
             // Profile card click handler
-            document.querySelectorAll('.discovery-card').forEach(card => {
-                card.addEventListener('click', function(e) {
-                    if (e.target.closest('button')) return;
-                    const userId = this.dataset.userId;
-                    openProfileViewer(userId);
+            function attachProfileClickListeners() {
+                document.querySelectorAll('.discovery-card').forEach(card => {
+                    card.addEventListener('click', function(e) {
+                        if (e.target.closest('button')) return;
+                        const userId = this.dataset.userId;
+                        openProfileViewer(userId);
+                    });
                 });
-            });
+            }
 
             // Initial loading state and update like buttons
             showLoading();
@@ -1009,6 +1018,7 @@
                 hideLoading();
                 updateLikeButtons();
                 attachLikeButtonListeners();
+                attachProfileClickListeners();
             });
 
             // See All buttons (placeholder)

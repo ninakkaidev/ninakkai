@@ -325,6 +325,9 @@ class MongoService:
 
     def find_matches(self, user_id: str) -> List[Dict[str, Any]]:
         try:
+            current_user = self.get_user_by_id(user_id)
+            if not current_user:
+                return []
             user_quiz = self.get_quiz_results(user_id)
             if not user_quiz:
                 return []
@@ -337,7 +340,7 @@ class MongoService:
                 match_percentage = self._calculate_match_percentage(user_scores, other_scores)
                 if other_scores['dominant_type'] == dominant_type or other_scores.get('secondary_type') == dominant_type:
                     user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
-                    if user_data:
+                    if user_data and user_data['gender'] != current_user['gender']:
                         matches.append({
                             'id': str(user_data['_id']),
                             'full_name': user_data['full_name'],
@@ -420,6 +423,9 @@ class MongoService:
 
     def search_matches(self, query: str, user_id: str) -> List[Dict[str, Any]]:
         try:
+            current_user = self.get_user_by_id(user_id)
+            if not current_user:
+                return []
             query = query.lower().strip()
             matches = []
             all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
@@ -429,7 +435,7 @@ class MongoService:
             user_scores = user_quiz['scores']
             for other_user in all_users:
                 user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
-                if user_data and (query in user_data['full_name'].lower() or any(query in interest.lower() for interest in user_data.get('interests', []))):
+                if user_data and user_data['gender'] != current_user['gender'] and (query in user_data['full_name'].lower() or any(query in interest.lower() for interest in user_data.get('interests', []))):
                     match_percentage = self._calculate_match_percentage(user_scores, other_user['scores'])
                     matches.append({
                         'id': str(user_data['_id']),
@@ -620,6 +626,9 @@ class MongoService:
     def get_filtered_matches(self, user_id: str) -> List[Dict[str, Any]]:
         """Get matches excluding liked and passed users"""
         try:
+            current_user = self.get_user_by_id(user_id)
+            if not current_user:
+                return []
             user_quiz = self.get_quiz_results(user_id)
             if not user_quiz:
                 return []
@@ -642,7 +651,7 @@ class MongoService:
                 
                 if other_scores['dominant_type'] == dominant_type or other_scores.get('secondary_type') == dominant_type:
                     user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
-                    if user_data:
+                    if user_data and user_data['gender'] != current_user['gender']:
                         matches.append({
                             'id': str(user_data['_id']),
                             'full_name': user_data['full_name'],
