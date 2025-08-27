@@ -337,13 +337,89 @@
                 gap: 20px;
             }
         }
+
+        /* Dark mode styles from profile.html for consistency */
+        .dark body {
+            background-color: #111827;
+            color: #f3f4f6;
+        }
+        
+        .dark .bg-white {
+            background-color: #1f2937 !important;
+            color: #f3f4f6;
+        }
+        
+        .dark .text-gray-800 {
+            color: #f3f4f6 !important;
+        }
+        
+        .dark .bg-gray-100 {
+            background-color: #111827 !important;
+        }
+        
+        .dark .bg-gray-50 {
+            background-color: #374151 !important;
+        }
+        
+        .dark .text-gray-500 {
+            color: #9ca3af !important;
+        }
+        
+        .dark .text-gray-600 {
+            color: #9ca3af !important;
+        }
+        
+        .dark .text-gray-700 {
+            color: #d1d5db !important;
+        }
+        
+        .dark .border-gray-200 {
+            border-color: #374151 !important;
+        }
+        
+        .dark .notification-item.unread {
+            background-color: #374151 !important;
+        }
+        
+        .dark .chat-message.received {
+            background-color: #374151 !important;
+        }
+        
+        .dark #settingsModal .settings-option:hover {
+            background-color: #374151 !important;
+        }
+        
+        .dark .language-options {
+            background-color: #1f2937;
+            border-color: #374151;
+        }
+        
+        .dark .language-option:hover {
+            background-color: #374151;
+        }
+        
+        .dark .confirmation-dialog div {
+            background-color: #1f2937;
+            color: #f3f4f6;
+        }
+
+        .dark .text-gray-900 {
+            color: #f3f4f6 !important;
+        }
+
+        .dark .bg-gradient-to-r.from-indigo-100.via-white.to-pink-100 {
+            background-image: linear-gradient(to right, var(--tw-gradient-stops)) !important;
+            --tw-gradient-from: #312e81 var(--tw-gradient-from-position);
+            --tw-gradient-to: #831843 var(--tw-gradient-to-position);
+            --tw-gradient-stops: var(--tw-gradient-from), #111827 var(--tw-gradient-via-position), var(--tw-gradient-to);
+        }
     </style>
 </head>
-<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-white">
+<body class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100">
     <!-- Loading State -->
     <div class="loading" id="loading">
         <div class="loading-spinner"></div>
-        <p class="text-white dark:text-white text-center">Finding your matches...</p>
+        <p class="text-gray-100 text-center">Finding your matches...</p>
     </div>
 
     <!-- Header -->
@@ -388,20 +464,20 @@
         <!-- Most Matched Suggestions Section -->
         <div id="matches-section" class="mb-8">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Most Matched Suggestions</h2>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Most Matched Suggestions</h2>
                 <button id="see-all-matches" class="text-pink-500 text-sm font-medium">See All</button>
             </div>
             <div id="matches-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                 {% if matches %}
                     {% for match in matches %}
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="{{ match.id }}">
-                        <div class="match-percentage text-gray-800 dark:text-white">{{ match.match_percentage }}%</div>
+                        <div class="match-percentage text-gray-800 dark:text-gray-100">{{ match.match_percentage }}%</div>
                         <img src="{{ match.image }}" alt="Profile" class="profile-image">
                         <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
                             <div class="flex justify-between items-end">
                                 <div>
-                                    <h3 class="text-white font-bold">{{ match.full_name }}, {{ match.age|default('N/A') }}</h3>
-                                    <p class="text-gray-300 dark:text-white text-sm">{{ match.occupation }} • {{ match.distance }}</p>
+                                    <h3 class="text-gray-100 font-bold">{{ match.full_name }}, {{ match.age|default('N/A') }}</h3>
+                                    <p class="text-gray-300 dark:text-gray-300 text-sm">{{ match.occupation }} • {{ match.distance }}</p>
                                 </div>
                                 <button class="like-button {% if match.liked %}liked-button{% else %}bg-pink-500 hover:bg-pink-600{% endif %} text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition" 
                                         data-user-id="{{ match.id }}" 
@@ -413,7 +489,7 @@
                     </div>
                     {% endfor %}
                 {% else %}
-                    <p class="text-gray-600 dark:text-white col-span-full">No matches found. Try completing your quiz!</p>
+                    <p class="text-gray-600 dark:text-gray-100 col-span-full">No matches found. Try completing your quiz!</p>
                 {% endif %}
             </div>
         </div>
@@ -421,7 +497,7 @@
         <!-- Discovery Section with new styling -->
         <div id="discovery-section" class="mb-8">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Discover People</h2>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Discover People</h2>
                 <button id="see-all-discovery" class="text-pink-500 text-sm font-medium">See All</button>
             </div>
             <div id="discovery-grid" class="discovery-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
@@ -429,15 +505,15 @@
                     {% for match in discovery %}
                     <div class="discovery-profile discovery-card" data-user-id="{{ match.id }}">
                         <img src="{{ match.image }}" alt="Profile" class="profile-image">
-                        <div class="discovery-rating text-gray-800 dark:text-white">
+                        <div class="discovery-rating text-gray-800 dark:text-gray-100">
                             <i class="fas fa-star text-yellow-500 text-xs mr-1"></i>
                             <span class="text-xs font-medium">{{ match.rating }}</span>
                         </div>
                         <div class="discovery-content">
                             <div class="flex justify-between items-end">
                                 <div>
-                                    <h3 class="text-white font-bold text-sm md:text-base">{{ match.full_name }}, {{ match.age|default('N/A') }}</h3>
-                                    <p class="text-gray-300 dark:text-white text-xs md:text-sm">{{ match.distance }}</p>
+                                    <h3 class="text-gray-100 font-bold text-sm md:text-base">{{ match.full_name }}, {{ match.age|default('N/A') }}</h3>
+                                    <p class="text-gray-300 dark:text-gray-300 text-xs md:text-sm">{{ match.distance }}</p>
                                 </div>
                                 <button class="like-button {% if match.liked %}liked-button{% else %}bg-pink-500 hover:bg-pink-600{% endif %} text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center transition" 
                                         data-user-id="{{ match.id }}" 
@@ -449,7 +525,7 @@
                     </div>
                     {% endfor %}
                 {% else %}
-                    <p class="text-gray-600 dark:text-white col-span-full">No people to discover. Try completing your quiz!</p>
+                    <p class="text-gray-600 dark:text-gray-100 col-span-full">No people to discover. Try completing your quiz!</p>
                 {% endif %}
             </div>
         </div>
@@ -537,7 +613,7 @@
 
             function showMatchPopup() {
                 const popup = document.createElement('div');
-                popup.className = 'popup text-gray-800 dark:text-white';
+                popup.className = 'popup text-gray-800 dark:text-gray-100';
                 popup.textContent = 'Connection Successful!';
                 document.body.appendChild(popup);
                 setTimeout(() => {
@@ -682,13 +758,13 @@
                 const matchesGrid = document.getElementById('matches-grid');
                 matchesGrid.innerHTML = matches.length ? matches.map(match => `
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="${match.id}">
-                        <div class="match-percentage text-gray-800 dark:text-white">${match.match_percentage}%</div>
+                        <div class="match-percentage text-gray-800 dark:text-gray-100">${match.match_percentage}%</div>
                         <img src="${match.image}" alt="${match.full_name}" class="profile-image">
                         <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
                             <div class="flex justify-between items-end">
                                 <div>
-                                    <h3 class="text-white font-bold">${match.full_name}, ${match.age || 'N/A'}</h3>
-                                    <p class="text-gray-300 dark:text-white text-sm">${match.occupation} • ${match.distance}</p>
+                                    <h3 class="text-gray-100 font-bold">${match.full_name}, ${match.age || 'N/A'}</h3>
+                                    <p class="text-gray-300 dark:text-gray-300 text-sm">${match.occupation} • ${match.distance}</p>
                                 </div>
                                 <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition" 
                                         data-user-id="${match.id}" 
@@ -698,7 +774,7 @@
                             </div>
                         </div>
                     </div>
-                `).join('') : '<p class="text-gray-600 dark:text-white col-span-full">No matches found for your search.</p>';
+                `).join('') : '<p class="text-gray-600 dark:text-gray-100 col-span-full">No matches found for your search.</p>';
                 
                 // Reattach event listeners to new buttons
                 attachLikeButtonListeners();
@@ -721,22 +797,22 @@
                         mainHeader.style.display = 'none';
                         
                         const profileViewer = document.createElement('div');
-                        profileViewer.className = 'profile-viewer bg-white dark:bg-gray-900 text-gray-800 dark:text-white';
+                        profileViewer.className = 'profile-viewer bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100';
                         profileViewer.innerHTML = `
                             <div class="relative">
                                 <img src="${profile.user.image}" alt="${profile.user.full_name}" class="profile-viewer-image">
                                 <button class="absolute top-4 left-4 bg-white dark:bg-gray-800 bg-opacity-80 rounded-full w-10 h-10 flex items-center justify-center close-profile">
-                                    <i class="fas fa-arrow-left text-gray-800 dark:text-white"></i>
+                                    <i class="fas fa-arrow-left text-gray-800 dark:text-gray-100"></i>
                                 </button>
                                 <div class="absolute bottom-4 left-4 bg-white dark:bg-gray-800 bg-opacity-80 rounded-full px-3 py-1">
-                                    <span class="font-bold text-gray-800 dark:text-white">${profile.user.match_percentage}% Match</span>
+                                    <span class="font-bold text-gray-800 dark:text-gray-100">${profile.user.match_percentage}% Match</span>
                                 </div>
                             </div>
                             <div class="p-6 flex-1">
                                 <div class="flex justify-between items-start mb-4">
                                     <div>
-                                        <h2 class="text-2xl font-bold text-gray-800 dark:text-white">${profile.user.full_name}, ${profile.user.age || 'N/A'}</h2>
-                                        <p class="text-gray-600 dark:text-white">${profile.user.occupation} • ${profile.user.distance}</p>
+                                        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">${profile.user.full_name}, ${profile.user.age || 'N/A'}</h2>
+                                        <p class="text-gray-600 dark:text-gray-400">${profile.user.occupation} • ${profile.user.distance}</p>
                                     </div>
                                     <button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-12 h-12 flex items-center justify-center transition" 
                                             data-user-id="${userId}" 
@@ -745,42 +821,42 @@
                                     </button>
                                 </div>
                                 <div class="mb-6">
-                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-white">About</h3>
-                                    <p class="text-gray-700 dark:text-white">${profile.user.bio}</p>
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">About</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.bio}</p>
                                 </div>
                                 <div class="mb-6">
-                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-white">Personality Types</h3>
-                                    <p class="text-gray-700 dark:text-white">Dominant: ${profile.user.personality.dominant_type} (${profile.user.personality.dominant_percentage}%)</p>
-                                    <p class="text-gray-700 dark:text-white">Secondary: ${profile.user.personality.secondary_type || 'None'} (${profile.user.personality.secondary_percentage || '0'}%)</p>
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Personality Types</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">Dominant: ${profile.user.personality.dominant_type} (${profile.user.personality.dominant_percentage}%)</p>
+                                    <p class="text-gray-700 dark:text-gray-300">Secondary: ${profile.user.personality.secondary_type || 'None'} (${profile.user.personality.secondary_percentage || '0'}%)</p>
                                 </div>
                                 <div class="mb-6">
-                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-white">Personality Details</h3>
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Personality Details</h3>
                                     ${profile.user.personality_info ? `
-                                        <p class="text-gray-700 dark:text-white"><strong>${profile.user.personality_info.title || 'Personality Information'}</strong></p>
-                                        <p class="text-gray-700 dark:text-white">${profile.user.personality_info.description || 'No description available'}</p>
-                                        <p class="text-gray-700 dark:text-white"><em>${profile.user.personality_info.tagline || ''}</em></p>
-                                        <p class="text-gray-700 dark:text-white"><strong>Strengths:</strong> ${profile.user.personality_info.strengths ? profile.user.personality_info.strengths.join(', ') : 'Not specified'}</p>
-                                        <p class="text-gray-700 dark:text-white"><strong>Compatibility:</strong> ${profile.user.personality_info.compatibility ? profile.user.personality_info.compatibility.join(', ') : 'Not specified'}</p>
-                                    ` : '<p class="text-gray-700 dark:text-white">No personality information available</p>'}
+                                        <p class="text-gray-700 dark:text-gray-300"><strong>${profile.user.personality_info.title || 'Personality Information'}</strong></p>
+                                        <p class="text-gray-700 dark:text-gray-300">${profile.user.personality_info.description || 'No description available'}</p>
+                                        <p class="text-gray-700 dark:text-gray-300"><em>${profile.user.personality_info.tagline || ''}</em></p>
+                                        <p class="text-gray-700 dark:text-gray-300"><strong>Strengths:</strong> ${profile.user.personality_info.strengths ? profile.user.personality_info.strengths.join(', ') : 'Not specified'}</p>
+                                        <p class="text-gray-700 dark:text-gray-300"><strong>Compatibility:</strong> ${profile.user.personality_info.compatibility ? profile.user.personality_info.compatibility.join(', ') : 'Not specified'}</p>
+                                    ` : '<p class="text-gray-700 dark:text-gray-300">No personality information available</p>'}
                                 </div>
                                 <div class="mb-6">
-                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-white">Interests</h3>
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Interests</h3>
                                     <div class="flex flex-wrap gap-2">
-                                        ${profile.user.interests && profile.user.interests.length ? profile.user.interests.map(interest => `<span class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-1 rounded-full text-sm">${interest}</span>`).join('') : '<span class="text-gray-600 dark:text-white">No interests listed</span>'}
+                                        ${profile.user.interests && profile.user.interests.length ? profile.user.interests.map(interest => `<span class="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100 px-3 py-1 rounded-full text-sm">${interest}</span>`).join('') : '<span class="text-gray-600 dark:text-gray-400">No interests listed</span>'}
                                     </div>
                                 </div>
                                 <div class="mb-6">
-                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-white">Photos</h3>
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Photos</h3>
                                     ${profile.user.photos && profile.user.photos.length ? `
                                         <div class="grid grid-cols-2 gap-4">
                                             ${profile.user.photos.map(photo => `<img src="${photo}" alt="User photo" class="rounded-lg object-cover h-40 w-full">`).join('')}
                                         </div>
                                     ` : `
-                                        <p class="text-gray-700 dark:text-white">No pictures uploaded yet</p>
+                                        <p class="text-gray-700 dark:text-gray-300">No pictures uploaded yet</p>
                                     `}
                                 </div>
                                 <div class="flex justify-between mt-8">
-                                    <button class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-full px-6 py-3 flex-1 mr-2 hover:bg-gray-300 dark:hover:bg-gray-600 transition pass-button" data-user-id="${userId}">
+                                    <button class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-full px-6 py-3 flex-1 mr-2 hover:bg-gray-300 dark:hover:bg-gray-600 transition pass-button" data-user-id="${userId}">
                                         <i class="fas fa-times mr-2"></i> Pass
                                     </button>
                                     <button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full px-6 py-3 flex-1 ml-2 transition" 
