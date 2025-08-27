@@ -1007,6 +1007,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       // Utility Functions
@@ -1029,7 +1030,6 @@
       let typingTimeout;
       let isTyping = false;
       let newMessageNotice = null;
-      let es = null;
 
       // Request notification permission
       if (Notification.permission === 'default') {
@@ -1354,75 +1354,69 @@
         });
       }
 
-      // SSE Setup
-      function setupSSE() {
-        if (es !== null) return;
-        es = new EventSource('/stream');
-        es.onmessage = (event) => {
-          const data = JSON.parse(event.data);
-          console.log('SSE event:', data);
-          const eventType = data.event;
-          const msg = data.data;
-          if (eventType === 'new_message') {
-            if ((msg.sender_id === currentChatUserId && msg.receiver_id === '{{ current_user_id }}') ||
-                (msg.receiver_id === currentChatUserId && msg.sender_id === '{{ current_user_id }}')) {
-              const isSent = msg.sender_id === '{{ current_user_id }}';
-              const messagesContainer = document.getElementById('messages-container');
-              if (isSent) {
-                const tempMessages = messagesContainer.querySelectorAll('[data-message-id^="temp-"]');
-                if (tempMessages.length > 0) {
-                  const lastTemp = tempMessages[tempMessages.length - 1];
-                  lastTemp.dataset.messageId = msg.id;
-                  const timeSpan = lastTemp.querySelector('.message-time');
-                  const formattedTime = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                  timeSpan.textContent = formattedTime;
-                  return;
-                }
-              }
-              const messageElement = createMessageElement(msg, isSent);
-              messagesContainer.appendChild(messageElement);
-              if (document.hidden || !isAtBottom()) {
-                showNewMessageNotice();
-                if (Notification.permission === 'granted') {
-                  new Notification('New Message', { body: msg.message });
-                }
-              } else {
-                scrollToBottom();
+      // Ably Setup
+      const ably = new Ably.Realtime('s-nj5w.0w.0r1nYg:3n84JwFzqeKWgZFhYRs0Ir_ZK8JZPXcVmzhpzGLzCaw');
+      const channel = ably.channels.get(`user:{{ current_user_id }}`);
+
+      channel.subscribe((msg) => {
+        const eventType = msg.name;
+        const data = msg.data;
+        console.log('Ably event:', eventType, data);
+        if (eventType === 'new_message') {
+          const msg = data;
+          if ((msg.sender_id === currentChatUserId && msg.receiver_id === '{{ current_user_id }}') ||
+              (msg.receiver_id === currentChatUserId && msg.sender_id === '{{ current_user_id }}')) {
+            const isSent = msg.sender_id === '{{ current_user_id }}';
+            const messagesContainer = document.getElementById('messages-container');
+            if (isSent) {
+              const tempMessages = messagesContainer.querySelectorAll('[data-message-id^="temp-"]');
+              if (tempMessages.length > 0) {
+                const lastTemp = tempMessages[tempMessages.length - 1];
+                lastTemp.dataset.messageId = msg.id;
+                const timeSpan = lastTemp.querySelector('.message-time');
+                const formattedTime = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                timeSpan.textContent = formattedTime;
+                return;
               }
             }
-          } else if (eventType === 'user_typing') {
-            if (msg.sender_id === currentChatUserId) {
-              let typingIndicator = document.querySelector('.typing-indicator');
-              if (!typingIndicator) {
-                typingIndicator = document.createElement('div');
-                typingIndicator.className = 'typing-indicator';
-                typingIndicator.textContent = 'Typing...';
-                document.getElementById('messages-container').appendChild(typingIndicator);
+            const messageElement = createMessageElement(msg, isSent);
+            messagesContainer.appendChild(messageElement);
+            if (document.hidden || !isAtBottom()) {
+              showNewMessageNotice();
+              if (Notification.permission === 'granted') {
+                new Notification('New Message', { body: msg.message });
               }
-              typingIndicator.style.display = 'block';
-              clearTimeout(typingTimeout);
-              typingTimeout = setTimeout(() => {
-                typingIndicator.style.display = 'none';
-              }, 3000);
-            }
-          } else if (eventType === 'message_deleted') {
-            const messageElement = document.querySelector(`[data-message-id="${msg.message_id}"]`);
-            if (messageElement) messageElement.remove();
-          } else if (eventType === 'messages_read') {
-            if (msg.conversation_id === currentChatUserId) {
-              updateReadStatus();
+            } else {
+              scrollToBottom();
             }
           }
-        };
-        es.onerror = (error) => {
-          console.error('SSE error:', error);
-          es.close();
-          es = null;
-          setTimeout(setupSSE, 5000);
-        };
-      }
-
-      setupSSE();
+        } else if (eventType === 'user_typing') {
+          const msg = data;
+          if (msg.sender_id === currentChatUserId) {
+            let typingIndicator = document.querySelector('.typing-indicator');
+            if (!typingIndicator) {
+              typingIndicator = document.createElement('div');
+              typingIndicator.className = 'typing-indicator';
+              typingIndicator.textContent = 'Typing...';
+              document.getElementById('messages-container').appendChild(typingIndicator);
+            }
+            typingIndicator.style.display = 'block';
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+              typingIndicator.style.display = 'none';
+            }, 3000);
+          }
+        } else if (eventType === 'message_deleted') {
+          const msg = data;
+          const messageElement = document.querySelector(`[data-message-id="${msg.message_id}"]`);
+          if (messageElement) messageElement.remove();
+        } else if (eventType === 'messages_read') {
+          const msg = data;
+          if (msg.conversation_id === currentChatUserId) {
+            updateReadStatus();
+          }
+        }
+      });
 
       // Responsive Behavior
       const conversationsCol = document.querySelector('.conversations-col');

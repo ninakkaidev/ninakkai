@@ -17,8 +17,8 @@ import cloudinary.uploader
 import cloudinary.api
 import pytz
 import json
-from queue import Queue
 import http.client
+from ably import AblyRest
 
 # Configure Cloudinary with explicit credentials and enhanced logging
 def configure_cloudinary():
@@ -61,7 +61,9 @@ app.config.update(
 # Initialize Cloudinary
 configure_cloudinary()
 
-user_queues = {}
+# Initialize Ably
+ABLY_KEY = 's-nj5w.0w.0r1nYg:3n84JwFzqeKWgZFhYRs0Ir_ZK8JZPXcVmzhpzGLzCaw'
+ably_client = AblyRest(ABLY_KEY)
 
 class MongoService:
     def __init__(self):
@@ -607,7 +609,7 @@ class MongoService:
             return {'success': False, 'error': str(e)}
 
     def has_liked_user(self, user_id: str, matched_user_id: str) -> bool:
-        """Check if a user has already liked another user"""
+        """Check if a user has has already liked another user"""
         try:
             like = self.likes.find_one({'user_id': user_id, 'matched_user_id': matched_user_id})
             return bool(like)
@@ -723,12 +725,9 @@ class ChatService:
             result = self.messages.insert_one(msg_data)
             msg_data['id'] = str(result.inserted_id)
             msg_data['timestamp'] = msg_data['timestamp'].isoformat()
-            for uid in [sender_id, receiver_id]:
-                if uid in user_queues:
-                    user_queues[uid].put({
-                        'event': 'new_message',
-                        'data': msg_data
-                    })
+            # Publish to both sender and receiver via Ably
+            ably_client.channels.get(f"user:{receiver_id}").publish('new_message', msg_data)
+            ably_client.channels.get(f"user:{sender_id}").publish('new_message', msg_data)
             return {'success': True, 'message_id': msg_data['id']}
         except Exception as e:
             logger.error(f"Send message error: {str(e)}")
@@ -750,11 +749,7 @@ class ChatService:
                 {'$set': {'read': True}}
             )
             if updated.modified_count > 0:
-                if user2 in user_queues:
-                    user_queues[user2].put({
-                        'event': 'messages_read',
-                        'data': {'conversation_id': user1}
-                    })
+                ably_client.channels.get(f"user:{user2}").publish('messages_read', {'conversation_id': user1})
             for msg in msgs:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
@@ -800,8 +795,15 @@ class ChatService:
 
     def delete_message(self, message_id: str) -> Dict[str, Any]:
         try:
-            result = self.messages.delete_one({'_id': ObjectId(message_id)})
-            return {'success': result.deleted_count > 0}
+            msg = self.messages.find_one({'_id': ObjectId(message_id)})
+            if msg:
+                result = self.messages.delete_one({'_id': ObjectId(message_id)})
+                if result.deleted_count > 0:
+                    # Publish to both via Ably
+                    ably_client.channels.get(f"user:{msg['receiver_id']}").publish('message_deleted', {'message_id': message_id})
+                    ably_client.channels.get(f"user:{msg['sender_id']}").publish('message_deleted', {'message_id': message_id})
+                    return {'success': True}
+            return {'success': False}
         except Exception as e:
             logger.error(f"Delete message error: {str(e)}")
             return {'success': False, 'error': str(e)}
@@ -1339,123 +1341,6 @@ def search_matches():
         logger.error(f"Search matches endpoint error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/user-profile/<user_id>')
-def user_profile(user_id):
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    try:
-        user = mongo_service.get_user_by_id(user_id)
-        if not user:
-            return jsonify({'success': False, 'error': 'User not found'}), 404
-        quiz_result = mongo_service.get_quiz_results(user_id)
-        third_person_personalities = {
-            '🌿 Nurturer': {
-                'dominant_type': '🌿 Nurturer',
-                'title': '“This person is a Nurturer.”',
-                'description': 'They’re gentle, loyal, and always ready to hold space for someone they love. They build relationships with quiet strength and warmth.',
-                'tagline': '“Soft-hearted, deep-rooted.”',
-                'strengths': ['Gentle', 'Loyal', 'Empathetic'],
-                'compatibility': ['🛡️ Protector', '👂 Listener'],
-                'color': '#4CAF50'
-            },
-            '🛡️ Protector': {
-                'dominant_type': '🛡️ Protector',
-                'title': '“This person is a Protector.”',
-                'description': 'They’re grounded, trustworthy, and always ready to stand up for the people they care about. Love means loyalty — and showing up when it matters.',
-                'tagline': '“Safe. Steady. Yours.”',
-                'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
-                'compatibility': ['🌿 Nurturer', '🌙 Dreamer'],
-                'color': '#2196F3'
-            },
-            '🌙 Dreamer': {
-                'dominant_type': '🌙 Dreamer',
-                'title': '“This person is a Dreamer.”',
-                'description': 'They feel deeply and love boldly. They seek the kind of connection that feels written in the stars. They crave the kind of love that makes their soul glow.',
-                'tagline': '“Romance is their religion.”',
-                'strengths': ['Deep', 'Bold', 'Soulful'],
-                'compatibility': ['💘 Romantic', '🌟 Idealist'],
-                'color': '#9C27B0'
-            },
-            '👂 Listener': {
-                'dominant_type': '👂 Listener',
-                'title': '“This person is a Listener.”',
-                'description': 'Calm and thoughtful, they hear more than what’s said. They bring comfort in silence and meaning in presence. They understand that real love sometimes just means being there.',
-                'tagline': '“Still waters, true heart.”',
-                'strengths': ['Calm', 'Thoughtful', 'Present'],
-                'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
-                'color': '#03A9F4'
-            },
-            '💘 Romantic': {
-                'dominant_type': '💘 Romantic',
-                'title': '“This person is a Romantic.”',
-                'description': 'They lead with their heart, express love freely, and long for emotional electricity. They don’t just fall in love — they dive in.',
-                'tagline': '“Loving loudly. Feeling deeply.”',
-                'strengths': ['Heart-led', 'Expressive', 'Passionate'],
-                'compatibility': ['🌙 Dreamer', '🌟 Idealist'],
-                'color': '#E91E63'
-            },
-            '🌟 Idealist': {
-                'dominant_type': '🌟 Idealist',
-                'title': '“This person is an Idealist.”',
-                'description': 'They believe love should feel right — clear, mutual, and beautifully real. You wait for the one who understands your soul.',
-                'tagline': '“Only real love will do.”',
-                'strengths': ['Believer', 'Clear', 'Soul-seeking'],
-                'compatibility': ['🌙 Dreamer', '💘 Romantic'],
-                'color': '#FFEB3B'
-            },
-        }
-        dominant_type = quiz_result['scores']['dominant_type'] if quiz_result else 'N/A'
-        personality_info = third_person_personalities.get(dominant_type, {
-            'dominant_type': dominant_type,
-            'title': f'This person is a {dominant_type.replace(" ", "")}.',
-            'description': 'Description not available.',
-            'tagline': '',
-            'strengths': [],
-            'compatibility': [],
-            'color': '#000000'
-        })
-        profile = {
-            'id': user['id'],
-            'full_name': user['full_name'],
-            'age': user.get('age'),
-            'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-            'occupation': user.get('occupation', 'N/A'),
-            'bio': user.get('bio', 'No bio available'),
-            'interests': user.get('interests', []),
-            'photos': user.get('photos', []),
-            'distance': 'N/A',
-            'rating': '4.5',
-            'match_percentage': 50,
-            'liked': mongo_service.has_liked_user(session['user_id'], user_id),
-            'personality': {
-                'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
-                'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0,
-                'secondary_type': quiz_result['scores']['secondary_type'] if quiz_result else 'N/A',
-                'secondary_percentage': quiz_result['scores']['secondary_percentage'] if quiz_result else 0
-            },
-            'personality_info': personality_info
-        }
-        return jsonify({'success': True, 'user': profile}), 200
-    except Exception as e:
-        logger.error(f"User profile endpoint error: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/stream')
-def stream():
-    if 'user_id' not in session:
-        return 'Unauthorized', 401
-
-    def generate():
-        q = user_queues.setdefault(session['user_id'], Queue())
-        try:
-            while True:
-                msg = q.get()
-                yield f"data: {json.dumps(msg)}\n\n"
-        except GeneratorExit:
-            pass
-
-    return Response(generate(), mimetype='text/event-stream')
-
 @app.route('/send_typing', methods=['POST'])
 def send_typing():
     if 'user_id' not in session:
@@ -1464,11 +1349,7 @@ def send_typing():
     to_user_id = data.get('to_user_id')
     if not to_user_id:
         return jsonify({'success': False, 'error': 'Missing to_user_id'}), 400
-    if to_user_id in user_queues:
-        user_queues[to_user_id].put({
-            'event': 'user_typing',
-            'data': {'sender_id': session['user_id']}
-        })
+    ably_client.channels.get(f"user:{to_user_id}").publish('user_typing', {'sender_id': session['user_id']})
     return jsonify({'success': True})
 
 @app.route('/chat')
@@ -1577,21 +1458,8 @@ def delete_message_endpoint():
     if not message_id:
         return jsonify({'success': False, 'error': 'No message ID provided'}), 400
     try:
-        msg = chat_service.messages.find_one({'_id': ObjectId(message_id)})
-        if msg and msg['sender_id'] == session['user_id']:
-            result = chat_service.delete_message(message_id)
-            if result['success']:
-                for uid in [msg['sender_id'], msg['receiver_id']]:
-                    if uid in user_queues:
-                        user_queues[uid].put({
-                            'event': 'message_deleted',
-                            'data': {'message_id': message_id}
-                        })
-                return jsonify({'success': True})
-            else:
-                return jsonify({'success': False, 'error': 'Failed to delete'})
-        else:
-            return jsonify({'success': False, 'error': 'Not authorized or not found'})
+        result = chat_service.delete_message(message_id)
+        return jsonify(result)
     except Exception as e:
         logger.error(f"Delete message error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
