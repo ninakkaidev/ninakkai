@@ -1,5 +1,6 @@
 from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory, jsonify, Response
 from flask_cors import CORS
+from flask_socketio import SocketIO, join_room, emit
 from pymongo import MongoClient
 from typing import Dict, Any, Optional, List
 from bson import ObjectId
@@ -18,9 +19,6 @@ import cloudinary.api
 import pytz
 import json
 import http.client
-from ably import AblyRealtime
-import asyncio
-import threading
 
 # Configure Cloudinary with explicit credentials and enhanced logging
 def configure_cloudinary():
@@ -60,28 +58,11 @@ app.config.update(
     SESSION_COOKIE_DOMAIN=None
 )
 
+# Initialize SocketIO
+socketio = SocketIO(app, cors_allowed_origins="*")
+
 # Initialize Cloudinary
 configure_cloudinary()
-
-# Initialize Ably in a background thread with persistent event loop
-ABLY_KEY = 's-nj5w.0r1nYg:3n84JwFzqeKWgZFhYRs0Ir_ZK8JZPXcVmzhpzGLzCaw'
-ably_loop = asyncio.new_event_loop()
-def run_ably_loop():
-    asyncio.set_event_loop(ably_loop)
-    ably_loop.run_forever()
-ably_thread = threading.Thread(target=run_ably_loop, daemon=True)
-ably_thread.start()
-
-ably_client = None
-async def _create_ably_client():
-    return AblyRealtime(key=ABLY_KEY)
-
-def get_ably_client():
-    global ably_client
-    if ably_client is None:
-        fut = asyncio.run_coroutine_threadsafe(_create_ably_client(), ably_loop)
-        ably_client = fut.result()
-    return ably_client
 
 class MongoService:
     def __init__(self):
@@ -743,14 +724,9 @@ class ChatService:
             result = self.messages.insert_one(msg_data)
             msg_data['id'] = str(result.inserted_id)
             msg_data['timestamp'] = msg_data['timestamp'].isoformat()
-            # Publish to both sender and receiver via Ably
-            client = get_ably_client()
-            channel_receiver = client.channels.get(f"user:{receiver_id}")
-            fut_receiver = asyncio.run_coroutine_threadsafe(channel_receiver.publish('new_message', msg_data), ably_loop)
-            fut_receiver.result()
-            channel_sender = client.channels.get(f"user:{sender_id}")
-            fut_sender = asyncio.run_coroutine_threadsafe(channel_sender.publish('new_message', msg_data), ably_loop)
-            fut_sender.result()
+            # Emit to both sender and receiver via SocketIO
+            socketio.emit('new_message', msg_data, room=f"user:{receiver_id}")
+            socketio.emit('new_message', msg_data, room=f"user:{sender_id}")
             return {'success': True, 'message_id': msg_data['id']}
         except Exception as e:
             logger.error(f"Send message error: {str(e)}")
@@ -772,10 +748,7 @@ class ChatService:
                 {'$set': {'read': True}}
             )
             if updated.modified_count > 0:
-                client = get_ably_client()
-                channel = client.channels.get(f"user:{user2}")
-                fut = asyncio.run_coroutine_threadsafe(channel.publish('messages_read', {'conversation_id': user1}), ably_loop)
-                fut.result()
+                socketio.emit('messages_read', {'conversation_id': user1}, room=f"user:{user2}")
             for msg in msgs:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
@@ -825,14 +798,9 @@ class ChatService:
             if msg:
                 result = self.messages.delete_one({'_id': ObjectId(message_id)})
                 if result.deleted_count > 0:
-                    # Publish to both via Ably
-                    client = get_ably_client()
-                    channel_receiver = client.channels.get(f"user:{msg['receiver_id']}")
-                    fut_receiver = asyncio.run_coroutine_threadsafe(channel_receiver.publish('message_deleted', {'message_id': message_id}), ably_loop)
-                    fut_receiver.result()
-                    channel_sender = client.channels.get(f"user:{msg['sender_id']}")
-                    fut_sender = asyncio.run_coroutine_threadsafe(channel_sender.publish('message_deleted', {'message_id': message_id}), ably_loop)
-                    fut_sender.result()
+                    # Emit to both via SocketIO
+                    socketio.emit('message_deleted', {'message_id': message_id}, room=f"user:{msg['receiver_id']}")
+                    socketio.emit('message_deleted', {'message_id': message_id}, room=f"user:{msg['sender_id']}")
                     return {'success': True}
             return {'success': False}
         except Exception as e:
@@ -1371,20 +1339,6 @@ def search_matches():
     except Exception as e:
         logger.error(f"Search matches endpoint error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/send_typing', methods=['POST'])
-def send_typing():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    data = request.get_json()
-    to_user_id = data.get('to_user_id')
-    if not to_user_id:
-        return jsonify({'success': False, 'error': 'Missing to_user_id'}), 400
-    client = get_ably_client()
-    channel = client.channels.get(f"user:{to_user_id}")
-    fut = asyncio.run_coroutine_threadsafe(channel.publish('user_typing', {'sender_id': session['user_id']}), ably_loop)
-    fut.result()
-    return jsonify({'success': True})
 
 @app.route('/chat')
 def chat():
@@ -1948,5 +1902,29 @@ def update_profile():
         return jsonify(result)
     return jsonify({'success': True}), 200
 
+# SocketIO Events
+@socketio.on('connect')
+def handle_connect():
+    if 'user_id' in session:
+        user_id = session['user_id']
+        join_room(f"user:{user_id}")
+        logger.info(f"User {user_id} connected and joined room user:{user_id}")
+    else:
+        logger.warning("Unauthorized socket connection attempt")
+        return False  # Disconnect if no session
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    if 'user_id' in session:
+        user_id = session['user_id']
+        leave_room(f"user:{user_id}")
+        logger.info(f"User {user_id} disconnected")
+
+@socketio.on('typing')
+def handle_typing(data):
+    to_user_id = data['to_user_id']
+    sender_id = session['user_id']
+    emit('user_typing', {'sender_id': sender_id}, room=f"user:{to_user_id}")
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5050, debug=True)
