@@ -946,7 +946,7 @@ def log_session_info():
             session[key] = pytz.UTC.localize(value)
             session.modified = True
 
-@app.route('/')
+@app.route('/', endpoint='home')
 def index():
     logger.debug(f"Session in index: {session}")
     logger.debug(f"Incoming cookies: {request.cookies}")
