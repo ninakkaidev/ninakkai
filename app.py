@@ -959,6 +959,18 @@ def index():
         logger.error(f"Error rendering index.html: {str(e)}")
         return 'Template not found', 404
 
+@app.route('/faq')
+def faq():
+    return render_template('faq.html')
+
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
 @app.route('/favicon.ico')
 def favicon():
     try:
@@ -1036,7 +1048,11 @@ def auth():
                 'bio': request.form.get('bio', ''),
                 'interests': request.form.get('interests', '').split(',') if request.form.get('interests') else []
             }
-            if not all([data['email'], data['password'], data['full_name']]):
+            agree_terms = request.form.get('agree_terms')
+            agree_privacy = request.form.get('agree_privacy')
+            if not agree_terms or not agree_privacy:
+                error = 'You must agree to the terms and conditions and privacy policy'
+            elif not all([data['email'], data['password'], data['full_name']]):
                 error = 'Please fill all required fields'
             elif not re.match(r"[^@]+@[^@]+\.[^@]+", data['email']):
                 error = 'Please enter a valid email address'

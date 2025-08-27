@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Responsive Animated Page</title>
+  <title>FAQ - ForYou Dating</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   <style>
     :root {
       --primary: #ff4d6d;
@@ -107,65 +108,23 @@
       background: #e0435f;
     }
 
-    .hero {
-      height: 100vh;
-      background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.3)),
-          url("{{ url_for('static', filename='images/photo-playful-man-gives-piggyback-ride-girlfriend.jpg') }}") no-repeat top center/cover;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      text-align: center;
-      padding: 0 20px;
-      color: white;
+    .main-content {
+      padding: 120px 20px 50px;
+      max-width: 1200px;
+      margin: 0 auto;
     }
 
-    .hero h1, .hero span {
-      background: linear-gradient(270deg, #ff1f1f, #00ff4c, #f74dcf, #ffe600, #4089ff);
-      background-size: 1000% 100%;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: animatedText 10s linear infinite;
+    .faq-section {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 30px;
+      animation: fadeInUp 1s ease;
     }
 
-    @keyframes animatedText {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 100% 50%; }
-    }
-
-    @media (max-width: 720px) {
-      .hero {
-        background-position: 70% center;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .hero {
-        background-position: 70% center;
-      }
-    }
-
-    .hero h1 {
-      font-size: 3rem;
-      margin-bottom: 20px;
-      animation: fadeInDown 1s ease;
-    }
-
-    .btn-hero {
-      background: linear-gradient(to right, rgb(250, 94, 94), rgb(113, 113, 248));
-      color: white;
-      padding: 15px 30px;
-      border: none;
-      border-radius: 30px;
-      font-size: 1.1rem;
-      cursor: pointer;
-      transition: all 0.4s ease;
-      animation: fadeInUp 1.2s ease;
-    }
-
-    .btn-hero:hover {
-      background: linear-gradient(to left, rgb(250, 94, 94), rgb(113, 113, 248));
-      transform: scale(1.05);
+    .accordion-button {
+      font-weight: bold;
+      color: var(--primary);
     }
 
     .hamburger {
@@ -203,7 +162,7 @@
       position: fixed;
       top: 0;
       right: 0;
-      width: 300px;
+      width: 280px;
       height: 100vh;
       padding: 80px 30px;
       box-shadow: var(--shadow);
@@ -384,17 +343,13 @@
         display: flex;
       }
 
-      .hero h1 {
-        font-size: 2rem;
-      }
-
       footer .footer-columns {
         flex-direction: column;
         text-align: left;
       }
 
       #about.popup {
-        width: 300px;
+        width: 200px;
       }
     }
 
@@ -416,14 +371,14 @@
 <body>
 
   <header id="header">
-    <div class="logo">
-        <span style="font-size: 2rem; background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; margin-right: 5px;">
-            നിനക്കായി-
-        </span>
-        <span style="font-size: 1.2rem; color: rgb(255, 255, 255); font-weight: 600;">
-            ForYou
-        </span>
-    </div>
+    <a href="index.html" class="logo" style="text-decoration: none;">
+    <span style="font-size: 2rem; background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; margin-right: 5px;">
+        നിനക്കായി-
+    </span>
+    <span style="font-size: 1.2rem; color: rgb(255, 255, 255); font-weight: 600;">
+        ForYou
+    </span>
+</a>
 
     <nav>
       <div class="popup-container">
@@ -458,7 +413,7 @@
         </div>
       </div>
 
-      <button class="btn-hero" onclick="location.href='{{ url_for('auth') }}'">Join Us</button>
+      <button class="join-btn" onclick="location.href='{{ url_for('auth') }}'">Join Us</button>
     </nav>
 
     <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
@@ -479,10 +434,61 @@
     <div id="popupContent"></div>
   </div>
 
-  <div class="hero">
-    <h1>Find Your Matches</h1>
-    <button class="btn-hero" onclick="location.href='{{ url_for('auth') }}'">Get Started</button>
-  </div>
+  <section class="main-content">
+    <h1 class="text-center mb-5" style="color: var(--primary); animation: fadeInDown 1s ease;">Frequently Asked Questions</h1>
+    <div class="faq-section">
+      <div class="accordion" id="faqAccordion">
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingOne">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+              How does the real-time face recognition work?
+            </button>
+          </h2>
+          <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              Our platform uses advanced AI to perform real-time face recognition during registration and interactions to verify gender and age, ensuring authentic profiles and matches.
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingTwo">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+              How do you prevent fraud and fake accounts?
+            </button>
+          </h2>
+          <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              We employ strict verification processes, including face recognition and manual reviews, to eliminate fake accounts and ensure only genuine users join for serious relationships.
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingThree">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+              Is my data private?
+            </button>
+          </h2>
+          <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              Yes, we prioritize privacy. All data is encrypted, and face recognition data is used solely for verification and not stored long-term.
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingFour">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+              How are matches made?
+            </button>
+          </h2>
+          <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              Matches are based on verified gender (men with women, women with men), age preferences, interests, and compatibility for serious relationships.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <footer>
   <div class="footer-content">
@@ -498,10 +504,10 @@
 
       <!-- Support -->
       <div class="footer-column">
-      <h4>Support</h4>
-      <a href="mailto:support@ninakkai.com?subject=Help%20Center%20Request">Help Center</a>
-      <a href="mailto:support@ninakkai.com?subject=Contact%20Us">Contact Us</a>
-    </div>
+        <h4>Support</h4>
+        <a href="mailto:support@ninakkai.com?subject=Help%20Center%20Request">Help Center</a>
+        <a href="mailto:support@ninakkai.com?subject=Contact%20Us">Contact Us</a>
+        </div>
 
 
       <!-- Social Links -->
@@ -527,7 +533,7 @@
   <p>&copy; 2025 ForYou Dating. All Rights Reserved.</p>
 </footer>
 
-
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
   <script>
     window.addEventListener('scroll', function () {
       document.getElementById('header').classList.toggle('sticky', window.scrollY > 10);
@@ -570,7 +576,7 @@
       const data = {
         about: "<strong>About Us</strong><br><br>We are a dating platform helping people find real connections.<br>✅ 100% original and verified profiles<br>✅ Safe, secure, and privacy-focused<br>✅ Built for meaningful relationships<br>✅ Smooth user experience with modern tech",
         pricing: "<strong>Pricing</strong><br><br>Basic: Free Forever 🎉<br>Pro: <span class='animated-gradient'>Coming Soon...</span>",
-        contact: "<strong>Contact</strong><br><br>Email: support@example.com<br>"
+        contact: "<strong>Contact</strong><br><br>Email: support@example.com<br>Phone: +123456789"
       };
       document.getElementById('popupContent').innerHTML = data[section];
       document.getElementById('mobilePopup').classList.add('active');

@@ -552,6 +552,28 @@
         .hidden {
             display: none !important;
         }
+
+        .checkbox-group {
+            text-align: left;
+            margin-bottom: 1rem;
+        }
+
+        .checkbox-group label {
+            color: white;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-group a {
+            color: #8f94fb;
+            text-decoration: none;
+        }
+
+        .checkbox-group a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -726,6 +748,18 @@
                             </div>
                             <div class="input-group">
                                 <input type="password" name="confirm_password" placeholder="Confirm Password" required id="confirmPassword" maxlength="50">
+                            </div>
+                            <div class="checkbox-group">
+                                <label>
+                                    <input type="checkbox" name="agree_terms" required>
+                                    I agree to the <a href="{{ url_for('terms') }}" target="_blank">Terms and Conditions</a>
+                                </label>
+                            </div>
+                            <div class="checkbox-group">
+                                <label>
+                                    <input type="checkbox" name="agree_privacy" required>
+                                    I agree to the <a href="{{ url_for('privacy') }}" target="_blank">Privacy Policy</a>
+                                </label>
                             </div>
                             <button type="submit" class="submit-btn" id="signupSubmitBtn">Sign Up</button>
                             <div class="form-nav">
