@@ -18,7 +18,8 @@ import cloudinary.api
 import pytz
 import json
 import http.client
-from ably import AblyRest
+from ably import AblyRealtime
+import asyncio
 
 # Configure Cloudinary with explicit credentials and enhanced logging
 def configure_cloudinary():
@@ -62,8 +63,8 @@ app.config.update(
 configure_cloudinary()
 
 # Initialize Ably
-ABLY_KEY = 's-nj5w.0w.0r1nYg:3n84JwFzqeKWgZFhYRs0Ir_ZK8JZPXcVmzhpzGLzCaw'
-ably_client = AblyRest(ABLY_KEY)
+ABLY_KEY = 's-nj5w.0r1nYg:3n84JwFzqeKWgZFhYRs0Ir_ZK8JZPXcVmzhpzGLzCaw'
+ably_client = AblyRealtime(key=ABLY_KEY)
 
 class MongoService:
     def __init__(self):
@@ -609,7 +610,7 @@ class MongoService:
             return {'success': False, 'error': str(e)}
 
     def has_liked_user(self, user_id: str, matched_user_id: str) -> bool:
-        """Check if a user has has already liked another user"""
+        """Check if a user has already liked another user"""
         try:
             like = self.likes.find_one({'user_id': user_id, 'matched_user_id': matched_user_id})
             return bool(like)
@@ -709,7 +710,7 @@ class ChatService:
         self.db = self.client['chat_db']
         self.messages = self.db['messages']
 
-    def send_message(self, sender_id: str, receiver_id: str, message: str) -> Dict[str, Any]:
+    async def send_message(self, sender_id: str, receiver_id: str, message: str) -> Dict[str, Any]:
         try:
             sender = mongo_service.get_user_by_id(sender_id)
             receiver = mongo_service.get_user_by_id(receiver_id)
@@ -726,14 +727,14 @@ class ChatService:
             msg_data['id'] = str(result.inserted_id)
             msg_data['timestamp'] = msg_data['timestamp'].isoformat()
             # Publish to both sender and receiver via Ably
-            ably_client.channels.get(f"user:{receiver_id}").publish('new_message', msg_data)
-            ably_client.channels.get(f"user:{sender_id}").publish('new_message', msg_data)
+            await ably_client.channels.get(f"user:{receiver_id}").publish('new_message', msg_data)
+            await ably_client.channels.get(f"user:{sender_id}").publish('new_message', msg_data)
             return {'success': True, 'message_id': msg_data['id']}
         except Exception as e:
             logger.error(f"Send message error: {str(e)}")
             return {'success': False, 'error': str(e)}
 
-    def get_messages(self, user1: str, user2: str) -> List[Dict[str, Any]]:
+    async def get_messages(self, user1: str, user2: str) -> List[Dict[str, Any]]:
         try:
             user1_data = mongo_service.get_user_by_id(user1)
             user2_data = mongo_service.get_user_by_id(user2)
@@ -749,7 +750,7 @@ class ChatService:
                 {'$set': {'read': True}}
             )
             if updated.modified_count > 0:
-                ably_client.channels.get(f"user:{user2}").publish('messages_read', {'conversation_id': user1})
+                await ably_client.channels.get(f"user:{user2}").publish('messages_read', {'conversation_id': user1})
             for msg in msgs:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
@@ -793,15 +794,15 @@ class ChatService:
             logger.error(f"Get unread per user error: {str(e)}")
             return 0
 
-    def delete_message(self, message_id: str) -> Dict[str, Any]:
+    async def delete_message(self, message_id: str) -> Dict[str, Any]:
         try:
             msg = self.messages.find_one({'_id': ObjectId(message_id)})
             if msg:
                 result = self.messages.delete_one({'_id': ObjectId(message_id)})
                 if result.deleted_count > 0:
                     # Publish to both via Ably
-                    ably_client.channels.get(f"user:{msg['receiver_id']}").publish('message_deleted', {'message_id': message_id})
-                    ably_client.channels.get(f"user:{msg['sender_id']}").publish('message_deleted', {'message_id': message_id})
+                    await ably_client.channels.get(f"user:{msg['receiver_id']}").publish('message_deleted', {'message_id': message_id})
+                    await ably_client.channels.get(f"user:{msg['sender_id']}").publish('message_deleted', {'message_id': message_id})
                     return {'success': True}
             return {'success': False}
         except Exception as e:
@@ -1349,7 +1350,9 @@ def send_typing():
     to_user_id = data.get('to_user_id')
     if not to_user_id:
         return jsonify({'success': False, 'error': 'Missing to_user_id'}), 400
-    ably_client.channels.get(f"user:{to_user_id}").publish('user_typing', {'sender_id': session['user_id']})
+    async def pub_typing():
+        await ably_client.channels.get(f"user:{to_user_id}").publish('user_typing', {'sender_id': session['user_id']})
+    asyncio.run(pub_typing())
     return jsonify({'success': True})
 
 @app.route('/chat')
@@ -1414,21 +1417,21 @@ def chat():
         return render_template('chat.html', profile={'image': 'https://randomuser.me/api/portraits/women/44.jpg'}, conversations=[], unread_count=0, error=str(e), current_user_id='')
 
 @app.route('/messages/<other_user_id>', methods=['GET'])
-def get_messages(other_user_id):
+def get_messages_route(other_user_id):
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     current_user_id = session['user_id']
     if not mongo_service.is_matched(current_user_id, other_user_id):
         return jsonify({'success': False, 'error': 'Not matched'}), 403
     try:
-        messages = chat_service.get_messages(current_user_id, other_user_id)
+        messages = asyncio.run(chat_service.get_messages(current_user_id, other_user_id))
         return jsonify({'success': True, 'messages': messages}), 200
     except Exception as e:
         logger.error(f"Get messages endpoint error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/send_message', methods=['POST'])
-def send_message():
+def send_message_route():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     try:
@@ -1440,7 +1443,7 @@ def send_message():
         current_user_id = session['user_id']
         if not mongo_service.is_matched(current_user_id, to_user_id):
             return jsonify({'success': False, 'error': 'Not matched'}), 403
-        result = chat_service.send_message(current_user_id, to_user_id, message)
+        result = asyncio.run(chat_service.send_message(current_user_id, to_user_id, message))
         if result['success']:
             return jsonify({'success': True}), 200
         else:
@@ -1458,7 +1461,7 @@ def delete_message_endpoint():
     if not message_id:
         return jsonify({'success': False, 'error': 'No message ID provided'}), 400
     try:
-        result = chat_service.delete_message(message_id)
+        result = asyncio.run(chat_service.delete_message(message_id))
         return jsonify(result)
     except Exception as e:
         logger.error(f"Delete message error: {str(e)}")
