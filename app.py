@@ -722,6 +722,7 @@ class ChatService:
                 'read': False
             }
             result = self.messages.insert_one(msg_data)
+            del msg_data['_id']
             msg_data['id'] = str(result.inserted_id)
             msg_data['timestamp'] = msg_data['timestamp'].isoformat()
             # Emit to both sender and receiver rooms
