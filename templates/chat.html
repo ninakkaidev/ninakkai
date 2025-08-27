@@ -391,6 +391,13 @@
       color: var(--text-gray);
     }
 
+    .message-status {
+      font-size: 0.6875rem;
+      opacity: 0.8;
+      text-align: right;
+      color: rgba(255,255,255,0.8);
+    }
+
     .message-actions {
       position: absolute;
       top: -20px;
@@ -880,9 +887,12 @@
               <div class="conversation-info">
                 <div class="conversation-header">
                   <h5>{{ conv.full_name }}</h5>
-                  <span class="time">{{ conv.time }}</span>
+                  <span class="time" data-iso-time="{{ conv.time }}">{{ conv.time }}</span>
                 </div>
                 <p class="last-message">{{ conv.last_message }}</p>
+                {% if conv.unread > 0 %}
+                <span class="unread-count">{{ conv.unread }}</span>
+                {% endif %}
               </div>
             </div>
             {% endfor %}
@@ -959,8 +969,7 @@
               <div class="interests" id="sidebar-interests"></div>
             </div>
             <div class="sidebar-actions">
-              <button class="btn btn-primary"><i class="fas fa-heart me-2"></i> Like</button>
-              <button class="btn btn-outline-danger"><i class="fas fa-ban me-2"></i> Block</button>
+              <button class="btn btn-outline-danger" id="block-button"><i class="fas fa-ban me-2"></i> Block</button>
             </div>
           </div>
         </div>
@@ -1003,6 +1012,11 @@
       let newMessageNotice = null;
       let es = null;
 
+      // Request notification permission
+      if (Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+
       // Emoji Picker
       const emojiBtn = document.querySelector('.btn-emoji');
       const emojiPicker = document.querySelector('.emoji-picker');
@@ -1036,6 +1050,7 @@
       const infoBtn = document.querySelector('.btn-info');
       const sidebar = document.querySelector('.profile-sidebar');
       const closeSidebar = document.querySelector('.btn-close-sidebar');
+      const blockBtn = document.getElementById('block-button');
 
       infoBtn.addEventListener('click', async () => {
         if (!currentChatUserId) {
@@ -1078,6 +1093,35 @@
       closeSidebar.addEventListener('click', () => {
         sidebar.classList.remove('active');
         navigationHistory.pop();
+      });
+
+      blockBtn.addEventListener('click', async () => {
+        if (confirm('Are you sure you want to block this user?')) {
+          try {
+            const response = await fetch('/block_user', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                blocked_user_id: currentChatUserId
+              })
+            });
+            const result = await response.json();
+            if (result.success) {
+              alert('User blocked successfully.');
+              sidebar.classList.remove('active');
+              // Optionally remove conversation from list
+              const conv = document.querySelector(`.conversation[data-user-id="${currentChatUserId}"]`);
+              if (conv) conv.remove();
+            } else {
+              alert('Failed to block user.');
+            }
+          } catch (error) {
+            console.error('Error blocking user:', error);
+            alert('Error blocking user.');
+          }
+        }
       });
 
       // Send Message
@@ -1144,6 +1188,7 @@
           <div class="message-content">
             <p>${msg.message}</p>
             <span class="message-time">${formattedTime}</span>
+            ${isSent ? `<span class="message-status">${msg.read ? 'Seen' : ''}</span>` : ''}
             <div class="message-actions">
               <button title="Delete" onclick="deleteMessage('${msg.id}')"><i class="fas fa-trash"></i></button>
             </div>
@@ -1284,6 +1329,12 @@
         newMessageNotice.style.display = 'block';
       }
 
+      function updateReadStatus() {
+        document.querySelectorAll('.message.sent .message-status').forEach(status => {
+          status.textContent = 'Seen';
+        });
+      }
+
       // SSE Setup
       function setupSSE() {
         if (es !== null) return;
@@ -1313,6 +1364,9 @@
               messagesContainer.appendChild(messageElement);
               if (document.hidden || !isAtBottom()) {
                 showNewMessageNotice();
+                if (Notification.permission === 'granted') {
+                  new Notification('New Message', { body: msg.message });
+                }
               } else {
                 scrollToBottom();
               }
@@ -1335,6 +1389,10 @@
           } else if (eventType === 'message_deleted') {
             const messageElement = document.querySelector(`[data-message-id="${msg.message_id}"]`);
             if (messageElement) messageElement.remove();
+          } else if (eventType === 'messages_read') {
+            if (msg.conversation_id === currentChatUserId) {
+              updateReadStatus();
+            }
           }
         };
         es.onerror = (error) => {
@@ -1416,7 +1474,7 @@
 
       window.addEventListener('resize', adjustHeight);
       messageInput.addEventListener('focus', () => {
-        setTimeout(scrollToBottom, 300);
+        setTimeout(scrollToBottom, 500);
       });
 
       // Conversation Click Handler
@@ -1428,6 +1486,15 @@
           await loadMessages(this.dataset.userId);
           navigationHistory.push('chat');
         });
+      });
+
+      // Format times in conversations
+      document.querySelectorAll('.conversation .time').forEach(timeEl => {
+        const isoTime = timeEl.dataset.isoTime;
+        if (isoTime) {
+          const date = new Date(isoTime);
+          timeEl.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
       });
 
       chatBackBtn.addEventListener('click', () => {

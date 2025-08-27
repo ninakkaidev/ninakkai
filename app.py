@@ -139,6 +139,7 @@ class MongoService:
                 'interests': interests or [],
                 'photos': [],
                 'location': '',
+                'blocked_users': [],
                 'profile_complete': False,
                 'email_verified': False,
                 'age_verified': False,  # Added age_verified field
@@ -683,6 +684,17 @@ class MongoService:
             logger.error(f"Unlike user error: {str(e)}")
             return {'success': False, 'error': str(e)}
 
+    def block_user(self, user_id: str, blocked_user_id: str) -> Dict[str, Any]:
+        try:
+            result = self.users.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$addToSet': {'blocked_users': blocked_user_id}}
+            )
+            return {'success': result.modified_count > 0}
+        except Exception as e:
+            logger.error(f"Block user error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
 class ChatService:
     def __init__(self):
         self.uri = "mongodb+srv://infoqiooo:Gjresr7SikhBmM5U@cluster0.hyzcpcz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
@@ -697,6 +709,10 @@ class ChatService:
 
     def send_message(self, sender_id: str, receiver_id: str, message: str) -> Dict[str, Any]:
         try:
+            sender = mongo_service.get_user_by_id(sender_id)
+            receiver = mongo_service.get_user_by_id(receiver_id)
+            if receiver_id in sender.get('blocked_users', []) or sender_id in receiver.get('blocked_users', []):
+                return {'success': False, 'error': 'Blocked'}
             msg_data = {
                 'sender_id': sender_id,
                 'receiver_id': receiver_id,
@@ -720,15 +736,25 @@ class ChatService:
 
     def get_messages(self, user1: str, user2: str) -> List[Dict[str, Any]]:
         try:
+            user1_data = mongo_service.get_user_by_id(user1)
+            user2_data = mongo_service.get_user_by_id(user2)
+            if user2 in user1_data.get('blocked_users', []) or user1 in user2_data.get('blocked_users', []):
+                return {'success': False, 'error': 'Blocked'}
             query = {'$or': [
                 {'sender_id': user1, 'receiver_id': user2},
                 {'sender_id': user2, 'receiver_id': user1}
             ]}
             msgs = list(self.messages.find(query).sort('timestamp', 1))
-            self.messages.update_many(
+            updated = self.messages.update_many(
                 {'receiver_id': user1, 'sender_id': user2, 'read': False},
                 {'$set': {'read': True}}
             )
+            if updated.modified_count > 0:
+                if user2 in user_queues:
+                    user_queues[user2].put({
+                        'event': 'messages_read',
+                        'data': {'conversation_id': user1}
+                    })
             for msg in msgs:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
@@ -763,6 +789,13 @@ class ChatService:
             return self.messages.count_documents({'receiver_id': user_id, 'read': False})
         except Exception as e:
             logger.error(f"Get unread count error: {str(e)}")
+            return 0
+
+    def get_unread_count_per_user(self, user_id: str, sender_id: str) -> int:
+        try:
+            return self.messages.count_documents({'receiver_id': user_id, 'sender_id': sender_id, 'read': False})
+        except Exception as e:
+            logger.error(f"Get unread per user error: {str(e)}")
             return 0
 
     def delete_message(self, message_id: str) -> Dict[str, Any]:
@@ -1069,7 +1102,7 @@ def verify_email_endpoint():
         session.permanent = True
         session['email'] = result['email']
         session['user_id'] = result['user_id']
-        session['verification_pending'] = False
+       session['verification_pending'] = False
         session.modified = True
         logger.debug(f"Session set after email verification: {session}")
         user = mongo_service.get_user_by_id(result['user_id'])
@@ -1481,13 +1514,15 @@ def chat():
             user = mongo_service.get_user_by_id(match_id)
             if user:
                 last_msg = chat_service.get_last_message(current_user_id, match_id)
+                unread = chat_service.get_unread_count_per_user(current_user_id, match_id)
                 conv = {
                     'id': user['id'],
                     'full_name': user['full_name'],
                     'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
                     'last_message': last_msg['message'] if last_msg else 'Start chatting!',
-                    'time': last_msg['timestamp'].strftime('%H:%M') if last_msg else '',
-                    'sort_time': last_msg['timestamp'] if last_msg else datetime.min.replace(tzinfo=timezone.utc)
+                    'time': last_msg['timestamp'].isoformat() if last_msg else '',
+                    'sort_time': last_msg['timestamp'] if last_msg else datetime.min.replace(tzinfo=timezone.utc),
+                    'unread': unread
                 }
                 conversations.append(conv)
         conversations.sort(key=lambda c: c['sort_time'], reverse=True)
@@ -1560,6 +1595,17 @@ def delete_message_endpoint():
     except Exception as e:
         logger.error(f"Delete message error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/block_user', methods=['POST'])
+def block_user_endpoint():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    blocked_user_id = data.get('blocked_user_id')
+    if not blocked_user_id:
+        return jsonify({'success': False, 'error': 'No user ID provided'}), 400
+    result = mongo_service.block_user(session['user_id'], blocked_user_id)
+    return jsonify(result)
 
 @app.route('/profile')
 def profile():
