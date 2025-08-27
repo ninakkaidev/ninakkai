@@ -1,6 +1,5 @@
 from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory, jsonify, Response
 from flask_cors import CORS
-from flask_socketio import SocketIO, join_room, emit
 from pymongo import MongoClient
 from typing import Dict, Any, Optional, List
 from bson import ObjectId
@@ -18,6 +17,7 @@ import cloudinary.uploader
 import cloudinary.api
 import pytz
 import json
+from queue import Queue
 import http.client
 
 # Configure Cloudinary with explicit credentials and enhanced logging
@@ -58,11 +58,10 @@ app.config.update(
     SESSION_COOKIE_DOMAIN=None
 )
 
-# Initialize SocketIO
-socketio = SocketIO(app, cors_allowed_origins="*")
-
 # Initialize Cloudinary
 configure_cloudinary()
+
+user_queues = {}
 
 class MongoService:
     def __init__(self):
@@ -724,9 +723,12 @@ class ChatService:
             result = self.messages.insert_one(msg_data)
             msg_data['id'] = str(result.inserted_id)
             msg_data['timestamp'] = msg_data['timestamp'].isoformat()
-            # Emit to both sender and receiver via SocketIO
-            socketio.emit('new_message', msg_data, room=f"user:{receiver_id}")
-            socketio.emit('new_message', msg_data, room=f"user:{sender_id}")
+            for uid in [sender_id, receiver_id]:
+                if uid in user_queues:
+                    user_queues[uid].put({
+                        'event': 'new_message',
+                        'data': msg_data
+                    })
             return {'success': True, 'message_id': msg_data['id']}
         except Exception as e:
             logger.error(f"Send message error: {str(e)}")
@@ -748,7 +750,11 @@ class ChatService:
                 {'$set': {'read': True}}
             )
             if updated.modified_count > 0:
-                socketio.emit('messages_read', {'conversation_id': user1}, room=f"user:{user2}")
+                if user2 in user_queues:
+                    user_queues[user2].put({
+                        'event': 'messages_read',
+                        'data': {'conversation_id': user1}
+                    })
             for msg in msgs:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
@@ -794,15 +800,8 @@ class ChatService:
 
     def delete_message(self, message_id: str) -> Dict[str, Any]:
         try:
-            msg = self.messages.find_one({'_id': ObjectId(message_id)})
-            if msg:
-                result = self.messages.delete_one({'_id': ObjectId(message_id)})
-                if result.deleted_count > 0:
-                    # Emit to both via SocketIO
-                    socketio.emit('message_deleted', {'message_id': message_id}, room=f"user:{msg['receiver_id']}")
-                    socketio.emit('message_deleted', {'message_id': message_id}, room=f"user:{msg['sender_id']}")
-                    return {'success': True}
-            return {'success': False}
+            result = self.messages.delete_one({'_id': ObjectId(message_id)})
+            return {'success': result.deleted_count > 0}
         except Exception as e:
             logger.error(f"Delete message error: {str(e)}")
             return {'success': False, 'error': str(e)}
@@ -1340,6 +1339,138 @@ def search_matches():
         logger.error(f"Search matches endpoint error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/user-profile/<user_id>')
+def user_profile(user_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    try:
+        user = mongo_service.get_user_by_id(user_id)
+        if not user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        quiz_result = mongo_service.get_quiz_results(user_id)
+        third_person_personalities = {
+            '🌿 Nurturer': {
+                'dominant_type': '🌿 Nurturer',
+                'title': '“This person is a Nurturer.”',
+                'description': 'They’re gentle, loyal, and always ready to hold space for someone they love. They build relationships with quiet strength and warmth.',
+                'tagline': '“Soft-hearted, deep-rooted.”',
+                'strengths': ['Gentle', 'Loyal', 'Empathetic'],
+                'compatibility': ['🛡️ Protector', '👂 Listener'],
+                'color': '#4CAF50'
+            },
+            '🛡️ Protector': {
+                'dominant_type': '🛡️ Protector',
+                'title': '“This person is a Protector.”',
+                'description': 'They’re grounded, trustworthy, and always ready to stand up for the people they care about. Love means loyalty — and showing up when it matters.',
+                'tagline': '“Safe. Steady. Yours.”',
+                'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
+                'compatibility': ['🌿 Nurturer', '🌙 Dreamer'],
+                'color': '#2196F3'
+            },
+            '🌙 Dreamer': {
+                'dominant_type': '🌙 Dreamer',
+                'title': '“This person is a Dreamer.”',
+                'description': 'They feel deeply and love boldly. They seek the kind of connection that feels written in the stars. They crave the kind of love that makes their soul glow.',
+                'tagline': '“Romance is their religion.”',
+                'strengths': ['Deep', 'Bold', 'Soulful'],
+                'compatibility': ['💘 Romantic', '🌟 Idealist'],
+                'color': '#9C27B0'
+            },
+            '👂 Listener': {
+                'dominant_type': '👂 Listener',
+                'title': '“This person is a Listener.”',
+                'description': 'Calm and thoughtful, they hear more than what’s said. They bring comfort in silence and meaning in presence. They understand that real love sometimes just means being there.',
+                'tagline': '“Still waters, true heart.”',
+                'strengths': ['Calm', 'Thoughtful', 'Present'],
+                'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
+                'color': '#03A9F4'
+            },
+            '💘 Romantic': {
+                'dominant_type': '💘 Romantic',
+                'title': '“This person is a Romantic.”',
+                'description': 'They lead with their heart, express love freely, and long for emotional electricity. They don’t just fall in love — they dive in.',
+                'tagline': '“Loving loudly. Feeling deeply.”',
+                'strengths': ['Heart-led', 'Expressive', 'Passionate'],
+                'compatibility': ['🌙 Dreamer', '🌟 Idealist'],
+                'color': '#E91E63'
+            },
+            '🌟 Idealist': {
+                'dominant_type': '🌟 Idealist',
+                'title': '“This person is an Idealist.”',
+                'description': 'They believe love should feel right — clear, mutual, and beautifully real. You wait for the one who understands your soul.',
+                'tagline': '“Only real love will do.”',
+                'strengths': ['Believer', 'Clear', 'Soul-seeking'],
+                'compatibility': ['🌙 Dreamer', '💘 Romantic'],
+                'color': '#FFEB3B'
+            },
+        }
+        dominant_type = quiz_result['scores']['dominant_type'] if quiz_result else 'N/A'
+        personality_info = third_person_personalities.get(dominant_type, {
+            'dominant_type': dominant_type,
+            'title': f'This person is a {dominant_type.replace(" ", "")}.',
+            'description': 'Description not available.',
+            'tagline': '',
+            'strengths': [],
+            'compatibility': [],
+            'color': '#000000'
+        })
+        profile = {
+            'id': user['id'],
+            'full_name': user['full_name'],
+            'age': user.get('age'),
+            'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+            'occupation': user.get('occupation', 'N/A'),
+            'bio': user.get('bio', 'No bio available'),
+            'interests': user.get('interests', []),
+            'photos': user.get('photos', []),
+            'distance': 'N/A',
+            'rating': '4.5',
+            'match_percentage': 50,
+            'liked': mongo_service.has_liked_user(session['user_id'], user_id),
+            'personality': {
+                'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
+                'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0,
+                'secondary_type': quiz_result['scores']['secondary_type'] if quiz_result else 'N/A',
+                'secondary_percentage': quiz_result['scores']['secondary_percentage'] if quiz_result else 0
+            },
+            'personality_info': personality_info
+        }
+        return jsonify({'success': True, 'user': profile}), 200
+    except Exception as e:
+        logger.error(f"User profile endpoint error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/stream')
+def stream():
+    if 'user_id' not in session:
+        return 'Unauthorized', 401
+
+    def generate():
+        q = user_queues.setdefault(session['user_id'], Queue())
+        try:
+            while True:
+                msg = q.get()
+                yield f"data: {json.dumps(msg)}\n\n"
+        except GeneratorExit:
+            pass
+
+    return Response(generate(), mimetype='text/event-stream')
+
+@app.route('/send_typing', methods=['POST'])
+def send_typing():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    to_user_id = data.get('to_user_id')
+    if not to_user_id:
+        return jsonify({'success': False, 'error': 'Missing to_user_id'}), 400
+    if to_user_id in user_queues:
+        user_queues[to_user_id].put({
+            'event': 'user_typing',
+            'data': {'sender_id': session['user_id']}
+        })
+    return jsonify({'success': True})
+
 @app.route('/chat')
 def chat():
     logger.debug(f"Session in chat: {session}")
@@ -1402,7 +1533,7 @@ def chat():
         return render_template('chat.html', profile={'image': 'https://randomuser.me/api/portraits/women/44.jpg'}, conversations=[], unread_count=0, error=str(e), current_user_id='')
 
 @app.route('/messages/<other_user_id>', methods=['GET'])
-def get_messages_route(other_user_id):
+def get_messages(other_user_id):
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     current_user_id = session['user_id']
@@ -1416,7 +1547,7 @@ def get_messages_route(other_user_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/send_message', methods=['POST'])
-def send_message_route():
+def send_message():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     try:
@@ -1446,8 +1577,21 @@ def delete_message_endpoint():
     if not message_id:
         return jsonify({'success': False, 'error': 'No message ID provided'}), 400
     try:
-        result = chat_service.delete_message(message_id)
-        return jsonify(result)
+        msg = chat_service.messages.find_one({'_id': ObjectId(message_id)})
+        if msg and msg['sender_id'] == session['user_id']:
+            result = chat_service.delete_message(message_id)
+            if result['success']:
+                for uid in [msg['sender_id'], msg['receiver_id']]:
+                    if uid in user_queues:
+                        user_queues[uid].put({
+                            'event': 'message_deleted',
+                            'data': {'message_id': message_id}
+                        })
+                return jsonify({'success': True})
+            else:
+                return jsonify({'success': False, 'error': 'Failed to delete'})
+        else:
+            return jsonify({'success': False, 'error': 'Not authorized or not found'})
     except Exception as e:
         logger.error(f"Delete message error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
@@ -1462,32 +1606,6 @@ def block_user_endpoint():
         return jsonify({'success': False, 'error': 'No user ID provided'}), 400
     result = mongo_service.block_user(session['user_id'], blocked_user_id)
     return jsonify(result)
-
-@app.route('/user-profile/<user_id>', methods=['GET'])
-def get_user_profile(user_id):
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    user = mongo_service.get_user_by_id(user_id)
-    if not user:
-        return jsonify({'success': False, 'error': 'User not found'}), 404
-    user_quiz = mongo_service.get_quiz_results(session['user_id'])
-    other_quiz = mongo_service.get_quiz_results(user_id)
-    if user_quiz and other_quiz:
-        match_percentage = mongo_service._calculate_match_percentage(user_quiz['scores'], other_quiz['scores'])
-    else:
-        match_percentage = 50
-    profile = {
-        'id': user['id'],
-        'full_name': user['full_name'],
-        'image': user.get('image'),
-        'bio': user.get('bio'),
-        'age': user.get('age'),
-        'distance': 'N/A',
-        'interests': user.get('interests', []),
-        'personality': other_quiz['scores'] if other_quiz else {},
-        'match_percentage': match_percentage
-    }
-    return jsonify({'success': True, 'user': profile})
 
 @app.route('/profile')
 def profile():
@@ -1902,29 +2020,5 @@ def update_profile():
         return jsonify(result)
     return jsonify({'success': True}), 200
 
-# SocketIO Events
-@socketio.on('connect')
-def handle_connect():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        join_room(f"user:{user_id}")
-        logger.info(f"User {user_id} connected and joined room user:{user_id}")
-    else:
-        logger.warning("Unauthorized socket connection attempt")
-        return False  # Disconnect if no session
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        leave_room(f"user:{user_id}")
-        logger.info(f"User {user_id} disconnected")
-
-@socketio.on('typing')
-def handle_typing(data):
-    to_user_id = data['to_user_id']
-    sender_id = session['user_id']
-    emit('user_typing', {'sender_id': sender_id}, room=f"user:{to_user_id}")
-
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5050, debug=True)
+    app.run(host='0.0.0.0', port=5050, debug=True) 
