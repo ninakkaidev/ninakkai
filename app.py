@@ -2006,7 +2006,7 @@ def upload_profile_picture():
     if 'user_id' not in session:
         logger.warning("Unauthorized access to upload_profile_picture")
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    file = request.files.get('image')
+    file = request.files.get('file')
     if not file:
         logger.warning("No file provided in upload_profile_picture")
         return jsonify({'success': False, 'error': 'No file provided'}), 400
