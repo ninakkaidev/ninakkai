@@ -515,7 +515,7 @@
     .emoji-picker {
       position: fixed;
       bottom: 70px;
-      right: 10px;
+      left: 10px;
       width: 280px;
       background-color: var(--card-dark);
       border-radius: 8px;
@@ -773,7 +773,7 @@
 
       .emoji-picker {
         bottom: 70px;
-        right: 10px;
+        left: 10px;
         width: 90%;
         max-width: 300px;
       }
@@ -815,7 +815,7 @@
 
       .emoji-picker {
         width: 95%;
-        right: 5px;
+        left: 5px;
       }
     }
 
@@ -848,9 +848,6 @@
           <li class="nav-item">
             <a class="nav-link active" href="{{ url_for('chat') }}">
               <i class="fas fa-comment me-1"></i> Messages
-              {% if unread_count > 0 %}
-              <span class="badge">{{ unread_count }}</span>
-              {% endif %}
             </a>
           </li>
           <li class="nav-item">
