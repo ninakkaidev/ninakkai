@@ -514,7 +514,7 @@
             
             <!-- Edit Buttons (shown only in edit mode) -->
             <div id="editButtons" class="edit-field flex justify-end space-x-2 mt-4">
-                <button id="cancelEditBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100">Cancel</button>
+                <button id="cancelEditBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</button>
                 <button id="saveProfileBtn" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600">Save Changes</button>
             </div>
         </div>
@@ -1229,7 +1229,7 @@
                     'This will permanently delete your account and all data. This action cannot be undone.',
                     'Delete',
                     'Cancel',
-                    'text-red-500'
+                    'bg-red-500 hover:bg-red-600'
                 );
                 
                 confirmation.querySelector('.confirm-btn').addEventListener('click', async () => {
@@ -1259,7 +1259,7 @@
             });
             
             // Helper function to create confirmation dialogs
-            function createConfirmationDialog(title, message, confirmText, cancelText, confirmColor = 'text-pink-500') {
+            function createConfirmationDialog(title, message, confirmText, cancelText, confirmBgClass = 'bg-pink-500 hover:bg-pink-600') {
                 const dialog = document.createElement('div');
                 dialog.className = 'confirmation-dialog fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center';
                 dialog.innerHTML = `
@@ -1270,7 +1270,7 @@
                             <button class="cancel-btn px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
                                 ${cancelText}
                             </button>
-                            <button class="confirm-btn px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 ${confirmColor}">
+                            <button class="confirm-btn px-4 py-2 ${confirmBgClass} text-white rounded-lg">
                                 ${confirmText}
                             </button>
                         </div>
