@@ -1996,14 +1996,11 @@ def personality_results():
     })
     return jsonify({'success': True, 'personality_info': personality_info})
 
-@app.route('/logout')
+@app.route('/logout', methods=['GET'])
 def logout():
     logger.debug(f"Session in logout: {session}")
     session.clear()
-    resp = make_response(redirect(url_for('index')))
-    resp.set_cookie('for_you_session', '', expires=0, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
-    resp.set_cookie('email_verified', '', expires=0, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
-    return resp
+    return jsonify({'success': True})
 
 @app.route('/upload_profile_picture', methods=['POST'])
 def upload_profile_picture():
