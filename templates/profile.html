@@ -1526,11 +1526,25 @@
                 });
             });
 
-            // Update Personality button
+            // Update Personality button with confirmation
             const updatePersonalityBtn = document.getElementById('updatePersonalityBtn');
             if (updatePersonalityBtn) {
                 updatePersonalityBtn.addEventListener('click', () => {
-                    window.location.href = '/questions?retake=true';
+                    const confirmation = createConfirmationDialog(
+                        'Update Personality',
+                        'Updating your personality will reset your current results. Are you sure you want to continue?',
+                        'Continue',
+                        'Cancel'
+                    );
+                    
+                    confirmation.querySelector('.confirm-btn').addEventListener('click', () => {
+                        window.location.href = '/questions?retake=true';
+                        confirmation.remove();
+                    });
+                    
+                    confirmation.querySelector('.cancel-btn').addEventListener('click', () => {
+                        confirmation.remove();
+                    });
                 });
             }
         });

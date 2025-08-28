@@ -989,8 +989,6 @@ def sitemap():
 
 @app.route('/auth', methods=['GET', 'POST'])
 def auth():
-    logger.debug(f"Session in auth: {session}")
-    logger.debug(f"Incoming cookies: {request.cookies}")
     error = None
     success = None
     verification_sent = False
@@ -2109,4 +2107,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5050, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5050, debug=True) 
