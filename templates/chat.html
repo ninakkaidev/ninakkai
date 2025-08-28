@@ -93,39 +93,75 @@
     }
 
     .welcome-screen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      text-align: center;
-      padding: 2rem;
-      background: linear-gradient(rgba(30, 39, 46, 0.8), rgba(30, 39, 46, 0.9));
-      border-radius: 0;
-    }
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* Align content to the right */
+  justify-content: center; /* Keep vertical centering */
+  height: 100%;
+  text-align: right; /* Right-align text */
+  padding: 2rem;
+  background: linear-gradient(rgba(30, 39, 46, 0.8), rgba(30, 39, 46, 0.9));
+  borderThick: 0;
+  box-sizing: border-box;
+  width: 100%;
+}
 
-    .welcome-icon {
-      font-size: 4rem;
-      margin-bottom: 1.5rem;
-      background: var(--gradient);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+.welcome-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 
-    .welcome-title {
-      font-size: 1.75rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      color: var(--text-light);
-    }
+.welcome-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--text-light);
+  max-width: 400px; /* Maintain max-width for readability */
+}
 
-    .welcome-text {
-      color: var(--text-gray);
-      max-width: 400px;
-      margin-bottom: 2rem;
-      line-height: 1.6;
-    }
+.welcome-text {
+  color: var(--text-gray);
+  max-width: 400px; /* Maintain max-width for readability */
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 992px) {
+  .welcome-screen {
+    display: none; /* Hide welcome screen on mobile as per original behavior */
+  }
+}
+
+@media (min-width: 993px) {
+  .welcome-screen {
+    position: absolute;
+    width: 100%;
+    z-zIndex: 5;
+    padding-right: 3rem; /* Add extra padding on the right for better spacing */
+  }
+}
+
+@media (max-width: 576px) {
+  .welcome-screen {
+    padding: 1.5rem; /* Adjust padding for smaller screens */
+  }
+
+  .welcome-title {
+    font-size: 1.5rem; /* Slightly smaller title for mobile */
+  }
+
+  .welcome-icon {
+    font-size: 3rem; /* Slightly smaller icon for mobile */
+  }
+
+  .welcome-text {
+    max-width: 300px; /* Adjust max-width for smaller screens */
+  }
+}
 
     .conversations-header {
       padding: 1rem 1.25rem;
