@@ -406,6 +406,23 @@
             --tw-gradient-to: #831843 var(--tw-gradient-to-position);
             --tw-gradient-stops: var(--tw-gradient-from), #111827 var(--tw-gradient-via-position), var(--tw-gradient-to);
         }
+
+        /* Optimized dark mode styles for edit inputs */
+        .dark input[type="text"],
+        .dark input[type="number"],
+        .dark textarea {
+            background-color: #374151 !important;
+            color: #f3f4f6 !important;
+            border-color: #4b5563 !important;
+        }
+
+        .dark input[type="text"]:focus,
+        .dark input[type="number"]:focus,
+        .dark textarea:focus {
+            outline: none;
+            border-color: #ec4899 !important;
+            box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.5) !important;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
