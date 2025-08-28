@@ -978,6 +978,14 @@ def favicon():
     except Exception as e:
         logger.error(f"Error serving favicon.ico: {str(e)}")
         return 'Favicon not found', 404
+    
+@app.route('/robots.txt')
+def robots():
+    return send_from_directory(app.static_folder, 'robots.txt')
+
+@app.route('/sitemap.xml')
+def sitemap():
+    return send_from_directory(app.static_folder, 'sitemap.xml')
 
 @app.route('/auth', methods=['GET', 'POST'])
 def auth():
