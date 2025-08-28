@@ -783,12 +783,10 @@
       .conversations-col {
         width: 30%;
         border-right: 1px solid rgba(255,255,255,0.1);
-        order: 2; /* Move to right side */
       }
 
       .chat-area-col {
         width: 70%;
-        order: 1; /* Move to left side */
       }
 
       .chat-area {
@@ -807,21 +805,6 @@
 
       .profile-sidebar {
         width: 350px;
-      }
-      
-      /* New styles for proper desktop layout */
-      .chat-container .container {
-        height: 100%;
-      }
-      
-      .chat-container .row {
-        height: 100%;
-        flex-direction: row-reverse; /* Reverse the order of columns */
-      }
-      
-      .welcome-screen {
-        left: 0;
-        width: 70%; /* Match the chat area width */
       }
     }
 
@@ -1361,7 +1344,6 @@
           document.querySelector('.chat-area').appendChild(newMessageNotice);
         }
         newMessageNotice.style.display = 'block';
-        newMessageNotice.style.right = window.innerWidth <= 992 ? '20px' : 'calc(30% + 20px)';
       }
 
       function updateReadStatus() {
