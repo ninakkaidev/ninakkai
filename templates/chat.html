@@ -794,9 +794,7 @@
       }
 
       .welcome-screen {
-        position: absolute;
-        width: 100%;
-        z-index: 5;
+        /* Removed position: absolute; width: 100%; z-index: 5; */
       }
 
       .chat-back-btn, .conversations-back-btn {
@@ -1434,6 +1432,7 @@
       const messagesContainer = document.getElementById('messages-container');
       const navbar = document.querySelector('.navbar');
       const chatContainer = document.querySelector('.chat-container');
+      const chatAreaCol = document.querySelector('.chat-area-col');
 
       messagesContainer.addEventListener('scroll', () => {
         if (isAtBottom() && newMessageNotice) {
@@ -1464,17 +1463,19 @@
         } else {
           chatBackBtn.style.display = 'none';
           conversationsBackBtn.style.display = 'none';
-          conversationsCol.style.width = '30%';
-          document.querySelector('.chat-area-col').style.width = '70%';
           conversationsCol.classList.remove('hidden');
           if (!currentChatUserId) {
-            console.log('Desktop view: No chat selected, showing welcome screen');
+            console.log('Desktop view: No chat selected, showing welcome screen centered');
             welcomeScreen.style.display = 'flex';
             chatArea.style.display = 'none';
+            conversationsCol.style.display = 'none';
+            chatAreaCol.style.width = '100%';
           } else {
             console.log('Desktop view: Chat selected, showing chat area');
             welcomeScreen.style.display = 'none';
             chatArea.style.display = 'flex';
+            conversationsCol.style.display = 'block';
+            chatAreaCol.style.width = '70%';
           }
         }
       }
@@ -1505,6 +1506,7 @@
           this.classList.add('active');
           await loadMessages(this.dataset.userId);
           navigationHistory.push('chat');
+          handleResize(); // Reapply layout after selecting chat
         });
       });
 
@@ -1533,6 +1535,7 @@
           document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
         }
         navigationHistory.pop();
+        handleResize(); // Reapply layout after back
       });
 
       conversationsBackBtn.addEventListener('click', () => {
