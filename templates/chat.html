@@ -86,7 +86,7 @@
 
     .conversations-col, .chat-area {
       background-color: var(--card-dark);
-      border-radius: 8px;
+      border-radius: 0;
       height: 100%;
       overflow: hidden;
       border: 1px solid rgba(255,255,255,0.05);
@@ -101,7 +101,7 @@
       text-align: center;
       padding: 2rem;
       background: linear-gradient(rgba(30, 39, 46, 0.8), rgba(30, 39, 46, 0.9));
-      border-radius: 8px;
+      border-radius: 0;
     }
 
     .welcome-icon {
@@ -805,6 +805,21 @@
 
       .profile-sidebar {
         width: 350px;
+      }
+      
+      /* Remove container padding to make full width */
+      .chat-container .container {
+        max-width: 100%;
+        padding: 0;
+      }
+      
+      .chat-container .row {
+        margin: 0;
+      }
+      
+      .chat-container .col-lg-4,
+      .chat-container .col-lg-8 {
+        padding: 0;
       }
     }
 
