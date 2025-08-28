@@ -616,7 +616,7 @@ class MongoService:
             return {'success': False, 'error': str(e)}
 
     def has_liked_user(self, user_id: str, matched_user_id: str) -> bool:
-        """Check if a user has already liked another user"""
+        """Check if a user has already liked another"""
         try:
             like = self.likes.find_one({'user_id': user_id, 'matched_user_id': matched_user_id})
             return bool(like)
