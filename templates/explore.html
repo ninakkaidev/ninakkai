@@ -478,29 +478,7 @@
                 <button id="see-all-matches" class="text-pink-500 text-sm font-medium">See All</button>
             </div>
             <div id="matches-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                {% if matches %}
-                    {% for match in matches %}
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="{{ match.id }}">
-                        <div class="match-percentage text-gray-800 dark:text-gray-100">{{ match.match_percentage }}%</div>
-                        <img src="{{ match.image }}" alt="Profile" class="profile-image">
-                        <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-                            <div class="flex justify-between items-end">
-                                <div>
-                                    <h3 class="text-gray-100 font-bold">{{ match.full_name }}, {{ match.age|default('N/A') }}</h3>
-                                    <p class="text-gray-300 dark:text-gray-300 text-sm">{{ match.occupation }} • {{ match.distance }}</p>
-                                </div>
-                                <button class="like-button {% if match.liked %}liked-button{% else %}bg-pink-500 hover:bg-pink-600{% endif %} text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition" 
-                                        data-user-id="{{ match.id }}" 
-                                        data-liked="{{ match.liked|default(false)|lower }}">
-                                    <i class="fas {% if match.liked %}fa-check{% else %}fa-heart{% endif %}"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <p class="text-gray-600 dark:text-gray-100 col-span-full">No matches found. Try completing your quiz!</p>
-                {% endif %}
+                <!-- Initially empty, populated by JS -->
             </div>
         </div>
 
@@ -511,32 +489,7 @@
                 <button id="see-all-discovery" class="text-pink-500 text-sm font-medium">See All</button>
             </div>
             <div id="discovery-grid" class="discovery-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                {% if discovery %}
-                    {% for match in discovery %}
-                    <div class="discovery-profile discovery-card" data-user-id="{{ match.id }}">
-                        <img src="{{ match.image }}" alt="Profile" class="profile-image">
-                        <div class="discovery-rating text-gray-800 dark:text-gray-100">
-                            <i class="fas fa-star text-yellow-500 text-xs mr-1"></i>
-                            <span class="text-xs font-medium">{{ match.rating }}</span>
-                        </div>
-                        <div class="discovery-content">
-                            <div class="flex justify-between items-end">
-                                <div>
-                                    <h3 class="text-gray-100 font-bold text-sm md:text-base">{{ match.full_name }}, {{ match.age|default('N/A') }}</h3>
-                                    <p class="text-gray-300 dark:text-gray-300 text-xs md:text-sm">{{ match.distance }}</p>
-                                </div>
-                                <button class="like-button {% if match.liked %}liked-button{% else %}bg-pink-500 hover:bg-pink-600{% endif %} text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center transition" 
-                                        data-user-id="{{ match.id }}" 
-                                        data-liked="{{ match.liked|default(false)|lower }}">
-                                    <i class="fas {% if match.liked %}fa-check{% else %}fa-heart text-xs md:text-sm{% endif %}"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <p class="text-gray-600 dark:text-gray-100 col-span-full">No people to discover. Try completing your quiz!</p>
-                {% endif %}
+                <!-- Initially empty, populated by JS -->
             </div>
         </div>
     </main>
@@ -789,6 +742,37 @@
                 attachProfileClickListeners();
             }
 
+            // New function to update discovery
+            function updateDiscovery(discovery) {
+                const discoveryGrid = document.getElementById('discovery-grid');
+                discoveryGrid.innerHTML = discovery.length ? discovery.map(match => `
+                    <div class="discovery-profile discovery-card" data-user-id="${match.id}">
+                        <img src="${match.image}" alt="Profile" class="profile-image">
+                        <div class="discovery-rating text-gray-800 dark:text-gray-100">
+                            <i class="fas fa-star text-yellow-500 text-xs mr-1"></i>
+                            <span class="text-xs font-medium">${match.rating}</span>
+                        </div>
+                        <div class="discovery-content">
+                            <div class="flex justify-between items-end">
+                                <div>
+                                    <h3 class="text-gray-100 font-bold text-sm md:text-base">${match.full_name}, ${match.age || 'N/A'}</h3>
+                                    <p class="text-gray-300 dark:text-gray-300 text-xs md:text-sm">${match.distance}</p>
+                                </div>
+                                <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center transition" 
+                                        data-user-id="${match.id}" 
+                                        data-liked="${match.liked}">
+                                    <i class="fas ${match.liked ? 'fa-check' : 'fa-heart text-xs md:text-sm'}"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('') : '<p class="text-gray-600 dark:text-gray-100 col-span-full">No people to discover. Try completing your quiz!</p>';
+                
+                // Reattach event listeners to new buttons
+                attachLikeButtonListeners();
+                attachProfileClickListeners();
+            }
+
             // Profile viewer
             function openProfileViewer(userId) {
                 showLoading();
@@ -1035,12 +1019,25 @@
 
             // Initial loading state and update like buttons
             showLoading();
-            window.addEventListener('load', () => {
-                hideLoading();
-                updateLikeButtons();
-                attachLikeButtonListeners();
-                attachProfileClickListeners();
-            });
+            fetch('/api/matches')
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        updateMatches(result.matches);
+                        updateDiscovery(result.matches);
+                    } else {
+                        showError(result.error || 'Failed to load matches');
+                    }
+                })
+                .catch(error => {
+                    showError('Network error while loading matches');
+                })
+                .finally(() => {
+                    hideLoading();
+                    updateLikeButtons();
+                    attachLikeButtonListeners();
+                    attachProfileClickListeners();
+                });
 
             // See All buttons (placeholder)
             document.querySelectorAll('#see-all-matches, #see-all-discovery').forEach(btn => {

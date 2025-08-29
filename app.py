@@ -1334,7 +1334,7 @@ def clear_notifications():
 def explore():
     logger.debug(f"Session in explore: {session}")
     if 'user_id' not in session:
-        logger.debug("No user_id in session for /explore")
+        logger.debug("No user in session for /explore")
         return redirect(url_for('auth', error='Please log in to access the explore page'))
     
     try:
@@ -1349,9 +1349,6 @@ def explore():
         quiz_result = mongo_service.get_quiz_results(session['user_id'])
         if not quiz_result:
             return redirect(url_for('questions', error='Please complete the quiz to access the explore page'))
-        
-        # Use filtered matches instead of all matches
-        matches = mongo_service.get_filtered_matches(session['user_id'])
         
         profile = {
             'id': user['id'],
@@ -1369,13 +1366,22 @@ def explore():
             'secondary_percentage': quiz_result['scores']['secondary_percentage']
         }
         
-        discovery = matches
-        nearby = matches
-        
-        return render_template('explore.html', profile=profile, matches=matches, discovery=discovery, nearby=nearby, error=None)
+        # Render with empty data, load asynchronously
+        return render_template('explore.html', profile=profile, matches=[], discovery=[], error=None)
     except Exception as e:
         logger.error(f"Explore error: {str(e)}")
-        return render_template('explore.html', profile={}, matches=[], discovery=[], nearby=[], error='An error occurred while loading the explore page. Please try again.')
+        return render_template('explore.html', profile={}, matches=[], discovery=[], error='An error occurred while loading the explore page. Please try again.')
+
+@app.route('/api/matches', methods=['GET'])
+def api_matches():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    try:
+        matches = mongo_service.get_filtered_matches(session['user_id'])
+        return jsonify({'success': True, 'matches': matches}), 200
+    except Exception as e:
+        logger.error(f"API matches error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to fetch matches'}), 500
 
 @app.route('/like-user', methods=['POST'])
 def like_user():
@@ -2122,4 +2128,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5050, debug=True) 
+    socketio.run(app, host='0.0.0.0', port=5050, debug=True)
