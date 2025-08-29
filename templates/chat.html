@@ -756,26 +756,6 @@
         width: 90%;
         max-width: 300px;
       }
-      
-      /* Fix for mobile view when keyboard is open */
-      .chat-area.active {
-        position: fixed;
-        height: 100%;
-        overflow: hidden;
-      }
-      
-      .messages-container {
-        height: calc(100% - 120px);
-        padding-bottom: 60px;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-      
-      .message-input-container {
-        position: fixed;
-        bottom: 0;
-        width: 100%;
-      }
     }
 
     @media (min-width: 993px) {
@@ -831,15 +811,6 @@
         width: 95%;
         left: 5px;
       }
-      
-      /* Additional mobile optimizations */
-      .messages-container {
-        padding: 0.5rem;
-      }
-      
-      .message-input-container {
-        padding: 0.25rem;
-      }
     }
 
     ::-webkit-scrollbar {
@@ -853,15 +824,6 @@
     ::-webkit-scrollbar-thumb {
       background: var(--text-gray);
       border-radius: 3px;
-    }
-    
-    /* Keyboard visibility helper class */
-    .keyboard-open .messages-container {
-      height: calc(100% - 60px) !important;
-    }
-    
-    .keyboard-open .chat-header {
-      position: relative !important;
     }
   </style>
 </head>
@@ -1039,53 +1001,10 @@
       let isTyping = false;
       let newMessageNotice = null;
       let socket = null;
-      let keyboardVisible = false;
 
       // Request notification permission
       if (Notification.permission === 'default') {
         Notification.requestPermission();
-      }
-
-      // Detect virtual keyboard visibility
-      function detectKeyboard() {
-        const visualViewport = window.visualViewport;
-        if (!visualViewport) return;
-        
-        const initialViewportHeight = window.innerHeight;
-        const currentViewportHeight = visualViewport.height;
-        const isKeyboardVisible = currentViewportHeight < initialViewportHeight * 0.8;
-        
-        if (isKeyboardVisible && !keyboardVisible) {
-          // Keyboard opened
-          keyboardVisible = true;
-          document.body.classList.add('keyboard-open');
-          adjustMessagesContainerHeight();
-          setTimeout(scrollToBottom, 300);
-        } else if (!isKeyboardVisible && keyboardVisible) {
-          // Keyboard closed
-          keyboardVisible = false;
-          document.body.classList.remove('keyboard-open');
-          adjustMessagesContainerHeight();
-        }
-      }
-      
-      // Adjust messages container height based on keyboard state
-      function adjustMessagesContainerHeight() {
-        const messagesContainer = document.getElementById('messages-container');
-        if (!messagesContainer) return;
-        
-        if (window.innerWidth <= 992) {
-          if (keyboardVisible) {
-            messagesContainer.style.height = 'calc(100% - 60px)';
-          } else {
-            messagesContainer.style.height = 'calc(100% - 120px)';
-          }
-        }
-      }
-      
-      // Set up visual viewport listener for keyboard detection
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', debounce(detectKeyboard, 150));
       }
 
       // Emoji Picker
@@ -1367,10 +1286,8 @@
 
       function scrollToBottom() {
         const messagesContainer = document.getElementById('messages-container');
-        if (messagesContainer) {
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-          console.log('Scrolled to bottom');
-        }
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        console.log('Scrolled to bottom');
       }
 
       function isAtBottom() {
