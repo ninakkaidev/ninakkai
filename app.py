@@ -396,12 +396,24 @@ class MongoService:
             if self.has_liked_user(user_id, matched_user_id):
                 return {'success': False, 'error': 'Already liked'}
             logger.info(f"Processing like from user {user_id} to {matched_user_id}")
+            current_user = self.get_user_by_id(user_id)
+            if current_user['gender'] == 'male':
+                rate_key = f"daily_likes_{user_id}"
+                if not self.check_rate_limit(rate_key, 5, timedelta(days=1)):
+                    return {'success': False, 'error': 'Daily like limit exceeded'}
             like_data = {
                 'user_id': user_id,
                 'matched_user_id': matched_user_id,
                 'timestamp': datetime.now(timezone.utc)
             }
             result = self.likes.insert_one(like_data)
+            if current_user['gender'] == 'male':
+                self.inc_rate_limit(rate_key)
+                limit_doc = self.db['rate_limits'].find_one({'key': rate_key})
+                attempts = limit_doc['attempts']
+                likes_remaining = 5 - attempts
+            else:
+                likes_remaining = None
             liker = self.get_user_by_id(user_id)
             liked = self.get_user_by_id(matched_user_id)
             self.add_notification(matched_user_id, f"{liker['full_name']} liked your profile", 'like', user_id)
@@ -410,7 +422,10 @@ class MongoService:
                 self.add_notification(user_id, f"You matched with {liked['full_name']}", 'match', matched_user_id)
                 self.add_notification(matched_user_id, f"You matched with {liker['full_name']}", 'match', user_id)
             logger.info(f"Like successful, like_id: {str(result.inserted_id)}, is_match: {is_match}")
-            return {'success': True, 'like_id': str(result.inserted_id), 'is_match': is_match}
+            response = {'success': True, 'like_id': str(result.inserted_id), 'is_match': is_match}
+            if likes_remaining is not None:
+                response['likes_remaining'] = likes_remaining
+            return response
         except Exception as e:
             logger.error(f"Like user error: {str(e)}")
             return {'success': False, 'error': str(e)}
@@ -2041,7 +2056,7 @@ def upload_photo():
         logger.warning("No file provided in upload_photo")
         return jsonify({'success': False, 'error': 'No file provided'}), 400
     user = mongo_service.get_user_by_id(session['user_id'])
-    if len(user.get('photos', [])) >= 7:
+    if len(len(user.get('photos', []))) >= 7:
         logger.warning("Maximum photos limit reached")
         return jsonify({'success': False, 'error': 'Maximum 7 photos allowed'}), 400
     try:

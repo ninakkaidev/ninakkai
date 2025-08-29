@@ -14,7 +14,7 @@
         }
 
         html.dark body {
-            background: #111827;
+            background: #000000;
         }
 
         .container {
@@ -340,7 +340,7 @@
 
         /* Dark mode styles from profile.html for consistency */
         .dark body {
-            background-color: #111827;
+            background-color: #000000;
             color: #f3f4f6;
         }
         
@@ -438,12 +438,6 @@
                 <div id="searchBox" class="hidden md:block search-box-transition">
                     <input type="text" id="searchInput" placeholder="Search by name or interests..." class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-full px-4 py-1 focus:outline-none focus:ring-2 focus:ring-pink-500" />
                 </div>
-                <div class="w-8 h-8 rounded-full bg-pink-500 overflow-hidden">
-                    <img src="{{ profile.image }}" alt="Profile" class="w-full h-full object-cover">
-                </div>
-                <button id="darkModeToggle" class="text-gray-500 dark:text-gray-300">
-                    <i class="fas fa-moon text-xl"></i>
-                </button>
             </div>
         </div>
     </header>
@@ -559,28 +553,13 @@
             const errorMessage = document.getElementById('error-message');
             const errorText = document.getElementById('error-text');
             const mainHeader = document.getElementById('mainHeader');
-            const darkModeToggle = document.getElementById('darkModeToggle');
             
             // Dark mode persistence
             if (localStorage.theme === 'dark') {
                 document.documentElement.classList.add('dark');
-                darkModeToggle.innerHTML = '<i class="fas fa-sun text-xl"></i>';
             } else {
                 document.documentElement.classList.remove('dark');
-                darkModeToggle.innerHTML = '<i class="fas fa-moon text-xl"></i>';
             }
-
-            darkModeToggle.addEventListener('click', () => {
-                if (document.documentElement.classList.contains('dark')) {
-                    document.documentElement.classList.remove('dark');
-                    localStorage.theme = 'light';
-                    darkModeToggle.innerHTML = '<i class="fas fa-moon text-xl"></i>';
-                } else {
-                    document.documentElement.classList.add('dark');
-                    localStorage.theme = 'dark';
-                    darkModeToggle.innerHTML = '<i class="fas fa-sun text-xl"></i>';
-                }
-            });
             
             // Store liked users in localStorage to persist across page refreshes
             let likedUsers = JSON.parse(localStorage.getItem('likedUsers') || '{}');
@@ -688,6 +667,15 @@
                                     showMatchPopup();
                                     showNotification("It's a match! You can now chat.");
                                 }
+
+                                // Handle like limits for males
+                                if (!isLiked && result.likes_remaining !== undefined) {
+                                    if (result.likes_remaining === 2) {
+                                        showNotification('Only 2 likes left for today!');
+                                    } else if (result.likes_remaining === 1) {
+                                        showNotification('Only 1 like left for today!');
+                                    }
+                                }
                                 
                                 // For like, remove card; for unlike, keep it
                                 if (!isLiked) {
@@ -701,7 +689,11 @@
                                     }, 1500);
                                 }
                             } else {
-                                showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
+                                if (result.error === 'Daily like limit exceeded') {
+                                    showNotification('Your daily like limit has been exceeded!');
+                                } else {
+                                    showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
+                                }
                             }
                         } catch (error) {
                             hideLoading();
@@ -940,6 +932,15 @@
                                     showMatchPopup();
                                     showNotification("It's a match! You can now chat.");
                                 }
+
+                                // Handle like limits for males
+                                if (!isLiked && result.likes_remaining !== undefined) {
+                                    if (result.likes_remaining === 2) {
+                                        showNotification('Only 2 likes left for today!');
+                                    } else if (result.likes_remaining === 1) {
+                                        showNotification('Only 1 like left for today!');
+                                    }
+                                }
                                 
                                 // For like, close viewer and remove card; for unlike, keep viewer open
                                 if (!isLiked) {
@@ -958,7 +959,11 @@
                                     }, 1500);
                                 }
                             } else {
-                                showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
+                                if (result.error === 'Daily like limit exceeded') {
+                                    showNotification('Your daily like limit has been exceeded!');
+                                } else {
+                                    showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
+                                }
                             }
                         } catch (error) {
                             hideLoading();
