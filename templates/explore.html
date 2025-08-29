@@ -258,10 +258,26 @@
             overflow-y: auto;
             display: flex;
             flex-direction: column;
+            animation: profileOpen 0.4s ease-out forwards;
         }
 
         html.dark .profile-viewer {
             background: #111827;
+        }
+
+        @keyframes profileOpen {
+            0% {
+                opacity: 0;
+                transform: translateY(20%) scale(0.95);
+            }
+            50% {
+                opacity: 1;
+                transform: translateY(-5%) scale(1.02);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
         /* Bottom navigation styling */
