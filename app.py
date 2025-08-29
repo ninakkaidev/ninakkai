@@ -1367,7 +1367,9 @@ def explore():
         }
         
         # Render with empty data, load asynchronously
-        return render_template('explore.html', profile=profile, matches=[], discovery=[], error=None)
+        resp = make_response(render_template('explore.html', profile=profile, matches=[], discovery=[], error=None))
+        resp.headers['Cache-Control'] = 'public, max-age=300'  # Cache the page for 5 mins
+        return resp
     except Exception as e:
         logger.error(f"Explore error: {str(e)}")
         return render_template('explore.html', profile={}, matches=[], discovery=[], error='An error occurred while loading the explore page. Please try again.')
@@ -1589,7 +1591,7 @@ def send_typing():
 def chat():
     logger.debug(f"Session in chat: {session}")
     if 'user_id' not in session:
-        logger.debug("No user_id in session for /chat")
+        logger.debug("No user in session for /chat")
         return redirect(url_for('auth', error='Please log in to access the chat page'))
     user = mongo_service.get_user_by_id(session['user_id'])
     if not user.get('age_verified', False):
