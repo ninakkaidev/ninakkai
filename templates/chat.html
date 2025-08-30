@@ -182,6 +182,7 @@
     .conversations-list {
       overflow-y: auto;
       height: calc(100% - 110px);
+      -webkit-overflow-scrolling: touch;
     }
 
     .conversation {
@@ -322,6 +323,7 @@
       display: flex;
       flex-direction: column;
       scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
     }
 
     .message {
@@ -1443,6 +1445,7 @@
       const messagesContainer = document.getElementById('messages-container');
       const navbar = document.querySelector('.navbar');
       const chatContainer = document.querySelector('.chat-container');
+      const profileSidebar = document.querySelector('.profile-sidebar');
 
       messagesContainer.addEventListener('scroll', () => {
         if (isAtBottom() && newMessageNotice) {
@@ -1498,13 +1501,28 @@
         } else {
           chatContainer.style.height = `${window.innerHeight - navbar.offsetHeight}px`;
         }
+        adjustVisual();
         scrollToBottom();
+      }
+
+      // Visual Viewport Adjustment for iOS keyboard issues
+      function adjustVisual() {
+        if ('visualViewport' in window) {
+          const vp = window.visualViewport;
+          conversationsCol.style.top = `${vp.offsetTop}px`;
+          chatArea.style.top = `${vp.offsetTop}px`;
+          profileSidebar.style.top = `${vp.offsetTop}px`;
+        }
+      }
+
+      if ('visualViewport' in window) {
+        window.visualViewport.addEventListener('resize', debounce(adjustVisual, 50));
+        window.visualViewport.addEventListener('scroll', debounce(adjustVisual, 50));
       }
 
       window.addEventListener('resize', adjustHeight);
       messageInput.addEventListener('focus', () => {
         setTimeout(() => {
-          window.scrollTo(0, 0);
           scrollToBottom();
         }, 100);
       });
