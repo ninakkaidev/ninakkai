@@ -796,7 +796,7 @@ class ChatService:
             result = self.messages.insert_one(msg_data)
             del msg_data['_id']
             msg_data['id'] = str(result.inserted_id)
-            msg_data['timestamp'] = msg_data['timestamp'].isoformat()
+            msg_data['timestamp'] = msg_data['timestamp'].isoformat().replace('+00:00', 'Z')
             # Emit to both sender and receiver rooms
             socketio.emit('new_message', msg_data, room=sender_id)
             socketio.emit('new_message', msg_data, room=receiver_id)
@@ -827,7 +827,7 @@ class ChatService:
                 del msg['_id']
                 if msg['timestamp'].tzinfo is None:
                     msg['timestamp'] = pytz.UTC.localize(msg['timestamp'])
-                msg['timestamp'] = msg['timestamp'].isoformat()
+                msg['timestamp'] = msg['timestamp'].isoformat().replace('+00:00', 'Z')
             return msgs
         except Exception as e:
             logger.error(f"Get messages error: {str(e)}")
@@ -845,6 +845,7 @@ class ChatService:
                 del msg['_id']
                 if msg['timestamp'].tzinfo is None:
                     msg['timestamp'] = pytz.UTC.localize(msg['timestamp'])
+                msg['timestamp'] = msg['timestamp'].isoformat().replace('+00:00', 'Z')
                 return msg
             return None
         except Exception as e:
@@ -1230,7 +1231,7 @@ def age_verification():
             conn = http.client.HTTPSConnection("age-detector.p.rapidapi.com")
             payload = json.dumps({"url": url})
             headers = {
-                'x-rapidapi-key': "3ced0e7048msh6cc7c5758e8cc09p1ab6bajsn7456d8d95695",
+                'x-rapidapi-key': "3ced0e7048msh6cc7c5758e8cccc09p1ab6bajsn7456d8d95695",
                 'x-rapidapi-host': "age-detector.p.rapidapi.com",
                 'Content-Type': "application/json"
             }
@@ -1507,7 +1508,7 @@ def user_profile(user_id):
             '💘 Romantic': {
                 'dominant_type': '💘 Romantic',
                 'title': '“This person is a Romantic.”',
-                'description': 'They lead with their heart, express love freely, and long for emotional electricity. They don’t just fall in love — they dive in.',
+                'description': 'They lead with their heart, express love freely, and long for emotional electricity. They don’t just fall in love — you dive in.',
                 'tagline': '“Loving loudly. Feeling deeply.”',
                 'strengths': ['Heart-led', 'Expressive', 'Passionate'],
                 'compatibility': ['🌙 Dreamer', '🌟 Idealist'],
@@ -1636,7 +1637,7 @@ def chat():
                     'full_name': user['full_name'],
                     'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
                     'last_message': last_msg['message'] if last_msg else 'Start chatting!',
-                    'time': last_msg['timestamp'].isoformat() if last_msg else '',
+                    'time': last_msg['timestamp'].isoformat().replace('+00:00', 'Z') if last_msg else '',
                     'sort_time': last_msg['timestamp'] if last_msg else datetime.min.replace(tzinfo=timezone.utc),
                     'unread': unread
                 }

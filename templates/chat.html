@@ -1188,7 +1188,7 @@
         messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
         messageDiv.dataset.messageId = msg.id;
 
-        const formattedTime = new Date(msg.timestamp + (msg.timestamp.endsWith('Z') ? '' : 'Z')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // Ensure UTC parsing
+        const formattedTime = new Date(msg.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }); // Standard format with AM/PM
 
         messageDiv.innerHTML = `
           <div class="message-content">
@@ -1366,7 +1366,7 @@
           if (conv) {
             conv.querySelector('.last-message').textContent = data.message;
             const timeEl = conv.querySelector('.time');
-            timeEl.textContent = new Date(data.timestamp + (data.timestamp.endsWith('Z') ? '' : 'Z')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            timeEl.textContent = new Date(data.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
             timeEl.dataset.isoTime = data.timestamp;
             if (data.receiver_id === '{{ session.user_id }}') {
               if (otherId !== currentChatUserId) {
@@ -1389,7 +1389,7 @@
                 const lastTemp = tempMessages[tempMessages.length - 1];
                 lastTemp.dataset.messageId = data.id;
                 const timeSpan = lastTemp.querySelector('.message-time');
-                const formattedTime = new Date(data.timestamp + (data.timestamp.endsWith('Z') ? '' : 'Z')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const formattedTime = new Date(data.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
                 timeSpan.textContent = formattedTime;
                 return;
               }
@@ -1544,6 +1544,7 @@
           navigationHistory.push('chat');
         });
         conv.addEventListener('touchstart', async function(e) { // Additional touch event for iOS
+          e.preventDefault();
           console.log('Conversation touched, userId:', this.dataset.userId);
           document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
           this.classList.add('active');
@@ -1556,8 +1557,8 @@
       document.querySelectorAll('.conversation .time').forEach(timeEl => {
         const isoTime = timeEl.dataset.isoTime;
         if (isoTime) {
-          const date = new Date(isoTime + (isoTime.endsWith('Z') ? '' : 'Z'));
-          timeEl.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const date = new Date(isoTime);
+          timeEl.textContent = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
         }
       });
 
@@ -1629,6 +1630,21 @@
           location.reload();
         }
       }, 300));
+
+      // Add touch event to show message actions on mobile
+      const messagesContainerElement = document.getElementById('messages-container');
+      messagesContainerElement.addEventListener('touchstart', (e) => {
+        const message = e.target.closest('.message');
+        if (message) {
+          const actions = message.querySelector('.message-actions');
+          if (actions) {
+            actions.style.opacity = '1';
+            setTimeout(() => {
+              actions.style.opacity = '0';
+            }, 5000);
+          }
+        }
+      }, {passive: true});
     });
   </script>
 </body>
