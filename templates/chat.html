@@ -251,8 +251,7 @@
     .unread-dot {
       position: absolute;
       right: 1rem;
-      top: 50%;
-      transform: translateY(-50%);
+      top: calc(50% - 4px);
       width: 8px;
       height: 8px;
       border-radius: 50%;
@@ -1188,7 +1187,7 @@
         messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
         messageDiv.dataset.messageId = msg.id;
 
-        const formattedTime = new Date(msg.timestamp + (msg.timestamp.endsWith('Z') ? '' : 'Z')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // Ensure UTC parsing
+        const formattedTime = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         messageDiv.innerHTML = `
           <div class="message-content">
@@ -1366,7 +1365,7 @@
           if (conv) {
             conv.querySelector('.last-message').textContent = data.message;
             const timeEl = conv.querySelector('.time');
-            timeEl.textContent = new Date(data.timestamp + (data.timestamp.endsWith('Z') ? '' : 'Z')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            timeEl.textContent = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             timeEl.dataset.isoTime = data.timestamp;
             if (data.receiver_id === '{{ session.user_id }}') {
               if (otherId !== currentChatUserId) {
@@ -1389,7 +1388,7 @@
                 const lastTemp = tempMessages[tempMessages.length - 1];
                 lastTemp.dataset.messageId = data.id;
                 const timeSpan = lastTemp.querySelector('.message-time');
-                const formattedTime = new Date(data.timestamp + (data.timestamp.endsWith('Z') ? '' : 'Z')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const formattedTime = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 timeSpan.textContent = formattedTime;
                 return;
               }
@@ -1556,7 +1555,7 @@
       document.querySelectorAll('.conversation .time').forEach(timeEl => {
         const isoTime = timeEl.dataset.isoTime;
         if (isoTime) {
-          const date = new Date(isoTime + (isoTime.endsWith('Z') ? '' : 'Z'));
+          const date = new Date(isoTime);
           timeEl.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
       });
