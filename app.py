@@ -1230,7 +1230,7 @@ def age_verification():
             conn = http.client.HTTPSConnection("age-detector.p.rapidapi.com")
             payload = json.dumps({"url": url})
             headers = {
-                'x-rapidapi-key': "3ced0e7048msh6cc7c5758e8cc09p1ab6bajsn7456d8d95695",
+                'x-rapidapi-key': "3ced0e7048msh6cc7c5758e8cccc09p1ab6bajsn7456d8d95695",
                 'x-rapidapi-host': "age-detector.p.rapidapi.com",
                 'Content-Type': "application/json"
             }
