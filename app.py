@@ -796,7 +796,7 @@ class ChatService:
             result = self.messages.insert_one(msg_data)
             del msg_data['_id']
             msg_data['id'] = str(result.inserted_id)
-            msg_data['timestamp'] = msg_data['timestamp'].replace(microsecond=0).isoformat() + 'Z'
+            msg_data['timestamp'] = msg_data['timestamp'].isoformat()
             # Emit to both sender and receiver rooms
             socketio.emit('new_message', msg_data, room=sender_id)
             socketio.emit('new_message', msg_data, room=receiver_id)
@@ -827,7 +827,7 @@ class ChatService:
                 del msg['_id']
                 if msg['timestamp'].tzinfo is None:
                     msg['timestamp'] = pytz.UTC.localize(msg['timestamp'])
-                msg['timestamp'] = msg['timestamp'].replace(microsecond=0).isoformat() + 'Z'
+                msg['timestamp'] = msg['timestamp'].isoformat()
             return msgs
         except Exception as e:
             logger.error(f"Get messages error: {str(e)}")
@@ -845,7 +845,6 @@ class ChatService:
                 del msg['_id']
                 if msg['timestamp'].tzinfo is None:
                     msg['timestamp'] = pytz.UTC.localize(msg['timestamp'])
-                msg['timestamp'] = msg['timestamp'].replace(microsecond=0).isoformat() + 'Z'
                 return msg
             return None
         except Exception as e:
@@ -1637,7 +1636,7 @@ def chat():
                     'full_name': user['full_name'],
                     'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
                     'last_message': last_msg['message'] if last_msg else 'Start chatting!',
-                    'time': last_msg['timestamp'].replace(microsecond=0).isoformat().replace('+00:00', 'Z') if last_msg else '',
+                    'time': last_msg['timestamp'].isoformat() if last_msg else '',
                     'sort_time': last_msg['timestamp'] if last_msg else datetime.min.replace(tzinfo=timezone.utc),
                     'unread': unread
                 }
