@@ -1455,7 +1455,6 @@
 
       function handleResize() {
         console.log('Window resized, width:', window.innerWidth);
-        adjustHeight();
         if (window.innerWidth <= 992) {
           chatBackBtn.style.display = 'block';
           conversationsBackBtn.style.display = 'block';
@@ -1489,43 +1488,48 @@
             chatArea.style.display = 'flex';
           }
         }
+        adjustViewport();
       }
 
       const debouncedHandleResize = debounce(handleResize, 100);
       window.addEventListener('resize', debouncedHandleResize);
-      handleResize();
 
-      function adjustHeight() {
-        if (document.body.classList.contains('chat-mode')) {
-          chatArea.style.height = `${window.innerHeight}px`;
-        } else {
-          chatContainer.style.height = `${window.innerHeight - navbar.offsetHeight}px`;
+      function adjustViewport() {
+        let vpHeight = window.innerHeight;
+        let vpTop = 0;
+        if ('visualViewport' in window) {
+          const vp = window.visualViewport;
+          vpHeight = vp.height;
+          vpTop = vp.offsetTop;
         }
-        adjustVisual();
+        conversationsCol.style.top = `${vpTop}px`;
+        chatArea.style.top = `${vpTop}px`;
+        profileSidebar.style.top = `${vpTop}px`;
+        if (document.body.classList.contains('chat-mode')) {
+          chatArea.style.height = `${vpHeight}px`;
+        } else {
+          chatContainer.style.height = `${vpHeight - (navbar ? navbar.offsetHeight : 0)}px`;
+        }
         scrollToBottom();
       }
 
-      // Visual Viewport Adjustment for iOS keyboard issues
-      function adjustVisual() {
-        if ('visualViewport' in window) {
-          const vp = window.visualViewport;
-          conversationsCol.style.top = `${vp.offsetTop}px`;
-          chatArea.style.top = `${vp.offsetTop}px`;
-          profileSidebar.style.top = `${vp.offsetTop}px`;
-        }
-      }
-
       if ('visualViewport' in window) {
-        window.visualViewport.addEventListener('resize', debounce(adjustVisual, 50));
-        window.visualViewport.addEventListener('scroll', debounce(adjustVisual, 50));
+        window.visualViewport.addEventListener('resize', debounce(adjustViewport, 50));
+        window.visualViewport.addEventListener('scroll', debounce(adjustViewport, 50));
       }
 
-      window.addEventListener('resize', adjustHeight);
       messageInput.addEventListener('focus', () => {
         setTimeout(() => {
+          adjustViewport();
           scrollToBottom();
-        }, 100);
+        }, 300);
       });
+
+      messageInput.addEventListener('blur', () => {
+        setTimeout(adjustViewport, 300);
+      });
+
+      handleResize();
 
       // Conversation Click Handler
       document.querySelectorAll('.conversation').forEach(conv => {
