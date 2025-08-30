@@ -1494,7 +1494,7 @@
 
       function adjustHeight() {
         if (document.body.classList.contains('chat-mode')) {
-          chatContainer.style.height = `${window.innerHeight}px`;
+          chatArea.style.height = `${window.innerHeight}px`;
         } else {
           chatContainer.style.height = `${window.innerHeight - navbar.offsetHeight}px`;
         }
@@ -1503,7 +1503,10 @@
 
       window.addEventListener('resize', adjustHeight);
       messageInput.addEventListener('focus', () => {
-        setTimeout(scrollToBottom, 500);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          scrollToBottom();
+        }, 100);
       });
 
       // Conversation Click Handler
