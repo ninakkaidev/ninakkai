@@ -808,18 +808,43 @@
         ],
         types: ["🌙 Dreamer", "🛡️ Protector", "💘 Romantic", "👂 Listener"]
       },
-      // New Optional Questions for Religion Preference
       {
-        question: "Is religion important to you in a future partner?",
-        answers: ["Very Important", "Somewhat Important", "Not Important"],
-        section: "religion_preference",
+        question: "How important is religion/faith in a future partner?",
+        answers: ["High - Must match my faith", "Medium - Prefer same faith", "Low - Note but not prioritize", "Skip - Religion won't affect matches"],
+        section: "religion_importance",
         nextQuestion: (answerIndex) => {
-          if (answerIndex === 0 || answerIndex === 1) {
+          if (answerIndex !== 3) { // Not Skip
             return {
-              question: "What is your religion?",
-              answers: [], // Free text input
-              isTextInput: true,
-              section: "religion_preference_own"
+              question: "What is your religion/faith?",
+              answers: [
+                "Christianity",
+                "Islam",
+                "Hinduism",
+                "Buddhism",
+                "Judaism",
+                "Sikhism",
+                "Spiritual but not religious",
+                "Agnostic",
+                "Atheist",
+                "Prefer not to say",
+                "Other"
+              ],
+              section: "religion",
+              isSelectWithOther: true,
+              nextQuestion: () => {
+                return {
+                  question: "Are you open to interfaith matches?",
+                  answers: ["Yes", "No"],
+                  section: "interfaith_open"
+                };
+              },
+              nextNextQuestion: () => {
+                return {
+                  question: "Display your religion on your profile?",
+                  answers: ["Yes", "No"],
+                  section: "religion_public"
+                };
+              }
             };
           }
           return null;
@@ -999,12 +1024,6 @@
     let nextDynamicQuestion = null;
     const requiredQuestionCount = requiredQuestions.length;
 
-    // Map for section answers
-    const sectionToAnswers = {
-      "religion_preference": optionalQuestions[2].answers,
-      "physical_preferences": optionalQuestions[3].answers
-    };
-
     // Load saved answers if redirected from auth
     function loadSavedAnswers() {
       const savedAnswers = sessionStorage.getItem('quiz_answers');
@@ -1132,10 +1151,75 @@
             input.classList.add('animate__animated', 'animate__pulse');
             setTimeout(() => {
               input.classList.remove('animate__animated', 'animate__pulse');
+              // Chain next questions if defined
+              if (questionData.nextQuestion) {
+                const next = questionData.nextQuestion();
+                if (next) {
+                  questions.splice(currentQuestion + 1, 0, next);
+                }
+              }
               displayQuestion();
             }, 300);
           } else {
             alert('Please enter a response before submitting.');
+          }
+        });
+        answersElement.appendChild(submitButton);
+      } else if (questionData.isSelectWithOther) {
+        console.log('Displaying select with other option');
+        const select = document.createElement('select');
+        select.className = 'form-control';
+        questionData.answers.forEach(ans => {
+          const opt = document.createElement('option');
+          opt.value = ans;
+          opt.textContent = ans;
+          select.appendChild(opt);
+        });
+        answersElement.appendChild(select);
+        const otherInput = document.createElement('input');
+        otherInput.type = 'text';
+        otherInput.placeholder = 'Specify other';
+        otherInput.style.display = 'none';
+        otherInput.className = 'form-control mt-2';
+        answersElement.appendChild(otherInput);
+        select.addEventListener('change', () => {
+          if (select.value === 'Other') {
+            otherInput.style.display = 'block';
+          } else {
+            otherInput.style.display = 'none';
+          }
+        });
+        const submitButton = document.createElement('button');
+        submitButton.className = 'rank-submit';
+        submitButton.textContent = 'Submit';
+        submitButton.addEventListener('click', () => {
+          let val = select.value;
+          if (val === 'Other') {
+            val = otherInput.value.trim() || 'Other';
+          }
+          if (val) {
+            selectAnswer({ value: val, section: questionData.section });
+            submitButton.classList.add('animate__animated', 'animate__pulse');
+            setTimeout(() => {
+              submitButton.classList.remove('animate__animated', 'animate__pulse');
+              // Chain next
+              if (questionData.nextQuestion) {
+                const next = questionData.nextQuestion();
+                if (next) {
+                  questions.splice(currentQuestion + 1, 0, next);
+                }
+              }
+              // Chain nextNext if defined
+              if (questionData.nextNextQuestion) {
+                const nextNext = questionData.nextNextQuestion();
+                if (nextNext) {
+                  questions.splice(currentQuestion + 2, 0, nextNext);
+                }
+              }
+              displayQuestion();
+            }, 300);
+          } else {
+            alert('Please select or enter a value.');
           }
         });
         answersElement.appendChild(submitButton);

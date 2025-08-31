@@ -146,7 +146,11 @@ class MongoService:
                 'email_verified': False,
                 'age_verified': False,  # Added age_verified field
                 'verification_token': verification_token,
-                'created_at': datetime.now(timezone.utc)
+                'created_at': datetime.now(timezone.utc),
+                'religion': None,
+                'religion_importance': 'skip',
+                'interfaith_open': False,
+                'religion_public': False,
             }
             result = self.users.insert_one(user_data)
             return {
@@ -290,6 +294,29 @@ class MongoService:
                 'completed_at': datetime.now(timezone.utc)
             }
             result = self.quiz_results.insert_one(quiz_result)
+
+            # Parse optional preferences from answers and update user
+            update_data = {}
+            for ans in quiz_data['answers']:
+                if 'section' in ans:
+                    if ans['section'] == 'religion_importance':
+                        importance_map = {
+                            0: 'high',
+                            1: 'medium',
+                            2: 'low',
+                            3: 'skip'
+                        }
+                        update_data['religion_importance'] = importance_map.get(ans.get('index'), 'skip')
+                    elif ans['section'] == 'religion':
+                        update_data['religion'] = ans.get('value')
+                    elif ans['section'] == 'interfaith_open':
+                        update_data['interfaith_open'] = ans.get('index') == 0  # 0: Yes, 1: No
+                    elif ans['section'] == 'religion_public':
+                        update_data['religion_public'] = ans.get('index') == 0  # 0: Yes, 1: No
+
+            if update_data:
+                self.update_user(user_id, update_data)
+
             self.users.update_one(
                 {'_id': ObjectId(user_id)},
                 {'$set': {'profile_complete': True}}
@@ -336,6 +363,12 @@ class MongoService:
                 return []
             user_scores = user_quiz['scores']
             dominant_type = user_scores['dominant_type']
+
+            # Religion preferences
+            current_religion = current_user.get('religion')
+            current_importance = current_user.get('religion_importance', 'skip')
+            current_interfaith = current_user.get('interfaith_open', False)
+
             all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
             matches = []
             for other_user in all_users:
@@ -344,20 +377,34 @@ class MongoService:
                 if other_scores['dominant_type'] == dominant_type or other_scores.get('secondary_type') == dominant_type:
                     user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
                     if user_data and user_data['gender'] != current_user['gender']:
-                        matches.append({
-                            'id': str(user_data['_id']),
-                            'full_name': user_data['full_name'],
-                            'age': user_data.get('age'),
-                            'gender': user_data.get('gender'),
-                            'image': user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-                            'occupation': user_data.get('occupation', 'N/A'),
-                            'bio': user_data.get('bio', 'No bio available'),
-                            'interests': user_data.get('interests', []),
-                            'distance': 'N/A',
-                            'rating': '4.5',
-                            'dominant_type': other_scores['dominant_type'],
-                            'match_percentage': match_percentage
-                        })
+                        # Apply religion filter
+                        other_religion = user_data.get('religion')
+                        include = True
+                        if current_importance != 'skip' and current_religion and other_religion:
+                            match_rel = current_religion == other_religion
+                            if current_importance == 'high' and not match_rel:
+                                include = False
+                            elif current_importance == 'medium' and not match_rel and not current_interfaith:
+                                include = False
+                            # For low, include but perhaps lower percentage
+                            elif current_importance == 'low' and not match_rel:
+                                match_percentage = max(0, match_percentage - 10)  # Slight penalty
+
+                        if include:
+                            matches.append({
+                                'id': str(user_data['_id']),
+                                'full_name': user_data['full_name'],
+                                'age': user_data.get('age'),
+                                'gender': user_data.get('gender'),
+                                'image': user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+                                'occupation': user_data.get('occupation', 'N/A'),
+                                'bio': user_data.get('bio', 'No bio available'),
+                                'interests': user_data.get('interests', []),
+                                'distance': 'N/A',
+                                'rating': '4.5',
+                                'dominant_type': other_scores['dominant_type'],
+                                'match_percentage': match_percentage
+                            })
             return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:10]
         except Exception as e:
             logger.error(f"Find matches error: {str(e)}")
@@ -1563,6 +1610,8 @@ def user_profile(user_id):
             },
             'personality_info': personality_info
         }
+        if user.get('religion_public', False):
+            profile['religion'] = user.get('religion', 'Not specified')
         return jsonify({'success': True, 'user': profile}), 200
     except Exception as e:
         logger.error(f"User profile endpoint error: {str(e)}")
@@ -1833,6 +1882,8 @@ def profile():
             'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0,
             'personality_info': personality_info
         }
+        if user.get('religion_public', False):
+            profile['religion'] = user.get('religion', 'Not specified')
         pending_likers = mongo_service.get_pending_likers(session['user_id'])
         notifications = mongo_service.get_notifications(session['user_id'])
         return render_template('profile.html', profile=profile, pending_likers=pending_likers, notifications=notifications)
