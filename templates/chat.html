@@ -1182,7 +1182,7 @@
         const repliedTo = messageInput.dataset.replyingTo || null;
         const optimisticMsg = {
           id: tempId,
-          sender_id: '{{ session.user_id }}',
+          sender_id: '{{ current_user_id }}',
           receiver_id: currentChatUserId,
           message: sanitizeHTML(message),
           timestamp: new Date().toISOString(),
@@ -1312,7 +1312,7 @@
             const messagesContainer = document.getElementById('messages-container');
             messagesContainer.innerHTML = '';
             result.messages.forEach(msg => {
-              const messageElement = createMessageElement(msg, msg.sender_id === '{{ session.user_id }}');
+              const messageElement = createMessageElement(msg, msg.sender_id === '{{ current_user_id }}');
               messagesContainer.appendChild(messageElement);
             });
             scrollToBottom();
@@ -1380,7 +1380,7 @@
             const response = await fetch('/delete_message', {
               method: 'POST',
               headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
               },
               body: JSON.stringify({
                 message_id: messageId
@@ -1425,7 +1425,7 @@
       function setupWebSocket() {
         socket = io({
           auth: {
-            user_id: '{{ session.user_id }}'
+            user_id: '{{ current_user_id }}'
           },
           transports: ['websocket', 'polling']  // Explicit transports for iOS compatibility
         });
@@ -1436,14 +1436,14 @@
 
         socket.on('new_message', (data) => {
           console.log('New message received:', data);
-          const otherId = data.sender_id === '{{ session.user_id }}' ? data.receiver_id : data.sender_id;
+          const otherId = data.sender_id === '{{ current_user_id }}' ? data.receiver_id : data.sender_id;
           const conv = document.querySelector(`.conversation[data-user-id="${otherId}"]`);
           if (conv) {
             conv.querySelector('.last-message').textContent = data.message;
             const timeEl = conv.querySelector('.time');
             timeEl.textContent = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             timeEl.dataset.isoTime = data.timestamp;
-            if (data.receiver_id === '{{ session.user_id }}') {
+            if (data.receiver_id === '{{ current_user_id }}') {
               if (otherId !== currentChatUserId) {
                 let unreadEl = conv.querySelector('.unread-dot');
                 if (!unreadEl) {
@@ -1456,7 +1456,7 @@
             conv.parentNode.prepend(conv);
           }
           if (currentChatUserId === otherId) {
-            const isSent = data.sender_id === '{{ session.user_id }}';
+            const isSent = data.sender_id === '{{ current_user_id }}';
             const messagesContainer = document.getElementById('messages-container');
             if (isSent) {
               const tempMessages = messagesContainer.querySelectorAll('[data-message-id^="temp-"]');

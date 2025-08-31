@@ -803,8 +803,8 @@ class ChatService:
             del msg_data['_id']
             msg_data['timestamp'] = msg_data['timestamp'].isoformat()
             # Emit to both sender and receiver rooms
-            socketio.emit('new_message', msg_data, room=sender_id)
-            socketio.emit('new_message', msg_data, room=receiver_id)
+            emit('new_message', msg_data, room=sender_id)
+            emit('new_message', msg_data, room=receiver_id)
             return {'success': True, 'message_id': msg_data['id']}
         except Exception as e:
             logger.error(f"Send message error: {str(e)}")
@@ -826,7 +826,7 @@ class ChatService:
                 {'$set': {'read': True}}
             )
             if updated.modified_count > 0:
-                socketio.emit('messages_read', {'conversation_id': user1}, room=user2)
+                emit('messages_read', {'conversation_id': user1}, room=user2)
             for msg in msgs:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
@@ -879,8 +879,8 @@ class ChatService:
             result = self.messages.delete_one({'_id': ObjectId(message_id)})
             if result.deleted_count > 0:
                 # Emit to both
-                socketio.emit('message_deleted', {'message_id': message_id}, room=sender_id)
-                socketio.emit('message_deleted', {'message_id': message_id}, room=receiver_id)
+                emit('message_deleted', {'message_id': message_id}, room=sender_id)
+                emit('message_deleted', {'message_id': message_id}, room=receiver_id)
             return {'success': result.deleted_count > 0}
         except Exception as e:
             logger.error(f"Delete message error: {str(e)}")
@@ -1593,7 +1593,7 @@ def send_typing():
     to_user_id = data.get('to_user_id')
     if not to_user_id:
         return jsonify({'success': False, 'error': 'Missing to_user_id'}), 400
-    socketio.emit('user_typing', {'sender_id': session['user_id']}, room=to_user_id)
+    emit('user_typing', {'sender_id': session['user_id']}, room=to_user_id)
     return jsonify({'success': True})
 
 @app.route('/chat')
@@ -1884,7 +1884,7 @@ def submit_quiz():
                 'isRankQuestion': True
             },
             {
-                'answers': ["Someone silently sitting with me through pain", "Someone helping me fix the situation", "Someone saying exactly the right words", "Someone holding me tight without speaking"],
+                'answers': ["Someone silently sitting with me through pain", "Someone helping me fix the situation", "Someone saying exactly the right words", "Solving life's problems together"],
                 'types': ["🌿 Nurturer", "🛡️ Protector", "👂 Listener", "💘 Romantic"]
             },
             {
