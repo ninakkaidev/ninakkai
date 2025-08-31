@@ -780,7 +780,7 @@ class ChatService:
         self.db = self.client['chat_db']
         self.messages = self.db['messages']
 
-    def send_message(self, sender_id: str, receiver_id: str, message: str, replied_to: Optional[str] = None) -> Dict[str, Any]:
+    def send_message(self, sender_id: str, receiver_id: str, message: str, replied_to: str = None) -> Dict[str, Any]:
         try:
             sender = mongo_service.get_user_by_id(sender_id)
             receiver = mongo_service.get_user_by_id(receiver_id)
@@ -791,17 +791,17 @@ class ChatService:
                 'receiver_id': receiver_id,
                 'message': message,
                 'timestamp': datetime.now(timezone.utc),
-                'read': False,
-                'replied_to': replied_to
+                'read': False
             }
-            result = self.messages.insert_one(msg_data)
-            del msg_data['_id']
-            msg_data['id'] = str(result.inserted_id)
-            msg_data['timestamp'] = msg_data['timestamp'].isoformat()
             if replied_to:
                 replied_msg = self.messages.find_one({'_id': ObjectId(replied_to)})
                 if replied_msg:
+                    msg_data['replied_to'] = replied_to
                     msg_data['replied_text'] = replied_msg['message']
+            result = self.messages.insert_one(msg_data)
+            msg_data['id'] = str(result.inserted_id)
+            del msg_data['_id']
+            msg_data['timestamp'] = msg_data['timestamp'].isoformat()
             # Emit to both sender and receiver rooms
             socketio.emit('new_message', msg_data, room=sender_id)
             socketio.emit('new_message', msg_data, room=receiver_id)
@@ -810,7 +810,7 @@ class ChatService:
             logger.error(f"Send message error: {str(e)}")
             return {'success': False, 'error': str(e)}
 
-    def get_messages(self, user1: str, user2: str) -> List[Dict[str, Any]]:
+    def get_messages(self, user1: str, user2: str):
         try:
             user1_data = mongo_service.get_user_by_id(user1)
             user2_data = mongo_service.get_user_by_id(user2)
@@ -821,11 +821,6 @@ class ChatService:
                 {'sender_id': user2, 'receiver_id': user1}
             ]}
             msgs = list(self.messages.find(query).sort('timestamp', 1))
-            for msg in msgs:
-                if 'replied_to' in msg and msg['replied_to']:
-                    replied_msg = self.messages.find_one({'_id': ObjectId(msg['replied_to'])})
-                    if replied_msg:
-                        msg['replied_text'] = replied_msg['message']
             updated = self.messages.update_many(
                 {'receiver_id': user1, 'sender_id': user2, 'read': False},
                 {'$set': {'read': True}}
@@ -835,13 +830,17 @@ class ChatService:
             for msg in msgs:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
+                if 'replied_to' in msg:
+                    replied = self.messages.find_one({'_id': ObjectId(msg['replied_to'])})
+                    if replied:
+                        msg['replied_text'] = replied['message']
                 if msg['timestamp'].tzinfo is None:
                     msg['timestamp'] = pytz.UTC.localize(msg['timestamp'])
                 msg['timestamp'] = msg['timestamp'].isoformat()
             return msgs
         except Exception as e:
             logger.error(f"Get messages error: {str(e)}")
-            return []
+            return {'success': False, 'error': str(e)}
 
     def get_last_message(self, user1: str, user2: str) -> Optional[Dict[str, Any]]:
         try:
@@ -1667,7 +1666,10 @@ def get_messages(other_user_id):
         return jsonify({'success': False, 'error': 'Not matched'}), 403
     try:
         messages = chat_service.get_messages(current_user_id, other_user_id)
-        return jsonify({'success': True, 'messages': messages}), 200
+        if isinstance(messages, dict):
+            return jsonify(messages), 400
+        else:
+            return jsonify({'success': True, 'messages': messages}), 200
     except Exception as e:
         logger.error(f"Get messages endpoint error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
