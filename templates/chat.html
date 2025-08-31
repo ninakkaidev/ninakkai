@@ -828,6 +828,45 @@
       background: var(--text-gray);
       border-radius: 3px;
     }
+
+    .message-content .replied-message {
+      background-color: rgba(255,255,255,0.1);
+      padding: 4px 8px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 0.75rem;
+      color: inherit;
+      opacity: 0.8;
+    }
+
+    .replying-to {
+      display: flex;
+      align-items: center;
+      padding: 0.5rem;
+      background-color: rgba(255,255,255,0.05);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      font-size: 0.8125rem;
+      color: var(--text-gray);
+    }
+
+    .replying-to span {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cancel-reply {
+      background: transparent;
+      border: none;
+      color: var(--text-gray);
+      font-size: 0.875rem;
+      margin-left: 0.5rem;
+    }
+
+    .cancel-reply:hover {
+      color: var(--primary-light);
+    }
   </style>
 </head>
 <body>
@@ -1006,7 +1045,7 @@
       let socket = null;
 
       // Request notification permission
-      if (Notification.permission === 'default') {
+      if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
       }
 
@@ -1132,7 +1171,7 @@
       // Send Message
       const sendBtn = document.getElementById('send-button');
 
-      function sendMessage() {
+      async function sendMessage() {
         const message = messageInput.value.trim();
         if (!message || !currentChatUserId) {
           console.warn('Cannot send message: Empty or no user selected');
@@ -1140,13 +1179,16 @@
         }
 
         const tempId = 'temp-' + Date.now();
+        const repliedTo = messageInput.dataset.replyingTo || null;
         const optimisticMsg = {
           id: tempId,
           sender_id: '{{ session.user_id }}',
           receiver_id: currentChatUserId,
           message: sanitizeHTML(message),
           timestamp: new Date().toISOString(),
-          read: false
+          read: false,
+          replied_to: repliedTo,
+          replied_text: repliedTo ? document.querySelector(`[data-message-id="${repliedTo}"] .message-content p`).textContent : null
         };
         const messagesContainer = document.getElementById('messages-container');
         const messageDiv = createMessageElement(optimisticMsg, true);
@@ -1154,33 +1196,37 @@
         scrollToBottom();
 
         messageInput.value = '';
+        messageInput.dataset.replyingTo = '';
+        const replyingDiv = document.querySelector('.replying-to');
+        if (replyingDiv) replyingDiv.style.display = 'none';
         messageInput.focus(); // Keep keyboard open after send
 
-        fetch('/send_message', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            to_user_id: currentChatUserId,
-            message: message
-          })
-        }).then(response => response.json())
-          .then(data => {
-            if (!data.success) {
-              console.error('Failed to send message:', data.error);
-              // Remove optimistic message if failed
-              const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
-              if (tempMsg) tempMsg.remove();
-              alert('Failed to send message.');
-            }
-          })
-          .catch(error => {
-            console.error('Error sending message:', error);
+        try {
+          const response = await fetch('/send_message', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              to_user_id: currentChatUserId,
+              message: message,
+              replied_to: repliedTo
+            })
+          });
+          const data = await response.json();
+          if (!data.success) {
+            console.error('Failed to send message:', data.error);
+            // Remove optimistic message if failed
             const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
             if (tempMsg) tempMsg.remove();
-            alert('Error sending message.');
-          });
+            alert('Failed to send message.');
+          }
+        } catch (error) {
+          console.error('Error sending message:', error);
+          const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
+          if (tempMsg) tempMsg.remove();
+          alert('Error sending message.');
+        }
       }
 
       function createMessageElement(msg, isSent) {
@@ -1190,18 +1236,47 @@
 
         const formattedTime = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+        let repliedHtml = '';
+        if (msg.replied_text) {
+          repliedHtml = `<div class="replied-message">${msg.replied_text}</div>`;
+        }
+
         messageDiv.innerHTML = `
           <div class="message-content">
+            ${repliedHtml}
             <p>${msg.message}</p>
             <span class="message-time">${formattedTime}</span>
             ${isSent ? `<span class="message-status">${msg.read ? 'Seen' : ''}</span>` : ''}
             <div class="message-actions">
+              <button title="Reply" onclick="replyToMessage('${msg.id}')"><i class="fas fa-reply"></i></button>
               ${isSent ? `<button title="Delete" onclick="deleteMessage('${msg.id}')"><i class="fas fa-trash"></i></button>` : ''}
             </div>
           </div>
         `;
 
         return messageDiv;
+      }
+
+      function replyToMessage(messageId) {
+        const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+        const messageText = messageElement.querySelector('.message-content p').textContent;
+
+        let replyingDiv = document.querySelector('.replying-to');
+        if (!replyingDiv) {
+          replyingDiv = document.createElement('div');
+          replyingDiv.className = 'replying-to';
+          replyingDiv.innerHTML = '<span></span><button class="cancel-reply"><i class="fas fa-times"></i></button>';
+          document.querySelector('.message-input-container').insertBefore(replyingDiv, document.querySelector('.message-input'));
+          replyingDiv.querySelector('.cancel-reply').addEventListener('click', () => {
+            replyingDiv.style.display = 'none';
+            messageInput.dataset.replyingTo = '';
+          });
+        }
+
+        replyingDiv.querySelector('span').textContent = `Replying to: ${messageText.substring(0, 50)}...`;
+        replyingDiv.style.display = 'block';
+        messageInput.dataset.replyingTo = messageId;
+        messageInput.focus();
       }
 
       messageInput.addEventListener('keypress', (e) => {
@@ -1299,19 +1374,19 @@
         return messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight <= 50;
       }
 
-      function deleteMessage(messageId) {
+      async function deleteMessage(messageId) {
         if (confirm('Delete this message?')) {
-          fetch('/delete_message', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              message_id: messageId
-            })
-          })
-          .then(response => response.json())
-          .then(data => {
+          try {
+            const response = await fetch('/delete_message', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                message_id: messageId
+              })
+            });
+            const data = await response.json();
             if (data.success) {
               const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
               if (messageElement) messageElement.remove();
@@ -1319,11 +1394,10 @@
               console.error('Failed to delete message:', data.error);
               alert('Failed to delete message.');
             }
-          })
-          .catch(error => {
+          } catch (error) {
             console.error('Error deleting message:', error);
             alert('Error deleting message.');
-          });
+          }
         }
       }
 
@@ -1352,7 +1426,8 @@
         socket = io({
           auth: {
             user_id: '{{ session.user_id }}'
-          }
+          },
+          transports: ['websocket', 'polling']  // Explicit transports for iOS compatibility
         });
 
         socket.on('connect', () => {
@@ -1398,7 +1473,7 @@
             messagesContainer.appendChild(messageElement);
             if (document.hidden || !isAtBottom()) {
               showNewMessageNotice();
-              if (Notification.permission === 'granted') {
+              if ('Notification' in window && Notification.permission === 'granted') {
                 new Notification('New Message', { body: data.message });
               }
             } else {
