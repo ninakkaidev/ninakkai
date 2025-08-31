@@ -13,7 +13,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Ninakkai: Personality-Based Dating App">
   <meta name="twitter:description" content="Connect with like-minded singles through personality insights. Download Ninakkai for authentic dating experiences.">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --primary: #ff4d6d;
@@ -33,6 +34,66 @@
       font-family: 'Segoe UI', sans-serif;
       scroll-behavior: smooth;
       background-color: #fdfdfd;
+    }
+
+    /* Loader Styles */
+    #loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease-out;
+    }
+
+    .loader-text {
+      font-family: 'Noto Sans Malayalam', sans-serif;
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 30px;
+      background: linear-gradient(135deg, #000000 0%, #ffffff 50%, #000000 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 2s linear infinite, fadeIn 2s ease;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
+    .loader {
+      width: 60px;
+      aspect-ratio: 1;
+      background: linear-gradient(#dc1818 0 0) bottom/100% 0% no-repeat #ccc;
+      -webkit-mask: 
+        radial-gradient(circle at 60% 65%, #000 62%, #0000 65%) top left, 
+        radial-gradient(circle at 40% 65%, #000 62%, #0000 65%) top right, 
+        linear-gradient(to bottom left, #000 42%,#0000 43%) bottom left , 
+        linear-gradient(to bottom right,#000 42%,#0000 43%) bottom right;
+      -webkit-mask-size: 50% 50%;
+      -webkit-mask-repeat: no-repeat;
+      animation: l19 2s infinite linear;
+    }
+
+    @keyframes l19 {
+        90%,100% {background-size:100% 100%}
+    }
+
+    .content {
+      opacity: 0;
+      transition: opacity 0.5s ease-in;
+    }
+
+    .content.loaded {
+      opacity: 1;
     }
 
     header {
@@ -159,6 +220,16 @@
       margin-bottom: 20px;
       animation: fadeInDown 1s ease;
     }
+    
+    .hero-description {
+      max-width: 800px;
+      font-size: 1.2rem;
+      margin-bottom: 30px;
+      line-height: 1.6;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      animation: fadeInUp 1s ease;
+      padding: 0 20px;
+    }
 
     .btn-hero {
       background: linear-gradient(to right, rgb(250, 94, 94), rgb(113, 113, 248));
@@ -175,6 +246,96 @@
     .btn-hero:hover {
       background: linear-gradient(to left, rgb(250, 94, 94), rgb(113, 113, 248));
       transform: scale(1.05);
+    }
+
+    /* Updated About Section */
+    .about-section {
+      padding: 80px 20px;
+      background-color: #fff;
+    }
+
+    .about-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 40px;
+      align-items: center;
+    }
+
+    .about-image {
+      flex: 1;
+      min-width: 300px;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .about-image img {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.5s ease;
+    }
+
+    .about-image:hover img {
+      transform: scale(1.03);
+    }
+
+    .about-content {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .about-title {
+      font-size: 2.5rem;
+      color: #333;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .about-text {
+      color: #555;
+      line-height: 1.8;
+      font-size: 1.1rem;
+      margin-bottom: 25px;
+    }
+
+    .about-text p {
+      margin-bottom: 20px;
+    }
+
+    .about-highlight {
+      background: linear-gradient(120deg, rgba(255,77,109,0.1) 0%, rgba(255,77,109,0.3) 100%);
+      border-left: 4px solid var(--primary);
+      padding: 20px;
+      border-radius: 0 8px 8px 0;
+      margin: 30px 0;
+    }
+
+    .about-highlight p {
+      margin: 0;
+      color: #333;
+      font-style: italic;
+    }
+
+    .about-features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    .feature-item {
+      flex: 1 1 200px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .feature-icon {
+      color: var(--primary);
+      font-size: 1.2rem;
     }
 
     .hamburger {
@@ -396,6 +557,11 @@
       .hero h1 {
         font-size: 2rem;
       }
+      
+      .hero-description {
+        font-size: 1rem;
+        padding: 0 10px;
+      }
 
       footer .footer-columns {
         flex-direction: column;
@@ -404,6 +570,18 @@
 
       #about.popup {
         width: 300px;
+      }
+
+      .about-title {
+        font-size: 2rem;
+      }
+
+      .about-container {
+        flex-direction: column;
+      }
+      
+      .loader-text {
+        font-size: 2.5rem;
       }
     }
 
@@ -420,124 +598,317 @@
       0% { background-position: 0% 50%; }
       100% { background-position: 100% 50%; }
     }
+    /* How It Works Section */
+.how-it-works {
+  padding: 80px 20px;
+  background: #fafafa;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 50px;
+}
+
+.how-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 50px;
+  max-width: 1200px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+.how-content {
+  flex: 1;
+  min-width: 300px;
+}
+
+.how-content h3 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: var(--primary);
+}
+
+.how-content p {
+  font-size: 1.1rem;
+  color: #555;
+  line-height: 1.8;
+  margin-bottom: 25px;
+}
+
+.how-features {
+  list-style: none;
+}
+
+.how-features li {
+  margin-bottom: 15px;
+  font-size: 1rem;
+  color: #444;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.how-features i {
+  color: var(--primary);
+  font-size: 1.2rem;
+}
+
+/* Mobile Mockup */
+.how-mobile {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.mobile-frame {
+  width: 300px;
+  height: 600px;
+  border: 12px solid #000;
+  border-radius: 30px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  background: #000;
+  position: relative;
+}
+
+.mobile-frame::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 6px;
+  background: #333;
+  border-radius: 10px;
+}
+
+.mobile-frame video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .how-container {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .how-content {
+    order: 2;
+  }
+
+  .how-mobile {
+    order: 1;
+    margin-bottom: 30px;
+  }
+}
+
   </style>
 </head>
 <body>
-
-  <header id="header">
-    <a href="index.html" class="logo" style="text-decoration: none;">
-        <span style="font-size: 2rem; background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; margin-right: 5px;">
-            നിനക്കായി-
-        </span>
-        <span style="font-size: 1.2rem; color: rgb(255, 255, 255); font-weight: 600;">
-            ForYou
-        </span>
-    </div>
-   </a>
-    <nav>
-      <div class="popup-container">
-        <a onmouseenter="showPopup(event, 'about')" onclick="showPopup(event, 'about')">About</a>
-        <div class="popup" id="about">
-          <p>
-            <strong>About Us</strong><br>
-            We are a dating platform helping people find real connections.<br>
-            ✅ 100% original and verified profiles<br>
-            ✅ Safe, secure, and privacy-focused<br>
-            ✅ Built for meaningful relationships<br>
-            ✅ Smooth user experience with modern tech
-          </p>
-        </div>
-      </div>
-
-      <div class="popup-container">
-        <a onmouseenter="showPopup(event, 'pricing')" onclick="showPopup(event, 'pricing')">Pricing</a>
-        <div class="popup" id="pricing">
-          <p>
-            <strong>Pricing</strong><br>
-            Basic: Free Forever 🎉<br>
-            Pro: <span class="animated-gradient">Coming Soon...</span>
-          </p>
-        </div>
-      </div>
-
-      <div class="popup-container">
-        <a onmouseenter="showPopup(event, 'contact')" onclick="showPopup(event, 'contact')">Contact</a>
-        <div class="popup" id="contact">
-          <p><strong>Contact</strong><br>Email: support@ninakkai.com</p>
-        </div>
-      </div>
-
-      <button class="btn-hero" onclick="location.href='{{ url_for('auth') }}'">Join Us</button>
-    </nav>
-
-    <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
-      <div></div><div></div><div></div>
-    </div>
-    <div class="mobile-nav" id="mobileMenu">
-      <a onclick="showMobilePopup('about')">About</a>
-      <a onclick="showMobilePopup('pricing')">Pricing</a>
-      <a onclick="showMobilePopup('contact')">Contact</a>
-      <a href="{{ url_for('auth') }}" class="join-btn" style="margin-top: 20px;">Join Us</a>
-    </div>
-  </header>
-
-  <div class="overlay" id="overlay" onclick="closeMobilePopup()"></div>
-
-  <div class="mobile-popup" id="mobilePopup">
-    <span class="close-popup" onclick="closeMobilePopup()">×</span>
-    <div id="popupContent"></div>
+  <!-- Loader -->
+  <div id="loader">
+    <div class="loader"></div>
+    <div class="loader-text">നിനക്കായി</div>
   </div>
 
-  <div class="hero">
-    <h1>Find Your Matches</h1>
-    <button class="btn-hero" onclick="location.href='{{ url_for('auth') }}'">Get Started</button>
-  </div>
+  <!-- Content (initially hidden) -->
+  <div class="content" id="content">
+    <header id="header">
+      <a href="index.html" class="logo" style="text-decoration: none;">
+          <span style="font-size: 2rem; background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; margin-right: 5px;">
+              നിനക്കായി-
+          </span>
+          <span style="font-size: 1.2rem; color: rgb(255, 255, 255); font-weight: 600;">
+              ForYou
+          </span>
+      </a>
+      <nav>
+        <a href="#about-section">About</a>
 
-  <footer>
-  <div class="footer-content">
-    <div class="footer-columns">
+        <div class="popup-container">
+          <a onmouseenter="showPopup(event, 'pricing')" onclick="showPopup(event, 'pricing')">Pricing</a>
+          <div class="popup" id="pricing">
+            <p>
+              <strong>Pricing</strong><br>
+              Basic: Free Forever 🎉<br>
+              Pro: <span class="animated-gradient">Coming Soon...</span>
+            </p>
+          </div>
+        </div>
 
-      <!-- Company Info -->
-      <div class="footer-column">
-        <h4>Company</h4>
-        <a href="{{ url_for('terms') }}">Terms & Conditions</a>
-        <a href="{{ url_for('privacy') }}">Privacy Policy</a>
-        <a href="{{ url_for('faq') }}">FAQs</a>
+        <div class="popup-container">
+          <a onmouseenter="showPopup(event, 'contact')" onclick="showPopup(event, 'contact')">Contact</a>
+          <div class="popup" id="contact">
+            <p><strong>Contact</strong><br>Email: support@ninakkai.com</p>
+          </div>
+        </div>
+
+        <button class="btn-hero" onclick="location.href='{{ url_for('auth') }}'">Join Us</button>
+      </nav>
+
+      <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
+        <div></div><div></div><div></div>
       </div>
+      <div class="mobile-nav" id="mobileMenu">
+        <a href="#about-section" onclick="closeMobileMenu()">About</a>
+        <a onclick="showMobilePopup('pricing')">Pricing</a>
+        <a onclick="showMobilePopup('contact')">Contact</a>
+        <a href="{{ url_for('auth') }}" class="join-btn" style="margin-top: 20px;">Join Us</a>
+      </div>
+    </header>
 
-      <!-- Support -->
-      <div class="footer-column">
-      <h4>Support</h4>
-      <a href="mailto:support@ninakkai.com?subject=Help%20Center%20Request">Help Center</a>
-      <a href="mailto:support@ninakkai.com?subject=Contact%20Us">Contact Us</a>
+    <div class="overlay" id="overlay" onclick="closeMobilePopup()"></div>
+
+    <div class="mobile-popup" id="mobilePopup">
+      <span class="close-popup" onclick="closeMobilePopup()">×</span>
+      <div id="popupContent"></div>
     </div>
 
+    <div class="hero">
+      <h1>Find Your Matches</h1>
+      <p class="hero-description">
+        Ninakkai is where authenticity meets compatibility. Our platform filters out the noise and focuses on what truly matters — emotional connection and genuine intentions. Through unique questions designed to uncover your real personality, we match you with people who truly resonate with you. Dating made real, simple, and meaningful.
+      </p>
+      <button class="btn-hero" onclick="location.href='{{ url_for('auth') }}'">Get Started</button>
+    </div>
 
-      <!-- Social Links -->
-      <div class="footer-column">
-        <h4>Stay Connected</h4>
-        <div class="social-icons">
-          <a href="#"><i class="fab fa-instagram"></i></a>
-          <a href="#"><i class="fab fa-facebook-f"></i></a>
-          <a href="#"><i class="fab fa-twitter"></i></a>
+    <!-- Updated About Section -->
+    <section class="about-section" id="about-section">
+      <h2 class="about-title">About Ninakkai</h2>
+      <div class="about-container">
+        <div class="about-image">
+         <img src="\static\images\couple-taking-selfie-while-eating-bowl-salmon-grass.webp" alt="Happy couple connecting through Ninakkai">
+        </div>
+        <div class="about-content">
+          <div class="about-text">
+            <p>In today's dating world, finding a genuine connection has become harder than ever. Most apps focus on swipes, appearances, or casual interactions, leaving people frustrated and unsure if anyone is truly real. That's the problem we wanted to solve.</p>
+            
+            <div class="about-highlight">
+              <p>Ninakkai was created to bring authenticity back into dating. Our solution starts with understanding you — not just your profile, but your heart and character.</p>
+            </div>
+            
+            <p>We begin with 10 thoughtfully designed emotional questions that reveal your core personality, followed by additional questions that uncover your unique traits. On top of that, our Keeper/Seeker questions help identify your relationship readiness.</p>
+            
+            <p>By combining all these insights, Ninakkai maps out who you truly are and connects you with people whose personalities, values, and emotional styles align with yours. This ensures every match isn't just a surface-level connection, but a meaningful, compatible partnership — built on sincerity, understanding, and real emotional compatibility.</p>
+            
+            <p>With Ninakkai, dating becomes more than just meeting someone new; it becomes a journey to find the person who genuinely fits your life.</p>
+          </div>
+          
+          <div class="about-features">
+            <div class="feature-item">
+              <span class="feature-icon"><i class="fas fa-heart"></i></span>
+              <span>Emotional Compatibility</span>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon"><i class="fas fa-brain"></i></span>
+              <span>Personality Insights</span>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon"><i class="fas fa-shield-alt"></i></span>
+              <span>Authentic Connections</span>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon"><i class="fas fa-handshake"></i></span>
+              <span>Relationship Readiness</span>
+            </div>
+          </div>
         </div>
       </div>
+    </section>
+    <!-- How Ninakkai Works Section -->
+<section class="how-it-works" id="how-it-works">
+  <h2 class="section-title">How Ninakkai Works</h2>
+  <div class="how-container">
+    <!-- Content Side -->
+    <div class="how-content">
+      <h3>Real Conversations, Real Connections</h3>
+      <p>
+        Ninakkai makes chatting more meaningful. Once you're matched, our platform
+        encourages open and genuine conversations. With an intuitive chat interface,
+        you can share thoughts, send quick reactions, and truly connect without the noise
+        of unnecessary distractions.
+      </p>
+      <ul class="how-features">
+        <li><i class="fas fa-comments"></i> Smart, distraction-free chat</li>
+        <li><i class="fas fa-video"></i> Share quick video snippets</li>
+        <li><i class="fas fa-heart"></i> Meaningful reactions & replies</li>
+      </ul>
+    </div>
 
-      <!-- Logo Section -->
-      <div class="footer-column">
-        <h4>Powered By</h4>
-        <a href="{{ url_for('home') }}">
-          <img src="/static/images/ninakkayi-logo.png" alt="Ninakkayi Logo" style="width:140px; margin-top:10px;">
-        </a>
+    <!-- Mobile Mockup Side -->
+    <div class="how-mobile">
+      <div class="mobile-frame">
+        <video autoplay muted loop playsinline>
+          <source src="\static\images\0_Tiktok_Social_Media_1280x720 (1).mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
       </div>
-
     </div>
   </div>
-  <p>&copy; 2025 നിനക്കായി -ForYou. All Rights Reserved.</p>
-</footer>
+</section>
 
+    <footer>
+      <div class="footer-content">
+        <div class="footer-columns">
+          <!-- Company Info -->
+          <div class="footer-column">
+            <h4>Company</h4>
+            <a href="{{ url_for('terms') }}">Terms & Conditions</a>
+            <a href="{{ url_for('privacy') }}">Privacy Policy</a>
+            <a href="{{ url_for('faq') }}">FAQs</a>
+          </div>
+
+          <!-- Support -->
+          <div class="footer-column">
+            <h4>Support</h4>
+            <a href="mailto:support@ninakkai.com?subject=Help%20Center%20Request">Help Center</a>
+            <a href="mailto:support@ninakkai.com?subject=Contact%20Us">Contact Us</a>
+          </div>
+
+          <!-- Social Links -->
+          <div class="footer-column">
+            <h4>Stay Connected</h4>
+            <div class="social-icons">
+              <a href="#"><i class="fab fa-instagram"></i></a>
+              <a href="#"><i class="fab fa-facebook-f"></i></a>
+              <a href="#"><i class="fab fa-twitter"></i></a>
+            </div>
+          </div>
+
+          <!-- Logo Section -->
+          <div class="footer-column">
+            <h4>Powered By</h4>
+            <a href="{{ url_for('home') }}">
+              <img src="/static/images/ninakkayi-logo.png" alt="Ninakkayi Logo" style="width:140px; margin-top:10px;">
+            </a>
+          </div>
+        </div>
+      </div>
+      <p>&copy; 2025 നിനക്കായി -ForYou. All Rights Reserved.</p>
+    </footer>
+  </div>
 
   <script>
+    // Loader functionality
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        document.getElementById('loader').style.opacity = '0';
+        document.getElementById('content').classList.add('loaded');
+        
+        setTimeout(function() {
+          document.getElementById('loader').style.display = 'none';
+        }, 500);
+      }, 1500); // Show loader for 1.5 seconds
+    });
+
     window.addEventListener('scroll', function () {
       document.getElementById('header').classList.toggle('sticky', window.scrollY > 10);
     });
@@ -575,11 +946,16 @@
       document.getElementById('overlay').classList.toggle('active');
     }
 
+    function closeMobileMenu() {
+      document.getElementById('mobileMenu').classList.remove('active');
+      document.getElementById('hamburger').classList.remove('active');
+      document.getElementById('overlay').classList.remove('active');
+    }
+
     function showMobilePopup(section) {
       const data = {
-        about: "<strong>About Us</strong><br><br>We are a dating platform helping people find real connections.<br>✅ 100% original and verified profiles<br>✅ Safe, secure, and privacy-focused<br>✅ Built for meaningful relationships<br>✅ Smooth user experience with modern tech",
         pricing: "<strong>Pricing</strong><br><br>Basic: Free Forever 🎉<br>Pro: <span class='animated-gradient'>Coming Soon...</span>",
-        contact: "<strong>Contact</strong><br><br>Email: support@example.com<br>"
+        contact: "<strong>Contact</strong><br><br>Email: support@ninakkai.com<br>"
       };
       document.getElementById('popupContent').innerHTML = data[section];
       document.getElementById('mobilePopup').classList.add('active');
@@ -589,6 +965,7 @@
     function closeMobilePopup() {
       document.getElementById('mobilePopup').classList.remove('active');
       document.getElementById('overlay').classList.remove('active');
+      closeMobileMenu();
     }
   </script>
 </body>
