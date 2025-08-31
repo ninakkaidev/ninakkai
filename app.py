@@ -780,7 +780,7 @@ class ChatService:
         self.db = self.client['chat_db']
         self.messages = self.db['messages']
 
-    def send_message(self, sender_id: str, receiver_id: str, message: str) -> Dict[str, Any]:
+    def send_message(self, sender_id: str, receiver_id: str, message: str, replied_to: Optional[str] = None) -> Dict[str, Any]:
         try:
             sender = mongo_service.get_user_by_id(sender_id)
             receiver = mongo_service.get_user_by_id(receiver_id)
@@ -791,12 +791,17 @@ class ChatService:
                 'receiver_id': receiver_id,
                 'message': message,
                 'timestamp': datetime.now(timezone.utc),
-                'read': False
+                'read': False,
+                'replied_to': replied_to
             }
             result = self.messages.insert_one(msg_data)
             del msg_data['_id']
             msg_data['id'] = str(result.inserted_id)
             msg_data['timestamp'] = msg_data['timestamp'].isoformat()
+            if replied_to:
+                replied_msg = self.messages.find_one({'_id': ObjectId(replied_to)})
+                if replied_msg:
+                    msg_data['replied_text'] = replied_msg['message']
             # Emit to both sender and receiver rooms
             socketio.emit('new_message', msg_data, room=sender_id)
             socketio.emit('new_message', msg_data, room=receiver_id)
@@ -816,6 +821,11 @@ class ChatService:
                 {'sender_id': user2, 'receiver_id': user1}
             ]}
             msgs = list(self.messages.find(query).sort('timestamp', 1))
+            for msg in msgs:
+                if 'replied_to' in msg and msg['replied_to']:
+                    replied_msg = self.messages.find_one({'_id': ObjectId(msg['replied_to'])})
+                    if replied_msg:
+                        msg['replied_text'] = replied_msg['message']
             updated = self.messages.update_many(
                 {'receiver_id': user1, 'sender_id': user2, 'read': False},
                 {'$set': {'read': True}}
@@ -1670,12 +1680,13 @@ def send_message():
         data = request.get_json()
         to_user_id = data.get('to_user_id')
         message = data.get('message')
+        replied_to = data.get('replied_to')
         if not to_user_id or not message:
             return jsonify({'success': False, 'error': 'Missing parameters'}), 400
         current_user_id = session['user_id']
         if not mongo_service.is_matched(current_user_id, to_user_id):
             return jsonify({'success': False, 'error': 'Not matched'}), 403
-        result = chat_service.send_message(current_user_id, to_user_id, message)
+        result = chat_service.send_message(current_user_id, to_user_id, message, replied_to)
         if result['success']:
             return jsonify(result), 200
         else:
