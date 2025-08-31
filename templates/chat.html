@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>ninakkai-ForYou | Personal Chat</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -33,12 +33,31 @@
       touch-action: manipulation; /* Improve mobile touch responsiveness */
     }
 
+    @supports (padding-top: env(safe-area-inset-top)) {
+      body {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+      }
+    }
+
     .navbar {
       background-color: var(--card-dark);
       box-shadow: 0 2px 10px rgba(0,0,0,0.2);
       padding: 0.75rem 1rem;
       border-bottom: 1px solid rgba(255,255,255,0.1);
       z-index: 1000;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+    }
+
+    @supports (top: env(safe-area-inset-top)) {
+      .navbar {
+        top: env(safe-area-inset-top);
+      }
     }
 
     .navbar-brand {
@@ -82,6 +101,14 @@
     .chat-container {
       height: calc(100vh - 56px);
       overflow: hidden;
+      padding-top: 56px; /* Account for navbar */
+    }
+
+    @supports (height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))) {
+      .chat-container {
+        height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 56px);
+        padding-top: calc(56px + env(safe-area-inset-top));
+      }
     }
 
     .conversations-col, .chat-area {
@@ -432,12 +459,18 @@
       padding: 0.5rem;
       border-top: 1px solid rgba(255,255,255,0.1);
       background-color: var(--card-dark);
-      position: sticky;
+      position: fixed;
       bottom: 0;
       left: 0;
       width: 100%;
       z-index: 1000;
       min-height: 60px;
+    }
+
+    @supports (bottom: env(safe-area-inset-bottom)) {
+      .message-input-container {
+        bottom: env(safe-area-inset-bottom);
+      }
     }
 
     .message-input {
@@ -700,6 +733,31 @@
       box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
 
+    .reply-preview {
+      background: rgba(255,255,255,0.05);
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cancel-reply {
+      background: transparent;
+      border: none;
+      color: var(--text-gray);
+    }
+
+    .replied-message {
+      background: rgba(255,255,255,0.1);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      margin-bottom: 0.25rem;
+      font-size: 0.75rem;
+      color: var(--text-gray);
+    }
+
     @media (max-width: 992px) {
       .conversations-col {
         position: fixed;
@@ -827,45 +885,6 @@
     ::-webkit-scrollbar-thumb {
       background: var(--text-gray);
       border-radius: 3px;
-    }
-
-    .message-content .replied-message {
-      background-color: rgba(255,255,255,0.1);
-      padding: 4px 8px;
-      border-radius: 6px;
-      margin-bottom: 6px;
-      font-size: 0.75rem;
-      color: inherit;
-      opacity: 0.8;
-    }
-
-    .replying-to {
-      display: flex;
-      align-items: center;
-      padding: 0.5rem;
-      background-color: rgba(255,255,255,0.05);
-      border-top: 1px solid rgba(255,255,255,0.1);
-      font-size: 0.8125rem;
-      color: var(--text-gray);
-    }
-
-    .replying-to span {
-      flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .cancel-reply {
-      background: transparent;
-      border: none;
-      color: var(--text-gray);
-      font-size: 0.875rem;
-      margin-left: 0.5rem;
-    }
-
-    .cancel-reply:hover {
-      color: var(--primary-light);
     }
   </style>
 </head>
@@ -1043,9 +1062,12 @@
       let isTyping = false;
       let newMessageNotice = null;
       let socket = null;
+      let replyingTo = null;
+      let replyPreview = null;
+      let messagesMap = {};
 
       // Request notification permission
-      if ('Notification' in window && Notification.permission === 'default') {
+      if (Notification.permission === 'default') {
         Notification.requestPermission();
       }
 
@@ -1171,7 +1193,7 @@
       // Send Message
       const sendBtn = document.getElementById('send-button');
 
-      async function sendMessage() {
+      function sendMessage() {
         const message = messageInput.value.trim();
         if (!message || !currentChatUserId) {
           console.warn('Cannot send message: Empty or no user selected');
@@ -1179,7 +1201,6 @@
         }
 
         const tempId = 'temp-' + Date.now();
-        const repliedTo = messageInput.dataset.replyingTo || null;
         const optimisticMsg = {
           id: tempId,
           sender_id: '{{ session.user_id }}',
@@ -1187,8 +1208,7 @@
           message: sanitizeHTML(message),
           timestamp: new Date().toISOString(),
           read: false,
-          replied_to: repliedTo,
-          replied_text: repliedTo ? document.querySelector(`[data-message-id="${repliedTo}"] .message-content p`).textContent : null
+          reply_to: replyingTo
         };
         const messagesContainer = document.getElementById('messages-container');
         const messageDiv = createMessageElement(optimisticMsg, true);
@@ -1196,37 +1216,39 @@
         scrollToBottom();
 
         messageInput.value = '';
-        messageInput.dataset.replyingTo = '';
-        const replyingDiv = document.querySelector('.replying-to');
-        if (replyingDiv) replyingDiv.style.display = 'none';
         messageInput.focus(); // Keep keyboard open after send
 
-        try {
-          const response = await fetch('/send_message', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              to_user_id: currentChatUserId,
-              message: message,
-              replied_to: repliedTo
-            })
-          });
-          const data = await response.json();
-          if (!data.success) {
-            console.error('Failed to send message:', data.error);
-            // Remove optimistic message if failed
+        if (replyingTo && replyPreview) {
+          replyPreview.remove();
+          replyingTo = null;
+        }
+
+        fetch('/send_message', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            to_user_id: currentChatUserId,
+            message: message,
+            reply_to: optimisticMsg.reply_to
+          })
+        }).then(response => response.json())
+          .then(data => {
+            if (!data.success) {
+              console.error('Failed to send message:', data.error);
+              // Remove optimistic message if failed
+              const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
+              if (tempMsg) tempMsg.remove();
+              alert('Failed to send message.');
+            }
+          })
+          .catch(error => {
+            console.error('Error sending message:', error);
             const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
             if (tempMsg) tempMsg.remove();
-            alert('Failed to send message.');
-          }
-        } catch (error) {
-          console.error('Error sending message:', error);
-          const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
-          if (tempMsg) tempMsg.remove();
-          alert('Error sending message.');
-        }
+            alert('Error sending message.');
+          });
       }
 
       function createMessageElement(msg, isSent) {
@@ -1237,8 +1259,13 @@
         const formattedTime = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         let repliedHtml = '';
-        if (msg.replied_text) {
-          repliedHtml = `<div class="replied-message">${msg.replied_text}</div>`;
+        if (msg.reply_to && messagesMap[msg.reply_to]) {
+          const repliedMsg = messagesMap[msg.reply_to];
+          repliedHtml = `
+            <div class="replied-message">
+              <p>${sanitizeHTML(repliedMsg.message.substring(0, 50))}${repliedMsg.message.length > 50 ? '...' : ''}</p>
+            </div>
+          `;
         }
 
         messageDiv.innerHTML = `
@@ -1255,28 +1282,6 @@
         `;
 
         return messageDiv;
-      }
-
-      function replyToMessage(messageId) {
-        const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
-        const messageText = messageElement.querySelector('.message-content p').textContent;
-
-        let replyingDiv = document.querySelector('.replying-to');
-        if (!replyingDiv) {
-          replyingDiv = document.createElement('div');
-          replyingDiv.className = 'replying-to';
-          replyingDiv.innerHTML = '<span></span><button class="cancel-reply"><i class="fas fa-times"></i></button>';
-          document.querySelector('.message-input-container').insertBefore(replyingDiv, document.querySelector('.message-input'));
-          replyingDiv.querySelector('.cancel-reply').addEventListener('click', () => {
-            replyingDiv.style.display = 'none';
-            messageInput.dataset.replyingTo = '';
-          });
-        }
-
-        replyingDiv.querySelector('span').textContent = `Replying to: ${messageText.substring(0, 50)}...`;
-        replyingDiv.style.display = 'block';
-        messageInput.dataset.replyingTo = messageId;
-        messageInput.focus();
       }
 
       messageInput.addEventListener('keypress', (e) => {
@@ -1311,6 +1316,10 @@
             console.log('Messages loaded successfully:', result.messages);
             const messagesContainer = document.getElementById('messages-container');
             messagesContainer.innerHTML = '';
+            messagesMap = {};
+            result.messages.forEach(msg => {
+              messagesMap[msg.id] = msg;
+            });
             result.messages.forEach(msg => {
               const messageElement = createMessageElement(msg, msg.sender_id === '{{ session.user_id }}');
               messagesContainer.appendChild(messageElement);
@@ -1338,6 +1347,8 @@
               chatArea.classList.add('active');
               document.body.classList.add('chat-mode');
               welcomeScreen.style.display = 'none';
+              // Force reflow for iOS
+              chatArea.offsetHeight;
             } else {
               console.log('Desktop view: Showing chat area, hiding welcome screen');
               welcomeScreen.style.display = 'none';
@@ -1374,19 +1385,19 @@
         return messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight <= 50;
       }
 
-      async function deleteMessage(messageId) {
+      function deleteMessage(messageId) {
         if (confirm('Delete this message?')) {
-          try {
-            const response = await fetch('/delete_message', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                message_id: messageId
-              })
-            });
-            const data = await response.json();
+          fetch('/delete_message', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message_id: messageId
+            })
+          })
+          .then(response => response.json())
+          .then(data => {
             if (data.success) {
               const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
               if (messageElement) messageElement.remove();
@@ -1394,11 +1405,30 @@
               console.error('Failed to delete message:', data.error);
               alert('Failed to delete message.');
             }
-          } catch (error) {
+          })
+          .catch(error => {
             console.error('Error deleting message:', error);
             alert('Error deleting message.');
-          }
+          });
         }
+      }
+
+      function replyToMessage(messageId) {
+        if (replyingTo && replyPreview) {
+          replyPreview.remove();
+        }
+        replyingTo = messageId;
+        const repliedMsg = messagesMap[messageId];
+        replyPreview = document.createElement('div');
+        replyPreview.className = 'reply-preview';
+        replyPreview.innerHTML = `Replying to: ${sanitizeHTML(repliedMsg.message.substring(0, 50))}${repliedMsg.message.length > 50 ? '...' : ''} <button class="cancel-reply">x</button>`;
+        const messageInputContainer = document.querySelector('.message-input-container');
+        messageInputContainer.insertBefore(replyPreview, document.querySelector('.message-input'));
+        const cancelBtn = replyPreview.querySelector('.cancel-reply');
+        cancelBtn.addEventListener('click', () => {
+          replyingTo = null;
+          replyPreview.remove();
+        });
       }
 
       function showNewMessageNotice() {
@@ -1426,8 +1456,7 @@
         socket = io({
           auth: {
             user_id: '{{ session.user_id }}'
-          },
-          transports: ['websocket', 'polling']  // Explicit transports for iOS compatibility
+          }
         });
 
         socket.on('connect', () => {
@@ -1469,11 +1498,12 @@
                 return;
               }
             }
+            messagesMap[data.id] = data;
             const messageElement = createMessageElement(data, isSent);
             messagesContainer.appendChild(messageElement);
             if (document.hidden || !isAtBottom()) {
               showNewMessageNotice();
-              if ('Notification' in window && Notification.permission === 'granted') {
+              if (Notification.permission === 'granted') {
                 new Notification('New Message', { body: data.message });
               }
             } else {
@@ -1548,6 +1578,8 @@
             conversationsCol.classList.add('hidden');
             document.body.classList.add('chat-mode');
             welcomeScreen.style.display = 'none';
+            // Force reflow for iOS
+            chatArea.offsetHeight;
           }
         } else {
           chatBackBtn.style.display = 'none';
@@ -1638,6 +1670,8 @@
           chatArea.style.display = 'none';
           conversationsCol.classList.remove('hidden');
           document.body.classList.remove('chat-mode');
+          // Force reflow
+          conversationsCol.offsetHeight;
         } else {
           console.log('Desktop view: Returning to welcome screen');
           chatArea.style.display = 'none';
