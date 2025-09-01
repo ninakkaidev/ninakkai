@@ -4,4 +4,3 @@ Flask-Cors==4.0.0
 pymongo==4.10.1
 pytz
 flask_socketio
-opencv-python
