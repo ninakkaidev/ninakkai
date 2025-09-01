@@ -798,7 +798,7 @@ class MongoService:
                 del n['_id']
                 if n['timestamp'].tzinfo is None:
                     n['timestamp'] = pytz.UTC.localize(n['timestamp'])
-                n['timestamp'] = n['timestamp'].isoformat()
+                n['timestamp'] = n['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
             return notifs
         except Exception as e:
             logger.error(f"Get notifications error: {str(e)}")
@@ -2136,7 +2136,7 @@ def upload_photo():
         logger.warning("No file provided in upload_photo")
         return jsonify({'success': False, 'error': 'No file provided'}), 400
     user = mongo_service.get_user_by_id(session['user_id'])
-    if len(len(user.get('photos', []))) >= 7:
+    if len(user.get('photos', [])) >= 7:
         logger.warning("Maximum photos limit reached")
         return jsonify({'success': False, 'error': 'Maximum 7 photos allowed'}), 400
     try:

@@ -532,7 +532,7 @@
             <div class="photo-slider flex overflow-x-auto pb-2 -mx-2" style="scroll-snap-type: x mandatory;">
                 {% for photo in profile.photos %}
                 <div class="flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative" style="scroll-snap-align: start;">
-                    <img src="{{ photo }}" class="w-full h-full object-cover">
+                    <img src="{{ photo }}" alt="Photo" class="w-full h-full object-cover">
                     <button onclick="deletePhoto('{{ photo }}')" class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
                         <i class="fas fa-times text-xs"></i>
                     </button>
@@ -548,7 +548,7 @@
                     Connections ({{ pending_likers|length }})
                 </button>
                 <button class="tab-btn flex-1 py-3 font-medium text-center border-b-2 border-transparent text-gray-500 hover:text-pink-500" data-tab="notifications">
-                    Notifications
+                    Notifications ({{ notifications | selectattr('read', 'equalto', False) | list | length }})
                 </button>
             </div>
             
