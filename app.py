@@ -1282,7 +1282,7 @@ def age_verification():
             return jsonify({'success': False, 'error': 'No image provided'}), 400
         try:
             api_url = "https://sure-myrilla-mhdashikofficial-61e061ec.koyeb.app/predict"
-            api_key = "a6dda19d-d076-404a-ae47-a4526f054254"
+            api_key = "74303dce-713f-4b91-829e-7e0a6c76a25c"
             headers = {"x-api-key": api_key}
             files = {'image': (file.filename, file.stream, file.mimetype)}
             resp = requests.post(api_url, files=files, headers=headers)
