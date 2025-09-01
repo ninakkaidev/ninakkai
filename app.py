@@ -19,8 +19,7 @@ import cloudinary.api
 import pytz
 import json
 import http.client
-import cv2
-import numpy as np
+import requests
 
 # Configure Cloudinary with explicit credentials and enhanced logging
 def configure_cloudinary():
@@ -65,21 +64,6 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Initialize Cloudinary
 configure_cloudinary()
-
-# Load OpenCV models for age detection
-# Assuming model files are placed in a 'models' directory in the app root
-MODEL_DIR = os.path.join(os.path.dirname(__file__), 'models')
-
-face_proto = os.path.join(MODEL_DIR, "opencv_face_detector.pbtxt")
-face_model = os.path.join(MODEL_DIR, "opencv_face_detector_uint8.pb")
-age_proto = os.path.join(MODEL_DIR, "age_deploy.prototxt")
-age_model = os.path.join(MODEL_DIR, "age_net.caffemodel")
-
-face_net = cv2.dnn.readNet(face_model, face_proto)
-age_net = cv2.dnn.readNet(age_model, age_proto)
-
-MODEL_MEAN_VALUES = (78.4263377603, 87.7689143744, 114.895847746)
-age_list = ['(0-2)', '(4-6)', '(8-12)', '(15-20)', '(25-32)', '(38-43)', '(48-53)', '(60-100)']
 
 class MongoService:
     def __init__(self):
@@ -1297,57 +1281,31 @@ def age_verification():
         if not file:
             return jsonify({'success': False, 'error': 'No image provided'}), 400
         try:
-            # Read the image
-            nparr = np.frombuffer(file.read(), np.uint8)
-            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            if image is None:
-                raise Exception("Invalid image file")
-            
-            # Resize image
-            image = cv2.resize(image, (720, 640))
-            
-            # Face detection
-            fr_h, fr_w = image.shape[:2]
-            blob = cv2.dnn.blobFromImage(image, 1.0, (300, 300), [104, 117, 123], True, False)
-            face_net.setInput(blob)
-            detections = face_net.forward()
-            
-            face_boxes = []
-            for i in range(detections.shape[2]):
-                confidence = detections[0, 0, i, 2]
-                if confidence > 0.7:
-                    x1 = int(detections[0, 0, i, 3] * fr_w)
-                    y1 = int(detections[0, 0, i, 4] * fr_h)
-                    x2 = int(detections[0, 0, i, 5] * fr_w)
-                    y2 = int(detections[0, 0, i, 6] * fr_h)
-                    face_boxes.append([x1, y1, x2, y2])
-            
-            if not face_boxes:
-                return jsonify({'success': False, 'error': 'No face detected. Please try again.'}), 400
-            
-            # Assuming single face for verification
-            if len(face_boxes) > 1:
-                return jsonify({'success': False, 'error': 'Multiple faces detected. Please take a selfie with only your face.'}), 400
-            
-            face_box = face_boxes[0]
-            face = image[max(0, face_box[1]-15):min(face_box[3]+15, image.shape[0]-1),
-                         max(0, face_box[0]-15):min(face_box[2]+15, image.shape[1]-1)]
-            
-            blob = cv2.dnn.blobFromImage(face, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
-            
-            # Predict age
-            age_net.setInput(blob)
-            age_preds = age_net.forward()
-            age_group = age_list[age_preds[0].argmax()]
-            
-            # Parse age group
-            age_lower = int(age_group[1:-1].split('-')[0])
-            
-            if age_lower >= 18:
-                mongo_service.update_user(session['user_id'], {'age_verified': True})
-                return jsonify({'success': True}), 200
-            else:
+            api_url = "https://sure-myrilla-mhdashikofficial-61e061ec.koyeb.app/predict"
+            api_key = "a6dda19d-d076-404a-ae47-a4526f054254"
+            headers = {"x-api-key": api_key}
+            files = {'image': (file.filename, file.stream, file.mimetype)}
+            resp = requests.post(api_url, files=files, headers=headers)
+            if resp.status_code != 200:
+                return jsonify({'success': False, 'error': 'API request failed'}), 500
+            data = resp.json()
+            # Assuming API response: {'age': '(25-32)', 'gender': 'Male'}
+            if 'age' not in data or 'gender' not in data:
+                return jsonify({'success': False, 'error': 'Invalid API response'}), 500
+            age_group = data['age']
+            detected_gender = data['gender'].lower()
+            # Parse age
+            try:
+                age_lower, age_upper = map(int, age_group[1:-1].split('-'))
+            except:
+                return jsonify({'success': False, 'error': 'Invalid age group from API'}), 500
+            user = mongo_service.get_user_by_id(session['user_id'])
+            if detected_gender != user['gender']:
+                return jsonify({'success': False, 'error': 'Detected gender does not match registered gender.'}), 403
+            if age_lower < 18:
                 return jsonify({'success': False, 'error': 'You must be at least 18 years old. If you think this is a mistake, contact joel@ninakkai.com'}), 403
+            mongo_service.update_user(session['user_id'], {'age_verified': True})
+            return jsonify({'success': True}), 200
         except Exception as e:
             logger.error(f"Age verification error: {str(e)}")
             return jsonify({'success': False, 'error': 'Verification failed. Please try again.'}), 500
@@ -2231,4 +2189,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5050, debug=True) 
+    socketio.run(app, host='0.0.0.0', port=5050, debug=True)
