@@ -530,8 +530,10 @@ class MongoService:
 
     def _calculate_scores(self, answers: List[Dict[str, Any]]) -> Dict[str, Any]:
         type_counts = {}
-        mandatory_answers = answers[:10]
+        mandatory_answers = answers[:9]  # Fixed to 9 required questions
         for answer in mandatory_answers:
+            if 'type' not in answer:
+                continue
             answer_type = answer['type']
             type_counts[answer_type] = type_counts.get(answer_type, 0) + 1
         if len(set(type_counts.values())) < len(type_counts):
@@ -541,12 +543,12 @@ class MongoService:
             dominant_type = self._resolve_tie_with_ranking(tied_types, ranked_types)
         else:
             dominant_type = max(type_counts, key=type_counts.get)
-        keeper_seeker = self._determine_keeper_seeker(answers[10:13] if len(answers) > 10 else None)
-        optional_answers = answers[13:] if len(answers) > 13 else []
+        keeper_seeker = self._determine_keeper_seeker(answers[9:12] if len(answers) > 9 else None)  # Adjusted index
+        optional_answers = answers[12:] if len(answers) > 12 else []  # Adjusted index
         optional_boosts = self._calculate_optional_boosts(dominant_type, optional_answers)
         total_mandatory = sum(type_counts.values())
         dominant_score = type_counts.get(dominant_type, 0)
-        dominant_percentage = int((dominant_score / total_mandatory) * 100)
+        dominant_percentage = int((dominant_score / total_mandatory) * 100) if total_mandatory > 0 else 0
         secondary_type = None
         secondary_score = 0
         secondary_percentage = 0
@@ -555,7 +557,7 @@ class MongoService:
             temp_counts.pop(dominant_type)
             secondary_type = max(temp_counts, key=temp_counts.get)
             secondary_score = temp_counts[secondary_type]
-            secondary_percentage = int((secondary_score / total_mandatory) * 100)
+            secondary_percentage = int((secondary_score / total_mandatory) * 100) if total_mandatory > 0 else 0
         profile = {
             'dominant_type': dominant_type,
             'dominant_score': dominant_score,
@@ -593,7 +595,7 @@ class MongoService:
         return tied_types[0]
 
     def _determine_keeper_seeker(self, answers: List[Dict[str, Any]]) -> Optional[str]:
-        if not answers or len(answers) < 3:
+        if not answers:
             return None
         keeper_seeker_map = {
             "A": "Keeper",
@@ -604,20 +606,26 @@ class MongoService:
         keeper_count = 0
         seeker_count = 0
         for answer in answers:
-            classification = keeper_seeker_map.get(answer['answer'][0], None)
-            if classification == "Keeper":
-                keeper_count += 1
-            elif classification == "Seeker":
-                seeker_count += 1
-        if keeper_count >= 2:
+            if 'answer' not in answer or not answer['answer']:
+                continue
+            first_char = answer['answer'][0].upper()
+            if first_char in keeper_seeker_map:
+                classification = keeper_seeker_map[first_char]
+                if classification == "Keeper":
+                    keeper_count += 1
+                elif classification == "Seeker":
+                    seeker_count += 1
+        if keeper_count > seeker_count:
             return "Keeper"
-        elif seeker_count >= 2:
+        elif seeker_count > keeper_count:
             return "Seeker"
         return None
 
     def _calculate_optional_boosts(self, dominant_type: str, optional_answers: List[Dict[str, Any]]) -> Dict[str, int]:
         boosts = {}
         for answer in optional_answers:
+            if 'type' not in answer:
+                continue
             answer_type = answer['type']
             if answer_type == dominant_type:
                 boosts[dominant_type] = boosts.get(dominant_type, 0) + 1
