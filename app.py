@@ -19,6 +19,8 @@ import cloudinary.api
 import pytz
 import json
 import http.client
+import cv2
+import numpy as np
 
 # Configure Cloudinary with explicit credentials and enhanced logging
 def configure_cloudinary():
@@ -64,6 +66,21 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Initialize Cloudinary
 configure_cloudinary()
 
+# Load OpenCV models for age detection
+# Assuming model files are placed in a 'models' directory in the app root
+MODEL_DIR = os.path.join(os.path.dirname(__file__), 'models')
+
+face_proto = os.path.join(MODEL_DIR, "opencv_face_detector.pbtxt")
+face_model = os.path.join(MODEL_DIR, "opencv_face_detector_uint8.pb")
+age_proto = os.path.join(MODEL_DIR, "age_deploy.prototxt")
+age_model = os.path.join(MODEL_DIR, "age_net.caffemodel")
+
+face_net = cv2.dnn.readNet(face_model, face_proto)
+age_net = cv2.dnn.readNet(age_model, age_proto)
+
+MODEL_MEAN_VALUES = (78.4263377603, 87.7689143744, 114.895847746)
+age_list = ['(0-2)', '(4-6)', '(8-12)', '(15-20)', '(25-32)', '(38-43)', '(48-53)', '(60-100)']
+
 class MongoService:
     def __init__(self):
         self.uri = os.getenv('MONGODB_URI', "mongodb+srv://ninakkaiforyou:9t2GADiJUf8xFhDZ@cluster0.fdoiudh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
@@ -85,8 +102,7 @@ class MongoService:
         limit = self.db['rate_limits'].find_one({'key': key})
         if limit:
             last_reset = limit['last_reset']
-            if last_reset.tzinfo is None:
-                last_reset = pytz.UTC.localize(last_reset)
+            last_reset = pytz.UTC.localize(last_reset) if last_reset.tzinfo is None else last_reset
             if now - last_reset > period:
                 self.db['rate_limits'].update_one(
                     {'key': key},
@@ -144,7 +160,7 @@ class MongoService:
                 'blocked_users': [],
                 'profile_complete': False,
                 'email_verified': False,
-                'age_verified': False,  # Added age_verified field
+                'age_verified': False,
                 'verification_token': verification_token,
                 'created_at': datetime.now(timezone.utc),
                 'religion': None,
@@ -386,7 +402,6 @@ class MongoService:
                                 include = False
                             elif current_importance == 'medium' and not match_rel and not current_interfaith:
                                 include = False
-                            # For low, include but perhaps lower percentage
                             elif current_importance == 'low' and not match_rel:
                                 match_percentage = max(0, match_percentage - 10)  # Slight penalty
 
@@ -686,7 +701,6 @@ class MongoService:
             return {'success': False, 'error': str(e)}
 
     def has_liked_user(self, user_id: str, matched_user_id: str) -> bool:
-        """Check if a user has already liked another"""
         try:
             like = self.likes.find_one({'user_id': user_id, 'matched_user_id': matched_user_id})
             return bool(like)
@@ -695,7 +709,6 @@ class MongoService:
             return False
 
     def has_passed_user(self, user_id: str, passed_user_id: str) -> bool:
-        """Check if a user has already passed on another user"""
         try:
             passed = self.passes.find_one({'user_id': user_id, 'passed_user_id': passed_user_id})
             return bool(passed)
@@ -704,7 +717,6 @@ class MongoService:
             return False
 
     def get_filtered_matches(self, user_id: str) -> List[Dict[str, Any]]:
-        """Get matches excluding liked and passed users"""
         try:
             current_user = self.get_user_by_id(user_id)
             if not current_user:
@@ -754,7 +766,6 @@ class MongoService:
             return []
 
     def unlike_user(self, user_id: str, matched_user_id: str) -> Dict[str, Any]:
-        """Remove a like from a user"""
         try:
             result = self.likes.delete_one({'user_id': user_id, 'matched_user_id': matched_user_id})
             is_match = self.is_matched(user_id, matched_user_id)
@@ -1286,39 +1297,58 @@ def age_verification():
         if not file:
             return jsonify({'success': False, 'error': 'No image provided'}), 400
         try:
-            # Upload to Cloudinary temporarily
-            upload_result = cloudinary.uploader.upload(file, folder="temp_age_verify")
-            url = upload_result['secure_url']
-            public_id = upload_result['public_id']
-            # Send to Age Detector API
-            conn = http.client.HTTPSConnection("age-detector.p.rapidapi.com")
-            payload = json.dumps({"url": url})
-            headers = {
-                'x-rapidapi-key': "3ced0e7048msh6cc7c5758e8cccc09p1ab6bajsn7456d8d95695",
-                'x-rapidapi-host': "age-detector.p.rapidapi.com",
-                'Content-Type': "application/json"
-            }
-            conn.request("POST", "/age-detection", payload, headers)
-            res = conn.getresponse()
-            if res.status != 200:
-                error_data = res.read().decode("utf-8", errors='ignore')
-                raise Exception(f"API error {res.status} {res.reason}: {error_data}")
-            data = res.read().decode("utf-8")
-            ages = json.loads(data)
-            # Delete the temporary image from Cloudinary
-            cloudinary.uploader.destroy(public_id)
-            if not ages:
+            # Read the image
+            nparr = np.frombuffer(file.read(), np.uint8)
+            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if image is None:
+                raise Exception("Invalid image file")
+            
+            # Resize image
+            image = cv2.resize(image, (720, 640))
+            
+            # Face detection
+            fr_h, fr_w = image.shape[:2]
+            blob = cv2.dnn.blobFromImage(image, 1.0, (300, 300), [104, 117, 123], True, False)
+            face_net.setInput(blob)
+            detections = face_net.forward()
+            
+            face_boxes = []
+            for i in range(detections.shape[2]):
+                confidence = detections[0, 0, i, 2]
+                if confidence > 0.7:
+                    x1 = int(detections[0, 0, i, 3] * fr_w)
+                    y1 = int(detections[0, 0, i, 4] * fr_h)
+                    x2 = int(detections[0, 0, i, 5] * fr_w)
+                    y2 = int(detections[0, 0, i, 6] * fr_h)
+                    face_boxes.append([x1, y1, x2, y2])
+            
+            if not face_boxes:
                 return jsonify({'success': False, 'error': 'No face detected. Please try again.'}), 400
-            age = ages[0]['age']
-            if age >= 18:
+            
+            # Assuming single face for verification
+            if len(face_boxes) > 1:
+                return jsonify({'success': False, 'error': 'Multiple faces detected. Please take a selfie with only your face.'}), 400
+            
+            face_box = face_boxes[0]
+            face = image[max(0, face_box[1]-15):min(face_box[3]+15, image.shape[0]-1),
+                         max(0, face_box[0]-15):min(face_box[2]+15, image.shape[1]-1)]
+            
+            blob = cv2.dnn.blobFromImage(face, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
+            
+            # Predict age
+            age_net.setInput(blob)
+            age_preds = age_net.forward()
+            age_group = age_list[age_preds[0].argmax()]
+            
+            # Parse age group
+            age_lower = int(age_group[1:-1].split('-')[0])
+            
+            if age_lower >= 18:
                 mongo_service.update_user(session['user_id'], {'age_verified': True})
                 return jsonify({'success': True}), 200
             else:
                 return jsonify({'success': False, 'error': 'You must be at least 18 years old. If you think this is a mistake, contact joel@ninakkai.com'}), 403
         except Exception as e:
-            # Attempt to delete if public_id exists
-            if 'public_id' in locals():
-                cloudinary.uploader.destroy(public_id)
             logger.error(f"Age verification error: {str(e)}")
             return jsonify({'success': False, 'error': 'Verification failed. Please try again.'}), 500
 
@@ -1902,7 +1932,6 @@ def profile():
 @app.route('/questions', methods=['GET'])
 def questions():
     logger.debug(f"Session in questions: {session}")
-    logger.debug(f"Incoming cookies: {request.cookies}")
     if 'user_id' not in session:
         logger.debug("No user_id in session for /questions")
         return redirect(url_for('auth'))
@@ -1934,7 +1963,7 @@ def submit_quiz():
         processed_answers = []
         required_questions = [
             {
-                'answers': ["Safe and calm inside", "Excited and full of butterflies", "Like I've found someone truly rare", "Scared of being too vulnerable"],
+                'answers': ["Safe and calm inside", "Excited and full of butterflies", "Like I've found someone truly rare", "Scared of being being too vulnerable"],
                 'types': ["👂 Listener", "💘 Romantic", "🌙 Dreamer", "🛡️ Protector"]
             },
             {
@@ -2202,4 +2231,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5050, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5050, debug=True) 
