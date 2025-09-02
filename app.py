@@ -1281,26 +1281,12 @@ def age_verification():
         if not file:
             return jsonify({'success': False, 'error': 'No image provided'}), 400
         try:
-            # Upload to Cloudinary temporarily
-            file.seek(0)  # Reset stream position
-            unique_id = uuid.uuid4().hex
-            upload_result = cloudinary.uploader.upload(
-                file,
-                folder="temp_age_verify",
-                public_id=f"temp_{unique_id}"
-            )
-            url = upload_result['secure_url']
-            public_id = upload_result['public_id']
-            
             api_url = "https://sure-myrilla-mhdashikofficial-61e061ec.koyeb.app/predict"
             api_key = "74303dce-713f-4b91-829e-7e0a6c76a25c"
             headers = {"x-api-key": api_key}
-            params = {'image_url': url}
-            resp = requests.post(api_url, params=params, headers=headers)
-            
-            # Delete temporary image from Cloudinary
-            cloudinary.uploader.destroy(public_id)
-            
+            file.seek(0)  # Reset file pointer if needed
+            files = {'file': (file.filename, file.read(), file.mimetype)}
+            resp = requests.post(api_url, files=files, headers=headers)
             if resp.status_code != 200:
                 return jsonify({'success': False, 'error': 'API request failed'}), 500
             data = resp.json()
@@ -1326,9 +1312,6 @@ def age_verification():
             return jsonify({'success': True}), 200
         except Exception as e:
             logger.error(f"Age verification error: {str(e)}")
-            # Clean up if upload succeeded but error occurred
-            if 'public_id' in locals():
-                cloudinary.uploader.destroy(public_id)
             return jsonify({'success': False, 'error': 'Verification failed. Please try again.'}), 500
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
