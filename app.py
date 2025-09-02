@@ -928,7 +928,6 @@ class ChatService:
         try:
             result = self.messages.delete_one({'_id': ObjectId(message_id)})
             if result.deleted_count > 0:
-                # Emit to both
                 socketio.emit('message_deleted', {'message_id': message_id}, room=sender_id)
                 socketio.emit('message_deleted', {'message_id': message_id}, room=receiver_id)
             return {'success': result.deleted_count > 0}
@@ -1421,17 +1420,14 @@ def explore():
         profile = {
             'id': user['id'],
             'full_name': user['full_name'],
-            'email': user['email'],
-            'age': user.get('age'),
-            'gender': user.get('gender'),
             'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
             'occupation': user.get('occupation', 'N/A'),
             'bio': user.get('bio', 'No bio available'),
             'interests': user.get('interests', []),
+            'distance': 'N/A',
+            'rating': '4.5',
             'dominant_type': quiz_result['scores']['dominant_type'],
-            'dominant_percentage': quiz_result['scores']['dominant_percentage'],
-            'secondary_type': quiz_result['scores']['secondary_type'],
-            'secondary_percentage': quiz_result['scores']['secondary_percentage']
+            'match_percentage': 50
         }
         
         # Render with empty data, load asynchronously
@@ -1630,32 +1626,24 @@ def user_profile(user_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @socketio.on('connect')
-def handle_connect():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        join_room(user_id)
-        logger.info(f"User {user_id} connected and joined room")
+def handle_connect(auth):
+    if auth and auth.get('user_id'):
+        join_room(auth['user_id'])
+        logger.info(f"User {auth['user_id']} connected and joined room")
     else:
         logger.warning("Unauthorized WebSocket connection attempt")
-        return False  # Reject connection
+        return False
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        leave_room(user_id)
-        logger.info(f"User {user_id} disconnected and left room")
+    logger.info("User disconnected")
 
-@app.route('/send_typing', methods=['POST'])
-def send_typing():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    data = request.get_json()
+@socketio.on('typing')
+def handle_typing(data):
+    sender_id = data.get('sender_id')
     to_user_id = data.get('to_user_id')
-    if not to_user_id:
-        return jsonify({'success': False, 'error': 'Missing to_user_id'}), 400
-    socketio.emit('user_typing', {'sender_id': session['user_id']}, room=to_user_id)
-    return jsonify({'success': True})
+    if sender_id and to_user_id:
+        socketio.emit('user_typing', {'sender_id': sender_id}, room=to_user_id)
 
 @app.route('/chat')
 def chat():
@@ -2205,4 +2193,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5050, debug=True) 
+    socketio.run(app, host='0.0.0.0', port=5050, debug=True)

@@ -1288,15 +1288,7 @@
       // Typing Indicator
       messageInput.addEventListener('input', debounce(() => {
         if (currentChatUserId) {
-          fetch('/send_typing', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              to_user_id: currentChatUserId
-            })
-          }).catch(error => console.error('Error sending typing:', error));
+          socket.emit('typing', {sender_id: '{{ current_user_id }}', to_user_id: currentChatUserId});
         }
       }, 500));
 
@@ -1380,7 +1372,7 @@
             const response = await fetch('/delete_message', {
               method: 'POST',
               headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
               },
               body: JSON.stringify({
                 message_id: messageId
@@ -1425,7 +1417,7 @@
       function setupWebSocket() {
         socket = io({
           auth: {
-            user_id: '{{ session.user_id }}'
+            user_id: '{{ current_user_id }}'
           },
           transports: ['websocket', 'polling']  // Explicit transports for iOS compatibility
         });
