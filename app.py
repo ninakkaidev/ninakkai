@@ -1284,16 +1284,22 @@ def age_verification():
             api_url = "https://sure-myrilla-mhdashikofficial-61e061ec.koyeb.app/predict"
             api_key = "74303dce-713f-4b91-829e-7e0a6c76a25c"
             headers = {"x-api-key": api_key}
-            files = {'image': (file.filename, file.stream, file.mimetype)}
+            # Changed key from 'image' to 'file' to match FastAPI parameter
+            files = {'file': (file.filename, file.stream, file.mimetype)}
             resp = requests.post(api_url, files=files, headers=headers)
             if resp.status_code != 200:
                 return jsonify({'success': False, 'error': 'API request failed'}), 500
             data = resp.json()
-            # Assuming API response: {'age': '(25-32)', 'gender': 'Male'}
-            if 'age' not in data or 'gender' not in data:
+            # Adjusted parsing to match API response structure: {"results": [{"age": "...", "gender": "..."}]}
+            results = data.get('results', [])
+            if not results:
+                return jsonify({'success': False, 'error': 'No face detected in the image'}), 400
+            # Take the first detected face (assuming single user in photo)
+            prediction = results[0]
+            if 'age' not in prediction or 'gender' not in prediction:
                 return jsonify({'success': False, 'error': 'Invalid API response'}), 500
-            age_group = data['age']
-            detected_gender = data['gender'].lower()
+            age_group = prediction['age']
+            detected_gender = prediction['gender'].lower()
             # Parse age
             try:
                 age_lower, age_upper = map(int, age_group[1:-1].split('-'))
@@ -2189,4 +2195,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5050, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5050, debug=True) 
