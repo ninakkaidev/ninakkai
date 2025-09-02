@@ -835,6 +835,7 @@
       border-radius: 6px;
       margin-bottom: 6px;
       font-size: 0.75rem;
+      font-style: italic;
       color: inherit;
       opacity: 0.8;
     }
@@ -1182,7 +1183,7 @@
         const repliedTo = messageInput.dataset.replyingTo || null;
         const optimisticMsg = {
           id: tempId,
-          sender_id: '{{ session.user_id }}',
+          sender_id: '{{ current_user_id }}',
           receiver_id: currentChatUserId,
           message: sanitizeHTML(message),
           timestamp: new Date().toISOString(),
@@ -1238,18 +1239,18 @@
 
         let repliedHtml = '';
         if (msg.replied_text) {
-          repliedHtml = `<div class="replied-message">${msg.replied_text}</div>`;
+          repliedHtml = `<div class="replied-message">${sanitizeHTML(msg.replied_text)}</div>`;
         }
 
         messageDiv.innerHTML = `
           <div class="message-content">
             ${repliedHtml}
-            <p>${msg.message}</p>
+            <p>${sanitizeHTML(msg.message)}</p>
             <span class="message-time">${formattedTime}</span>
             ${isSent ? `<span class="message-status">${msg.read ? 'Seen' : ''}</span>` : ''}
             <div class="message-actions">
-              <button title="Reply" onclick="replyToMessage('${msg.id}')"><i class="fas fa-reply"></i></button>
-              ${isSent ? `<button title="Delete" onclick="deleteMessage('${msg.id}')"><i class="fas fa-trash"></i></button>` : ''}
+              <button title="Reply" class="reply-btn" data-message-id="${msg.id}"><i class="fas fa-reply"></i></button>
+              ${isSent ? `<button title="Delete" class="delete-btn" data-message-id="${msg.id}"><i class="fas fa-trash"></i></button>` : ''}
             </div>
           </div>
         `;
@@ -1304,7 +1305,7 @@
             const messagesContainer = document.getElementById('messages-container');
             messagesContainer.innerHTML = '';
             result.messages.forEach(msg => {
-              const messageElement = createMessageElement(msg, msg.sender_id === '{{ session.user_id }}');
+              const messageElement = createMessageElement(msg, msg.sender_id === '{{ current_user_id }}');
               messagesContainer.appendChild(messageElement);
             });
             scrollToBottom();
@@ -1428,14 +1429,14 @@
 
         socket.on('new_message', (data) => {
           console.log('New message received:', data);
-          const otherId = data.sender_id === '{{ session.user_id }}' ? data.receiver_id : data.sender_id;
+          const otherId = data.sender_id === '{{ current_user_id }}' ? data.receiver_id : data.sender_id;
           const conv = document.querySelector(`.conversation[data-user-id="${otherId}"]`);
           if (conv) {
             conv.querySelector('.last-message').textContent = data.message;
             const timeEl = conv.querySelector('.time');
             timeEl.textContent = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             timeEl.dataset.isoTime = data.timestamp;
-            if (data.receiver_id === '{{ session.user_id }}') {
+            if (data.receiver_id === '{{ current_user_id }}') {
               if (otherId !== currentChatUserId) {
                 let unreadEl = conv.querySelector('.unread-dot');
                 if (!unreadEl) {
@@ -1448,7 +1449,7 @@
             conv.parentNode.prepend(conv);
           }
           if (currentChatUserId === otherId) {
-            const isSent = data.sender_id === '{{ session.user_id }}';
+            const isSent = data.sender_id === '{{ current_user_id }}';
             const messagesContainer = document.getElementById('messages-container');
             if (isSent) {
               const tempMessages = messagesContainer.querySelectorAll('[data-message-id^="temp-"]');
@@ -1599,6 +1600,23 @@
       });
 
       handleResize();
+
+      // Event Delegation for Message Actions
+      messagesContainer.addEventListener('click', (e) => {
+        const replyBtn = e.target.closest('.reply-btn');
+        if (replyBtn) {
+          const id = replyBtn.dataset.messageId;
+          replyToMessage(id);
+          return;
+        }
+
+        const deleteBtn = e.target.closest('.delete-btn');
+        if (deleteBtn) {
+          const id = deleteBtn.dataset.messageId;
+          deleteMessage(id);
+          return;
+        }
+      });
 
       // Conversation Click Handler
       document.querySelectorAll('.conversation').forEach(conv => {
