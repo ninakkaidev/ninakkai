@@ -1268,18 +1268,30 @@ def verify_email_endpoint():
 
 @app.route('/age-verification', methods=['GET', 'POST'])
 def age_verification():
-    if 'user_id' not in session:
-        return redirect(url_for('auth'))
-    user = mongo_service.get_user_by_id(session['user_id'])
-    if user.get('age_verified', False):
-        quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
-        return redirect(url_for('explore') if quiz_completed else url_for('questions'))
     if request.method == 'GET':
+        if 'user_id' not in session:
+            return redirect(url_for('auth'))
+        user = mongo_service.get_user_by_id(session['user_id'])
+        if user.get('age_verified', False):
+            quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
+            return redirect(url_for('explore') if quiz_completed else url_for('questions'))
         return render_template('age_verification.html')
+
     if request.method == 'POST':
+        # For POST, always return JSON – no redirects
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'error': 'Session expired. Please log in again.', 'redirect': url_for('auth')}), 401
+        
+        user = mongo_service.get_user_by_id(session['user_id'])
+        if user.get('age_verified', False):
+            quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
+            redirect_to = url_for('explore') if quiz_completed else url_for('questions')
+            return jsonify({'success': True, 'already_verified': True, 'redirect': redirect_to}), 200
+
         file = request.files.get('image')
         if not file:
             return jsonify({'success': False, 'error': 'No image provided'}), 400
+
         try:
             api_url = "https://sure-myrilla-mhdashikofficial-61e061ec.koyeb.app/predict"
             api_key = "74303dce-713f-4b91-829e-7e0a6c76a25c"
@@ -1309,7 +1321,7 @@ def age_verification():
             if age_lower < 18:
                 return jsonify({'success': False, 'error': 'You must be at least 18 years old. If you think this is a mistake, contact joel@ninakkai.com'}), 403
             mongo_service.update_user(session['user_id'], {'age_verified': True})
-            return jsonify({'success': True}), 200
+            return jsonify({'success': True, 'redirect': url_for('questions')}), 200
         except Exception as e:
             logger.error(f"Age verification error: {str(e)}")
             return jsonify({'success': False, 'error': 'Verification failed. Please try again.'}), 500
