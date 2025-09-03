@@ -1,5 +1,5 @@
 import eventlet
-eventlet.monkey_patch()  # Enable full monkey patching, including threads, to ensure compatibility
+eventlet.monkey_patch(thread=False)  # Disable thread patching to avoid Werkzeug local issues
 
 from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory, jsonify, Response
 from flask_cors import CORS
@@ -62,8 +62,8 @@ app.config.update(
     SESSION_COOKIE_DOMAIN=None
 )
 
-# Initialize SocketIO with increased logging and reconnection support
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', ping_timeout=60, ping_interval=25, logger=True, engineio_logger=True)
+# Initialize SocketIO (use 'eventlet' async_mode for better real-time performance)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', ping_timeout=60, ping_interval=25)
 
 # Initialize Cloudinary
 configure_cloudinary()
@@ -192,18 +192,6 @@ class MongoService:
         except Exception as e:
             logger.error(f"Get user by id error: {str(e)}")
             return None
-
-    def get_users_by_ids(self, ids: List[str]) -> List[Dict[str, Any]]:
-        try:
-            obj_ids = [ObjectId(id) for id in ids]
-            users = list(self.users.find({'_id': {'$in': obj_ids}}))
-            for u in users:
-                u['id'] = str(u['_id'])
-                del u['_id']
-            return users
-        except Exception as e:
-            logger.error(f"Get users by ids error: {str(e)}")
-            return []
 
     def get_user_by_verification_token(self, token: str) -> Optional[Dict[str, Any]]:
         try:
@@ -883,15 +871,6 @@ class ChatService:
             # Emit to both sender and receiver rooms
             socketio.emit('new_message', msg_data, room=sender_id)
             socketio.emit('new_message', msg_data, room=receiver_id)
-            # Additionally, emit an update for conversation list
-            update_data = {
-                'conversation_id': sender_id if msg_data['receiver_id'] == sender_id else msg_data['receiver_id'],
-                'last_message': message,
-                'time': msg_data['timestamp'],
-                'unread': 1 if not msg_data['read'] else 0
-            }
-            socketio.emit('update_conversation', update_data, room=sender_id)
-            socketio.emit('update_conversation', update_data, room=receiver_id)
             return {'success': True, 'message_id': msg_data['id']}
         except Exception as e:
             logger.error(f"Send message error: {str(e)}")
@@ -941,7 +920,6 @@ class ChatService:
                 del msg['_id']
                 if msg['timestamp'].tzinfo is None:
                     msg['timestamp'] = pytz.UTC.localize(msg['timestamp'])
-                msg['timestamp'] = msg['timestamp'].isoformat()
                 return msg
             return None
         except Exception as e:
@@ -961,17 +939,6 @@ class ChatService:
         except Exception as e:
             logger.error(f"Get unread per user error: {str(e)}")
             return 0
-
-    def get_unread_counts(self, user_id: str) -> Dict[str, int]:
-        try:
-            unreads = list(self.messages.aggregate([
-                {'$match': {'receiver_id': user_id, 'read': False}},
-                {'$group': {'_id': '$sender_id', 'count': {'$sum': 1}}}
-            ]))
-            return {str(u['_id']): u['count'] for u in unreads}
-        except Exception as e:
-            logger.error(f"Get unread counts error: {str(e)}")
-            return {}
 
     def delete_message(self, message_id: str, sender_id: str, receiver_id: str) -> Dict[str, Any]:
         try:
@@ -1730,42 +1697,20 @@ def chat():
         }
         
         matched_user_ids = mongo_service.get_matched_users(current_user_id)
-        users = mongo_service.get_users_by_ids(matched_user_ids)
-        users_dict = {u['id']: u for u in users}
-        unread_counts = chat_service.get_unread_counts(current_user_id)
-        unread_count = sum(unread_counts.values())
-        matched_obj_ids = [ObjectId(id) for id in matched_user_ids]
-        last_msgs_agg = list(chat_service.messages.aggregate([
-            {'$match': {'$or': [
-                {'sender_id': current_user_id, 'receiver_id': {'$in': matched_user_ids}},
-                {'sender_id': {'$in': matched_user_ids}, 'receiver_id': current_user_id}
-            ]}},
-            {'$sort': {'timestamp': -1}},
-            {'$group': {'_id': {'$cond': [{'$eq': ['$sender_id', current_user_id]}, '$receiver_id', '$sender_id']}, 'last_msg': {'$first': '$$ROOT'}}}
-        ]))
-        last_msgs_dict = {}
-        for m in last_msgs_agg:
-            conv_id = m['_id']
-            msg = m['last_msg']
-            msg['id'] = str(msg['_id'])
-            del msg['_id']
-            if msg['timestamp'].tzinfo is None:
-                msg['timestamp'] = pytz.UTC.localize(msg['timestamp'])
-            msg['timestamp'] = msg['timestamp'].isoformat()
-            last_msgs_dict[conv_id] = msg
+        unread_count = chat_service.get_unread_count(current_user_id)
         conversations = []
         for match_id in matched_user_ids:
-            user = users_dict.get(match_id)
+            user = mongo_service.get_user_by_id(match_id)
             if user:
-                last_msg = last_msgs_dict.get(match_id)
-                unread = unread_counts.get(match_id, 0)
+                last_msg = chat_service.get_last_message(current_user_id, match_id)
+                unread = chat_service.get_unread_count_per_user(current_user_id, match_id)
                 conv = {
                     'id': user['id'],
                     'full_name': user['full_name'],
                     'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
                     'last_message': last_msg['message'] if last_msg else 'Start chatting!',
-                    'time': last_msg['timestamp'] if last_msg else '',
-                    'sort_time': datetime.fromisoformat(last_msg['timestamp']) if last_msg else datetime.min.replace(tzinfo=timezone.utc),
+                    'time': last_msg['timestamp'].isoformat() if last_msg else '',
+                    'sort_time': last_msg['timestamp'] if last_msg else datetime.min.replace(tzinfo=timezone.utc),
                     'unread': unread
                 }
                 conversations.append(conv)
@@ -2263,4 +2208,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5050, debug=True) 
+    socketio.run(app, host='0.0.0.0', port=5050, debug=True)
