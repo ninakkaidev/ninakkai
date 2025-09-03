@@ -1,5 +1,5 @@
 import eventlet
-eventlet.monkey_patch(thread=False)  # Disable thread patching to avoid Werkzeug local issues
+eventlet.monkey_patch()  # Enable full monkey patching, including threads, to ensure compatibility
 
 from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory, jsonify, Response
 from flask_cors import CORS
@@ -62,8 +62,8 @@ app.config.update(
     SESSION_COOKIE_DOMAIN=None
 )
 
-# Initialize SocketIO (use 'eventlet' async_mode for better real-time performance)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', ping_timeout=60, ping_interval=25)
+# Initialize SocketIO with increased logging and reconnection support
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', ping_timeout=60, ping_interval=25, logger=True, engineio_logger=True)
 
 # Initialize Cloudinary
 configure_cloudinary()
@@ -871,6 +871,15 @@ class ChatService:
             # Emit to both sender and receiver rooms
             socketio.emit('new_message', msg_data, room=sender_id)
             socketio.emit('new_message', msg_data, room=receiver_id)
+            # Additionally, emit an update for conversation list
+            update_data = {
+                'conversation_id': sender_id if msg_data['receiver_id'] == sender_id else msg_data['receiver_id'],
+                'last_message': message,
+                'time': msg_data['timestamp'],
+                'unread': 1 if not msg_data['read'] else 0
+            }
+            socketio.emit('update_conversation', update_data, room=sender_id)
+            socketio.emit('update_conversation', update_data, room=receiver_id)
             return {'success': True, 'message_id': msg_data['id']}
         except Exception as e:
             logger.error(f"Send message error: {str(e)}")
