@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch(thread=False)  # Disable thread patching to avoid Werkzeug local issues
+
 from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory, jsonify, Response
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room, leave_room
@@ -20,13 +23,6 @@ import pytz
 import json
 import http.client
 import requests
-
-# For production WebSocket support (add this)
-try:
-    import eventlet
-    eventlet.monkey_patch()
-except ImportError:
-    pass  # Assume dev environment
 
 # Configure Cloudinary with explicit credentials and enhanced logging
 def configure_cloudinary():
@@ -66,8 +62,8 @@ app.config.update(
     SESSION_COOKIE_DOMAIN=None
 )
 
-# Initialize SocketIO (for production, use eventlet or gevent as worker)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')  # Use 'gevent' if preferred
+# Initialize SocketIO (use 'threading' async_mode for compatibility in serverless)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # Initialize Cloudinary
 configure_cloudinary()
@@ -75,7 +71,7 @@ configure_cloudinary()
 class MongoService:
     def __init__(self):
         self.uri = os.getenv('MONGODB_URI', "mongodb+srv://ninakkaiforyou:9t2GADiJUf8xFhDZ@cluster0.fdoiudh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-        self.client = MongoClient(self.uri)
+        self.client = MongoClient(self.uri, tlsAllowInvalidCertificates=True)
         try:
             self.client.admin.command('ping')
             logger.info("MongoDB connection successful")
@@ -841,7 +837,7 @@ class MongoService:
 class ChatService:
     def __init__(self):
         self.uri = "mongodb+srv://infoqiooo:Gjresr7SikhBmM5U@cluster0.hyzcpcz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-        self.client = MongoClient(self.uri)
+        self.client = MongoClient(self.uri, tlsAllowInvalidCertificates=True)
         try:
             self.client.admin.command('ping')
             logger.info("Chat MongoDB connection successful")
