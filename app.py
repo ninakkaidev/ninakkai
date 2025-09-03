@@ -1,5 +1,5 @@
 import eventlet
-eventlet.monkey_patch()
+eventlet.monkey_patch(thread=False)  # Disable thread patching to avoid Werkzeug local issues
 
 from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory, jsonify, Response
 from flask_cors import CORS
