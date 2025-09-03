@@ -862,7 +862,7 @@ class ChatService:
                     msg_data['replied_to'] = replied_to
                     msg_data['replied_text'] = replied_msg['message']
             result = self.messages.insert_one(msg_data)
-            msg_data['id'] = str(result.inserted_id)
+            msg_data["id"] = str(result.inserted_id)
             del msg_data['_id']
             msg_data['timestamp'] = msg_data['timestamp'].isoformat()
             # Emit to both sender and receiver rooms
@@ -1618,7 +1618,6 @@ def user_profile(user_id):
             'occupation': user.get('occupation', 'N/A'),
             'bio': user.get('bio', 'No bio available'),
             'interests': user.get('interests', []),
-            'photos': user.get('photos', []),
             'distance': 'N/A',
             'rating': '4.5',
             'match_percentage': 50,
@@ -1803,7 +1802,6 @@ def profile():
         if not user:
             return render_template('profile.html', profile={}, pending_likers=[], notifications=[])
         quiz_result = mongo_service.get_quiz_results(session['user_id'])
-        # Define personalities dict
         personalities = {
             '🌿 Nurturer': {
                 'dominant_type': '🌿 Nurturer',
