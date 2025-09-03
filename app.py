@@ -467,6 +467,19 @@ class MongoService:
             if is_match:
                 self.add_notification(user_id, f"You matched with {liked['full_name']}", 'match', matched_user_id)
                 self.add_notification(matched_user_id, f"You matched with {liker['full_name']}", 'match', user_id)
+                # Emit new_match to both users
+                match_data_for_user = {
+                    'match_id': matched_user_id,
+                    'full_name': liked['full_name'],
+                    'image': liked.get('image', 'https://randomuser.me/api/portraits/women/44.jpg')
+                }
+                socketio.emit('new_match', match_data_for_user, room=user_id)
+                match_data_for_matched = {
+                    'match_id': user_id,
+                    'full_name': liker['full_name'],
+                    'image': liker.get('image', 'https://randomuser.me/api/portraits/women/44.jpg')
+                }
+                socketio.emit('new_match', match_data_for_matched, room=matched_user_id)
             logger.info(f"Like successful, like_id: {str(result.inserted_id)}, is_match: {is_match}")
             response = {'success': True, 'like_id': str(result.inserted_id), 'is_match': is_match}
             if likes_remaining is not None:

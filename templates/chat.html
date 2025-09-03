@@ -1447,6 +1447,43 @@
               }
             }
             conv.parentNode.prepend(conv);
+          } else {
+            // If conversation doesn't exist, create it (fallback)
+            const conversationsList = document.querySelector('.conversations-list');
+            const newConv = document.createElement('div');
+            newConv.className = 'conversation';
+            newConv.dataset.userId = otherId;
+            // Note: We need user info, so fetch it
+            fetch(`/user-profile/${otherId}`)
+              .then(res => res.json())
+              .then(result => {
+                if (result.success) {
+                  const user = result.user;
+                  newConv.innerHTML = `
+                    <div class="conversation-pic">
+                      <img src="${user.image || 'https://randomuser.me/api/portraits/women/44.jpg'}" alt="Profile">
+                    </div>
+                    <div class="conversation-info">
+                      <div class="conversation-header">
+                        <h5>${user.full_name || 'Unknown'}</h5>
+                        <span class="time" data-iso-time="${data.timestamp}">${new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <p class="last-message">${data.message}</p>
+                  `;
+                  if (data.receiver_id === '{{ current_user_id }}' && otherId !== currentChatUserId) {
+                    const unreadEl = document.createElement('span');
+                    unreadEl.className = 'unread-dot';
+                    newConv.appendChild(unreadEl);
+                  }
+                  newConv.addEventListener('click', async () => {
+                    document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
+                    newConv.classList.add('active');
+                    await loadMessages(otherId);
+                    navigationHistory.push('chat');
+                  });
+                  conversationsList.prepend(newConv);
+                }
+              });
           }
           if (currentChatUserId === otherId) {
             const isSent = data.sender_id === '{{ current_user_id }}';
@@ -1473,6 +1510,34 @@
               scrollToBottom();
             }
           }
+        });
+
+        socket.on('new_match', (data) => {
+          console.log('New match received:', data);
+          const conversationsList = document.querySelector('.conversations-list');
+          let conv = document.querySelector(`.conversation[data-user-id="${data.match_id}"]`);
+          if (conv) return; // Already exists
+          conv = document.createElement('div');
+          conv.className = 'conversation';
+          conv.dataset.userId = data.match_id;
+          conv.innerHTML = `
+            <div class="conversation-pic">
+              <img src="${data.image}" alt="Profile">
+            </div>
+            <div class="conversation-info">
+              <div class="conversation-header">
+                <h5>${data.full_name}</h5>
+                <span class="time" data-iso-time=""></span>
+              </div>
+              <p class="last-message">Start chatting!</p>
+          `;
+          conv.addEventListener('click', async () => {
+            document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
+            conv.classList.add('active');
+            await loadMessages(data.match_id);
+            navigationHistory.push('chat');
+          });
+          conversationsList.prepend(conv);
         });
 
         socket.on('user_typing', (data) => {
