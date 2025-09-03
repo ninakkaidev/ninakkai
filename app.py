@@ -1,5 +1,5 @@
 import eventlet
-eventlet.monkey_patch(thread=False)  # Disable thread patching to avoid Werkzeug local issues
+eventlet.monkey_patch()
 
 from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory, jsonify, Response
 from flask_cors import CORS
@@ -62,8 +62,8 @@ app.config.update(
     SESSION_COOKIE_DOMAIN=None
 )
 
-# Initialize SocketIO (use 'threading' async_mode for compatibility in serverless)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+# Initialize SocketIO (use 'eventlet' async_mode for better real-time performance)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', ping_timeout=60, ping_interval=25)
 
 # Initialize Cloudinary
 configure_cloudinary()
@@ -2208,5 +2208,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    # For dev; in production, use gunicorn --worker-class eventlet -w 1 app:app
     socketio.run(app, host='0.0.0.0', port=5050, debug=True)
