@@ -21,6 +21,13 @@ import json
 import http.client
 import requests
 
+# For production WebSocket support (add this)
+try:
+    import eventlet
+    eventlet.monkey_patch()
+except ImportError:
+    pass  # Assume dev environment
+
 # Configure Cloudinary with explicit credentials and enhanced logging
 def configure_cloudinary():
     try:
@@ -52,15 +59,15 @@ app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secure-fixed-secret-ke
 app.permanent_session_lifetime = timedelta(days=1)
 app.config.update(
     SESSION_COOKIE_SAMESITE='Lax',
-    SESSION_COOKIE_SECURE=False,  # Set to False for local development
+    SESSION_COOKIE_SECURE=False,  # Set to True in production with HTTPS
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_NAME='for_you_session',
     SESSION_COOKIE_PATH='/',
     SESSION_COOKIE_DOMAIN=None
 )
 
-# Initialize SocketIO
-socketio = SocketIO(app, cors_allowed_origins="*")
+# Initialize SocketIO (for production, use eventlet or gevent as worker)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')  # Use 'gevent' if preferred
 
 # Initialize Cloudinary
 configure_cloudinary()
@@ -862,7 +869,7 @@ class ChatService:
                     msg_data['replied_to'] = replied_to
                     msg_data['replied_text'] = replied_msg['message']
             result = self.messages.insert_one(msg_data)
-            msg_data["id"] = str(result.inserted_id)
+            msg_data['id'] = str(result.inserted_id)
             del msg_data['_id']
             msg_data['timestamp'] = msg_data['timestamp'].isoformat()
             # Emit to both sender and receiver rooms
@@ -1718,7 +1725,7 @@ def chat():
         logger.error(f"Chat error: {str(e)}")
         return render_template('chat.html', profile={'image': 'https://randomuser.me/api/portraits/women/44.jpg'}, conversations=[], unread_count=0, error=str(e), current_user_id='')
 
-@app.route('/messages/<other_user_id>', methods=['GET'])
+@app.route("/messages/<other_user_id>", methods=['GET'])
 def get_messages(other_user_id):
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
@@ -1802,6 +1809,7 @@ def profile():
         if not user:
             return render_template('profile.html', profile={}, pending_likers=[], notifications=[])
         quiz_result = mongo_service.get_quiz_results(session['user_id'])
+        # Define personalities dict
         personalities = {
             '🌿 Nurturer': {
                 'dominant_type': '🌿 Nurturer',
@@ -2204,4 +2212,5 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
+    # For dev; in production, use gunicorn --worker-class eventlet -w 1 app:app
     socketio.run(app, host='0.0.0.0', port=5050, debug=True)
