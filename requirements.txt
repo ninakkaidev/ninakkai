@@ -5,3 +5,4 @@ pymongo==4.10.1
 pytz
 flask_socketio
 requests
+eventlet
