@@ -1344,7 +1344,7 @@
           const button = document.createElement('button');
           button.textContent = answer;
           button.addEventListener('click', () => {
-            selectAnswer({ index, section: questionData.section });
+            selectAnswer({ index, type: questionData.types[index], answer: answer });
             button.classList.add('animate__animated', 'animate__pulse');
             setTimeout(() => {
               button.classList.remove('animate__animated', 'animate__pulse');
@@ -1399,8 +1399,12 @@
         alert('Please rank all items before submitting.');
         return;
       }
+      rankedItems.sort((a, b) => a.rank - b.rank); // Ensure sorted by rank
+      const questionData = questions[currentQuestion];
+      const topIndex = rankedItems[0].index;
+      const ranked_answer = "Ranked: " + rankedItems.map(r => `${r.rank}. ${questionData.answers[r.index]}`).join(", ");
       console.log(`Submitting ranking for question ${currentQuestion}:`, rankedItems);
-      selectedAnswers.push({ question: currentQuestion, ranking: rankedItems });
+      selectedAnswers.push({ question: currentQuestion, ranking: rankedItems, type: questionData.types[topIndex], answer: ranked_answer });
       currentQuestion++;
       displayQuestion();
     }
@@ -1475,7 +1479,7 @@
     function continueMaturityQuestions() {
       console.log(`Continuing with maturity questions, currentQuestion: ${currentQuestion}, adding ${optionalMaturityQuestions.length} maturity questions`);
       questions.push(...optionalMaturityQuestions);
-      currentQuestion = requiredQuestionCount + initialOptionalQuestions.length + additionalOptionalQuestions.length;
+      currentQuestion = questions.length - optionalMaturityQuestions.length; // Set to start of maturity
       isMaturitySection = true;
       optionalSection.style.display = 'none';
       questionBox.style.display = 'flex';

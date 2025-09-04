@@ -545,16 +545,11 @@ class MongoService:
 
     def _calculate_scores(self, answers: List[Dict[str, Any]]) -> Dict[str, Any]:
         type_counts = {}
-        mandatory_answers = answers[:9]  # Fixed to 9 required questions
-        for answer in mandatory_answers:
+        for answer in answers:
             if 'type' in answer:
-                answer_type = answer['type']
-                type_counts[answer_type] = type_counts.get(answer_type, 0) + 1
-        optional_answers = answers[9:]
-        for answer in optional_answers:
-            if 'type' in answer:
-                answer_type = answer['type']
-                type_counts[answer_type] = type_counts.get(answer_type, 0.0) + 0.2  # Little variation for optional
+                q = answer.get('question', 0)
+                increment = 1 if q < 9 else 0.2
+                type_counts[answer['type']] = type_counts.get(answer['type'], 0) + increment
         if not type_counts:
             return {'dominant_type': None, 'dominant_percentage': 0}
         # Resolve tie if any
@@ -572,7 +567,7 @@ class MongoService:
         # Keeper Seeker from all answers that match pattern
         keeper_seeker = self._determine_keeper_seeker(answers)
         # Optional boosts
-        optional_boosts = self._calculate_optional_boosts(dominant_type, optional_answers)
+        optional_boosts = self._calculate_optional_boosts(dominant_type, answers[9:] if len(answers) > 9 else [])
         # Total for percentages
         total = sum(type_counts.values())
         dominant_score = type_counts.get(dominant_type, 0)
@@ -601,10 +596,10 @@ class MongoService:
             profile['keeper_seeker_type'] = keeper_seeker
         return profile
 
-    def _parse_ranked_types(self, ranked_answer: str) -> List[str]:
-        if not ranked_answer.startswith("Ranked:"):
+    def _parse_ranked_types(self, ranked_answer: Dict[str, Any]) -> List[str]:
+        if 'answer' not in ranked_answer or not ranked_answer['answer'].startswith("Ranked:"):
             return []
-        parts = [p.strip() for p in ranked_answer.split("Ranked:")[1].split(",")]
+        parts = [p.strip() for p in ranked_answer['answer'].split("Ranked:")[1].split(",")]
         ordered_items = []
         for part in parts:
             item = part.split(".", 1)[1].strip() if "." in part else part.strip()
@@ -1430,43 +1425,9 @@ def clear_notifications():
 @app.route('/explore')
 def explore():
     logger.debug(f"Session in explore: {session}")
-    if 'user_id' not in session:
-        logger.debug("No user in session for /explore")
-        return redirect(url_for('auth', error='Please log in to access the explore page'))
-    
-    try:
-        user = mongo_service.get_user_by_id(session['user_id'])
-        if not user:
-            session.clear()
-            return redirect(url_for('auth', error='User not found. Please log in again.'))
-        
-        if not user.get('age_verified', False):
-            return redirect(url_for('age_verification'))
-        
-        quiz_result = mongo_service.get_quiz_results(session['user_id'])
-        if not quiz_result:
-            return redirect(url_for('questions', error='Please complete the quiz to access the explore page'))
-        
-        profile = {
-            'id': user['id'],
-            'full_name': user['full_name'],
-            'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-            'occupation': user.get('occupation', 'N/A'),
-            'bio': user.get('bio', 'No bio available'),
-            'interests': user.get('interests', []),
-            'distance': 'N/A',
-            'rating': '4.5',
-            'dominant_type': quiz_result['scores']['dominant_type'],
-            'match_percentage': 50
-        }
-        
-        # Render with empty data, load asynchronously
-        resp = make_response(render_template('explore.html', profile=profile, matches=[], discovery=[], error=None))
-        resp.headers['Cache-Control'] = 'public, max-age=300'  # Cache the page for 5 mins
-        return resp
-    except Exception as e:
-        logger.error(f"Explore error: {str(e)}")
-        return render_template('explore.html', profile={}, matches=[], discovery=[], error='An error occurred while loading the explore page. Please try again.')
+    if 'user_id' not quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
+            return redirect(url_for('explore') if quiz_completed else url_for('questions'))
+        return render_template('explore.html')
 
 @app.route('/api/matches', methods=['GET'])
 def api_matches():
@@ -1951,79 +1912,7 @@ def submit_quiz():
         if not answers:
             return jsonify({'success': False, 'error': 'No answers provided'}), 400
         
-        processed_answers = []
-        required_questions = [
-            {
-                'answers': ["Safe and calm inside", "Excited and full of butterflies", "Like I've found someone truly rare", "Scared of being being too vulnerable"],
-                'types': ["👂 Listener", "💘 Romantic", "🌙 Dreamer", "🛡️ Protector"]
-            },
-            {
-                'answers': ["Trust", "Emotional connection", "Shared goals", "Physical intimacy"],
-                'types': ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "💘 Romantic"],
-                'isRankQuestion': True
-            },
-            {
-                'answers': ["Someone silently sitting with me through pain", "Someone helping me fix the situation", "Someone saying exactly the right words", "Someone holding me tight without speaking"],
-                'types': ["🌿 Nurturer", "🛡️ Protector", "👂 Listener", "💘 Romantic"]
-            },
-            {
-                'answers': ["Try to stay calm and really listen", "Express your emotions openly", "Try to solve it quickly and move on", "Take it personally and overthink it"],
-                'types': ["👂 Listener", "💘 Romantic", "🛡️ Protector", "🌙 Dreamer"]
-            },
-            {
-                'answers': ["Kind and soft", "Strong and independent", "Perfect and without flaws", "Honest and growing"],
-                'types': ["🌿 Nurturer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
-            },
-            {
-                'answers': ["Peace and emotional safety", "Excitement and mystery", "Growth and learning together", "Feeling truly known and accepted"],
-                'types': ["🌿 Nurturer", "💘 Romantic", "🌟 Idealist", "🌙 Dreamer"]
-            },
-            {
-                'answers': ["Deep, late-night emotional conversations", "Intense physical closeness and passion", "When someone notices the little things", "Solving life's problems together"],
-                'types': ["🌙 Dreamer", "💘 Romantic", "🌿 Nurturer", "🛡️ Protector"]
-            },
-            {
-                'answers': ["Cry or let it out", "Get silent and withdraw", "Keep busy to avoid it", "Talk it out with someone trusted"],
-                'types': ["🌙 Dreamer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
-            },
-            {
-                'answers': ["Freedom to spend and still save together", "Clear roles — one earns, one manages", "Always discuss big spending decisions", "Having separate money but shared goals"],
-                'types': ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "🌟 Idealist"]
-            }
-        ]
-        optional_questions = [
-            {
-                'answers': ["I need space to process alone", "I want to talk it through together", "I focus on practical solutions", "I lean on my partner for comfort"],
-                'types': ["🛡️ Protector", "👂 Listener", "🌟 Idealist", "🌿 Nurturer"]
-            },
-            {
-                'answers': ["Dream big and figure it out later", "Set clear goals and timelines", "Go with the flow and see what happens", "Discuss every step together"],
-                'types': ["🌙 Dreamer", "🛡️ Protector", "💘 Romantic", "👂 Listener"]
-            }
-        ]
-        
-        all_questions = required_questions + optional_questions
-        for answer_data in answers:
-            question_idx = answer_data.get('question')
-            if question_idx >= len(all_questions):
-                continue
-            question = all_questions[question_idx]
-            if question.get('isRankQuestion'):
-                ranking = answer_data.get('ranking', [])
-                ranked_answer = "Ranked: " + ", ".join(f"{r['rank']}. {question['answers'][r['index']]}" for r in ranking)
-                processed_answers.append({
-                    'type': question['types'][ranking[0]['index']] if ranking else question['types'][0],
-                    'answer': ranked_answer
-                })
-            else:
-                answer_idx = answer_data.get('answer')
-                if answer_idx is not None and 0 <= answer_idx < len(question['answers']):
-                    processed_answers.append({
-                        'type': question['types'][answer_idx],
-                        'answer': question['answers'][answer_idx]
-                    })
-
-        quiz_data = {'answers': processed_answers}
+        quiz_data = {'answers': answers}
         result = mongo_service.save_quiz_results(session['user_id'], quiz_data)
         if result['success']:
             return jsonify({'success': True}), 200
