@@ -1880,8 +1880,8 @@ def profile():
                 'dominant_type': '👂 Listener',
                 'title': '“You are a Listener.”',
                 'description': 'Calm and thoughtful, you hear more than what’s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
-                'tagline': “Still waters, true heart.”
-, 'strengths': ['Calm', 'Thoughtful', 'Present'],
+                'tagline': '“Still waters, true heart.”', 
+                'strengths': ['Calm', 'Thoughtful', 'Present'],
                 'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
                 'color': '#03A9F4'  # Light Blue
             },
