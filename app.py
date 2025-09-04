@@ -903,7 +903,7 @@ class ChatService:
             msgs = list(self.messages.find(query).sort('timestamp', 1))
             updated = self.messages.update_many(
                 {'receiver_id': user1, 'sender_id': user2, 'read': False},
-               {'$set': {'read': True}}
+                {'$set': {'read': True}}
             )
             if updated.modified_count > 0:
                 socketio.emit('messages_read', {'conversation_id': user1}, room=user2)
@@ -2238,4 +2238,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5050, debug=True) 
+    socketio.run(app, host='0.0.0.0', port=5050, debug=True)

@@ -775,12 +775,6 @@
         transform: translateX(0);
       }
 
-      .welcome-screen {
-        position: absolute;
-        width: 100%;
-        z-index: 5;
-      }
-
       .chat-back-btn, .conversations-back-btn {
         display: none !important;
       }
@@ -913,27 +907,6 @@
             <div id="loading-spinner" style="text-align: center; padding: 20px;">
               <i class="fas fa-spinner fa-spin fa-2x"></i><br>Loading conversations...
             </div>
-            {% if conversations|length == 0 %}
-            <div class="welcome-text text-center p-3">No conversations yet. Start chatting with your matches!</div>
-            {% else %}
-            {% for conv in conversations %}
-            <div class="conversation" data-user-id="{{ conv.id }}">
-              <div class="conversation-pic">
-                <img src="{{ conv.image }}" alt="Profile">
-              </div>
-              <div class="conversation-info">
-                <div class="conversation-header">
-                  <h5>{{ conv.full_name }}</h5>
-                  <span class="time" data-iso-time="{{ conv.time }}">{{ conv.time }}</span>
-                </div>
-                <p class="last-message">{{ conv.last_message }}</p>
-                {% if conv.unread > 0 %}
-                <span class="unread-dot"></span>
-                {% endif %}
-              </div>
-            </div>
-            {% endfor %}
-            {% endif %}
           </div>
         </div>
         <div class="col-lg-8 h-100 chat-area-col">
@@ -1422,7 +1395,10 @@
           auth: {
             user_id: '{{ current_user_id }}'
           },
-          transports: ['websocket', 'polling']  // Explicit transports for iOS compatibility
+          transports: ['websocket', 'polling'],  // Explicit transports for iOS compatibility
+          reconnection: true,
+          reconnectionAttempts: Infinity,
+          reconnectionDelay: 1000
         });
 
         socket.on('connect', () => {
@@ -1822,6 +1798,9 @@
               });
               conversationsList.appendChild(convDiv);
             });
+            if (result.conversations.length === 0) {
+              conversationsList.innerHTML = '<div class="welcome-text text-center p-3">No conversations yet. Start chatting with your matches!</div>';
+            }
             // Optionally update unread_count if displayed in UI
           } else {
             console.error('Failed to load conversations:', result.error);
