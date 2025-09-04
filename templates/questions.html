@@ -1081,25 +1081,22 @@
 
     function displayQuestion() {
       console.log(`Current state: currentQuestion=${currentQuestion}, questions.length=${questions.length}, isOptionalSection=${isOptionalSection}, isAdditionalOptionalSection=${isAdditionalOptionalSection}, isMaturitySection=${isMaturitySection}`);
-      if (currentQuestion >= requiredQuestionCount && !isOptionalSection) {
-        console.log('Finished required questions, showing optional section');
-        showOptionalSection();
-        return;
-      }
-      if (currentQuestion >= requiredQuestionCount + initialOptionalQuestions.length && !isAdditionalOptionalSection && isOptionalSection) {
-        console.log('Finished initial optional questions, showing additional optional section');
-        showAdditionalOptionalSection();
-        return;
-      }
-      if (currentQuestion >= requiredQuestionCount + initialOptionalQuestions.length + additionalOptionalQuestions.length && isAdditionalOptionalSection && !isMaturitySection) {
-        console.log('Finished additional optional questions, showing maturity section');
-        showMaturitySection();
-        return;
-      }
+      
       if (currentQuestion >= questions.length) {
-        console.log('Finished all questions, submitting quiz');
-        submitQuiz();
-        return;
+        console.log(`Finished section, deciding next: isOptional=${isOptionalSection}, isAdditional=${isAdditionalOptionalSection}, isMaturity=${isMaturitySection}`);
+        if (!isOptionalSection) {
+          showOptionalSection();
+          return;
+        } else if (!isAdditionalOptionalSection) {
+          showAdditionalOptionalSection();
+          return;
+        } else if (!isMaturitySection) {
+          showMaturitySection();
+          return;
+        } else {
+          submitQuiz();
+          return;
+        }
       }
 
       const questionData = questions[currentQuestion];

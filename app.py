@@ -1272,7 +1272,7 @@ def auth():
 
 @app.route('/verify-email')
 def verify_email_endpoint():
-    logger.debug(f"Session in verify-email: {session}")
+    logger.debug(f"Verify-email session: {session}")
     token = request.args.get('token')
     if not token:
         return redirect(url_for('auth', error='Invalid verification link'))
