@@ -2073,54 +2073,54 @@ def personality_results():
     personalities = {
         '🌿 Nurturer': {
             'dominant_type': '🌿 Nurturer',
-            'title': '“You are a Nurturer.”',
+            'title': 'You are a Nurturer.',
             'description': 'You’re gentle, loyal, and always ready to hold space for someone you love. You build relationships with quiet strength and warmth.',
-            'tagline': '“Soft-hearted, deep-rooted.”',
+            'tagline': 'Soft-hearted, deep-rooted.',
             'strengths': ['Gentle', 'Loyal', 'Empathetic'],  # Add some strengths
             'compatibility': ['🛡️ Protector', '👂 Listener'],  # Examples
             'color': '#4CAF50'  # Green
         },
         '🛡️ Protector': {
             'dominant_type': '🛡️ Protector',
-            'title': '“You are a Protector.”',
+            'title': 'You are a Protector.',
             'description': 'You’re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — and showing up when it matters.',
-            'tagline': '“Safe. Steady. Yours.”',
+            'tagline': 'Safe. Steady. Yours.',
             'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
             'compatibility': ['🌿 Nurturer', '🌙 Dreamer'],
             'color': '#2196F3'  # Blue
         },
         '🌙 Dreamer': {
             'dominant_type': '🌙 Dreamer',
-            'title': '“You are a Dreamer.”',
+            'title': 'You are a Dreamer.',
             'description': 'You feel deeply and love boldly. You seek the kind of connection that feels written in the stars. You crave the kind of love that makes your soul glow.',
-            'tagline': '“Romance is your religion.”',
+            'tagline': 'Romance is your religion.',
             'strengths': ['Deep', 'Bold', 'Soulful'],
             'compatibility': ['💘 Romantic', '🌟 Idealist'],
             'color': '#9C27B0'  # Purple
         },
         '👂 Listener': {
             'dominant_type': '👂 Listener',
-            'title': '“You are a Listener.”',
+            'title': 'You are a Listener.',
             'description': 'Calm and thoughtful, you hear more than what’s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
-            'tagline': '“Still waters, true heart.”',
+            'tagline': 'Still waters, true heart.',
             'strengths': ['Calm', 'Thoughtful', 'Present'],
             'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
             'color': '#03A9F4'  # Light Blue
         },
         '💘 Romantic': {
             'dominant_type': '💘 Romantic',
-            'title': '“You are a Romantic.”',
+            'title': 'You are a Romantic.',
             'description': 'You lead with your heart, express love freely, and long for emotional electricity. You don’t just fall in love — you dive in.',
-            'tagline': '“Loving loudly. Feeling deeply.”',
+            'tagline': 'Loving loudly. Feeling deeply.',
             'strengths': ['Heart-led', 'Expressive', 'Passionate'],
             'compatibility': ['🌙 Dreamer', '🌟 Idealist'],
             'color': '#E91E63'  # Pink
         },
         '🌟 Idealist': {
             'dominant_type': '🌟 Idealist',
-            'title': '“You are an Idealist.”',
+            'title': 'You are an Idealist.',
             'description': 'You believe love should feel right — clear, mutual, and beautifully real. You wait for the one who understands your soul.',
-            'tagline': '“Only real love will do.”',
+            'tagline': 'Only real love will do.',
             'strengths': ['Believer', 'Clear', 'Soul-seeking'],
             'compatibility': ['🌙 Dreamer', '💘 Romantic'],
             'color': '#FFEB3B'  # Yellow
