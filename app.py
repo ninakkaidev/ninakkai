@@ -30,7 +30,7 @@ def configure_cloudinary():
         cloudinary.config(
             cloud_name='dibbkr9vs',
             api_key='869559855343136',
-            api_secret='FfJnI44v31rzfPvp7-K9lnI5BDM',
+            api_secret='FfJnI44v31rzfPvp7e-K9lnI5BDM',
             secure=True
         )
         config = cloudinary.config()
@@ -1562,6 +1562,10 @@ def user_profile(user_id):
         if not user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
         quiz_result = mongo_service.get_quiz_results(user_id)
+        current_quiz = mongo_service.get_quiz_results(session['user_id'])
+        match_percentage = 50
+        if current_quiz and quiz_result:
+            match_percentage = mongo_service._calculate_match_percentage(current_quiz['scores'], quiz_result['scores'])
         third_person_personalities = {
             '🌿 Nurturer': {
                 'dominant_type': '🌿 Nurturer',
@@ -1638,7 +1642,7 @@ def user_profile(user_id):
             'interests': user.get('interests', []),
             'distance': 'N/A',
             'rating': '4.5',
-            'match_percentage': 50,
+            'match_percentage': match_percentage,
             'liked': mongo_service.has_liked_user(session['user_id'], user_id),
             'personality': {
                 'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
