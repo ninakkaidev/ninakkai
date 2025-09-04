@@ -910,6 +910,9 @@
             <i class="fas fa-search"></i>
           </div>
           <div class="conversations-list">
+            <div id="loading-spinner" style="text-align: center; padding: 20px;">
+              <i class="fas fa-spinner fa-spin fa-2x"></i><br>Loading conversations...
+            </div>
             {% if conversations|length == 0 %}
             <div class="welcome-text text-center p-3">No conversations yet. Start chatting with your matches!</div>
             {% else %}
@@ -933,7 +936,6 @@
             {% endif %}
           </div>
         </div>
-
         <div class="col-lg-8 h-100 chat-area-col">
           <div class="welcome-screen">
             <div class="welcome-icon"><i class="fas fa-comments"></i></div>
@@ -1235,7 +1237,7 @@
         messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
         messageDiv.dataset.messageId = msg.id;
 
-        const formattedTime = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const formattedTime = new Date(msg.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
 
         let repliedHtml = '';
         if (msg.replied_text) {
@@ -1341,7 +1343,7 @@
             navigationHistory.push('chat');
 
             // Remove unread indicator from conversation list
-            const conv = document.querySelector(`.conversation[data-user-id="${userId}"]`);
+            const conv = document.querySelector(`.conversation[data-user-id="${currentChatUserId}"]`);
             if (conv) {
               const unread = conv.querySelector('.unread-dot');
               if (unread) unread.remove();
@@ -1441,9 +1443,10 @@
           const conv = document.querySelector(`.conversation[data-user-id="${otherId}"]`);
           if (conv) {
             conv.querySelector('.last-message').textContent = data.message;
-            const timeEl = conv.querySelector('.time');
-            timeEl.textContent = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            timeEl.dataset.isoTime = data.timestamp;
+            const time = conv.querySelector('.time');
+            const date = new Date(data.timestamp);
+            time.textContent = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+            time.dataset.isoTime = data.timestamp;
             if (data.receiver_id === '{{ current_user_id }}') {
               if (otherId !== currentChatUserId) {
                 let unreadEl = conv.querySelector('.unread-dot');
@@ -1474,7 +1477,7 @@
                     <div class="conversation-info">
                       <div class="conversation-header">
                         <h5>${user.full_name || 'Unknown'}</h5>
-                        <span class="time" data-iso-time="${data.timestamp}">${new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span class="time" data-iso-time="${data.timestamp}">${new Date(data.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}</span>
                       </div>
                       <p class="last-message">${data.message}</p>
                   `;
@@ -1502,7 +1505,7 @@
                 const lastTemp = tempMessages[tempMessages.length - 1];
                 lastTemp.dataset.messageId = data.id;
                 const timeSpan = lastTemp.querySelector('.message-time');
-                const formattedTime = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const formattedTime = new Date(data.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
                 timeSpan.textContent = formattedTime;
                 return;
               }
@@ -1709,7 +1712,7 @@
         const isoTime = timeEl.dataset.isoTime;
         if (isoTime) {
           const date = new Date(isoTime);
-          timeEl.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          timeEl.textContent = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
         }
       });
 
@@ -1784,6 +1787,8 @@
 
       // Lazy load conversations
       async function loadConversations() {
+        const loadingSpinner = document.getElementById('loading-spinner');
+        loadingSpinner.style.display = 'block';
         try {
           const response = await fetch('/api/conversations');
           const result = await response.json();
@@ -1822,6 +1827,8 @@
           }
         } catch (error) {
           console.error('Error loading conversations:', error);
+        } finally {
+          loadingSpinner.style.display = 'none';
         }
       }
 
