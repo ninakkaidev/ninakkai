@@ -787,7 +787,7 @@
       }
     ];
 
-    const optionalQuestions = [
+    const initialOptionalQuestions = [
       { 
         question: "How do you handle stress in a relationship?", 
         answers: [
@@ -807,7 +807,10 @@
           "Discuss every step together"
         ],
         types: ["🌙 Dreamer", "🛡️ Protector", "💘 Romantic", "👂 Listener"]
-      },
+      }
+    ];
+
+    const additionalOptionalQuestions = [
       {
         question: "How important is religion/faith in a future partner?",
         answers: ["High - Must match my faith", "Medium - Prefer same faith", "Low - Note but not prioritize", "Skip - Religion won't affect matches"],
@@ -850,7 +853,6 @@
           return null;
         }
       },
-      // New Optional Questions for Physical Preferences
       {
         question: "Are physical traits important in a partner?",
         answers: ["Very Important", "Somewhat Important", "Not Important"],
@@ -910,7 +912,6 @@
           }
         ]
       },
-      // New Optional Question for Final Filter Settings
       {
         question: "Set your match filters",
         answers: [], // Toggle inputs
@@ -922,7 +923,6 @@
           { label: "Show all emotionally compatible matches", value: true }
         ]
       },
-      // New Optional Question for Profile Setup
       {
         question: "Set up your profile",
         answers: [], // Custom input
@@ -1016,6 +1016,7 @@
     let questions = [...requiredQuestions];
     let selectedAnswers = [];
     let isOptionalSection = false;
+    let isAdditionalOptionalSection = false;
     let isMaturitySection = false;
     let currentExtraSection = '';
     let rankedItems = [];
@@ -1032,11 +1033,11 @@
         console.log(`Loaded saved answers: ${selectedAnswers.length}, currentQuestion: ${currentQuestion}, requiredQuestionCount: ${requiredQuestionCount}`);
         if (currentQuestion >= requiredQuestionCount) {
           isOptionalSection = true;
-          questions.push(...optionalQuestions);
+          questions = [...requiredQuestions, ...initialOptionalQuestions, ...additionalOptionalQuestions];
         }
-        if (currentQuestion >= requiredQuestionCount + optionalQuestions.length) {
+        if (currentQuestion >= requiredQuestionCount + initialOptionalQuestions.length + additionalOptionalQuestions.length) {
           isMaturitySection = true;
-          questions.push(...optionalMaturityQuestions);
+          questions = [...questions, ...optionalMaturityQuestions];
         }
         sessionStorage.removeItem('quiz_answers');
         displayQuestion();
@@ -1061,6 +1062,8 @@
     function handleYes() {
       if (currentExtraSection === 'optional') {
         continueOptionalQuestions();
+      } else if (currentExtraSection === 'additional_optional') {
+        continueAdditionalOptionalQuestions();
       } else if (currentExtraSection === 'maturity') {
         continueMaturityQuestions();
       }
@@ -1077,18 +1080,25 @@
     }
 
     function displayQuestion() {
-      console.log(`Current state: currentQuestion=${currentQuestion}, questions.length=${questions.length}, isOptionalSection=${isOptionalSection}, isMaturitySection=${isMaturitySection}`);
+      console.log(`Current state: currentQuestion=${currentQuestion}, questions.length=${questions.length}, isOptionalSection=${isOptionalSection}, isAdditionalOptionalSection=${isAdditionalOptionalSection}, isMaturitySection=${isMaturitySection}`);
+      if (currentQuestion >= requiredQuestionCount && !isOptionalSection) {
+        console.log('Finished required questions, showing optional section');
+        showOptionalSection();
+        return;
+      }
+      if (currentQuestion >= requiredQuestionCount + initialOptionalQuestions.length && !isAdditionalOptionalSection && isOptionalSection) {
+        console.log('Finished initial optional questions, showing additional optional section');
+        showAdditionalOptionalSection();
+        return;
+      }
+      if (currentQuestion >= requiredQuestionCount + initialOptionalQuestions.length + additionalOptionalQuestions.length && isAdditionalOptionalSection && !isMaturitySection) {
+        console.log('Finished additional optional questions, showing maturity section');
+        showMaturitySection();
+        return;
+      }
       if (currentQuestion >= questions.length) {
-        if (!isOptionalSection) {
-          console.log('Finished required questions, showing optional section');
-          showOptionalSection();
-        } else if (!isMaturitySection) {
-          console.log('Finished optional questions, showing maturity section');
-          showMaturitySection();
-        } else {
-          console.log('Finished all questions, submitting quiz');
-          submitQuiz();
-        }
+        console.log('Finished all questions, submitting quiz');
+        submitQuiz();
         return;
       }
 
@@ -1410,6 +1420,21 @@
       }, 1000);
     }
 
+    function showAdditionalOptionalSection() {
+      console.log('Showing additional optional section');
+      currentExtraSection = 'additional_optional';
+      qaContainer.style.display = 'flex';
+      questionBox.style.display = 'none';
+      optionalSection.style.display = 'block';
+      sectionTitle.textContent = 'Additional Optional Questions';
+      sectionDescription.textContent = 'These questions are optional, but answering them will make your matches more accurate and increase your chances of finding the perfect partner.';
+      optionalP.textContent = 'Want to answer additional questions for better matches?';
+      optionalSection.classList.add('animate__animated', 'animate__fadeIn');
+      setTimeout(() => {
+        optionalSection.classList.remove('animate__animated', 'animate__fadeIn');
+      }, 1000);
+    }
+
     function showMaturitySection() {
       console.log('Showing maturity section');
       currentExtraSection = 'maturity';
@@ -1426,9 +1451,21 @@
     }
 
     function continueOptionalQuestions() {
-      console.log(`Continuing with optional questions, currentQuestion: ${currentQuestion}`);
-      questions.push(...optionalQuestions);
+      console.log(`Continuing with initial optional questions, currentQuestion: ${currentQuestion}`);
+      questions.push(...initialOptionalQuestions);
+      currentQuestion = requiredQuestionCount;
       isOptionalSection = true;
+      optionalSection.style.display = 'none';
+      questionBox.style.display = 'flex';
+      qaContainer.style.display = 'flex';
+      displayQuestion();
+    }
+
+    function continueAdditionalOptionalQuestions() {
+      console.log(`Continuing with additional optional questions, currentQuestion: ${currentQuestion}`);
+      questions.push(...additionalOptionalQuestions);
+      currentQuestion = requiredQuestionCount + initialOptionalQuestions.length;
+      isAdditionalOptionalSection = true;
       optionalSection.style.display = 'none';
       questionBox.style.display = 'flex';
       qaContainer.style.display = 'flex';
@@ -1438,6 +1475,7 @@
     function continueMaturityQuestions() {
       console.log(`Continuing with maturity questions, currentQuestion: ${currentQuestion}, adding ${optionalMaturityQuestions.length} maturity questions`);
       questions.push(...optionalMaturityQuestions);
+      currentQuestion = requiredQuestionCount + initialOptionalQuestions.length + additionalOptionalQuestions.length;
       isMaturitySection = true;
       optionalSection.style.display = 'none';
       questionBox.style.display = 'flex';
