@@ -1581,54 +1581,54 @@ def user_profile(user_id):
         third_person_personalities = {
             '🌿 Nurturer': {
                 'dominant_type': '🌿 Nurturer',
-                'title': '“This person is a Nurturer.”',
+                'title': 'This person is a Nurturer.',
                 'description': 'They’re gentle, loyal, and always ready to hold space for someone they love. They build relationships with quiet strength and warmth.',
-                'tagline': '“Soft-hearted, deep-rooted.”',
+                'tagline': 'Soft-hearted, deep-rooted.',
                 'strengths': ['Gentle', 'Loyal', 'Empathetic'],  # Add some strengths
                 'compatibility': ['🛡️ Protector', '👂 Listener'],  # Examples
                 'color': '#4CAF50'  # Green
             },
             '🛡️ Protector': {
                 'dominant_type': '🛡️ Protector',
-                'title': '“This person is a Protector.”',
+                'title': 'This person is a Protector.',
                 'description': 'They’re grounded, trustworthy, and always ready to stand up for the people they care about. Love means loyalty — and showing up when it matters.',
-                'tagline': '“Safe. Steady. Yours.”',
+                'tagline': 'Safe. Steady. Yours.',
                 'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
                 'compatibility': ['🌿 Nurturer', '🌙 Dreamer'],
                 'color': '#2196F3'  # Blue
             },
             '🌙 Dreamer': {
                 'dominant_type': '🌙 Dreamer',
-                'title': '“This person is a Dreamer.”',
+                'title': 'This person is a Dreamer.',
                 'description': 'They feel deeply and love boldly. They seek the kind of connection that feels written in the stars. They crave the kind of love that makes their soul glow.',
-                'tagline': '“Romance is their religion.”',
+                'tagline': 'Romance is their religion.',
                 'strengths': ['Deep', 'Bold', 'Soulful'],
                 'compatibility': ['💘 Romantic', '🌟 Idealist'],
                 'color': '#9C27B0'  # Purple
             },
             '👂 Listener': {
                 'dominant_type': '👂 Listener',
-                'title': '“This person is a Listener.”',
+                'title': 'This person is a Listener.',
                 'description': 'Calm and thoughtful, they hear more than what’s said. They bring comfort in silence and meaning in presence. They understand that real love sometimes just means being there.',
-                'tagline': '“Still waters, true heart.”',
+                'tagline': ' Still waters, true heart.',
                 'strengths': ['Calm', 'Thoughtful', 'Present'],
                 'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
                 'color': '#03A9F4'  # Light Blue
             },
             '💘 Romantic': {
                 'dominant_type': '💘 Romantic',
-                'title': '“This person is a Romantic.”',
+                'title': 'This person is a Romantic.',
                 'description': 'They lead with their heart, express love freely, and long for emotional electricity. They don’t just fall in love — they dive in.',
-                'tagline': '“Loving loudly. Feeling deeply.”',
+                'tagline': 'Loving loudly. Feeling deeply.',
                 'strengths': ['Heart-led', 'Expressive', 'Passionate'],
                 'compatibility': ['🌙 Dreamer', '🌟 Idealist'],
                 'color': '#E91E63'  # Pink
             },
             '🌟 Idealist': {
                 'dominant_type': '🌟 Idealist',
-                'title': '“This person is an Idealist.”',
+                'title': 'This person is an Idealist.',
                 'description': 'They believe love should feel right — clear, mutual, and beautifully real. You wait for the one who understands your soul.',
-                'tagline': '“Only real love will do.”',
+                'tagline': 'Only real love will do.',
                 'strengths': ['Believer', 'Clear', 'Soul-seeking'],
                 'compatibility': ['🌙 Dreamer', '💘 Romantic'],
                 'color': '#FFEB3B'  # Yellow
