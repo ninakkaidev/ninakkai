@@ -695,6 +695,7 @@
     // Quiz Data
     const requiredQuestions = [
       { 
+        id: 'req1',
         question: "When you're falling in love, you usually feel...", 
         answers: [
           "Safe and calm inside",
@@ -705,6 +706,7 @@
         types: ["👂 Listener", "💘 Romantic", "🌙 Dreamer", "🛡️ Protector"]
       },
       { 
+        id: 'req2',
         question: "Arrange these in order of importance in a relationship:", 
         answers: [
           "Trust",
@@ -716,6 +718,7 @@
         isRankQuestion: true
       },
       { 
+        id: 'req3',
         question: "What kind of emotional support feels most comforting to you?", 
         answers: [
           "Someone silently sitting with me through pain",
@@ -726,6 +729,7 @@
         types: ["🌿 Nurturer", "🛡️ Protector", "👂 Listener", "💘 Romantic"]
       },
       { 
+        id: 'req4',
         question: "In a disagreement with someone you care about, you...", 
         answers: [
           "Try to stay calm and really listen",
@@ -736,6 +740,7 @@
         types: ["👂 Listener", "💘 Romantic", "🛡️ Protector", "🌙 Dreamer"]
       },
       { 
+        id: 'req5',
         question: "How do you want others to describe you?", 
         answers: [
           "Kind and soft",
@@ -746,6 +751,7 @@
         types: ["🌿 Nurturer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
       },
       { 
+        id: 'req6',
         question: "What do you crave most in a relationship?", 
         answers: [
           "Peace and emotional safety",
@@ -756,6 +762,7 @@
         types: ["🌿 Nurturer", "💘 Romantic", "🌟 Idealist", "🌙 Dreamer"]
       },
       { 
+        id: 'req7',
         question: "What makes you feel emotionally alive in love?", 
         answers: [
           "Deep, late-night emotional conversations",
@@ -766,6 +773,7 @@
         types: ["🌙 Dreamer", "💘 Romantic", "🌿 Nurturer", "🛡️ Protector"]
       },
       { 
+        id: 'req8',
         question: "When you feel deeply hurt, you usually...", 
         answers: [
           "Cry or let it out",
@@ -776,6 +784,7 @@
         types: ["🌙 Dreamer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
       },
       { 
+        id: 'req9',
         question: "What does financial stability mean to you in a relationship?", 
         answers: [
           "Freedom to spend and still save together",
@@ -789,6 +798,7 @@
 
     const initialOptionalQuestions = [
       { 
+        id: 'opt1',
         question: "How do you handle stress in a relationship?", 
         answers: [
           "I need space to process alone",
@@ -799,6 +809,7 @@
         types: ["🛡️ Protector", "👂 Listener", "🌟 Idealist", "🌿 Nurturer"]
       },
       { 
+        id: 'opt2',
         question: "What's your approach to planning a future with someone?", 
         answers: [
           "Dream big and figure it out later",
@@ -812,12 +823,14 @@
 
     const additionalOptionalQuestions = [
       {
+        id: 'religion_importance',
         question: "How important is religion/faith in a future partner?",
         answers: ["High - Must match my faith", "Medium - Prefer same faith", "Low - Note but not prioritize", "Skip - Religion won't affect matches"],
         section: "religion_importance",
         nextQuestion: (answerIndex) => {
           if (answerIndex !== 3) { // Not Skip
             return {
+              id: 'religion',
               question: "What is your religion/faith?",
               answers: [
                 "Christianity",
@@ -836,6 +849,7 @@
               isSelectWithOther: true,
               nextQuestion: () => {
                 return {
+                  id: 'interfaith_open',
                   question: "Are you open to interfaith matches?",
                   answers: ["Yes", "No"],
                   section: "interfaith_open"
@@ -843,6 +857,7 @@
               },
               nextNextQuestion: () => {
                 return {
+                  id: 'religion_public',
                   question: "Display your religion on your profile?",
                   answers: ["Yes", "No"],
                   section: "religion_public"
@@ -854,12 +869,14 @@
         }
       },
       {
+        id: 'physical_preferences',
         question: "Are physical traits important in a partner?",
         answers: ["Very Important", "Somewhat Important", "Not Important"],
         section: "physical_preferences",
         nextQuestion: (answerIndex) => {
           if (answerIndex === 0 || answerIndex === 1) {
             return {
+              id: 'physical_traits_preferred',
               question: "Select your preferred physical traits",
               answers: [], // Custom input (select and range slider)
               isCustomInput: true,
@@ -889,6 +906,7 @@
         }
       },
       {
+        id: 'physical_traits_own',
         question: "What are your physical traits?",
         answers: [], // Custom input
         isCustomInput: true,
@@ -913,6 +931,7 @@
         ]
       },
       {
+        id: 'filter_settings',
         question: "Set your match filters",
         answers: [], // Toggle inputs
         isToggleInput: true,
@@ -924,6 +943,7 @@
         ]
       },
       {
+        id: 'profile_setup',
         question: "Set up your profile",
         answers: [], // Custom input
         isCustomInput: true,
@@ -950,6 +970,7 @@
 
     const optionalMaturityQuestions = [
       { 
+        id: 'mat1',
         question: "You see your partner being emotionally close to a friend. You feel…", 
         answers: [
           "A. Curious and ask openly",
@@ -960,6 +981,7 @@
         types: ["🌿 Nurturer", "👂 Listener", "💘 Romantic", "🛡️ Protector"]
       },
       { 
+        id: 'mat2',
         question: "Your partner has a serious conflict with your family. You…", 
         answers: [
           "A. Support your partner but stay neutral.",
@@ -970,6 +992,7 @@
         types: ["👂 Listener", "🌿 Nurturer", "🛡️ Protector", "🌙 Dreamer"]
       },
       { 
+        id: 'mat3',
         question: "How do you handle emotional overwhelm?", 
         answers: [
           "A. Talk it out immediately",
@@ -980,6 +1003,7 @@
         types: ["👂 Listener", "🛡️ Protector", "🌙 Dreamer", "🌟 Idealist"]
       },
       { 
+        id: 'mat4',
         question: "What’s your biggest fear in love?", 
         answers: [
           "A. Being misunderstood",
@@ -990,6 +1014,7 @@
         types: ["🌟 Idealist", "👂 Listener", "🌙 Dreamer", "🛡️ Protector"]
       },
       { 
+        id: 'mat5',
         question: "What do you quietly need most in a relationship?", 
         answers: [
           "A. To feel safe and protected",
@@ -1000,6 +1025,7 @@
         types: ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "👂 Listener"]
       },
       { 
+        id: 'mat6',
         question: "Which quality do you most admire in a partner?", 
         answers: [
           "A. Loyalty",
@@ -1081,22 +1107,25 @@
 
     function displayQuestion() {
       console.log(`Current state: currentQuestion=${currentQuestion}, questions.length=${questions.length}, isOptionalSection=${isOptionalSection}, isAdditionalOptionalSection=${isAdditionalOptionalSection}, isMaturitySection=${isMaturitySection}`);
-      
+      if (currentQuestion >= requiredQuestionCount && !isOptionalSection) {
+        console.log('Finished required questions, showing optional section');
+        showOptionalSection();
+        return;
+      }
+      if (currentQuestion >= requiredQuestionCount + initialOptionalQuestions.length && !isAdditionalOptionalSection && isOptionalSection) {
+        console.log('Finished initial optional questions, showing additional optional section');
+        showAdditionalOptionalSection();
+        return;
+      }
+      if (currentQuestion >= requiredQuestionCount + initialOptionalQuestions.length + additionalOptionalQuestions.length && isAdditionalOptionalSection && !isMaturitySection) {
+        console.log('Finished additional optional questions, showing maturity section');
+        showMaturitySection();
+        return;
+      }
       if (currentQuestion >= questions.length) {
-        console.log(`Finished section, deciding next: isOptional=${isOptionalSection}, isAdditional=${isAdditionalOptionalSection}, isMaturity=${isMaturitySection}`);
-        if (!isOptionalSection) {
-          showOptionalSection();
-          return;
-        } else if (!isAdditionalOptionalSection) {
-          showAdditionalOptionalSection();
-          return;
-        } else if (!isMaturitySection) {
-          showMaturitySection();
-          return;
-        } else {
-          submitQuiz();
-          return;
-        }
+        console.log('Finished all questions, submitting quiz');
+        submitQuiz();
+        return;
       }
 
       const questionData = questions[currentQuestion];
@@ -1341,7 +1370,7 @@
           const button = document.createElement('button');
           button.textContent = answer;
           button.addEventListener('click', () => {
-            selectAnswer({ index, section: questionData.section });
+            selectAnswer({ index });
             button.classList.add('animate__animated', 'animate__pulse');
             setTimeout(() => {
               button.classList.remove('animate__animated', 'animate__pulse');
@@ -1367,7 +1396,7 @@
 
     function selectAnswer(data) {
       console.log(`Selected answer for question ${currentQuestion}:`, data);
-      selectedAnswers.push({ question: currentQuestion, ...data });
+      selectedAnswers.push({ question: currentQuestion, question_id: questions[currentQuestion].id, ...data });
       currentQuestion++;
     }
 
@@ -1397,7 +1426,7 @@
         return;
       }
       console.log(`Submitting ranking for question ${currentQuestion}:`, rankedItems);
-      selectedAnswers.push({ question: currentQuestion, ranking: rankedItems });
+      selectedAnswers.push({ question: currentQuestion, question_id: questions[currentQuestion].id, ranking: rankedItems });
       currentQuestion++;
       displayQuestion();
     }
