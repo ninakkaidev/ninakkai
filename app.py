@@ -883,24 +883,12 @@ class ChatService:
             del msg_data['_id']
             msg_data['timestamp'] = msg_data['timestamp'].isoformat()
             # Emit to both sender and receiver rooms
-            emit('new_message', msg_data, room=sender_id)
-            emit('new_message', msg_data, room=receiver_id)
-            # Also update the conversation list for both
-            self._update_conversation(sender_id, receiver_id, msg_data)
-            self._update_conversation(receiver_id, sender_id, msg_data)
+            socketio.emit('new_message', msg_data, room=sender_id)
+            socketio.emit('new_message', msg_data, room=receiver_id)
             return {'success': True, 'message_id': msg_data['id']}
         except Exception as e:
             logger.error(f"Send message error: {str(e)}")
             return {'success': False, 'error': str(e)}
-
-    def _update_conversation(self, user_id: str, other_id: str, msg_data: Dict):
-        # Emit an event to update the conversation list
-        emit('update_conversation', {
-            'other_id': other_id,
-            'last_message': msg_data['message'],
-            'timestamp': msg_data['timestamp'],
-            'unread': msg_data['receiver_id'] == user_id
-        }, room=user_id)
 
     def get_messages(self, user1: str, user2: str):
         try:
@@ -918,7 +906,7 @@ class ChatService:
                 {'$set': {'read': True}}
             )
             if updated.modified_count > 0:
-                emit('messages_read', {'conversation_id': user1}, room=user2)
+                socketio.emit('messages_read', {'conversation_id': user1}, room=user2)
             for msg in msgs:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
@@ -970,8 +958,8 @@ class ChatService:
         try:
             result = self.messages.delete_one({'_id': ObjectId(message_id)})
             if result.deleted_count > 0:
-                emit('message_deleted', {'message_id': message_id}, room=sender_id)
-                emit('message_deleted', {'message_id': message_id}, room=receiver_id)
+                socketio.emit('message_deleted', {'message_id': message_id}, room=sender_id)
+                socketio.emit('message_deleted', {'message_id': message_id}, room=receiver_id)
             return {'success': result.deleted_count > 0}
         except Exception as e:
             logger.error(f"Delete message error: {str(e)}")
@@ -1581,54 +1569,54 @@ def user_profile(user_id):
         third_person_personalities = {
             '🌿 Nurturer': {
                 'dominant_type': '🌿 Nurturer',
-                'title': 'This person is a Nurturer.',
+                'title': '“This person is a Nurturer.”',
                 'description': 'They’re gentle, loyal, and always ready to hold space for someone they love. They build relationships with quiet strength and warmth.',
-                'tagline': 'Soft-hearted, deep-rooted.',
+                'tagline': '“Soft-hearted, deep-rooted.”',
                 'strengths': ['Gentle', 'Loyal', 'Empathetic'],  # Add some strengths
                 'compatibility': ['🛡️ Protector', '👂 Listener'],  # Examples
                 'color': '#4CAF50'  # Green
             },
             '🛡️ Protector': {
                 'dominant_type': '🛡️ Protector',
-                'title': 'This person is a Protector.',
+                'title': '“This person is a Protector.”',
                 'description': 'They’re grounded, trustworthy, and always ready to stand up for the people they care about. Love means loyalty — and showing up when it matters.',
-                'tagline': 'Safe. Steady. Yours.',
+                'tagline': '“Safe. Steady. Yours.”',
                 'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
                 'compatibility': ['🌿 Nurturer', '🌙 Dreamer'],
                 'color': '#2196F3'  # Blue
             },
             '🌙 Dreamer': {
                 'dominant_type': '🌙 Dreamer',
-                'title': 'This person is a Dreamer.',
+                'title': '“This person is a Dreamer.”',
                 'description': 'They feel deeply and love boldly. They seek the kind of connection that feels written in the stars. They crave the kind of love that makes their soul glow.',
-                'tagline': 'Romance is their religion.',
+                'tagline': '“Romance is their religion.”',
                 'strengths': ['Deep', 'Bold', 'Soulful'],
                 'compatibility': ['💘 Romantic', '🌟 Idealist'],
                 'color': '#9C27B0'  # Purple
             },
             '👂 Listener': {
                 'dominant_type': '👂 Listener',
-                'title': 'This person is a Listener.',
+                'title': '“This person is a Listener.”',
                 'description': 'Calm and thoughtful, they hear more than what’s said. They bring comfort in silence and meaning in presence. They understand that real love sometimes just means being there.',
-                'tagline': ' Still waters, true heart.',
+                'tagline': '“Still waters, true heart.”',
                 'strengths': ['Calm', 'Thoughtful', 'Present'],
                 'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
                 'color': '#03A9F4'  # Light Blue
             },
             '💘 Romantic': {
                 'dominant_type': '💘 Romantic',
-                'title': 'This person is a Romantic.',
+                'title': '“This person is a Romantic.”',
                 'description': 'They lead with their heart, express love freely, and long for emotional electricity. They don’t just fall in love — they dive in.',
-                'tagline': 'Loving loudly. Feeling deeply.',
+                'tagline': '“Loving loudly. Feeling deeply.”',
                 'strengths': ['Heart-led', 'Expressive', 'Passionate'],
                 'compatibility': ['🌙 Dreamer', '🌟 Idealist'],
                 'color': '#E91E63'  # Pink
             },
             '🌟 Idealist': {
                 'dominant_type': '🌟 Idealist',
-                'title': 'This person is an Idealist.',
+                'title': '“This person is an Idealist.”',
                 'description': 'They believe love should feel right — clear, mutual, and beautifully real. You wait for the one who understands your soul.',
-                'tagline': 'Only real love will do.',
+                'tagline': '“Only real love will do.”',
                 'strengths': ['Believer', 'Clear', 'Soul-seeking'],
                 'compatibility': ['🌙 Dreamer', '💘 Romantic'],
                 'color': '#FFEB3B'  # Yellow
@@ -1689,7 +1677,7 @@ def handle_typing(data):
     sender_id = data.get('sender_id')
     to_user_id = data.get('to_user_id')
     if sender_id and to_user_id:
-        emit('user_typing', {'sender_id': sender_id}, room=to_user_id)
+        socketio.emit('user_typing', {'sender_id': sender_id}, room=to_user_id)
 
 @app.route('/chat')
 def chat():
@@ -1880,7 +1868,7 @@ def profile():
                 'dominant_type': '👂 Listener',
                 'title': '“You are a Listener.”',
                 'description': 'Calm and thoughtful, you hear more than what’s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
-                'tagline': '“Still waters, true heart.”', 
+                'tagline': '“Still waters, true heart.”',
                 'strengths': ['Calm', 'Thoughtful', 'Present'],
                 'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
                 'color': '#03A9F4'  # Light Blue
@@ -2073,54 +2061,54 @@ def personality_results():
     personalities = {
         '🌿 Nurturer': {
             'dominant_type': '🌿 Nurturer',
-            'title': 'You are a Nurturer.',
+            'title': '“You are a Nurturer.”',
             'description': 'You’re gentle, loyal, and always ready to hold space for someone you love. You build relationships with quiet strength and warmth.',
-            'tagline': 'Soft-hearted, deep-rooted.',
+            'tagline': '“Soft-hearted, deep-rooted.”',
             'strengths': ['Gentle', 'Loyal', 'Empathetic'],  # Add some strengths
             'compatibility': ['🛡️ Protector', '👂 Listener'],  # Examples
             'color': '#4CAF50'  # Green
         },
         '🛡️ Protector': {
             'dominant_type': '🛡️ Protector',
-            'title': 'You are a Protector.',
+            'title': '“You are a Protector.”',
             'description': 'You’re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — and showing up when it matters.',
-            'tagline': 'Safe. Steady. Yours.',
+            'tagline': '“Safe. Steady. Yours.”',
             'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
             'compatibility': ['🌿 Nurturer', '🌙 Dreamer'],
             'color': '#2196F3'  # Blue
         },
         '🌙 Dreamer': {
             'dominant_type': '🌙 Dreamer',
-            'title': 'You are a Dreamer.',
+            'title': '“You are a Dreamer.”',
             'description': 'You feel deeply and love boldly. You seek the kind of connection that feels written in the stars. You crave the kind of love that makes your soul glow.',
-            'tagline': 'Romance is your religion.',
+            'tagline': '“Romance is your religion.”',
             'strengths': ['Deep', 'Bold', 'Soulful'],
             'compatibility': ['💘 Romantic', '🌟 Idealist'],
             'color': '#9C27B0'  # Purple
         },
         '👂 Listener': {
             'dominant_type': '👂 Listener',
-            'title': 'You are a Listener.',
+            'title': '“You are a Listener.”',
             'description': 'Calm and thoughtful, you hear more than what’s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
-            'tagline': 'Still waters, true heart.',
+            'tagline': '“Still waters, true heart.”',
             'strengths': ['Calm', 'Thoughtful', 'Present'],
             'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
             'color': '#03A9F4'  # Light Blue
         },
         '💘 Romantic': {
             'dominant_type': '💘 Romantic',
-            'title': 'You are a Romantic.',
+            'title': '“You are a Romantic.”',
             'description': 'You lead with your heart, express love freely, and long for emotional electricity. You don’t just fall in love — you dive in.',
-            'tagline': 'Loving loudly. Feeling deeply.',
+            'tagline': '“Loving loudly. Feeling deeply.”',
             'strengths': ['Heart-led', 'Expressive', 'Passionate'],
             'compatibility': ['🌙 Dreamer', '🌟 Idealist'],
             'color': '#E91E63'  # Pink
         },
         '🌟 Idealist': {
             'dominant_type': '🌟 Idealist',
-            'title': 'You are an Idealist.',
+            'title': '“You are an Idealist.”',
             'description': 'You believe love should feel right — clear, mutual, and beautifully real. You wait for the one who understands your soul.',
-            'tagline': 'Only real love will do.',
+            'tagline': '“Only real love will do.”',
             'strengths': ['Believer', 'Clear', 'Soul-seeking'],
             'compatibility': ['🌙 Dreamer', '💘 Romantic'],
             'color': '#FFEB3B'  # Yellow
