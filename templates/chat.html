@@ -1796,6 +1796,7 @@
             const conversationsList = document.querySelector('.conversations-list');
             conversationsList.innerHTML = '';
             result.conversations.forEach(conv => {
+              const formattedTime = conv.time ? new Date(conv.time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }) : '';
               const convDiv = document.createElement('div');
               convDiv.className = 'conversation';
               convDiv.dataset.userId = conv.id;
@@ -1806,7 +1807,7 @@
                 <div class="conversation-info">
                   <div class="conversation-header">
                     <h5>${conv.full_name}</h5>
-                    <span class="time" data-iso-time="${conv.time}">${conv.time}</span>
+                    <span class="time" data-iso-time="${conv.time}">${formattedTime}</span>
                   </div>
                   <p class="last-message">${conv.last_message}</p>
                   ${conv.unread > 0 ? '<span class="unread-dot"></span>' : ''}
