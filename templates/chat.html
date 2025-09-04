@@ -1196,6 +1196,12 @@
             const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
             if (tempMsg) tempMsg.remove();
             alert('Failed to send message.');
+          } else {
+            // Update the temp id with real id
+            const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
+            if (tempMsg) {
+              tempMsg.dataset.messageId = data.message_id;
+            }
           }
         } catch (error) {
           console.error('Error sending message:', error);
@@ -1263,10 +1269,17 @@
 
       // Typing Indicator
       messageInput.addEventListener('input', debounce(() => {
-        if (currentChatUserId) {
-          socket.emit('typing', {sender_id: '{{ current_user_id }}', to_user_id: currentChatUserId});
+        if (currentChatUserId && messageInput.value.trim() !== '') {
+          if (!isTyping) {
+            socket.emit('typing', {sender_id: '{{ current_user_id }}', to_user_id: currentChatUserId});
+            isTyping = true;
+          }
+          clearTimeout(typingTimeout);
+          typingTimeout = setTimeout(() => {
+            isTyping = false;
+          }, 3000);
         }
-      }, 500));
+      }, 300));
 
       // Load Messages
       async function loadMessages(userId) {
@@ -1395,7 +1408,7 @@
           auth: {
             user_id: '{{ current_user_id }}'
           },
-          transports: ['websocket', 'polling'],  // Explicit transports for iOS compatibility
+          transports: ['polling', 'websocket'],  // Prefer polling first to avoid websocket issues
           reconnection: true,
           reconnectionAttempts: Infinity,
           reconnectionDelay: 1000
@@ -1552,6 +1565,26 @@
         socket.on('messages_read', (data) => {
           if (data.conversation_id === currentChatUserId) {
             updateReadStatus();
+          }
+        });
+
+        socket.on('update_conversation', (data) => {
+          const conv = document.querySelector(`.conversation[data-user-id="${data.other_id}"]`);
+          if (conv) {
+            conv.querySelector('.last-message').textContent = data.last_message;
+            const time = conv.querySelector('.time');
+            const date = new Date(data.timestamp);
+            time.textContent = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+            time.dataset.isoTime = data.timestamp;
+            if (data.unread && data.other_id !== currentChatUserId) {
+              let unreadEl = conv.querySelector('.unread-dot');
+              if (!unreadEl) {
+                unreadEl = document.createElement('span');
+                unreadEl.className = 'unread-dot';
+                conv.appendChild(unreadEl);
+              }
+            }
+            conv.parentNode.prepend(conv);
           }
         });
       }

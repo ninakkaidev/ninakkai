@@ -71,7 +71,7 @@ configure_cloudinary()
 class MongoService:
     def __init__(self):
         self.uri = os.getenv('MONGODB_URI', "mongodb+srv://ninakkaiforyou:9t2GADiJUf8xFhDZ@cluster0.fdoiudh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-        self.client = MongoClient(self.uri, tlsAllowInvalidCertificates=True)
+        self.client = MongoClient(self.uri, tlsAllowInvalidInvalidCertificates=True)
         try:
             self.client.admin.command('ping')
             logger.info("MongoDB connection successful")
@@ -883,12 +883,24 @@ class ChatService:
             del msg_data['_id']
             msg_data['timestamp'] = msg_data['timestamp'].isoformat()
             # Emit to both sender and receiver rooms
-            socketio.emit('new_message', msg_data, room=sender_id)
-            socketio.emit('new_message', msg_data, room=receiver_id)
+            emit('new_message', msg_data, room=sender_id)
+            emit('new_message', msg_data, room=receiver_id)
+            # Also update the conversation list for both
+            self._update_conversation(sender_id, receiver_id, msg_data)
+            self._update_conversation(receiver_id, sender_id, msg_data)
             return {'success': True, 'message_id': msg_data['id']}
         except Exception as e:
             logger.error(f"Send message error: {str(e)}")
             return {'success': False, 'error': str(e)}
+
+    def _update_conversation(self, user_id: str, other_id: str, msg_data: Dict):
+        # Emit an event to update the conversation list
+        emit('update_conversation', {
+            'other_id': other_id,
+            'last_message': msg_data['message'],
+            'timestamp': msg_data['timestamp'],
+            'unread': msg_data['receiver_id'] == user_id
+        }, room=user_id)
 
     def get_messages(self, user1: str, user2: str):
         try:
@@ -906,7 +918,7 @@ class ChatService:
                 {'$set': {'read': True}}
             )
             if updated.modified_count > 0:
-                socketio.emit('messages_read', {'conversation_id': user1}, room=user2)
+                emit('messages_read', {'conversation_id': user1}, room=user2)
             for msg in msgs:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
@@ -958,8 +970,8 @@ class ChatService:
         try:
             result = self.messages.delete_one({'_id': ObjectId(message_id)})
             if result.deleted_count > 0:
-                socketio.emit('message_deleted', {'message_id': message_id}, room=sender_id)
-                socketio.emit('message_deleted', {'message_id': message_id}, room=receiver_id)
+                emit('message_deleted', {'message_id': message_id}, room=sender_id)
+                emit('message_deleted', {'message_id': message_id}, room=receiver_id)
             return {'success': result.deleted_count > 0}
         except Exception as e:
             logger.error(f"Delete message error: {str(e)}")
@@ -1677,7 +1689,7 @@ def handle_typing(data):
     sender_id = data.get('sender_id')
     to_user_id = data.get('to_user_id')
     if sender_id and to_user_id:
-        socketio.emit('user_typing', {'sender_id': sender_id}, room=to_user_id)
+        emit('user_typing', {'sender_id': sender_id}, room=to_user_id)
 
 @app.route('/chat')
 def chat():
@@ -2238,4 +2250,5 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5050, debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    socketio.run(app, host='0.0.0.0', port=port, debug=True)
