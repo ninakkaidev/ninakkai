@@ -1781,6 +1781,51 @@
           location.reload();
         }
       }, 300));
+
+      // Lazy load conversations
+      async function loadConversations() {
+        try {
+          const response = await fetch('/api/conversations');
+          const result = await response.json();
+          if (result.success) {
+            const conversationsList = document.querySelector('.conversations-list');
+            conversationsList.innerHTML = '';
+            result.conversations.forEach(conv => {
+              const convDiv = document.createElement('div');
+              convDiv.className = 'conversation';
+              convDiv.dataset.userId = conv.id;
+              convDiv.innerHTML = `
+                <div class="conversation-pic">
+                  <img src="${conv.image}" alt="Profile">
+                </div>
+                <div class="conversation-info">
+                  <div class="conversation-header">
+                    <h5>${conv.full_name}</h5>
+                    <span class="time" data-iso-time="${conv.time}">${conv.time}</span>
+                  </div>
+                  <p class="last-message">${conv.last_message}</p>
+                  ${conv.unread > 0 ? '<span class="unread-dot"></span>' : ''}
+                </div>
+              `;
+              convDiv.addEventListener('click', async (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
+                convDiv.classList.add('active');
+                await loadMessages(conv.id);
+                navigationHistory.push('chat');
+              });
+              conversationsList.appendChild(convDiv);
+            });
+            // Optionally update unread_count if displayed in UI
+          } else {
+            console.error('Failed to load conversations:', result.error);
+          }
+        } catch (error) {
+          console.error('Error loading conversations:', error);
+        }
+      }
+
+      loadConversations();
     });
   </script>
 </body>

@@ -1326,7 +1326,8 @@ def age_verification():
             api_key = "74303dce-713f-4b91-829e-7e0a6c76a25c"
             headers = {"x-api-key": api_key}
             file.seek(0)  # Reset file pointer if needed
-            files = {'file': (file.filename, file.read(), file.mimetype)}
+            file = file.read()
+            files = {'file': ('image.jpg', file, 'image/jpeg')}
             resp = requests.post(api_url, files=files, headers=headers)
             if resp.status_code != 200:
                 return jsonify({'success': False, 'error': 'API request failed'}), 500
@@ -1335,7 +1336,7 @@ def age_verification():
             if not results:
                 return jsonify({'success': False, 'error': 'No face detected'}), 400
             prediction = results[0]
-            if 'age' not in prediction or 'gender' not in prediction:
+            if 'age' not in prediction or 'gender' in prediction:
                 return jsonify({'success': False, 'error': 'Invalid API response'}), 500
             age_group = prediction['age']
             detected_gender = prediction['gender'].lower()
@@ -1567,9 +1568,9 @@ def user_profile(user_id):
                 'title': '“This person is a Nurturer.”',
                 'description': 'They’re gentle, loyal, and always ready to hold space for someone they love. They build relationships with quiet strength and warmth.',
                 'tagline': '“Soft-hearted, deep-rooted.”',
-                'strengths': ['Gentle', 'Loyal', 'Empathetic'],
-                'compatibility': ['🛡️ Protector', '👂 Listener'],
-                'color': '#4CAF50'
+                'strengths': ['Gentle', 'Loyal', 'Empathetic'],  # Add some strengths
+                'compatibility': ['🛡️ Protector', '👂 Listener'],  # Examples
+                'color': '#4CAF50'  # Green
             },
             '🛡️ Protector': {
                 'dominant_type': '🛡️ Protector',
@@ -1578,7 +1579,7 @@ def user_profile(user_id):
                 'tagline': '“Safe. Steady. Yours.”',
                 'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
                 'compatibility': ['🌿 Nurturer', '🌙 Dreamer'],
-                'color': '#2196F3'
+                'color': '#2196F3'  # Blue
             },
             '🌙 Dreamer': {
                 'dominant_type': '🌙 Dreamer',
@@ -1587,7 +1588,7 @@ def user_profile(user_id):
                 'tagline': '“Romance is their religion.”',
                 'strengths': ['Deep', 'Bold', 'Soulful'],
                 'compatibility': ['💘 Romantic', '🌟 Idealist'],
-                'color': '#9C27B0'
+                'color': '#9C27B0'  # Purple
             },
             '👂 Listener': {
                 'dominant_type': '👂 Listener',
@@ -1596,7 +1597,7 @@ def user_profile(user_id):
                 'tagline': '“Still waters, true heart.”',
                 'strengths': ['Calm', 'Thoughtful', 'Present'],
                 'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
-                'color': '#03A9F4'
+                'color': '#03A9F4'  # Light Blue
             },
             '💘 Romantic': {
                 'dominant_type': '💘 Romantic',
@@ -1605,7 +1606,7 @@ def user_profile(user_id):
                 'tagline': '“Loving loudly. Feeling deeply.”',
                 'strengths': ['Heart-led', 'Expressive', 'Passionate'],
                 'compatibility': ['🌙 Dreamer', '🌟 Idealist'],
-                'color': '#E91E63'
+                'color': '#E91E63'  # Pink
             },
             '🌟 Idealist': {
                 'dominant_type': '🌟 Idealist',
@@ -1614,7 +1615,7 @@ def user_profile(user_id):
                 'tagline': '“Only real love will do.”',
                 'strengths': ['Believer', 'Clear', 'Soul-seeking'],
                 'compatibility': ['🌙 Dreamer', '💘 Romantic'],
-                'color': '#FFEB3B'
+                'color': '#FFEB3B'  # Yellow
             },
         }
         dominant_type = quiz_result['scores']['dominant_type'] if quiz_result else 'N/A'
@@ -1710,6 +1711,18 @@ def chat():
             'secondary_percentage': quiz_completed['scores']['secondary_percentage']
         }
         
+        # Render with empty conversations for lazy loading
+        return render_template('chat.html', profile=profile, conversations=[], unread_count=0, current_user_id=current_user_id)
+    except Exception as e:
+        logger.error(f"Chat error: {str(e)}")
+        return render_template('chat.html', profile={'image': 'https://randomuser.me/api/portraits/women/44.jpg'}, conversations=[], unread_count=0, error=str(e), current_user_id='')
+
+@app.route('/api/conversations', methods=['GET'])
+def api_conversations():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    try:
+        current_user_id = session['user_id']
         matched_user_ids = mongo_service.get_matched_users(current_user_id)
         unread_count = chat_service.get_unread_count(current_user_id)
         conversations = []
@@ -1729,11 +1742,10 @@ def chat():
                 }
                 conversations.append(conv)
         conversations.sort(key=lambda c: c['sort_time'], reverse=True)
-        
-        return render_template('chat.html', profile=profile, conversations=conversations, unread_count=unread_count, current_user_id=current_user_id)
+        return jsonify({'success': True, 'conversations': conversations, 'unread_count': unread_count}), 200
     except Exception as e:
-        logger.error(f"Chat error: {str(e)}")
-        return render_template('chat.html', profile={'image': 'https://randomuser.me/api/portraits/women/44.jpg'}, conversations=[], unread_count=0, error=str(e), current_user_id='')
+        logger.error(f"API conversations error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to fetch conversations'}), 500
 
 @app.route("/messages/<other_user_id>", methods=['GET'])
 def get_messages(other_user_id):
@@ -2222,4 +2234,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5050, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5050, debug=True) 
