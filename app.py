@@ -71,7 +71,7 @@ configure_cloudinary()
 class MongoService:
     def __init__(self):
         self.uri = os.getenv('MONGODB_URI', "mongodb+srv://ninakkaiforyou:9t2GADiJUf8xFhDZ@cluster0.fdoiudh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-        self.client = MongoClient(self.uri, tlsAllowInvalidInvalidCertificates=True)
+        self.client = MongoClient(self.uri, tlsAllowInvalidCertificates=True)
         try:
             self.client.admin.command('ping')
             logger.info("MongoDB connection successful")
@@ -1880,8 +1880,8 @@ def profile():
                 'dominant_type': '👂 Listener',
                 'title': '“You are a Listener.”',
                 'description': 'Calm and thoughtful, you hear more than what’s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
-                'tagline': '“Still waters, true heart.”',
-                'strengths': ['Calm', 'Thoughtful', 'Present'],
+                'tagline': “Still waters, true heart.”
+, 'strengths': ['Calm', 'Thoughtful', 'Present'],
                 'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
                 'color': '#03A9F4'  # Light Blue
             },
@@ -2250,5 +2250,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    socketio.run(app, host='0.0.0.0', port=port, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5050, debug=True)
