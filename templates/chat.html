@@ -1009,7 +1009,6 @@
       let currentChatUserId = null;
       let navigationHistory = ['conversations'];
       let typingTimeout;
-      let isTyping = false;
       let newMessageNotice = null;
       let socket = null;
 
@@ -1239,11 +1238,11 @@
           replyingDiv = document.createElement('div');
           replyingDiv.className = 'replying-to';
           replyingDiv.innerHTML = '<span></span><button class="cancel-reply"><i class="fas fa-times"></i></button>';
-          document.querySelector('.message-input-container').insertBefore(replyingDiv, document.querySelector('.message-input'));
           replyingDiv.querySelector('.cancel-reply').addEventListener('click', () => {
             replyingDiv.style.display = 'none';
             messageInput.dataset.replyingTo = '';
           });
+          document.querySelector('.message-input-container').insertBefore(replyingDiv, document.querySelector('.message-input'));
         }
 
         replyingDiv.querySelector('span').textContent = `Replying to: ${messageText.substring(0, 50)}...`;
@@ -1261,14 +1260,7 @@
       // Typing Indicator
       messageInput.addEventListener('input', debounce(() => {
         if (currentChatUserId && messageInput.value.trim() !== '') {
-          if (!isTyping) {
-            socket.emit('typing', {sender_id: '{{ current_user_id }}', to_user_id: currentChatUserId});
-            isTyping = true;
-          }
-          clearTimeout(typingTimeout);
-          typingTimeout = setTimeout(() => {
-            isTyping = false;
-          }, 3000);
+          socket.emit('typing', {sender_id: '{{ current_user_id }}', to_user_id: currentChatUserId});
         }
       }, 300));
 
@@ -1393,7 +1385,7 @@
           auth: {
             user_id: '{{ current_user_id }}'
           },
-          transports: ['polling', 'websocket'],  // Prefer polling first to avoid websocket issues
+          transports: ['websocket', 'polling'],  // Prefer websocket for real-time
           reconnection: true,
           reconnectionAttempts: Infinity,
           reconnectionDelay: 1000
