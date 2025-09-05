@@ -330,7 +330,8 @@
             }
 
             .discovery-grid {
-                grid-template-columns: repeat(2, 1fr);
+                flex-direction: row;
+                overflow-x: auto;
                 gap: 12px;
             }
         }
@@ -349,7 +350,8 @@
             }
             
             .discovery-grid {
-                grid-template-columns: repeat(3, 1fr);
+                flex-direction: row;
+                overflow-x: auto;
                 gap: 16px;
             }
         }
@@ -368,7 +370,8 @@
             }
             
             .discovery-grid {
-                grid-template-columns: repeat(4, 1fr);
+                flex-direction: row;
+                overflow-x: auto;
                 gap: 20px;
             }
         }
@@ -507,7 +510,7 @@
                 <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Discover People</h2>
                 <button id="see-all-discovery" class="text-pink-500 text-sm font-medium">See All</button>
             </div>
-            <div id="discovery-grid" class="discovery-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            <div id="discovery-grid" class="discovery-grid flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory">
                 <!-- Initially empty, populated by JS -->
             </div>
         </div>
@@ -692,7 +695,7 @@
                 });
             }
 
-            // Header scroll effect
+            // Header scroll scroll effect
             window.addEventListener('scroll', () => {
                 mainHeader.classList.toggle('scrolled-header', window.scrollY > 10);
             });
@@ -764,7 +767,7 @@
             function updateDiscovery(discovery) {
                 const discoveryGrid = document.getElementById('discovery-grid');
                 discoveryGrid.innerHTML = discovery.length ? discovery.map(match => `
-                    <div class="discovery-profile discovery-card" data-user-id="${match.id}">
+                    <div class="discovery-profile discovery-card flex-none w-[80%] sm:w-[60%] md:w-[40%] lg:w-[30%] snap-center" data-user-id="${match.id}">
                         <img src="${match.image}" alt="Profile" class="discovery-image">
                         <div class="discovery-rating text-gray-800 dark:text-gray-100">
                             <i class="fas fa-star text-yellow-500 text-xs mr-1"></i>
@@ -1017,18 +1020,6 @@
                         hideLoading();
                         showError('Network error while passing user');
                     }
-                });
-            }
-
-            // Profile card click handler
-            function attachProfileClickListeners() {
-                document.querySelectorAll('.discovery-card:not([data-click-attached])').forEach(card => {
-                    card.addEventListener('click', function(e) {
-                        if (e.target.closest('button')) return;
-                        const userId = this.dataset.userId;
-                        openProfileViewer(userId);
-                    });
-                    card.setAttribute('data-click-attached', 'true');
                 });
             }
 
