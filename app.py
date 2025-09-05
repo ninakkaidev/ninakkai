@@ -905,8 +905,6 @@ class ChatService:
                 {'receiver_id': user1, 'sender_id': user2, 'read': False},
                 {'$set': {'read': True}}
             )
-            if updated.modified_count > 0:
-                socketio.emit('messages_read', {'conversation_id': user1}, room=user2)
             for msg in msgs:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
@@ -2173,7 +2171,7 @@ def upload_photo():
         return jsonify({'success': False, 'error': 'No file provided'}), 400
     user = mongo_service.get_user_by_id(session['user_id'])
     if len(user.get('photos', [])) >= 7:
-        logger.warning("Maximum photos limit reached")
+        logger.warning("Maximum photos limit limit reached")
         return jsonify({'success': False, 'error': 'Maximum 7 photos allowed'}), 400
     try:
         logger.info("Attempting to upload photo to Cloudinary")
