@@ -746,7 +746,8 @@
 
         socket = io({
           auth: { user_id: '{{ current_user_id }}' },
-          transports: ['websocket', 'polling'],
+          transports: ['polling'],
+          upgrade: false,
           reconnection: true,
           reconnectionAttempts: Infinity,
           reconnectionDelay: 1000
