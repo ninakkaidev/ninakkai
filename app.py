@@ -561,9 +561,9 @@ class MongoService:
         max_count = max(type_counts.values())
         tied_types = [t for t, cnt in type_counts.items() if cnt == max_count]
         if len(tied_types) > 1:
-            q2_answer = next((ans for ans in answers if 'ranking' in ans), None)
+            q2_answer = next((a['answer'] for a in answers if a.get('question') == 1), None)
             if q2_answer:
-                ranked_types = self._parse_ranked_types(q2_answer)  # Assume parse returns ordered types
+                ranked_types = self._parse_ranked_types(q2_answer)
                 dominant_type = self._resolve_tie_with_ranking(tied_types, ranked_types)
             else:
                 dominant_type = tied_types[0]
@@ -870,8 +870,7 @@ class ChatService:
                 'sender_id': sender_id,
                 'receiver_id': receiver_id,
                 'message': message,
-                'timestamp': datetime.now(timezone.utc),
-                'read': False
+                'timestamp': datetime.now(timezone.utc)
             }
             if replied_to:
                 replied_msg = self.messages.find_one({'_id': ObjectId(replied_to)})
@@ -880,11 +879,23 @@ class ChatService:
                     msg_data['replied_text'] = replied_msg['message']
             result = self.messages.insert_one(msg_data)
             msg_data['id'] = str(result.inserted_id)
-            del msg_data['_id']
             msg_data['timestamp'] = msg_data['timestamp'].isoformat()
             # Emit to both sender and receiver rooms
             socketio.emit('new_message', msg_data, room=sender_id)
             socketio.emit('new_message', msg_data, room=receiver_id)
+            # Emit update_conversation to both for last message update
+            socketio.emit('update_conversation', {
+                'other_id': receiver_id,
+                'last_message': message,
+                'timestamp': msg_data['timestamp'],
+                'unread': sender_id != receiver_id  # Unread if not self-message
+            }, room=sender_id)
+            socketio.emit('update_conversation', {
+                'other_id': sender_id,
+                'last_message': message,
+                'timestamp': msg_data['timestamp'],
+                'unread': True
+            }, room=receiver_id)
             return {'success': True, 'message_id': msg_data['id']}
         except Exception as e:
             logger.error(f"Send message error: {str(e)}")
@@ -901,12 +912,6 @@ class ChatService:
                 {'sender_id': user2, 'receiver_id': user1}
             ]}
             msgs = list(self.messages.find(query).sort('timestamp', 1))
-            updated = self.messages.update_many(
-                {'receiver_id': user1, 'sender_id': user2, 'read': False},
-                {'$set': {'read': True}}
-            )
-            if updated.modified_count > 0:
-                socketio.emit('messages_read', {'conversation_id': user1}, room=user2)
             for msg in msgs:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
@@ -942,14 +947,14 @@ class ChatService:
 
     def get_unread_count(self, user_id: str) -> int:
         try:
-            return self.messages.count_documents({'receiver_id': user_id, 'read': False})
+            return self.messages.count_documents({'receiver_id': user_id})
         except Exception as e:
             logger.error(f"Get unread count error: {str(e)}")
             return 0
 
     def get_unread_count_per_user(self, user_id: str, sender_id: str) -> int:
         try:
-            return self.messages.count_documents({'receiver_id': user_id, 'sender_id': sender_id, 'read': False})
+            return self.messages.count_documents({'receiver_id': user_id, 'sender_id': sender_id})
         except Exception as e:
             logger.error(f"Get unread per user error: {str(e)}")
             return 0
@@ -1661,9 +1666,9 @@ def user_profile(user_id):
 
 @socketio.on('connect')
 def handle_connect(auth):
-    if auth and auth.get('user_id'):
+    if auth and 'user_id' in auth:
         join_room(auth['user_id'])
-        logger.info(f"User {auth['user_id']} connected and joined room")
+        logger.info(f"User {auth['user_id']} connected and joined room {auth['user_id']}")
     else:
         logger.warning("Unauthorized WebSocket connection attempt")
         return False
@@ -1677,7 +1682,8 @@ def handle_typing(data):
     sender_id = data.get('sender_id')
     to_user_id = data.get('to_user_id')
     if sender_id and to_user_id:
-        socketio.emit('user_typing', {'sender_id': sender_id}, room=to_user_id)
+        emit('user_typing', {'sender_id': sender_id}, room=to_user_id)
+        logger.info(f"Typing event emitted from {sender_id} to {to_user_id}")
 
 @app.route('/chat')
 def chat():
@@ -2173,7 +2179,7 @@ def upload_photo():
         return jsonify({'success': False, 'error': 'No file provided'}), 400
     user = mongo_service.get_user_by_id(session['user_id'])
     if len(user.get('photos', [])) >= 7:
-        logger.warning("Maximum photos limit reached")
+        logger.warning("Maximum photos limit limit reached")
         return jsonify({'success': False, 'error': 'Maximum 7 photos allowed'}), 400
     try:
         logger.info("Attempting to upload photo to Cloudinary")

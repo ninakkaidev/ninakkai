@@ -1162,7 +1162,6 @@
           receiver_id: currentChatUserId,
           message: sanitizeHTML(message),
           timestamp: new Date().toISOString(),
-          read: false,
           replied_to: repliedTo,
           replied_text: repliedTo ? document.querySelector(`[data-message-id="${repliedTo}"] .message-content p`).textContent : null
         };
@@ -1228,7 +1227,6 @@
             ${repliedHtml}
             <p>${sanitizeHTML(msg.message)}</p>
             <span class="message-time">${formattedTime}</span>
-            ${isSent ? `<span class="message-status">${msg.read ? 'Seen' : ''}</span>` : ''}
             <div class="message-actions">
               <button title="Reply" class="reply-btn" data-message-id="${msg.id}"><i class="fas fa-reply"></i></button>
               ${isSent ? `<button title="Delete" class="delete-btn" data-message-id="${msg.id}"><i class="fas fa-trash"></i></button>` : ''}
@@ -1396,12 +1394,6 @@
         newMessageNotice.style.display = 'block';
       }
 
-      function updateReadStatus() {
-        document.querySelectorAll('.message.sent .message-status').forEach(status => {
-          status.textContent = 'Seen';
-        });
-      }
-
       // WebSocket Setup using Socket.IO
       function setupWebSocket() {
         socket = io({
@@ -1560,12 +1552,6 @@
         socket.on('message_deleted', (data) => {
           const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
           if (messageElement) messageElement.remove();
-        });
-
-        socket.on('messages_read', (data) => {
-          if (data.conversation_id === currentChatUserId) {
-            updateReadStatus();
-          }
         });
 
         socket.on('update_conversation', (data) => {
