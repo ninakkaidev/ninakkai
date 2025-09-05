@@ -6,7 +6,6 @@
   <title>ninakkai-ForYou | Personal Chat</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <style>
     :root {
       --primary: #6c5ce7;
@@ -390,10 +389,12 @@
       let navigationHistory = ['conversations'];
       let typingTimeout;
       let newMessageNotice = null;
-      let socket = null;
-
-      // Ask for notifications (once)
-      if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+      let pollInterval = null;
+      let convPollInterval = null;
+      let typingEmitTimer = null;
+      let stopTypingTimer = null;
+      const TYPING_DEBOUNCE_MS = 250;
+      const STOP_TYPING_AFTER_MS = 1200;
 
       // ---------- Emoji Picker ----------
       const emojiBtn = document.querySelector('.btn-emoji');
@@ -627,21 +628,14 @@
       messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
       sendBtn.addEventListener('click', sendMessage);
 
-      // ---------- Typing indicator (robust) ----------
-      let typingEmitTimer = null;
-      let stopTypingTimer = null;
-      const TYPING_DEBOUNCE_MS = 250;
-      const STOP_TYPING_AFTER_MS = 1200;
-
-      function emitTypingStart() {
-        if (!socket || !socket.connected || !currentChatUserId) return;
-        socket.emit('typing', { sender_id: '{{ current_user_id }}', to_user_id: currentChatUserId });
-        socket.emit('user_typing', { sender_id: '{{ current_user_id }}', to_user_id: currentChatUserId });
+      // ---------- Typing indicator (HTTP polling) ----------
+      async function sendTypingStart() {
+        if (!currentChatUserId) return;
+        await fetch(`/start_typing/${currentChatUserId}`, { method: 'POST' });
       }
-      function emitTypingStop() {
-        if (!socket || !socket.connected || !currentChatUserId) return;
-        socket.emit('stop_typing', { sender_id: '{{ current_user_id }}', to_user_id: currentChatUserId });
-        socket.emit('user_stop_typing', { sender_id: '{{ current_user_id }}', to_user_id: currentChatUserId });
+      async function sendTypingStop() {
+        if (!currentChatUserId) return;
+        await fetch(`/stop_typing/${currentChatUserId}`, { method: 'POST' });
       }
       function showTypingIndicator() {
         let ti = document.querySelector('.typing-indicator');
@@ -663,25 +657,13 @@
       messageInput.addEventListener('input', () => {
         clearTimeout(typingEmitTimer);
         typingEmitTimer = setTimeout(() => {
-          if (messageInput.value.trim().length > 0) emitTypingStart();
-          else emitTypingStop();
+          if (messageInput.value.trim().length > 0) sendTypingStart();
+          else sendTypingStop();
         }, TYPING_DEBOUNCE_MS);
 
         clearTimeout(stopTypingTimer);
-        stopTypingTimer = setTimeout(emitTypingStop, STOP_TYPING_AFTER_MS);
+        stopTypingTimer = setTimeout(sendTypingStop, STOP_TYPING_AFTER_MS);
       });
-
-      function bindTypingListeners() {
-        socket.off('typing'); socket.off('user_typing'); socket.off('stop_typing'); socket.off('user_stop_typing');
-
-        const handleStart = (data) => { if (data && data.sender_id === currentChatUserId) showTypingIndicator(); };
-        const handleStop = (data) => { if (data && data.sender_id === currentChatUserId) hideTypingIndicator(); };
-
-        socket.on('typing', handleStart);
-        socket.on('user_typing', handleStart);
-        socket.on('stop_typing', handleStop);
-        socket.on('user_stop_typing', handleStop);
-      }
 
       // ---------- Load messages ----------
       async function loadMessages(userId) {
@@ -730,156 +712,60 @@
               if (unread) unread.remove();
             }
 
-            // Optional: tell server which room we joined (pair-room)
-            try {
-              socket.emit('join', { other_id: currentChatUserId });
-            } catch {}
+            startPolling();
           } else alert('Failed to load messages. Please try again.');
         } catch {
           alert('Error loading messages. Please check your connection.');
         }
       }
 
-      // ---------- Socket setup (deduped listeners + acks) ----------
-      function setupWebSocket() {
-        if (socket) { try { socket.disconnect(); } catch(e) {} }
-
-        socket = io({
-          auth: { user_id: '{{ current_user_id }}' },
-          transports: ['polling'],
-          upgrade: false,
-          reconnection: true,
-          reconnectionAttempts: Infinity,
-          reconnectionDelay: 1000
-        });
-
-        socket.on('connect', () => {
-          console.log('Connected to SocketIO server');
-          bindTypingListeners();
-        });
-
-        socket.on('connect_error', (err) => { console.error('Connection error:', err.message); });
-        socket.on('disconnect', (reason) => { console.log('Disconnected:', reason); });
-
-        socket.off('new_message'); socket.off('new_match'); socket.off('message_deleted'); socket.off('update_conversation');
-
-        socket.on('new_message', (data, ack) => {
+      // ---------- Polling for messages and typing ----------
+      function startPolling() {
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(async () => {
+          if (!currentChatUserId) return;
           try {
-            if (typeof ack === 'function') ack({ received: true });
-
-            const otherId = data.sender_id === '{{ current_user_id }}' ? data.receiver_id : data.sender_id;
-            let conv = document.querySelector(`.conversation[data-user-id="${otherId}"]`);
-            const formattedTime = new Date(data.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
-
-            if (conv) {
-              conv.querySelector('.last-message').textContent = data.message;
-              const timeEl = conv.querySelector('.time');
-              if (timeEl) { timeEl.textContent = formattedTime; timeEl.dataset.isoTime = data.timestamp; }
-              conv.parentNode.prepend(conv);
-              if (data.receiver_id === '{{ current_user_id }}' && otherId !== currentChatUserId) {
-                if (!conv.querySelector('.unread-dot')) {
-                  const unread = document.createElement('span'); unread.className = 'unread-dot'; conv.appendChild(unread);
-                }
-              }
-            } else {
-              const conversationsList = document.querySelector('.conversations-list');
-              conv = document.createElement('div');
-              conv.className = 'conversation';
-              conv.dataset.userId = otherId;
-              conv.innerHTML = `
-                <div class="conversation-pic"><img src="https://randomuser.me/api/portraits/lego/1.jpg" alt="Profile"></div>
-                <div class="conversation-info">
-                  <div class="conversation-header">
-                    <h5>${otherId}</h5>
-                    <span class="time" data-iso-time="${data.timestamp}">${formattedTime}</span>
-                  </div>
-                  <p class="last-message">${data.message}</p>
-                </div>`;
-              conv.addEventListener('click', async () => {
-                document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
-                conv.classList.add('active');
-                await loadMessages(otherId);
-                navigationHistory.push('chat');
-              });
-              conversationsList.prepend(conv);
-            }
-
-            if (currentChatUserId === otherId) {
-              const isSent = data.sender_id === '{{ current_user_id }}';
-
-              if (isSent) {
-                const tempMessages = messagesContainer.querySelectorAll('[data-message-id^="temp-"]');
-                if (tempMessages.length > 0) {
-                  const lastTemp = tempMessages[tempMessages.length - 1];
-                  lastTemp.dataset.messageId = data.id;
-                  const timeSpan = lastTemp.querySelector('.message-time');
-                  timeSpan.textContent = formattedTime;
+            const response = await fetch(`/messages/${currentChatUserId}`);
+            const result = await response.json();
+            if (result.success) {
+              const currentMsgsIds = Array.from(messagesContainer.querySelectorAll('.message')).map(el => el.dataset.messageId);
+              result.messages.forEach(msg => {
+                if (!currentMsgsIds.includes(msg.id)) {
+                  const isSent = msg.sender_id === '{{ current_user_id }}';
+                  const el = createMessageElement(msg, isSent);
+                  messagesContainer.appendChild(el);
                   attachBottomSentinel();
-                  smartScrollToBottom(true);
-                  return;
+                  if (document.hidden || !atBottom) {
+                    showNewMessageNotice();
+                    if ('Notification' in window && Notification.permission === 'granted' && !isSent) {
+                      new Notification('New Message', { body: msg.message });
+                    }
+                  } else {
+                    smartScrollToBottom(true);
+                  }
                 }
-              }
-
-              const el = createMessageElement(data, isSent);
-              messagesContainer.appendChild(el);
-              attachBottomSentinel();
-
-              if (document.hidden || !atBottom) {
-                showNewMessageNotice();
-                if ('Notification' in window && Notification.permission === 'granted' && data.sender_id !== '{{ current_user_id }}') {
-                  new Notification('New Message', { body: data.message });
-                }
+              });
+              if (result.is_typing) {
+                showTypingIndicator();
               } else {
-                smartScrollToBottom(true);
+                hideTypingIndicator();
               }
             }
-          } catch (err) { console.error('Error in new_message handler:', err); }
-        });
-
-        socket.on('new_match', (data) => {
-          const conversationsList = document.querySelector('.conversations-list');
-          let conv = document.querySelector(`.conversation[data-user-id="${data.match_id}"]`);
-          if (conv) return;
-          conv = document.createElement('div');
-          conv.className = 'conversation';
-          conv.dataset.userId = data.match_id;
-          conv.innerHTML = `
-            <div class="conversation-pic"><img src="${data.image}" alt="Profile"></div>
-            <div class="conversation-info">
-              <div class="conversation-header"><h5>${data.full_name}</h5><span class="time" data-iso-time=""></span></div>
-              <p class="last-message">Start chatting!</p>
-            </div>`;
-          conv.addEventListener('click', async () => {
-            document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
-            conv.classList.add('active');
-            await loadMessages(data.match_id);
-            navigationHistory.push('chat');
-          });
-          conversationsList.prepend(conv);
-        });
-
-        socket.on('message_deleted', (data) => {
-          const el = document.querySelector(`[data-message-id="${data.message_id}"]`);
-          if (el) el.remove();
-        });
-
-        socket.on('update_conversation', (data) => {
-          const conv = document.querySelector(`.conversation[data-user-id="${data.other_id}"]`);
-          if (!conv) return;
-          conv.querySelector('.last-message').textContent = data.last_message;
-          const time = conv.querySelector('.time');
-          const date = new Date(data.timestamp);
-          time.textContent = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
-          time.dataset.isoTime = data.timestamp;
-          if (data.unread && data.other_id !== currentChatUserId) {
-            if (!conv.querySelector('.unread-dot')) {
-              const unreadEl = document.createElement('span'); unreadEl.className = 'unread-dot'; conv.appendChild(unreadEl);
-            }
+          } catch (e) {
+            console.error('Polling error:', e);
           }
-          conv.parentNode.prepend(conv);
-        });
+        }, 2000);  // Poll every 2 seconds
       }
-      setupWebSocket();
+
+      // ---------- Polling for conversations list ----------
+      function startConvPolling() {
+        if (convPollInterval) clearInterval(convPollInterval);
+        convPollInterval = setInterval(() => {
+          if (!currentChatUserId) {  // Only poll when in conversations list
+            loadConversations();
+          }
+        }, 10000);  // Every 10 seconds
+      }
 
       // ---------- Responsive / viewport fixes ----------
       const conversationsCol = document.querySelector('.conversations-col');
@@ -981,6 +867,7 @@
       // Back buttons
       chatBackBtn.addEventListener('click', () => {
         currentChatUserId = null;
+        if (pollInterval) clearInterval(pollInterval);
         if (window.innerWidth <= 992) {
           chatArea.classList.remove('active');
           chatArea.style.display = 'none';
@@ -1079,6 +966,7 @@
         }
       }
       loadConversations();
+      startConvPolling();
     });
   </script>
 </body>

@@ -3,7 +3,6 @@ eventlet.monkey_patch(thread=False)  # Disable thread patching to avoid Werkzeug
 
 from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory, jsonify, Response
 from flask_cors import CORS
-from flask_socketio import SocketIO, emit, join_room, leave_room
 from pymongo import MongoClient
 from typing import Dict, Any, Optional, List
 from bson import ObjectId
@@ -61,9 +60,6 @@ app.config.update(
     SESSION_COOKIE_PATH='/',
     SESSION_COOKIE_DOMAIN=None
 )
-
-# Initialize SocketIO (use 'eventlet' async_mode for better real-time performance)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', ping_timeout=60, ping_interval=25)
 
 # Initialize Cloudinary
 configure_cloudinary()
@@ -470,19 +466,6 @@ class MongoService:
             if is_match:
                 self.add_notification(user_id, f"You matched with {liked['full_name']}", 'match', matched_user_id)
                 self.add_notification(matched_user_id, f"You matched with {liker['full_name']}", 'match', user_id)
-                # Emit new_match to both users
-                match_data_for_user = {
-                    'match_id': matched_user_id,
-                    'full_name': liked['full_name'],
-                    'image': liked.get('image', 'https://randomuser.me/api/portraits/women/44.jpg')
-                }
-                socketio.emit('new_match', match_data_for_user, room=user_id)
-                match_data_for_matched = {
-                    'match_id': user_id,
-                    'full_name': liker['full_name'],
-                    'image': liker.get('image', 'https://randomuser.me/api/portraits/women/44.jpg')
-                }
-                socketio.emit('new_match', match_data_for_matched, room=matched_user_id)
             logger.info(f"Like successful, like_id: {str(result.inserted_id)}, is_match: {is_match}")
             response = {'success': True, 'like_id': str(result.inserted_id), 'is_match': is_match}
             if likes_remaining is not None:
@@ -859,6 +842,8 @@ class ChatService:
             logger.error(f"Chat MongoDB connection failed: {str(e)}")
         self.db = self.client['chat_db']
         self.messages = self.db['messages']
+        self.typing = self.db['typing']
+        self.typing.create_index("timestamp", expireAfterSeconds=10)
 
     def send_message(self, sender_id: str, receiver_id: str, message: str, replied_to: str = None) -> Dict[str, Any]:
         try:
@@ -882,9 +867,6 @@ class ChatService:
             msg_data['id'] = str(result.inserted_id)
             del msg_data['_id']
             msg_data['timestamp'] = msg_data['timestamp'].isoformat()
-            # Emit to both sender and receiver rooms
-            socketio.emit('new_message', msg_data, room=sender_id)
-            socketio.emit('new_message', msg_data, room=receiver_id)
             return {'success': True, 'message_id': msg_data['id']}
         except Exception as e:
             logger.error(f"Send message error: {str(e)}")
@@ -915,7 +897,8 @@ class ChatService:
                 if msg['timestamp'].tzinfo is None:
                     msg['timestamp'] = pytz.UTC.localize(msg['timestamp'])
                 msg['timestamp'] = msg['timestamp'].isoformat()
-            return msgs
+            is_typing = self.is_typing(user2, user1)
+            return {'success': True, 'messages': msgs, 'is_typing': is_typing}
         except Exception as e:
             logger.error(f"Get messages error: {str(e)}")
             return {'success': False, 'error': str(e)}
@@ -955,13 +938,33 @@ class ChatService:
     def delete_message(self, message_id: str, sender_id: str, receiver_id: str) -> Dict[str, Any]:
         try:
             result = self.messages.delete_one({'_id': ObjectId(message_id)})
-            if result.deleted_count > 0:
-                socketio.emit('message_deleted', {'message_id': message_id}, room=sender_id)
-                socketio.emit('message_deleted', {'message_id': message_id}, room=receiver_id)
             return {'success': result.deleted_count > 0}
         except Exception as e:
             logger.error(f"Delete message error: {str(e)}")
             return {'success': False, 'error': str(e)}
+
+    def start_typing(self, from_id: str, to_id: str):
+        try:
+            self.typing.update_one(
+                {'from_id': from_id, 'to_id': to_id},
+                {'$set': {'timestamp': datetime.now(timezone.utc)}},
+                upsert=True
+            )
+        except Exception as e:
+            logger.error(f"Start typing error: {str(e)}")
+
+    def stop_typing(self, from_id: str, to_id: str):
+        try:
+            self.typing.delete_one({'from_id': from_id, 'to_id': to_id})
+        except Exception as e:
+            logger.error(f"Stop typing error: {str(e)}")
+
+    def is_typing(self, from_id: str, to_id: str) -> bool:
+        try:
+            return bool(self.typing.find_one({'from_id': from_id, 'to_id': to_id}))
+        except Exception as e:
+            logger.error(f"Is typing error: {str(e)}")
+            return False
 
 mongo_service = MongoService()
 chat_service = ChatService()
@@ -998,7 +1001,7 @@ def send_verification_email(email: str, verification_token: str) -> Dict[str, An
         return {'success': True}
     except Exception as e:
         logger.error(f"Failed to send verification email to {email}: {str(e)}")
-        return {'success': False, 'error': str(e)}
+        return {'success':False, 'error': str(e)}
 
 def send_reset_email(email: str, reset_token: str) -> Dict[str, Any]:
     try:
@@ -1657,26 +1660,6 @@ def user_profile(user_id):
         logger.error(f"User profile endpoint error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@socketio.on('connect')
-def handle_connect(auth):
-    if auth and auth.get('user_id'):
-        join_room(auth['user_id'])
-        logger.info(f"User {auth['user_id']} connected and joined room")
-    else:
-        logger.warning("Unauthorized WebSocket connection attempt")
-        return False
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    logger.info("User disconnected")
-
-@socketio.on('typing')
-def handle_typing(data):
-    sender_id = data.get('sender_id')
-    to_user_id = data.get('to_user_id')
-    if sender_id and to_user_id:
-        socketio.emit('user_typing', {'sender_id': sender_id}, room=to_user_id)
-
 @app.route('/chat')
 def chat():
     logger.debug(f"Session in chat: {session}")
@@ -1757,11 +1740,8 @@ def get_messages(other_user_id):
     if not mongo_service.is_matched(current_user_id, other_user_id):
         return jsonify({'success': False, 'error': 'Not matched'}), 403
     try:
-        messages = chat_service.get_messages(current_user_id, other_user_id)
-        if isinstance(messages, dict):
-            return jsonify(messages), 400
-        else:
-            return jsonify({'success': True, 'messages': messages}), 200
+        result = chat_service.get_messages(current_user_id, other_user_id)
+        return jsonify(result), 200 if result['success'] else 400
     except Exception as e:
         logger.error(f"Get messages endpoint error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1818,6 +1798,20 @@ def block_user_endpoint():
         return jsonify({'success': False, 'error': 'No user ID provided'}), 400
     result = mongo_service.block_user(session['user_id'], blocked_user_id)
     return jsonify(result)
+
+@app.route('/start_typing/<to_id>', methods=['POST'])
+def start_typing(to_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    chat_service.start_typing(session['user_id'], to_id)
+    return jsonify({'success': True})
+
+@app.route('/stop_typing/<to_id>', methods=['POST'])
+def stop_typing(to_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    chat_service.stop_typing(session['user_id'], to_id)
+    return jsonify({'success': True})
 
 @app.route('/profile')
 def profile():
@@ -2150,7 +2144,7 @@ def upload_profile_picture():
         logger.info(f"Uploaded profile picture URL: {url}")
         update_result = mongo_service.update_user(session['user_id'], {'image': url})
         if update_result['success']:
-            logger.info("User profile picture updated successfully in database")
+            logger.info("User profile profile picture updated successfully in database")
             return jsonify({'success': True, 'url': url}), 200
         else:
             logger.error("Failed to update user profile picture in database")
@@ -2171,7 +2165,7 @@ def upload_photo():
         return jsonify({'success': False, 'error': 'No file provided'}), 400
     user = mongo_service.get_user_by_id(session['user_id'])
     if len(user.get('photos', [])) >= 7:
-        logger.warning("Maximum photos limit limit reached")
+        logger.warning("Maximum photos limit reached")
         return jsonify({'success': False, 'error': 'Maximum 7 photos allowed'}), 400
     try:
         logger.info("Attempting to upload photo to Cloudinary")
@@ -2236,4 +2230,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5050, debug=True)
+    app.run(host='0.0.0.0', port=5050, debug=True)
