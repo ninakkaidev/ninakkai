@@ -298,6 +298,24 @@
             box-shadow: 0 -1px 3px rgba(255,255,255,0.1);
         }
 
+        /* Skeleton loading animation */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        html.dark .skeleton {
+            background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+            background-size: 200% 100%;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
         /* Responsive adjustments */
         @media (max-width: 640px) {
             .profile-image {
@@ -500,7 +518,28 @@
                 <button id="see-all-matches" class="text-pink-500 text-sm font-medium">See All</button>
             </div>
             <div id="matches-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                <!-- Initially empty, populated by JS -->
+                <!-- Skeleton loaders for initial loading -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative">
+                    <div class="skeleton w-full h-64"></div>
+                    <div class="p-4">
+                        <div class="skeleton h-6 w-3/4 mb-2"></div>
+                        <div class="skeleton h-4 w-1/2"></div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative">
+                    <div class="skeleton w-full h-64"></div>
+                    <div class="p-4">
+                        <div class="skeleton h-6 w-3/4 mb-2"></div>
+                        <div class="skeleton h-4 w-1/2"></div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative">
+                    <div class="skeleton w-full h-64"></div>
+                    <div class="p-4">
+                        <div class="skeleton h-6 w-3/4 mb-2"></div>
+                        <div class="skeleton h-4 w-1/2"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -511,8 +550,24 @@
                 <button id="see-all-discovery" class="text-pink-500 text-sm font-medium">See All</button>
             </div>
             <div id="discovery-grid" class="discovery-grid flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory">
-                <!-- Initially empty, populated by JS -->
+                <!-- Skeleton loaders for initial loading -->
+                <div class="discovery-profile flex-none w-[80%] sm:w-[60%] md:w-[40%] lg:w-[30%] snap-center">
+                    <div class="skeleton w-full h-72 rounded-xl"></div>
+                </div>
+                <div class="discovery-profile flex-none w-[80%] sm:w-[60%] md:w-[40%] lg:w-[30%] snap-center">
+                    <div class="skeleton w-full h-72 rounded-xl"></div>
+                </div>
+                <div class="discovery-profile flex-none w-[80%] sm:w-[60%] md:w-[40%] lg:w-[30%] snap-center">
+                    <div class="skeleton w-full h-72 rounded-xl"></div>
+                </div>
             </div>
+        </div>
+        
+        <!-- Load More Button -->
+        <div id="load-more-container" class="text-center mt-8 hidden">
+            <button id="load-more-btn" class="bg-pink-500 hover:bg-pink-600 text-white font-medium py-2 px-6 rounded-full transition">
+                Load More Profiles
+            </button>
         </div>
     </main>
 
@@ -544,6 +599,13 @@
             const errorMessage = document.getElementById('error-message');
             const errorText = document.getElementById('error-text');
             const mainHeader = document.getElementById('mainHeader');
+            const loadMoreContainer = document.getElementById('load-more-container');
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            
+            // State for lazy loading
+            let currentPage = 0;
+            let isLoading = false;
+            let hasMoreMatches = true;
             
             // Dark mode persistence
             if (localStorage.theme === 'dark') {
@@ -789,6 +851,70 @@
                     </div>
                 `).join('') : '<p class="text-gray-600 dark:text-gray-100 col-span-full">No people to discover. Try completing your quiz!</p>';
             }
+            
+            // Function to append new matches (for lazy loading)
+            function appendMatches(matches) {
+                const matchesGrid = document.getElementById('matches-grid');
+                const discoveryGrid = document.getElementById('discovery-grid');
+                
+                // Remove skeleton loaders if they exist
+                const skeletonLoaders = matchesGrid.querySelectorAll('.skeleton');
+                skeletonLoaders.forEach(loader => loader.remove());
+                
+                matches.forEach(match => {
+                    const matchCard = document.createElement('div');
+                    matchCard.className = 'bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative discovery-card';
+                    matchCard.dataset.userId = match.id;
+                    matchCard.innerHTML = `
+                        <div class="match-percentage text-gray-800 dark:text-gray-100">${match.match_percentage}%</div>
+                        <img src="${match.image}" alt="${match.full_name}" class="profile-image">
+                        <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
+                            <div class="flex justify-between items-end">
+                                <div>
+                                    <h3 class="text-gray-100 font-bold">${match.full_name}, ${match.age || 'N/A'}</h3>
+                                    <p class="text-gray-300 dark:text-gray-300 text-sm">${match.occupation} • ${match.distance}</p>
+                                </div>
+                                <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition" 
+                                        data-user-id="${match.id}" 
+                                        data-liked="${match.liked}">
+                                    <i class="fas ${match.liked ? 'fa-check' : 'fa-heart'}"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    matchesGrid.appendChild(matchCard);
+                    
+                    const discoveryCard = document.createElement('div');
+                    discoveryCard.className = 'discovery-profile discovery-card flex-none w-[80%] sm:w-[60%] md:w-[40%] lg:w-[30%] snap-center';
+                    discoveryCard.dataset.userId = match.id;
+                    discoveryCard.innerHTML = `
+                        <img src="${match.image}" alt="Profile" class="discovery-image">
+                        <div class="discovery-rating text-gray-800 dark:text-gray-100">
+                            <i class="fas fa-star text-yellow-500 text-xs mr-1"></i>
+                            <span class="text-xs font-medium">${match.rating}</span>
+                        </div>
+                        <div class="discovery-content">
+                            <div class="flex justify-between items-end">
+                                <div>
+                                    <h3 class="text-gray-100 font-bold text-sm md:text-base">${match.full_name}, ${match.age || 'N/A'}</h3>
+                                    <p class="text-gray-300 dark:text-gray-300 text-xs md:text-sm">${match.distance}</p>
+                                </div>
+                                <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center transition" 
+                                        data-user-id="${match.id}" 
+                                        data-liked="${match.liked}">
+                                    <i class="fas ${match.liked ? 'fa-check' : 'fa-heart text-xs md:text-sm'}"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    discoveryGrid.appendChild(discoveryCard);
+                });
+                
+                // Update like buttons and attach listeners
+                updateLikeButtons();
+                attachLikeButtonListeners();
+                attachProfileClickListeners();
+            }
 
             // Profile viewer
             function openProfileViewer(userId) {
@@ -1022,28 +1148,55 @@
                     }
                 });
             }
-
-            // Initial loading state and update like buttons
-            showLoading();
-            fetch('/api/matches')
-                .then(response => response.json())
-                .then(result => {
+            
+            // Function to load matches with pagination
+            async function loadMatches(page = 0) {
+                if (isLoading) return;
+                
+                isLoading = true;
+                showLoading();
+                
+                try {
+                    const response = await fetch(`/api/matches?page=${page}`);
+                    const result = await response.json();
+                    
                     if (result.success) {
-                        updateMatches(result.matches);
-                        updateDiscovery(result.matches);
+                        if (result.matches.length > 0) {
+                            appendMatches(result.matches);
+                            currentPage = page;
+                            
+                            // Show load more button if there are more matches
+                            if (result.has_more) {
+                                loadMoreContainer.classList.remove('hidden');
+                            } else {
+                                loadMoreContainer.classList.add('hidden');
+                                hasMoreMatches = false;
+                            }
+                        } else {
+                            // No more matches
+                            loadMoreContainer.classList.add('hidden');
+                            hasMoreMatches = false;
+                        }
                     } else {
                         showError(result.error || 'Failed to load matches');
                     }
-                })
-                .catch(error => {
+                } catch (error) {
                     showError('Network error while loading matches');
-                })
-                .finally(() => {
+                } finally {
                     hideLoading();
-                    updateLikeButtons();
-                    attachLikeButtonListeners();
-                    attachProfileClickListeners();
-                });
+                    isLoading = false;
+                }
+            }
+
+            // Initial loading state and load first page of matches
+            loadMatches(0);
+            
+            // Load more button event listener
+            loadMoreBtn.addEventListener('click', () => {
+                if (hasMoreMatches && !isLoading) {
+                    loadMatches(currentPage + 1);
+                }
+            });
 
             // See All buttons (placeholder)
             document.querySelectorAll('#see-all-matches, #see-all-discovery').forEach(btn => {
@@ -1051,6 +1204,20 @@
                     showError('See All functionality coming soon!');
                 });
             });
+            
+            // Attach profile click listeners
+            function attachProfileClickListeners() {
+                document.querySelectorAll('.discovery-card:not([data-click-attached])').forEach(card => {
+                    card.addEventListener('click', function(e) {
+                        // Don't open profile if clicking on like button
+                        if (!e.target.closest('.like-button')) {
+                            const userId = this.dataset.userId;
+                            openProfileViewer(userId);
+                        }
+                    });
+                    card.setAttribute('data-click-attached', 'true');
+                });
+            }
         });
     </script>
 </body>
