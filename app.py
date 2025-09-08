@@ -282,7 +282,7 @@ class MongoService:
         except Exception as e:
             logger.error(f"Update password error: {str(e)}")
             return {'success': False, 'error': str(e)}
-
+        
     def save_quiz_results(self, user_id: str, quiz_data: Dict[str, Any]) -> Dict[str, Any]:
         try:
             scores = self._calculate_scores(quiz_data['answers'])
@@ -312,6 +312,25 @@ class MongoService:
                         update_data['interfaith_open'] = ans.get('index') == 0  # 0: Yes, 1: No
                     elif ans['section'] == 'religion_public':
                         update_data['religion_public'] = ans.get('index') == 0  # 0: Yes, 1: No
+                    elif ans['section'] == 'physical_preferences':
+                        importance_map = {
+                            0: 'very_important',
+                            1: 'somewhat_important',
+                            2: 'not_important'
+                        }
+                        update_data['physical_importance'] = importance_map.get(ans.get('index'), 'not_important')
+                    elif ans['section'] == 'physical_traits_preferred':
+                        # Store physical preferences
+                        update_data['physical_preferences'] = ans.get('responses', [])
+                    elif ans['section'] == 'physical_traits_own':
+                        # Store own physical traits
+                        update_data['physical_traits'] = ans.get('responses', [])
+                    elif ans['section'] == 'filter_settings':
+                        # Store filter settings
+                        update_data['filter_settings'] = ans.get('toggles', [])
+                    elif ans['section'] == 'profile_setup':
+                        # Store profile setup data
+                        update_data['profile_data'] = ans.get('responses', [])
 
             if update_data:
                 self.update_user(user_id, update_data)
@@ -328,91 +347,177 @@ class MongoService:
         except Exception as e:
             return {'success': False, 'error': str(e)}
 
-    def get_quiz_results(self, user_id: str) -> Optional[Dict[str, Any]]:
-        try:
-            result = self.quiz_results.find_one({'user_id': user_id}, sort=[('completed_at', -1)])
-            if result:
-                result['id'] = str(result['_id'])
-                del result['_id']
-                return result
-            return None
-        except Exception as e:
-            logger.error(f"Get quiz results error: {str(e)}")
-            return None
-
-    def delete_quiz_results(self, user_id: str) -> Dict[str, Any]:
-        try:
-            self.quiz_results.delete_many({'user_id': user_id})
-            self.users.update_one(
-                {'_id': ObjectId(user_id)},
-                {'$set': {'profile_complete': False}}
-            )
-            return {'success': True}
-        except Exception as e:
-            logger.error(f"Delete quiz results error: {str(e)}")
-            return {'success': False, 'error': str(e)}
+    def _calculate_scores(self, answers: List[Dict[str, Any]]) -> Dict[str, Any]:
+        type_counts = {}
+        # Process first 10 mandatory questions
+        for answer in answers[:10]:
+            if 'type' in answer:
+                answer_type = answer['type']
+                type_counts[answer_type] = type_counts.get(answer_type, 0) + 1
+        
+        # Process optional questions with less weight
+        for answer in answers[10:16]:
+            if 'type' in answer:
+                answer_type = answer['type']
+                type_counts[answer_type] = type_counts.get(answer_type, 0) + 0.5
+        
+        if not type_counts:
+            return {'dominant_type': None, 'dominant_percentage': 0}
+        
+        # Find dominant type
+        max_count = max(type_counts.values())
+        dominant_type = [t for t, cnt in type_counts.items() if cnt == max_count][0]
+        
+        # Calculate percentages
+        total = sum(type_counts.values())
+        dominant_percentage = int((type_counts[dominant_type] / total) * 100)
+        
+        # Find secondary type (second highest)
+        temp_counts = type_counts.copy()
+        del temp_counts[dominant_type]
+        if temp_counts:
+            secondary_type = max(temp_counts, key=temp_counts.get)
+            secondary_percentage = int((temp_counts[secondary_type] / total) * 100)
+        else:
+            secondary_type = None
+            secondary_percentage = 0
+            
+        # Determine keeper/seeker type from answers
+        keeper_seeker = None
+        keeper_count = 0
+        seeker_count = 0
+        
+        for answer in answers:
+            if 'keeperSeeker' in answer:
+                if answer['keeperSeeker'] == 'Keeper':
+                    keeper_count += 1
+                else:
+                    seeker_count += 1
+        
+        if keeper_count > seeker_count:
+            keeper_seeker = 'Keeper'
+        elif seeker_count > keeper_count:
+            keeper_seeker = 'Seeker'
+        
+        return {
+            'dominant_type': dominant_type,
+            'dominant_percentage': dominant_percentage,
+            'secondary_type': secondary_type,
+            'secondary_percentage': secondary_percentage,
+            'keeper_seeker': keeper_seeker,
+            'type_counts': type_counts
+        }
 
     def find_matches(self, user_id: str) -> List[Dict[str, Any]]:
         try:
             current_user = self.get_user_by_id(user_id)
             if not current_user:
                 return []
+                
             user_quiz = self.get_quiz_results(user_id)
             if not user_quiz:
                 return []
+                
             user_scores = user_quiz['scores']
             dominant_type = user_scores['dominant_type']
-
-            # Religion preferences
-            current_religion = current_user.get('religion')
-            current_importance = current_user.get('religion_importance', 'skip')
-            current_interfaith = current_user.get('interfaith_open', False)
-
+            
+            # Get user preferences
+            religion_importance = current_user.get('religion_importance', 'skip')
+            user_religion = current_user.get('religion')
+            interfaith_open = current_user.get('interfaith_open', False)
+            physical_importance = current_user.get('physical_importance', 'not_important')
+            physical_preferences = current_user.get('physical_preferences', [])
+            
             all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
             matches = []
+            
             for other_user in all_users:
                 other_scores = other_user['scores']
+                other_user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
+                
+                if not other_user_data or other_user_data['gender'] == current_user['gender']:
+                    continue
+                
+                # Calculate base match percentage
                 match_percentage = self._calculate_match_percentage(user_scores, other_scores)
-                if other_scores['dominant_type'] == dominant_type or other_scores.get('secondary_type') == dominant_type:
-                    user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
-                    if user_data and user_data['gender'] != current_user['gender']:
-                        # Apply religion filter
-                        other_religion = user_data.get('religion')
-                        include = True
-                        if current_importance != 'skip' and current_religion and other_religion:
-                            match_rel = current_religion == other_religion
-                            if current_importance == 'high' and not match_rel:
-                                include = False
-                            elif current_importance == 'medium' and not match_rel and not current_interfaith:
-                                include = False
-                            elif current_importance == 'low' and not match_rel:
-                                match_percentage = max(0, match_percentage - 10)  # Slight penalty
-
-                        if include:
-                            matches.append({
-                                'id': str(user_data['_id']),
-                                'full_name': user_data['full_name'],
-                                'age': user_data.get('age'),
-                                'gender': user_data.get('gender'),
-                                'image': user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-                                'occupation': user_data.get('occupation', 'N/A'),
-                                'bio': user_data.get('bio', 'No bio available'),
-                                'interests': user_data.get('interests', []),
-                                'distance': 'N/A',
-                                'rating': '4.5',
-                                'dominant_type': other_scores['dominant_type'],
-                                'match_percentage': match_percentage
-                            })
-            return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:10]
+                
+                # Apply religion filter if important
+                if religion_importance != 'skip' and user_religion:
+                    other_religion = other_user_data.get('religion')
+                    if religion_importance == 'high' and other_religion != user_religion:
+                        continue  # Skip if religion doesn't match and it's highly important
+                    elif religion_importance == 'medium' and other_religion != user_religion and not interfaith_open:
+                        match_percentage = max(0, match_percentage - 20)  # Penalty for religion mismatch
+                
+                # Apply physical preferences filter if important
+                if physical_importance != 'not_important' and physical_preferences:
+                    other_physical = other_user_data.get('physical_traits', [])
+                    physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
+                    
+                    if physical_importance == 'very_important' and physical_match_score < 0.5:
+                        continue  # Skip if physical doesn't match and it's very important
+                    elif physical_importance == 'somewhat_important':
+                        match_percentage = int(match_percentage * (0.7 + 0.3 * physical_match_score))
+                
+                matches.append({
+                    'id': str(other_user_data['_id']),
+                    'full_name': other_user_data['full_name'],
+                    'age': other_user_data.get('age'),
+                    'gender': other_user_data.get('gender'),
+                    'image': other_user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+                    'occupation': other_user_data.get('occupation', 'N/A'),
+                    'bio': other_user_data.get('bio', 'No bio available'),
+                    'interests': other_user_data.get('interests', []),
+                    'distance': 'N/A',
+                    'rating': '4.5',
+                    'dominant_type': other_scores['dominant_type'],
+                    'match_percentage': match_percentage,
+                    'keeper_seeker': other_scores.get('keeper_seeker', 'Unknown')
+                })
+            
+            return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:20]
         except Exception as e:
             logger.error(f"Find matches error: {str(e)}")
             return []
 
+    def _calculate_physical_match(self, preferences: List, traits: List) -> float:
+        """Calculate how well physical traits match preferences (0-1)"""
+        if not preferences or not traits:
+            return 0.5  # Neutral score if no data
+        
+        match_score = 0
+        total_comparisons = 0
+        
+        # Simple implementation - in real app, you'd have more sophisticated matching
+        for pref in preferences:
+            if isinstance(pref, dict) and 'label' in pref and 'value' in pref:
+                for trait in traits:
+                    if isinstance(trait, dict) and 'label' in trait and 'value' in trait:
+                        if pref['label'] == trait['label']:
+                            total_comparisons += 1
+                            if pref['value'] == trait['value'] or pref['value'] == 'No Preference':
+                                match_score += 1
+                            # For range values, you'd need more complex logic
+        
+        return match_score / total_comparisons if total_comparisons > 0 else 0.5
+
     def _calculate_match_percentage(self, user_scores: Dict[str, Any], other_scores: Dict[str, Any]) -> int:
         try:
-            dominant_match = 50 if user_scores['dominant_type'] == other_scores['dominant_type'] else 20
-            secondary_match = 30 if user_scores.get('secondary_type') == other_scores.get('secondary_type') and user_scores.get('secondary_type') else 10
-            return min(dominant_match + secondary_match, 100)
+            # Base match on personality compatibility
+            dominant_match = 40 if user_scores['dominant_type'] == other_scores['dominant_type'] else 20
+            secondary_match = 30 if user_scores.get('secondary_type') == other_scores.get('secondary_type') else 10
+            
+            # Add bonus for keeper-seeker compatibility
+            keeper_seeker_bonus = 0
+            if user_scores.get('keeper_seeker') == other_scores.get('keeper_seeker'):
+                keeper_seeker_bonus = 15
+            elif (user_scores.get('keeper_seeker') == 'Keeper' and 
+                  other_scores.get('keeper_seeker') == 'Seeker') or \
+                 (user_scores.get('keeper_seeker') == 'Seeker' and 
+                  other_scores.get('keeper_seeker') == 'Keeper'):
+                keeper_seeker_bonus = 5
+            
+            return min(dominant_match + secondary_match + keeper_seeker_bonus, 100)
         except Exception as e:
             logger.error(f"Calculate match percentage error: {str(e)}")
             return 50

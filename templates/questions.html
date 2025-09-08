@@ -692,7 +692,7 @@
     const compatibilityTypes = document.getElementById('compatibility-types');
     const btnMeetMatches = document.getElementById('btn-meet-matches');
 
-    // Quiz Data
+    // Quiz Data - Organized into 5 distinct sections
     const mandatoryQuestions = [
       { 
         id: 'req1',
@@ -941,14 +941,6 @@
                   question: "Are you open to interfaith matches?",
                   answers: ["Yes", "No"],
                   section: "interfaith_open"
-                };
-              },
-              nextNextQuestion: () => {
-                return {
-                  id: 'religion_public',
-                  question: "Display your religion on your profile?",
-                  answers: ["Yes", "No"],
-                  section: "religion_public"
                 };
               }
             };
@@ -1342,13 +1334,6 @@
                 const next = questionData.nextQuestion();
                 if (next) {
                   questions.splice(currentQuestion + 1, 0, next);
-                }
-              }
-              // Chain nextNext if defined
-              if (questionData.nextNextQuestion) {
-                const nextNext = questionData.nextNextQuestion();
-                if (nextNext) {
-                  questions.splice(currentQuestion + 2, 0, nextNext);
                 }
               }
               displayQuestion();
