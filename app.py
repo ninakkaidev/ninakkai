@@ -282,7 +282,7 @@ class MongoService:
         except Exception as e:
             logger.error(f"Update password error: {str(e)}")
             return {'success': False, 'error': str(e)}
-        
+
     def save_quiz_results(self, user_id: str, quiz_data: Dict[str, Any]) -> Dict[str, Any]:
         try:
             scores = self._calculate_scores(quiz_data['answers'])
@@ -349,64 +349,142 @@ class MongoService:
 
     def _calculate_scores(self, answers: List[Dict[str, Any]]) -> Dict[str, Any]:
         type_counts = {}
-        # Process first 10 mandatory questions
-        for answer in answers[:10]:
+        mandatory_answers = answers[:9]  # Fixed to 9 required questions
+        for answer in mandatory_answers:
             if 'type' in answer:
                 answer_type = answer['type']
                 type_counts[answer_type] = type_counts.get(answer_type, 0) + 1
-        
-        # Process optional questions with less weight
-        for answer in answers[10:16]:
+        optional_answers = answers[9:]
+        for answer in optional_answers:
             if 'type' in answer:
                 answer_type = answer['type']
-                type_counts[answer_type] = type_counts.get(answer_type, 0) + 0.5
-        
+                type_counts[answer_type] = type_counts.get(answer_type, 0.0) + 0.2  # Little variation for optional
         if not type_counts:
             return {'dominant_type': None, 'dominant_percentage': 0}
-        
-        # Find dominant type
+        # Resolve tie if any
         max_count = max(type_counts.values())
-        dominant_type = [t for t, cnt in type_counts.items() if cnt == max_count][0]
-        
-        # Calculate percentages
+        tied_types = [t for t, cnt in type_counts.items() if cnt == max_count]
+        if len(tied_types) > 1:
+            q2_answer = next((ans for ans in answers if 'ranking' in ans), None)
+            if q2_answer:
+                ranked_types = self._parse_ranked_types(q2_answer)  # Assume parse returns ordered types
+                dominant_type = self._resolve_tie_with_ranking(tied_types, ranked_types)
+            else:
+                dominant_type = tied_types[0]
+        else:
+            dominant_type = max(type_counts, key=type_counts.get)
+        # Keeper Seeker from all answers that match pattern
+        keeper_seeker = self._determine_keeper_seeker(answers)
+        # Optional boosts
+        optional_boosts = self._calculate_optional_boosts(dominant_type, optional_answers)
+        # Total for percentages
         total = sum(type_counts.values())
-        dominant_percentage = int((type_counts[dominant_type] / total) * 100)
-        
-        # Find secondary type (second highest)
+        dominant_score = type_counts.get(dominant_type, 0)
+        dominant_percentage = int((dominant_score / total) * 100) if total > 0 else 0
+        secondary_type = None
+        secondary_score = 0
+        secondary_percentage = 0
         temp_counts = type_counts.copy()
-        del temp_counts[dominant_type]
+        if dominant_type in temp_counts:
+            del temp_counts[dominant_type]
         if temp_counts:
             secondary_type = max(temp_counts, key=temp_counts.get)
-            secondary_percentage = int((temp_counts[secondary_type] / total) * 100)
-        else:
-            secondary_type = None
-            secondary_percentage = 0
-            
-        # Determine keeper/seeker type from answers
-        keeper_seeker = None
-        keeper_count = 0
-        seeker_count = 0
-        
-        for answer in answers:
-            if 'keeperSeeker' in answer:
-                if answer['keeperSeeker'] == 'Keeper':
-                    keeper_count += 1
-                else:
-                    seeker_count += 1
-        
-        if keeper_count > seeker_count:
-            keeper_seeker = 'Keeper'
-        elif seeker_count > keeper_count:
-            keeper_seeker = 'Seeker'
-        
-        return {
+            secondary_score = temp_counts[secondary_type]
+            secondary_percentage = int((secondary_score / total) * 100) if total > 0 else 0
+        profile = {
             'dominant_type': dominant_type,
+            'dominant_score': dominant_score,
             'dominant_percentage': dominant_percentage,
             'secondary_type': secondary_type,
+            'secondary_score': secondary_score,
             'secondary_percentage': secondary_percentage,
-            'keeper_seeker': keeper_seeker,
+            'optional_traits_boost': optional_boosts,
             'type_counts': type_counts
         }
+        if keeper_seeker:
+            profile['keeper_seeker_type'] = keeper_seeker
+        return profile
+
+    def _parse_ranked_types(self, ranked_answer: str) -> List[str]:
+        if not ranked_answer.startswith("Ranked:"):
+            return []
+        parts = [p.strip() for p in ranked_answer.split("Ranked:")[1].split(",")]
+        ordered_items = []
+        for part in parts:
+            item = part.split(".", 1)[1].strip() if "." in part else part.strip()
+            ordered_items.append(item)
+        item_to_type = {
+            "Trust": "🛡️ Protector",
+            "Emotional connection": "🌿 Nurturer",
+            "Shared goals": "👂 Listener",
+            "Physical intimacy": "💘 Romantic"
+        }
+        return [item_to_type.get(item, "") for item in ordered_items if item in item_to_type]
+
+    def _resolve_tie_with_ranking(self, tied_types: List[str], ranked_types: List[str]) -> str:
+        for type_ in ranked_types:
+            if type_ in tied_types:
+                return type_
+        return tied_types[0]
+
+    def _determine_keeper_seeker(self, answers: List[Dict[str, Any]]) -> Optional[str]:
+        if not answers:
+            return None
+        keeper_seeker_map = {
+            "A": "Keeper",
+            "B": "Seeker",
+            "C": "Keeper",
+            "D": "Seeker"
+        }
+        keeper_count = 0
+        seeker_count = 0
+        for answer in answers:
+            if 'answer' in answer:
+                ans_text = answer['answer']
+                if re.match(r'^[A-D]\.', ans_text, re.I):
+                    first_char = ans_text[0].upper()
+                    if first_char in keeper_seeker_map:
+                        classification = keeper_seeker_map[first_char]
+                        if classification == "Keeper":
+                            keeper_count += 1
+                        elif classification == "Seeker":
+                            seeker_count += 1
+        if keeper_count > seeker_count:
+            return "Keeper"
+        elif seeker_count > keeper_count:
+            return "Seeker"
+        return None
+
+    def _calculate_optional_boosts(self, dominant_type: str, optional_answers: List[Dict[str, Any]]) -> Dict[str, int]:
+        boosts = {}
+        for answer in optional_answers:
+            if 'type' in answer:
+                answer_type = answer['type']
+                if answer_type == dominant_type:
+                    boosts[dominant_type] = boosts.get(dominant_type, 0) + 1
+                elif answer_type in boosts:
+                    boosts[answer_type] += 1
+        return boosts
+
+    def get_quiz_results(self, user_id: str) -> Optional[Dict[str, Any]]:
+        try:
+            result = self.quiz_results.find_one({'user_id': user_id})
+            if result:
+                result['id'] = str(result['_id'])
+                del result['_id']
+                return result
+            return None
+        except Exception as e:
+            logger.error(f"Get quiz results error: {str(e)}")
+            return None
+
+    def delete_quiz_results(self, user_id: str) -> Dict[str, Any]:
+        try:
+            result = self.quiz_results.delete_many({'user_id': user_id})
+            return {'success': True, 'deleted_count': result.deleted_count}
+        except Exception as e:
+            logger.error(f"Delete quiz results error: {str(e)}")
+            return {'success': False, 'error': str(e)}
 
     def find_matches(self, user_id: str) -> List[Dict[str, Any]]:
         try:
@@ -630,125 +708,6 @@ class MongoService:
         except Exception as e:
             logger.error(f"Search matches error: {str(e)}")
             return []
-
-    def _calculate_scores(self, answers: List[Dict[str, Any]]) -> Dict[str, Any]:
-        type_counts = {}
-        mandatory_answers = answers[:9]  # Fixed to 9 required questions
-        for answer in mandatory_answers:
-            if 'type' in answer:
-                answer_type = answer['type']
-                type_counts[answer_type] = type_counts.get(answer_type, 0) + 1
-        optional_answers = answers[9:]
-        for answer in optional_answers:
-            if 'type' in answer:
-                answer_type = answer['type']
-                type_counts[answer_type] = type_counts.get(answer_type, 0.0) + 0.2  # Little variation for optional
-        if not type_counts:
-            return {'dominant_type': None, 'dominant_percentage': 0}
-        # Resolve tie if any
-        max_count = max(type_counts.values())
-        tied_types = [t for t, cnt in type_counts.items() if cnt == max_count]
-        if len(tied_types) > 1:
-            q2_answer = next((ans for ans in answers if 'ranking' in ans), None)
-            if q2_answer:
-                ranked_types = self._parse_ranked_types(q2_answer)  # Assume parse returns ordered types
-                dominant_type = self._resolve_tie_with_ranking(tied_types, ranked_types)
-            else:
-                dominant_type = tied_types[0]
-        else:
-            dominant_type = max(type_counts, key=type_counts.get)
-        # Keeper Seeker from all answers that match pattern
-        keeper_seeker = self._determine_keeper_seeker(answers)
-        # Optional boosts
-        optional_boosts = self._calculate_optional_boosts(dominant_type, optional_answers)
-        # Total for percentages
-        total = sum(type_counts.values())
-        dominant_score = type_counts.get(dominant_type, 0)
-        dominant_percentage = int((dominant_score / total) * 100) if total > 0 else 0
-        secondary_type = None
-        secondary_score = 0
-        secondary_percentage = 0
-        temp_counts = type_counts.copy()
-        if dominant_type in temp_counts:
-            del temp_counts[dominant_type]
-        if temp_counts:
-            secondary_type = max(temp_counts, key=temp_counts.get)
-            secondary_score = temp_counts[secondary_type]
-            secondary_percentage = int((secondary_score / total) * 100) if total > 0 else 0
-        profile = {
-            'dominant_type': dominant_type,
-            'dominant_score': dominant_score,
-            'dominant_percentage': dominant_percentage,
-            'secondary_type': secondary_type,
-            'secondary_score': secondary_score,
-            'secondary_percentage': secondary_percentage,
-            'optional_traits_boost': optional_boosts,
-            'type_counts': type_counts
-        }
-        if keeper_seeker:
-            profile['keeper_seeker_type'] = keeper_seeker
-        return profile
-
-    def _parse_ranked_types(self, ranked_answer: str) -> List[str]:
-        if not ranked_answer.startswith("Ranked:"):
-            return []
-        parts = [p.strip() for p in ranked_answer.split("Ranked:")[1].split(",")]
-        ordered_items = []
-        for part in parts:
-            item = part.split(".", 1)[1].strip() if "." in part else part.strip()
-            ordered_items.append(item)
-        item_to_type = {
-            "Trust": "🛡️ Protector",
-            "Emotional connection": "🌿 Nurturer",
-            "Shared goals": "👂 Listener",
-            "Physical intimacy": "💘 Romantic"
-        }
-        return [item_to_type.get(item, "") for item in ordered_items if item in item_to_type]
-
-    def _resolve_tie_with_ranking(self, tied_types: List[str], ranked_types: List[str]) -> str:
-        for type_ in ranked_types:
-            if type_ in tied_types:
-                return type_
-        return tied_types[0]
-
-    def _determine_keeper_seeker(self, answers: List[Dict[str, Any]]) -> Optional[str]:
-        if not answers:
-            return None
-        keeper_seeker_map = {
-            "A": "Keeper",
-            "B": "Seeker",
-            "C": "Keeper",
-            "D": "Seeker"
-        }
-        keeper_count = 0
-        seeker_count = 0
-        for answer in answers:
-            if 'answer' in answer:
-                ans_text = answer['answer']
-                if re.match(r'^[A-D]\.', ans_text, re.I):
-                    first_char = ans_text[0].upper()
-                    if first_char in keeper_seeker_map:
-                        classification = keeper_seeker_map[first_char]
-                        if classification == "Keeper":
-                            keeper_count += 1
-                        elif classification == "Seeker":
-                            seeker_count += 1
-        if keeper_count > seeker_count:
-            return "Keeper"
-        elif seeker_count > keeper_count:
-            return "Seeker"
-        return None
-
-    def _calculate_optional_boosts(self, dominant_type: str, optional_answers: List[Dict[str, Any]]) -> Dict[str, int]:
-        boosts = {}
-        for answer in optional_answers:
-            if 'type' in answer:
-                answer_type = answer['type']
-                if answer_type == dominant_type:
-                    boosts[dominant_type] = boosts.get(dominant_type, 0) + 1
-                elif answer_type in boosts:
-                    boosts[answer_type] += 1
-        return boosts
 
     def get_liked_users(self, user_id: str) -> List[Dict[str, Any]]:
         try:
@@ -2161,17 +2120,6 @@ def submit_quiz():
     except Exception as e:
         logger.error(f"Submit quiz error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
-def get_quiz_results(self, user_id: str) -> Optional[Dict[str, Any]]:
-        try:
-            result = self.quiz_results.find_one({'user_id': user_id})
-            if result:
-                result['id'] = str(result['_id'])
-                del result['_id']
-                return result
-            return None
-        except Exception as e:
-            logger.error(f"Get quiz results error: {str(e)}")
-            return None
 
 @app.route('/personality_results', methods=['GET'])
 def personality_results():
