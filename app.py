@@ -2161,6 +2161,17 @@ def submit_quiz():
     except Exception as e:
         logger.error(f"Submit quiz error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
+def get_quiz_results(self, user_id: str) -> Optional[Dict[str, Any]]:
+        try:
+            result = self.quiz_results.find_one({'user_id': user_id})
+            if result:
+                result['id'] = str(result['_id'])
+                del result['_id']
+                return result
+            return None
+        except Exception as e:
+            logger.error(f"Get quiz results error: {str(e)}")
+            return None
 
 @app.route('/personality_results', methods=['GET'])
 def personality_results():
