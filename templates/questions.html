@@ -940,7 +940,19 @@
                   id: 'interfaith_open',
                   question: "Are you open to interfaith matches?",
                   answers: ["Yes", "No"],
-                  section: "interfaith_open"
+                  section: "interfaith_open",
+                  nextQuestion: () => {
+                    return {
+                      id: 'religion_filter',
+                      question: "Set your religion match filter",
+                      answers: [],
+                      isToggleInput: true,
+                      section: "religion_filter",
+                      toggles: [
+                        { label: "Show only same-religion matches", value: false }
+                      ]
+                    };
+                  }
                 };
               }
             };
@@ -1020,7 +1032,6 @@
         isToggleInput: true,
         section: "filter_settings",
         toggles: [
-          { label: "Show only same-religion matches", value: false },
           { label: "Show only preferred physical traits", value: false },
           { label: "Show all emotionally compatible matches", value: true }
         ]
