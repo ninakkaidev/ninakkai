@@ -1,13 +1,16 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>നിനക്കായി-ForYou | Personality Quiz</title>
+    <title>നിനക്കായി-ForYou | Personality Quiz - Find Your Perfect Match</title>
+  <meta name="description" content="Discover your perfect match with our personality-based compatibility quiz. Answer questions designed to uncover your emotional personality and find people who truly fit you at the core.">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
+ 
     html {
       overflow-x: hidden;
     }
@@ -607,6 +610,7 @@
         opacity: 1;
       }
     }
+
   </style>
 </head>
 <body>
@@ -616,7 +620,7 @@
 <div class="intro-container" id="intro-container">
   <div class="intro-text">You're Just a Few Steps Away...</div>
   <div class="sub-text">Discover your perfect match with our personality-based compatibility quiz</div>
-  <div class="sub-text">Your answers shape your journey. These ten questions are carefully designed to uncover your emotional personality and ensure you’re matched with people who truly fit you — not just on the surface, but at the core.</div>
+  <div class="sub-text">Your answers shape your journey. These ten questions are carefully designed to uncover your emotional personality and ensure you're matched with people who truly fit you — not just on the surface, but at the core.</div>
   <button class="btn-start" id="btn-start">Begin Your Journey</button>
 </div>
 
@@ -638,7 +642,7 @@
     </div>
     
     <div class="optional-section" id="optional-section">
-      <p id="optional-p">Want to refine your matches with deeper questions?</p>
+      <p id="optional-p"></p>
       <div>
         <button class="btn-optional" id="btn-yes">Yes, Continue</button>
         <button class="btn-optional" id="btn-no">No, Skip</button>
@@ -692,8 +696,8 @@
     const compatibilityTypes = document.getElementById('compatibility-types');
     const btnMeetMatches = document.getElementById('btn-meet-matches');
 
-    // Quiz Data
-    const requiredQuestions = [
+    // Quiz Data - Organized into 5 sections
+    const mandatoryQuestions = [
       { 
         id: 'req1',
         question: "When you're falling in love, you usually feel...", 
@@ -793,10 +797,21 @@
           "Having separate money but shared goals"
         ],
         types: ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "🌟 Idealist"]
+      },
+      { 
+        id: 'req10',
+        question: "How do you express affection in a relationship?", 
+        answers: [
+          "Through words of affirmation",
+          "Through physical touch",
+          "Through acts of service",
+          "Through quality time together"
+        ],
+        types: ["👂 Listener", "💘 Romantic", "🌿 Nurturer", "🛡️ Protector"]
       }
     ];
 
-    const initialOptionalQuestions = [
+    const optionalQuestions = [
       { 
         id: 'opt1',
         question: "How do you handle stress in a relationship?", 
@@ -818,10 +833,90 @@
           "Discuss every step together"
         ],
         types: ["🌙 Dreamer", "🛡️ Protector", "💘 Romantic", "👂 Listener"]
+      },
+      { 
+        id: 'opt3',
+        question: "How important is alone time in a relationship for you?", 
+        answers: [
+          "Very important - I need regular alone time",
+          "Somewhat important - I like balance",
+          "Not very important - I prefer being together",
+          "Not important at all - I want to share everything"
+        ],
+        types: ["🛡️ Protector", "👂 Listener", "🌿 Nurturer", "💘 Romantic"]
+      },
+      { 
+        id: 'opt4',
+        question: "How do you handle disagreements about money?", 
+        answers: [
+          "Create a budget together",
+          "Discuss values behind spending",
+          "Compromise on spending habits",
+          "Keep finances separate to avoid conflict"
+        ],
+        types: ["🛡️ Protector", "👂 Listener", "🌿 Nurturer", "🌟 Idealist"]
+      },
+      { 
+        id: 'opt5',
+        question: "What role does humor play in your relationships?", 
+        answers: [
+          "Essential - I need someone who makes me laugh",
+          "Important - It helps lighten tense moments",
+          "Nice to have - But not crucial",
+          "Not important - I prefer serious connections"
+        ],
+        types: ["💘 Romantic", "👂 Listener", "🌿 Nurturer", "🛡️ Protector"]
+      },
+      { 
+        id: 'opt6',
+        question: "How do you prefer to celebrate special occasions?", 
+        answers: [
+          "Big parties with friends and family",
+          "Quiet, intimate celebrations",
+          "Traveling or adventurous activities",
+          "Simple gestures and quality time"
+        ],
+        types: ["💘 Romantic", "👂 Listener", "🌙 Dreamer", "🌿 Nurturer"]
       }
     ];
 
-    const additionalOptionalQuestions = [
+    const keeperSeekerQuestions = [
+      {
+        id: 'keeper1',
+        question: "What makes someone a 'keeper' in your eyes?",
+        answers: [
+          "Loyalty and commitment through challenges",
+          "Emotional intelligence and understanding",
+          "Shared values and life goals",
+          "Passion and chemistry that doesn't fade"
+        ],
+        types: ["🛡️ Protector", "👂 Listener", "🌟 Idealist", "💘 Romantic"]
+      },
+      {
+        id: 'keeper2',
+        question: "When you're seeking a partner, what's your primary focus?",
+        answers: [
+          "Finding someone who shares my core values",
+          "Finding emotional connection and understanding",
+          "Finding physical attraction and chemistry",
+          "Finding someone who complements my lifestyle"
+        ],
+        types: ["🌟 Idealist", "👂 Listener", "💘 Romantic", "🛡️ Protector"]
+      },
+      {
+        id: 'keeper3',
+        question: "What would make you end a relationship with someone you care about?",
+        answers: [
+          "Dishonesty or betrayal of trust",
+          "Lack of emotional availability",
+          "Fundamentally different life goals",
+          "Loss of connection or growing apart"
+        ],
+        types: ["🛡️ Protector", "👂 Listener", "🌟 Idealist", "🌙 Dreamer"]
+      }
+    ];
+
+    const religionQuestions = [
       {
         id: 'religion_importance',
         question: "How important is religion/faith in a future partner?",
@@ -854,20 +949,15 @@
                   answers: ["Yes", "No"],
                   section: "interfaith_open"
                 };
-              },
-              nextNextQuestion: () => {
-                return {
-                  id: 'religion_public',
-                  question: "Display your religion on your profile?",
-                  answers: ["Yes", "No"],
-                  section: "religion_public"
-                };
               }
             };
           }
           return null;
         }
-      },
+      }
+    ];
+
+    const physicalQuestions = [
       {
         id: 'physical_preferences',
         question: "Are physical traits important in a partner?",
@@ -929,126 +1019,22 @@
             options: ["Slim", "Average", "Fit"]
           }
         ]
-      },
-      {
-        id: 'filter_settings',
-        question: "Set your match filters",
-        answers: [], // Toggle inputs
-        isToggleInput: true,
-        section: "filter_settings",
-        toggles: [
-          { label: "Show only same-religion matches", value: false },
-          { label: "Show only preferred physical traits", value: false },
-          { label: "Show all emotionally compatible matches", value: true }
-        ]
-      },
-      {
-        id: 'profile_setup',
-        question: "Set up your profile",
-        answers: [], // Custom input
-        isCustomInput: true,
-        section: "profile_setup",
-        inputs: [
-          {
-            label: "Education / Work",
-            type: "text"
-          },
-          {
-            label: "Interests (select all that apply)",
-            type: "multi-select",
-            options: ["Travel", "Music", "Sports", "Reading", "Movies", "Cooking", "Gaming", "Art", "Fitness", "Technology"]
-          },
-          {
-            label: "One-line self-summary (optional)",
-            type: "text",
-            optional: true
-          }
-        ],
-        submitText: "Start Matching"
-      }
-    ];
-
-    const optionalMaturityQuestions = [
-      { 
-        id: 'mat1',
-        question: "You see your partner being emotionally close to a friend. You feel…", 
-        answers: [
-          "A. Curious and ask openly",
-          "B. Completely fine",
-          "C. A little jealous but trust them",
-          "D. Insecure and silent"
-        ],
-        types: ["🌿 Nurturer", "👂 Listener", "💘 Romantic", "🛡️ Protector"]
-      },
-      { 
-        id: 'mat2',
-        question: "Your partner has a serious conflict with your family. You…", 
-        answers: [
-          "A. Support your partner but stay neutral.",
-          "B. Try to fix the situation without taking sides.",
-          "C. Defend your family — they raised me.",
-          "D. Fully support my partner, even if it causes tension."
-        ],
-        types: ["👂 Listener", "🌿 Nurturer", "🛡️ Protector", "🌙 Dreamer"]
-      },
-      { 
-        id: 'mat3',
-        question: "How do you handle emotional overwhelm?", 
-        answers: [
-          "A. Talk it out immediately",
-          "B. Need space to calm down",
-          "C. Write or reflect privately",
-          "D. Look for distraction or activity"
-        ],
-        types: ["👂 Listener", "🛡️ Protector", "🌙 Dreamer", "🌟 Idealist"]
-      },
-      { 
-        id: 'mat4',
-        question: "What’s your biggest fear in love?", 
-        answers: [
-          "A. Being misunderstood",
-          "B. Losing emotional connection",
-          "C. Getting hurt or rejected",
-          "D. Not being able to protect the person I love"
-        ],
-        types: ["🌟 Idealist", "👂 Listener", "🌙 Dreamer", "🛡️ Protector"]
-      },
-      { 
-        id: 'mat5',
-        question: "What do you quietly need most in a relationship?", 
-        answers: [
-          "A. To feel safe and protected",
-          "B. To be emotionally understood",
-          "C. To give and receive open affection",
-          "D. To be accepted without pressure"
-        ],
-        types: ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "👂 Listener"]
-      },
-      { 
-        id: 'mat6',
-        question: "Which quality do you most admire in a partner?", 
-        answers: [
-          "A. Loyalty",
-          "B. Compassion",
-          "C. Passion",
-          "D. Wisdom"
-        ],
-        types: ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "🌟 Idealist"]
       }
     ];
 
     // State Variables
     let currentQuestion = 0;
-    let questions = [...requiredQuestions];
+    let questions = [...mandatoryQuestions];
     let selectedAnswers = [];
-    let isOptionalSection = false;
-    let isAdditionalOptionalSection = false;
-    let isMaturitySection = false;
-    let currentExtraSection = '';
-    let rankedItems = [];
-    let currentRank = 1;
-    let nextDynamicQuestion = null;
-    const requiredQuestionCount = requiredQuestions.length;
+    let currentSection = 'mandatory';
+    let currentSectionIndex = 0;
+    const sections = [
+      { name: 'mandatory', questions: mandatoryQuestions, title: 'Personality Quiz', description: 'Answer these 10 questions to help us find your perfect match.' },
+      { name: 'optional', questions: optionalQuestions, title: 'Optional Questions', description: 'Answer 6 additional questions to refine your matches.' },
+      { name: 'keeperSeeker', questions: keeperSeekerQuestions, title: 'Keeper/Seeker Questions', description: 'These 3 questions help us understand what you value in a partner.' },
+      { name: 'religion', questions: religionQuestions, title: 'Religion Questions', description: 'Share your religious preferences for better matching.' },
+      { name: 'physical', questions: physicalQuestions, title: 'Physical Preferences', description: 'Share your physical preferences and traits.' }
+    ];
 
     // Load saved answers if redirected from auth
     function loadSavedAnswers() {
@@ -1056,19 +1042,21 @@
       if (savedAnswers) {
         selectedAnswers = JSON.parse(savedAnswers);
         currentQuestion = selectedAnswers.length;
-        console.log(`Loaded saved answers: ${selectedAnswers.length}, currentQuestion: ${currentQuestion}, requiredQuestionCount: ${requiredQuestionCount}`);
-        if (currentQuestion >= requiredQuestionCount) {
-          isOptionalSection = true;
-          questions = [...requiredQuestions, ...initialOptionalQuestions, ...additionalOptionalQuestions];
+        
+        // Determine which section we're in based on answered questions
+        let answeredCount = 0;
+        for (let i = 0; i < sections.length; i++) {
+          answeredCount += sections[i].questions.length;
+          if (currentQuestion < answeredCount) {
+            currentSection = sections[i].name;
+            currentSectionIndex = i;
+            currentQuestion = currentQuestion - (answeredCount - sections[i].questions.length);
+            break;
+          }
         }
-        if (currentQuestion >= requiredQuestionCount + initialOptionalQuestions.length + additionalOptionalQuestions.length) {
-          isMaturitySection = true;
-          questions = [...questions, ...optionalMaturityQuestions];
-        }
+        
         sessionStorage.removeItem('quiz_answers');
         displayQuestion();
-      } else {
-        console.log('No saved answers found');
       }
     }
 
@@ -1076,72 +1064,69 @@
     loadSavedAnswers();
     btnStart.addEventListener('click', startQuiz);
     btnMeetMatches.addEventListener('click', () => {
-      console.log('Meet Your Matches clicked, redirecting to explore');
       window.location.href = '{{ url_for("explore") }}';
     });
     btnYes.addEventListener('click', handleYes);
-    btnNo.addEventListener('click', () => {
-      console.log('Skipping, submitting quiz');
-      submitQuiz();
-    });
+    btnNo.addEventListener('click', handleNo);
 
     function handleYes() {
-      if (currentExtraSection === 'optional') {
-        continueOptionalQuestions();
-      } else if (currentExtraSection === 'additional_optional') {
-        continueAdditionalOptionalQuestions();
-      } else if (currentExtraSection === 'maturity') {
-        continueMaturityQuestions();
+      // Move to the next section
+      currentSectionIndex++;
+      if (currentSectionIndex < sections.length) {
+        currentSection = sections[currentSectionIndex].name;
+        questions = [...sections[currentSectionIndex].questions];
+        currentQuestion = 0;
+        optionalSection.style.display = 'none';
+        questionBox.style.display = 'flex';
+        displayQuestion();
+      } else {
+        // All sections completed
+        submitQuiz();
       }
     }
 
+    function handleNo() {
+      // Skip this section and any remaining sections
+      submitQuiz();
+    }
+
     function startQuiz() {
-      console.log('Starting quiz');
       introContainer.style.display = 'none';
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'flex';
-      sectionTitle.textContent = 'Personality Quiz';
-      sectionDescription.textContent = 'Answer these questions to help us find your perfect match.';
       displayQuestion();
     }
 
     function displayQuestion() {
-      console.log(`Current state: currentQuestion=${currentQuestion}, questions.length=${questions.length}, isOptionalSection=${isOptionalSection}, isAdditionalOptionalSection=${isAdditionalOptionalSection}, isMaturitySection=${isMaturitySection}`);
-      if (currentQuestion >= requiredQuestionCount && !isOptionalSection) {
-        console.log('Finished required questions, showing optional section');
-        showOptionalSection();
-        return;
-      }
-      if (currentQuestion >= requiredQuestionCount + initialOptionalQuestions.length && !isAdditionalOptionalSection && isOptionalSection) {
-        console.log('Finished initial optional questions, showing additional optional section');
-        showAdditionalOptionalSection();
-        return;
-      }
-      if (currentQuestion >= requiredQuestionCount + initialOptionalQuestions.length + additionalOptionalQuestions.length && isAdditionalOptionalSection && !isMaturitySection) {
-        console.log('Finished additional optional questions, showing maturity section');
-        showMaturitySection();
-        return;
-      }
       if (currentQuestion >= questions.length) {
-        console.log('Finished all questions, submitting quiz');
-        submitQuiz();
-        return;
+        // Finished current section
+        if (currentSectionIndex < sections.length - 1) {
+          // Show section completion message
+          showSectionComplete();
+          return;
+        } else {
+          // All sections completed
+          submitQuiz();
+          return;
+        }
       }
 
       const questionData = questions[currentQuestion];
-      console.log(`Displaying question ${currentQuestion + 1}: ${questionData.question}`);
       questionElement.textContent = questionData.question;
 
-      // Update progress
-      const progress = ((currentQuestion + 1) / requiredQuestionCount) * 100;
-      progressBar.style.width = `${Math.min(progress, 100)}%`;
+      // Update progress based on current section
+      const progress = ((currentQuestion + 1) / questions.length) * 100;
+      progressBar.style.width = `${progress}%`;
+
+      // Update section info
+      sectionTitle.textContent = sections[currentSectionIndex].title;
+      sectionDescription.textContent = sections[currentSectionIndex].description;
 
       // Clear previous answers
       answersElement.innerHTML = '';
       rankInstructions.style.display = 'none';
 
       if (questionData.isRankQuestion) {
-        console.log('Displaying ranking question');
         rankInstructions.style.display = 'block';
         rankInstructions.textContent = 'Click to select and rank items in order of importance (1 is highest).';
         rankedItems = [];
@@ -1161,38 +1146,7 @@
         submitButton.disabled = true;
         submitButton.addEventListener('click', submitRank);
         answersElement.appendChild(submitButton);
-      } else if (questionData.isTextInput) {
-        console.log('Displaying text input question');
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = 'Enter your answer';
-        input.className = 'form-control';
-        answersElement.appendChild(input);
-        const submitButton = document.createElement('button');
-        submitButton.className = 'rank-submit';
-        submitButton.textContent = 'Submit';
-        submitButton.addEventListener('click', () => {
-          if (input.value.trim()) {
-            selectAnswer({ value: input.value, section: questionData.section });
-            input.classList.add('animate__animated', 'animate__pulse');
-            setTimeout(() => {
-              input.classList.remove('animate__animated', 'animate__pulse');
-              // Chain next questions if defined
-              if (questionData.nextQuestion) {
-                const next = questionData.nextQuestion();
-                if (next) {
-                  questions.splice(currentQuestion + 1, 0, next);
-                }
-              }
-              displayQuestion();
-            }, 300);
-          } else {
-            alert('Please enter a response before submitting.');
-          }
-        });
-        answersElement.appendChild(submitButton);
       } else if (questionData.isSelectWithOther) {
-        console.log('Displaying select with other option');
         const select = document.createElement('select');
         select.className = 'form-control';
         questionData.answers.forEach(ans => {
@@ -1235,13 +1189,6 @@
                   questions.splice(currentQuestion + 1, 0, next);
                 }
               }
-              // Chain nextNext if defined
-              if (questionData.nextNextQuestion) {
-                const nextNext = questionData.nextNextQuestion();
-                if (nextNext) {
-                  questions.splice(currentQuestion + 2, 0, nextNext);
-                }
-              }
               displayQuestion();
             }, 300);
           } else {
@@ -1250,7 +1197,6 @@
         });
         answersElement.appendChild(submitButton);
       } else if (questionData.isCustomInput) {
-        console.log('Displaying custom input question');
         questionData.inputs.forEach(inputData => {
           const formGroup = document.createElement('div');
           formGroup.className = 'form-group';
@@ -1294,20 +1240,6 @@
             input.className = 'form-control';
             input.placeholder = inputData.optional ? 'Optional' : '';
             formGroup.appendChild(input);
-          } else if (inputData.type === 'multi-select') {
-            const chipContainer = document.createElement('div');
-            chipContainer.className = 'chip-container';
-            inputData.options.forEach(option => {
-              const chip = document.createElement('div');
-              chip.className = 'chip';
-              chip.textContent = option;
-              chip.dataset.value = option;
-              chip.addEventListener('click', () => {
-                chip.classList.toggle('selected');
-              });
-              chipContainer.appendChild(chip);
-            });
-            formGroup.appendChild(chipContainer);
           }
           answersElement.appendChild(formGroup);
         });
@@ -1316,13 +1248,9 @@
         submitButton.textContent = questionData.submitText || 'Submit';
         submitButton.addEventListener('click', () => {
           const responses = [];
-          const inputs = answersElement.querySelectorAll('.form-control, .chip.selected');
+          const inputs = answersElement.querySelectorAll('.form-control');
           inputs.forEach(input => {
-            if (input.classList && input.classList.contains('chip')) {
-              responses.push({ label: input.parentElement.previousSibling.textContent, value: input.dataset.value });
-            } else {
-              responses.push({ label: input.previousSibling.textContent, value: input.value });
-            }
+            responses.push({ label: input.previousSibling.textContent, value: input.value });
           });
           selectAnswer({ responses, section: questionData.section });
           submitButton.classList.add('animate__animated', 'animate__pulse');
@@ -1332,40 +1260,8 @@
           }, 300);
         });
         answersElement.appendChild(submitButton);
-      } else if (questionData.isToggleInput) {
-        console.log('Displaying toggle input question');
-        const toggleContainer = document.createElement('div');
-        toggleContainer.className = 'toggle-container';
-        questionData.toggles.forEach(toggle => {
-          const label = document.createElement('label');
-          label.className = 'toggle-label';
-          const input = document.createElement('input');
-          input.type = 'checkbox';
-          input.checked = toggle.value;
-          input.dataset.label = toggle.label;
-          label.appendChild(input);
-          label.appendChild(document.createTextNode(toggle.label));
-          toggleContainer.appendChild(label);
-        });
-        answersElement.appendChild(toggleContainer);
-        const submitButton = document.createElement('button');
-        submitButton.className = 'rank-submit';
-        submitButton.textContent = 'Submit';
-        submitButton.addEventListener('click', () => {
-          const toggles = [];
-          toggleContainer.querySelectorAll('input').forEach(input => {
-            toggles.push({ label: input.dataset.label, value: input.checked });
-          });
-          selectAnswer({ toggles, section: questionData.section });
-          submitButton.classList.add('animate__animated', 'animate__pulse');
-          setTimeout(() => {
-            submitButton.classList.remove('animate__animated', 'animate__pulse');
-            displayQuestion();
-          }, 300);
-        });
-        answersElement.appendChild(submitButton);
       } else {
-        console.log('Displaying multiple-choice question');
+        // Standard multiple choice question
         questionData.answers.forEach((answer, index) => {
           const button = document.createElement('button');
           button.textContent = answer;
@@ -1395,8 +1291,12 @@
     }
 
     function selectAnswer(data) {
-      console.log(`Selected answer for question ${currentQuestion}:`, data);
-      selectedAnswers.push({ question: currentQuestion, question_id: questions[currentQuestion].id, ...data });
+      selectedAnswers.push({ 
+        question: currentQuestion, 
+        question_id: questions[currentQuestion].id, 
+        section: currentSection,
+        ...data 
+      });
       currentQuestion++;
     }
 
@@ -1409,7 +1309,6 @@
         rankItem.appendChild(rankNumber);
         rankedItems.push({ index, rank: currentRank });
         currentRank++;
-        console.log(`Ranked item ${index} as rank ${currentRank - 1}, rankedItems:`, rankedItems);
         if (currentRank > questions[currentQuestion].answers.length) {
           answersElement.querySelector('.rank-submit').disabled = false;
         }
@@ -1421,97 +1320,43 @@
 
     function submitRank() {
       if (rankedItems.length !== questions[currentQuestion].answers.length) {
-        console.error('Incomplete ranking, please rank all items');
         alert('Please rank all items before submitting.');
         return;
       }
-      console.log(`Submitting ranking for question ${currentQuestion}:`, rankedItems);
-      selectedAnswers.push({ question: currentQuestion, question_id: questions[currentQuestion].id, ranking: rankedItems });
+      selectedAnswers.push({ 
+        question: currentQuestion, 
+        question_id: questions[currentQuestion].id, 
+        section: currentSection,
+        ranking: rankedItems 
+      });
       currentQuestion++;
       displayQuestion();
     }
 
-    function showOptionalSection() {
-      console.log('Showing optional section');
-      currentExtraSection = 'optional';
+    function showSectionComplete() {
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'none';
       optionalSection.style.display = 'block';
-      sectionTitle.textContent = 'Optional Questions';
-      sectionDescription.textContent = 'Answer a few more questions to refine your matches or skip to see your results.';
-      optionalP.textContent = 'Want to refine your matches with deeper questions?';
+      
+      // Set appropriate message based on current section
+      if (currentSectionIndex === 0) {
+        optionalP.textContent = 'You\'ve completed the mandatory questions! Answer optional questions for better matching?';
+      } else if (currentSectionIndex === 1) {
+        optionalP.textContent = 'You\'ve completed the optional questions! Answer keeper/seeker questions for better matching?';
+      } else if (currentSectionIndex === 2) {
+        optionalP.textContent = 'You\'ve completed the keeper/seeker questions! Answer religion questions for better matching?';
+      } else if (currentSectionIndex === 3) {
+        optionalP.textContent = 'You\'ve completed the religion questions! Answer physical questions for better matching?';
+      }
+      
       optionalSection.classList.add('animate__animated', 'animate__fadeIn');
       setTimeout(() => {
         optionalSection.classList.remove('animate__animated', 'animate__fadeIn');
       }, 1000);
-    }
-
-    function showAdditionalOptionalSection() {
-      console.log('Showing additional optional section');
-      currentExtraSection = 'additional_optional';
-      qaContainer.style.display = 'flex';
-      questionBox.style.display = 'none';
-      optionalSection.style.display = 'block';
-      sectionTitle.textContent = 'Additional Optional Questions';
-      sectionDescription.textContent = 'These questions are optional, but answering them will make your matches more accurate and increase your chances of finding the perfect partner.';
-      optionalP.textContent = 'Want to answer additional questions for better matches?';
-      optionalSection.classList.add('animate__animated', 'animate__fadeIn');
-      setTimeout(() => {
-        optionalSection.classList.remove('animate__animated', 'animate__fadeIn');
-      }, 1000);
-    }
-
-    function showMaturitySection() {
-      console.log('Showing maturity section');
-      currentExtraSection = 'maturity';
-      qaContainer.style.display = 'flex';
-      questionBox.style.display = 'none';
-      optionalSection.style.display = 'block';
-      sectionTitle.textContent = 'Optional Maturity Questions';
-      sectionDescription.textContent = 'These questions are optional, but they help us uncover deeper layers of your relationship style. Answer honestly to see how your secondary traits shape your compatibility with others.';
-      optionalP.textContent = '';
-      optionalSection.classList.add('animate__animated', 'animate__fadeIn');
-      setTimeout(() => {
-        optionalSection.classList.remove('animate__animated', 'animate__fadeIn');
-      }, 1000);
-    }
-
-    function continueOptionalQuestions() {
-      console.log(`Continuing with initial optional questions, currentQuestion: ${currentQuestion}`);
-      questions.push(...initialOptionalQuestions);
-      currentQuestion = requiredQuestionCount;
-      isOptionalSection = true;
-      optionalSection.style.display = 'none';
-      questionBox.style.display = 'flex';
-      qaContainer.style.display = 'flex';
-      displayQuestion();
-    }
-
-    function continueAdditionalOptionalQuestions() {
-      console.log(`Continuing with additional optional questions, currentQuestion: ${currentQuestion}`);
-      questions.push(...additionalOptionalQuestions);
-      currentQuestion = requiredQuestionCount + initialOptionalQuestions.length;
-      isAdditionalOptionalSection = true;
-      optionalSection.style.display = 'none';
-      questionBox.style.display = 'flex';
-      qaContainer.style.display = 'flex';
-      displayQuestion();
-    }
-
-    function continueMaturityQuestions() {
-      console.log(`Continuing with maturity questions, currentQuestion: ${currentQuestion}, adding ${optionalMaturityQuestions.length} maturity questions`);
-      questions.push(...optionalMaturityQuestions);
-      currentQuestion = requiredQuestionCount + initialOptionalQuestions.length + additionalOptionalQuestions.length;
-      isMaturitySection = true;
-      optionalSection.style.display = 'none';
-      questionBox.style.display = 'flex';
-      qaContainer.style.display = 'flex';
-      displayQuestion();
     }
 
     async function submitQuiz() {
       try {
-        console.log('Submitting quiz with answers:', selectedAnswers);
         sessionStorage.setItem('quiz_answers', JSON.stringify(selectedAnswers));
         const response = await fetch('{{ url_for("submit_quiz") }}', {
           method: 'POST',
@@ -1522,9 +1367,7 @@
           credentials: 'include'
         });
         const data = await response.json();
-        console.log('Quiz submission response:', data);
         if (data.success) {
-          console.log('Quiz submitted successfully, clearing session storage');
           sessionStorage.removeItem('quiz_answers');
           // Directly fetch and show personality results
           fetch('{{ url_for("personality_results") }}')
@@ -1536,20 +1379,16 @@
                 displayPersonalityInfo(personalityData.personality_info);
                 personalityResults.style.display = 'block';
               } else {
-                console.error('Failed to fetch personality results');
                 window.location.href = '{{ url_for("explore") }}';
               }
             })
             .catch(error => {
-              console.error('Error fetching personality results:', error);
               window.location.href = '{{ url_for("explore") }}';
             });
         } else {
-          console.error('Quiz submission failed:', data.error);
           alert('Error submitting quiz: ' + (data.error || 'Unknown error'));
         }
       } catch (error) {
-        console.error('Quiz submission error:', error);
         alert('An error occurred while submitting the quiz. Please try again.');
       }
     }
@@ -1558,9 +1397,6 @@
       personalityType.textContent = personalityInfo.dominant_type;
       personalityTitle.textContent = personalityInfo.title;
       personalityDescription.textContent = personalityInfo.description;
-      
-      // Set dynamic color based on personality type
-      document.documentElement.style.setProperty('--personality-color', personalityInfo.color);
       
       // Display strengths
       strengthsContainer.innerHTML = '';
@@ -1587,34 +1423,22 @@
       let hasProfile = false;
 
       selectedAnswers.forEach(ans => {
-        if (ans.section) {
+        if (ans.section && ans.section !== 'mandatory') {
           hasProfile = true;
-          if (ans.index !== undefined && sectionToAnswers[ans.section]) {
-            const val = sectionToAnswers[ans.section][ans.index];
+          if (ans.index !== undefined) {
             const p = document.createElement('p');
-            p.innerHTML = `<strong>${ans.section.replace(/_/g, ' ').toUpperCase()}:</strong> ${val}`;
+            p.innerHTML = `<strong>${ans.section}:</strong> ${questions[ans.question].answers[ans.index]}`;
             profileContent.appendChild(p);
           } else if (ans.value) {
             const p = document.createElement('p');
-            p.innerHTML = `<strong>${ans.section.replace(/_/g, ' ').toUpperCase()}:</strong> ${ans.value}`;
+            p.innerHTML = `<strong>${ans.section}:</strong> ${ans.value}`;
             profileContent.appendChild(p);
           } else if (ans.responses) {
-            let respData = {};
             ans.responses.forEach(resp => {
-              if (!respData[resp.label]) {
-                respData[resp.label] = [];
-              }
-              respData[resp.label].push(resp.value);
-            });
-            for (let key in respData) {
               const p = document.createElement('p');
-              p.innerHTML = `<strong>${key}:</strong> ${respData[key].join(', ')}`;
+              p.innerHTML = `<strong>${ans.section} - ${resp.label}:</strong> ${resp.value}`;
               profileContent.appendChild(p);
-            }
-          } else if (ans.toggles) {
-            const p = document.createElement('p');
-            p.innerHTML = `<strong>Filters:</strong> ${ans.toggles.filter(t => t.value).map(t => t.label).join(', ')}`;
-            profileContent.appendChild(p);
+            });
           }
         }
       });
