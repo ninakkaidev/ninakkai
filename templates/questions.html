@@ -911,44 +911,39 @@
 
     const religionQuestions = [
       {
-        id: 'religion',
-        question: "What is your religion/faith?",
-        answers: [
-          "Christianity",
-          "Islam",
-          "Hinduism",
-          "Buddhism",
-          "Judaism",
-          "Sikhism",
-          "Spiritual but not religious",
-          "Agnostic",
-          "Atheist",
-          "Prefer not to say",
-          "Other",
-          "Skip - Religion won't affect matches"
-        ],
-        section: "religion",
-        isSelectWithOther: true,
+        id: 'religion_importance',
+        question: "How important is religion/faith in a future partner?",
+        answers: ["High - Must match my faith", "Medium - Prefer same faith", "Low - Note but not prioritize", "Skip - Religion won't affect matches"],
         nextQuestion: (answerIndex) => {
-          if (answerIndex !== 11) { // Not Skip
+          if (answerIndex !== 3) { // Not Skip
             return {
-              id: 'religion_importance',
-              question: "How important is religion/faith in a future partner?",
-              answers: ["High - Must match my faith", "Medium - Prefer same faith", "Low - Note but not prioritize"],
-              section: "religion_importance",
+              id: 'religion',
+              question: "What is your religion/faith?",
+              answers: [
+                "Christianity",
+                "Islam",
+                "Hinduism",
+                "Buddhism",
+                "Judaism",
+                "Sikhism",
+                "Spiritual but not religious",
+                "Agnostic",
+                "Atheist",
+                "Prefer not to say",
+                "Other"
+              ],
+              isSelectWithOther: true,
               nextQuestion: () => {
                 return {
                   id: 'interfaith_open',
                   question: "Are you open to interfaith matches?",
                   answers: ["Yes", "No"],
-                  section: "interfaith_open",
                   nextQuestion: () => {
                     return {
                       id: 'religion_filter',
                       question: "Set your religion match filter",
                       answers: [],
                       isToggleInput: true,
-                      section: "religion_filter",
                       toggles: [
                         { label: "Show only same-religion matches", value: false }
                       ]
