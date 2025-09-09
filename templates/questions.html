@@ -1066,10 +1066,10 @@
 
     // State Variables
     let currentQuestion = 0;
-    let sectionStart = 0;
     let questions = [...mandatoryQuestions];
     let selectedAnswers = [];
     let currentSection = 'mandatory';
+    let sectionStart = 0;
     let isOptionalSection = false;
     let isKeeperSeekerSection = false;
     let isReligionSection = false;
@@ -1078,6 +1078,11 @@
     let rankedItems = [];
     let currentRank = 1;
     let nextDynamicQuestion = null;
+    const mandatoryQuestionCount = mandatoryQuestions.length;
+    const optionalQuestionCount = optionalMaturityQuestions.length;
+    const keeperSeekerQuestionCount = keeperSeekerQuestions.length;
+    const religionQuestionCount = religionQuestions.length;
+    const physicalQuestionCount = physicalQuestions.length;
 
     // Load saved answers if redirected from auth
     function loadSavedAnswers() {
@@ -1085,33 +1090,32 @@
       if (savedAnswers) {
         selectedAnswers = JSON.parse(savedAnswers);
         currentQuestion = selectedAnswers.length;
-        console.log(`Loaded saved answers: ${selectedAnswers.length}, currentQuestion: ${currentQuestion}`);
+        console.log(`Loaded saved answers: ${selectedAnswers.length}, currentQuestion: ${currentQuestion}, mandatoryQuestionCount: ${mandatoryQuestionCount}`);
         
         // Determine which section we're in based on progress
-        const mandatoryQuestionCount = mandatoryQuestions.length;
-        const optionalQuestionCount = optionalMaturityQuestions.length;
-        const keeperSeekerQuestionCount = keeperSeekerQuestions.length;
-        const religionQuestionCount = religionQuestions.length;
-
         if (currentQuestion >= mandatoryQuestionCount) {
           isOptionalSection = true;
           questions = [...mandatoryQuestions, ...optionalMaturityQuestions];
           currentSection = 'optional';
+          sectionStart = mandatoryQuestionCount;
         }
         if (currentQuestion >= mandatoryQuestionCount + optionalQuestionCount) {
           isKeeperSeekerSection = true;
           questions = [...questions, ...keeperSeekerQuestions];
           currentSection = 'keeperSeeker';
+          sectionStart = mandatoryQuestionCount + optionalQuestionCount;
         }
         if (currentQuestion >= mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount) {
           isReligionSection = true;
           questions = [...questions, ...religionQuestions];
           currentSection = 'religion';
+          sectionStart = mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount;
         }
         if (currentQuestion >= mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount) {
           isPhysicalSection = true;
           questions = [...questions, ...physicalQuestions];
           currentSection = 'physical';
+          sectionStart = mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount;
         }
         
         sessionStorage.removeItem('quiz_answers');
@@ -1130,18 +1134,8 @@
     });
     btnYes.addEventListener('click', handleYes);
     btnNo.addEventListener('click', () => {
-      if (currentExtraSection === 'optional') {
-        showKeeperSeekerSection();
-      } else if (currentExtraSection === 'keeperSeeker') {
-        showReligionSection();
-      } else if (currentExtraSection === 'religion') {
-        showPhysicalSection();
-      } else if (currentExtraSection === 'physical') {
-        console.log('Skipping physical, submitting quiz');
-        submitQuiz();
-      } else {
-        submitQuiz();
-      }
+      console.log('Skipping, submitting quiz');
+      submitQuiz();
     });
 
     function handleYes() {
@@ -1175,35 +1169,35 @@
       console.log(`Current state: currentQuestion=${currentQuestion}, questions.length=${questions.length}, currentSection=${currentSection}`);
       
       if (currentQuestion >= questions.length) {
-        switch (currentSection) {
-          case 'mandatory':
-            showOptionalSection();
-            break;
-          case 'optional':
-            showKeeperSeekerSection();
-            break;
-          case 'keeperSeeker':
-            showReligionSection();
-            break;
-          case 'religion':
-            showPhysicalSection();
-            break;
-          case 'physical':
-            submitQuiz();
-            break;
-          default:
-            submitQuiz();
+        if (currentSection === 'mandatory' && !isOptionalSection) {
+          showOptionalSection();
+          return;
         }
+        if (currentSection === 'optional' && !isKeeperSeekerSection) {
+          showKeeperSeekerSection();
+          return;
+        }
+        if (currentSection === 'keeperSeeker' && !isReligionSection) {
+          showReligionSection();
+          return;
+        }
+        if (currentSection === 'religion' && !isPhysicalSection) {
+          showPhysicalSection();
+          return;
+        }
+        submitQuiz();
         return;
       }
+
+      // Update progress
+      const completed = currentQuestion - sectionStart;
+      const totalInSection = questions.length - sectionStart;
+      let progress = totalInSection > 0 ? (completed / totalInSection) * 100 : 0;
+      progressBar.style.width = `${Math.min(progress, 100)}%`;
 
       const questionData = questions[currentQuestion];
       console.log(`Displaying question ${currentQuestion + 1}: ${questionData.question}`);
       questionElement.textContent = questionData.question;
-
-      // Update progress
-      let progress = ((currentQuestion - sectionStart + 1) / (questions.length - sectionStart)) * 100;
-      progressBar.style.width = `${Math.min(progress, 100)}%`;
 
       // Clear previous answers
       answersElement.innerHTML = '';
@@ -1246,13 +1240,6 @@
             input.classList.add('animate__animated', 'animate__pulse');
             setTimeout(() => {
               input.classList.remove('animate__animated', 'animate__pulse');
-              // Chain next questions if defined
-              if (questionData.nextQuestion) {
-                const next = questionData.nextQuestion();
-                if (next) {
-                  questions.splice(currentQuestion + 1, 0, next);
-                }
-              }
               displayQuestion();
             }, 300);
           } else {
@@ -1297,13 +1284,6 @@
             submitButton.classList.add('animate__animated', 'animate__pulse');
             setTimeout(() => {
               submitButton.classList.remove('animate__animated', 'animate__pulse');
-              // Chain next
-              if (questionData.nextQuestion) {
-                const next = questionData.nextQuestion();
-                if (next) {
-                  questions.splice(currentQuestion + 1, 0, next);
-                }
-              }
               displayQuestion();
             }, 300);
           } else {
@@ -1432,7 +1412,6 @@
           const button = document.createElement('button');
           button.textContent = answer;
           button.addEventListener('click', () => {
-            // For keeper/seeker questions, store the keeperSeeker value instead of type
             if (questionData.keeperSeeker) {
               selectAnswer({ index, keeperSeeker: questionData.keeperSeeker[index] });
             } else {
@@ -1441,7 +1420,6 @@
             button.classList.add('animate__animated', 'animate__pulse');
             setTimeout(() => {
               button.classList.remove('animate__animated', 'animate__pulse');
-              // Check for dynamic next question
               if (questionData.nextQuestion) {
                 const next = questionData.nextQuestion(index);
                 if (next) {
@@ -1465,12 +1443,10 @@
       console.log(`Selected answer for question ${currentQuestion}:`, data);
       const questionData = questions[currentQuestion];
       
-      // For regular questions, include the type information
       if (questionData.types && data.index !== undefined) {
         data.type = questionData.types[data.index];
       }
       
-      // For keeper/seeker questions, include the keeperSeeker information
       if (questionData.keeperSeeker && data.index !== undefined) {
         data.keeperSeeker = questionData.keeperSeeker[data.index];
       }
@@ -1533,7 +1509,6 @@
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'none';
       optionalSection.style.display = 'block';
-      updateSectionInfo();
       optionalP.textContent = 'Want to help us understand your relationship readiness?';
       optionalSection.classList.add('animate__animated', 'animate__fadeIn');
       setTimeout(() => {
@@ -1547,7 +1522,6 @@
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'none';
       optionalSection.style.display = 'block';
-      updateSectionInfo();
       optionalP.textContent = 'Want to specify your religion and faith preferences?';
       optionalSection.classList.add('animate__animated', 'animate__fadeIn');
       setTimeout(() => {
@@ -1561,7 +1535,6 @@
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'none';
       optionalSection.style.display = 'block';
-      updateSectionInfo();
       optionalP.textContent = 'Want to specify your physical preferences in a partner?';
       optionalSection.classList.add('animate__animated', 'animate__fadeIn');
       setTimeout(() => {
@@ -1571,10 +1544,8 @@
 
     function continueOptionalQuestions() {
       console.log(`Continuing with optional questions, currentQuestion: ${currentQuestion}`);
-      const oldLength = questions.length;
       questions.push(...optionalMaturityQuestions);
-      currentQuestion = oldLength;
-      sectionStart = oldLength;
+      sectionStart = currentQuestion;
       isOptionalSection = true;
       currentSection = 'optional';
       optionalSection.style.display = 'none';
@@ -1586,10 +1557,8 @@
 
     function continueKeeperSeekerQuestions() {
       console.log(`Continuing with keeper/seeker questions, currentQuestion: ${currentQuestion}`);
-      const oldLength = questions.length;
       questions.push(...keeperSeekerQuestions);
-      currentQuestion = oldLength;
-      sectionStart = oldLength;
+      sectionStart = currentQuestion;
       isKeeperSeekerSection = true;
       currentSection = 'keeperSeeker';
       optionalSection.style.display = 'none';
@@ -1601,10 +1570,8 @@
 
     function continueReligionQuestions() {
       console.log(`Continuing with religion questions, currentQuestion: ${currentQuestion}`);
-      const oldLength = questions.length;
       questions.push(...religionQuestions);
-      currentQuestion = oldLength;
-      sectionStart = oldLength;
+      sectionStart = currentQuestion;
       isReligionSection = true;
       currentSection = 'religion';
       optionalSection.style.display = 'none';
@@ -1616,10 +1583,8 @@
 
     function continuePhysicalQuestions() {
       console.log(`Continuing with physical questions, currentQuestion: ${currentQuestion}`);
-      const oldLength = questions.length;
       questions.push(...physicalQuestions);
-      currentQuestion = oldLength;
-      sectionStart = oldLength;
+      sectionStart = currentQuestion;
       isPhysicalSection = true;
       currentSection = 'physical';
       optionalSection.style.display = 'none';
