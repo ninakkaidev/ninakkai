@@ -274,7 +274,7 @@
       border: none;
       padding: 10px 30px;
       font-size: 1rem;
-      border-radius: 50px;
+      borderRadius: 50px;
       cursor: pointer;
       transition: all 0.3s ease;
       width: fit-content;
@@ -331,6 +331,7 @@
       justify-content: center;
       gap: 10px;
       margin-bottom: 25px;
+      display: none;
     }
 
     .strength-pill {
@@ -1011,7 +1012,11 @@
           { label: "Show only preferred physical traits", value: false },
           { label: "Show all emotionally compatible matches", value: true }
         ]
-      },
+      }
+    ];
+
+    // NEW: Profile setup questions as a separate section
+    const profileSetupQuestions = [
       {
         id: 'profile_setup',
         question: "Set up your profile",
@@ -1059,6 +1064,10 @@
       physical: {
         title: "Physical Preferences",
         description: "These questions help us understand your preferences regarding physical traits in a partner. Your answers will help us find matches that align with your preferences."
+      },
+      profileSetup: {
+        title: "Profile Setup",
+        description: "Let's set up your profile to help others get to know you better and improve your matching experience."
       }
     };
 
@@ -1071,6 +1080,7 @@
     let isKeeperSeekerSection = false;
     let isReligionSection = false;
     let isPhysicalSection = false;
+    let isProfileSetupSection = false;
     let currentExtraSection = '';
     let rankedItems = [];
     let currentRank = 1;
@@ -1080,6 +1090,7 @@
     const keeperSeekerQuestionCount = keeperSeekerQuestions.length;
     const religionQuestionCount = religionQuestions.length;
     const physicalQuestionCount = physicalQuestions.length;
+    const profileSetupQuestionCount = profileSetupQuestions.length;
 
     // Load saved answers if redirected from auth
     function loadSavedAnswers() {
@@ -1109,6 +1120,11 @@
           isPhysicalSection = true;
           questions = [...questions, ...physicalQuestions];
           currentSection = 'physical';
+        }
+        if (currentQuestion >= mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount) {
+          isProfileSetupSection = true;
+          questions = [...questions, ...profileSetupQuestions];
+          currentSection = 'profileSetup';
         }
         
         sessionStorage.removeItem('quiz_answers');
@@ -1140,6 +1156,8 @@
         continueReligionQuestions();
       } else if (currentExtraSection === 'physical') {
         continuePhysicalQuestions();
+      } else if (currentExtraSection === 'profileSetup') {
+        continueProfileSetupQuestions();
       }
     }
 
@@ -1181,6 +1199,11 @@
         showPhysicalSection();
         return;
       }
+      if (currentQuestion >= mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount && !isProfileSetupSection && currentSection === 'physical') {
+        console.log('Finished physical questions, showing profile setup section');
+        showProfileSetupSection();
+        return;
+      }
       if (currentQuestion >= questions.length) {
         console.log('Finished all questions, submitting quiz');
         submitQuiz();
@@ -1203,6 +1226,8 @@
         progress = ((currentQuestion - mandatoryQuestionCount - optionalQuestionCount - keeperSeekerQuestionCount + 1) / religionQuestionCount) * 100;
       } else if (currentSection === 'physical') {
         progress = ((currentQuestion - mandatoryQuestionCount - optionalQuestionCount - keeperSeekerQuestionCount - religionQuestionCount + 1) / physicalQuestionCount) * 100;
+      } else if (currentSection === 'profileSetup') {
+        progress = ((currentQuestion - mandatoryQuestionCount - optionalQuestionCount - keeperSeekerQuestionCount - religionQuestionCount - physicalQuestionCount + 1) / profileSetupQuestionCount) * 100;
       }
       progressBar.style.width = `${Math.min(progress, 100)}%`;
 
@@ -1575,6 +1600,21 @@
       }, 1000);
     }
 
+    function showProfileSetupSection() {
+      console.log('Showing profile setup section');
+      currentExtraSection = 'profileSetup';
+      currentSection = 'profileSetup';
+      qaContainer.style.display = 'flex';
+      questionBox.style.display = 'none';
+      optionalSection.style.display = 'block';
+      updateSectionInfo();
+      optionalP.textContent = 'Ready to set up your profile and start matching?';
+      optionalSection.classList.add('animate__animated', 'animate__fadeIn');
+      setTimeout(() => {
+        optionalSection.classList.remove('animate__animated', 'animate__fadeIn');
+      }, 1000);
+    }
+
     function continueOptionalQuestions() {
       console.log(`Continuing with optional questions, currentQuestion: ${currentQuestion}`);
       questions.push(...optionalMaturityQuestions);
@@ -1620,6 +1660,19 @@
       currentQuestion = mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount;
       isPhysicalSection = true;
       currentSection = 'physical';
+      optionalSection.style.display = 'none';
+      questionBox.style.display = 'flex';
+      qaContainer.style.display = 'flex';
+      updateSectionInfo();
+      displayQuestion();
+    }
+
+    function continueProfileSetupQuestions() {
+      console.log(`Continuing with profile setup questions, currentQuestion: ${currentQuestion}`);
+      questions.push(...profileSetupQuestions);
+      currentQuestion = mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount;
+      isProfileSetupSection = true;
+      currentSection = 'profileSetup';
       optionalSection.style.display = 'none';
       questionBox.style.display = 'flex';
       qaContainer.style.display = 'flex';
