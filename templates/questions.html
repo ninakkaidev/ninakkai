@@ -932,25 +932,7 @@
                 "Prefer not to say",
                 "Other"
               ],
-              isSelectWithOther: true,
-              nextQuestion: () => {
-                return {
-                  id: 'interfaith_open',
-                  question: "Are you open to interfaith matches?",
-                  answers: ["Yes", "No"],
-                  nextQuestion: () => {
-                    return {
-                      id: 'religion_filter',
-                      question: "Set your religion match filter",
-                      answers: [],
-                      isToggleInput: true,
-                      toggles: [
-                        { label: "Show only same-religion matches", value: false }
-                      ]
-                    };
-                  }
-                };
-              }
+              isSelectWithOther: true
             };
           }
           return null;
@@ -1084,6 +1066,7 @@
 
     // State Variables
     let currentQuestion = 0;
+    let sectionStart = 0;
     let questions = [...mandatoryQuestions];
     let selectedAnswers = [];
     let currentSection = 'mandatory';
@@ -1095,11 +1078,6 @@
     let rankedItems = [];
     let currentRank = 1;
     let nextDynamicQuestion = null;
-    const mandatoryQuestionCount = mandatoryQuestions.length;
-    const optionalQuestionCount = optionalMaturityQuestions.length;
-    const keeperSeekerQuestionCount = keeperSeekerQuestions.length;
-    const religionQuestionCount = religionQuestions.length;
-    const physicalQuestionCount = physicalQuestions.length;
 
     // Load saved answers if redirected from auth
     function loadSavedAnswers() {
@@ -1107,9 +1085,14 @@
       if (savedAnswers) {
         selectedAnswers = JSON.parse(savedAnswers);
         currentQuestion = selectedAnswers.length;
-        console.log(`Loaded saved answers: ${selectedAnswers.length}, currentQuestion: ${currentQuestion}, mandatoryQuestionCount: ${mandatoryQuestionCount}`);
+        console.log(`Loaded saved answers: ${selectedAnswers.length}, currentQuestion: ${currentQuestion}`);
         
         // Determine which section we're in based on progress
+        const mandatoryQuestionCount = mandatoryQuestions.length;
+        const optionalQuestionCount = optionalMaturityQuestions.length;
+        const keeperSeekerQuestionCount = keeperSeekerQuestions.length;
+        const religionQuestionCount = religionQuestions.length;
+
         if (currentQuestion >= mandatoryQuestionCount) {
           isOptionalSection = true;
           questions = [...mandatoryQuestions, ...optionalMaturityQuestions];
@@ -1147,8 +1130,18 @@
     });
     btnYes.addEventListener('click', handleYes);
     btnNo.addEventListener('click', () => {
-      console.log('Skipping, submitting quiz');
-      submitQuiz();
+      if (currentExtraSection === 'optional') {
+        showKeeperSeekerSection();
+      } else if (currentExtraSection === 'keeperSeeker') {
+        showReligionSection();
+      } else if (currentExtraSection === 'religion') {
+        showPhysicalSection();
+      } else if (currentExtraSection === 'physical') {
+        console.log('Skipping physical, submitting quiz');
+        submitQuiz();
+      } else {
+        submitQuiz();
+      }
     });
 
     function handleYes() {
@@ -1168,6 +1161,7 @@
       introContainer.style.display = 'none';
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'flex';
+      sectionStart = 0;
       updateSectionInfo();
       displayQuestion();
     }
@@ -1180,30 +1174,26 @@
     function displayQuestion() {
       console.log(`Current state: currentQuestion=${currentQuestion}, questions.length=${questions.length}, currentSection=${currentSection}`);
       
-      // Check if we need to transition to the next section
-      if (currentQuestion >= mandatoryQuestionCount && !isOptionalSection && currentSection === 'mandatory') {
-        console.log('Finished mandatory questions, showing optional section');
-        showOptionalSection();
-        return;
-      }
-      if (currentQuestion >= mandatoryQuestionCount + optionalQuestionCount && !isKeeperSeekerSection && currentSection === 'optional') {
-        console.log('Finished optional questions, showing keeper/seeker section');
-        showKeeperSeekerSection();
-        return;
-      }
-      if (currentQuestion >= mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount && !isReligionSection && currentSection === 'keeperSeeker') {
-        console.log('Finished keeper/seeker questions, showing religion section');
-        showReligionSection();
-        return;
-      }
-      if (currentQuestion >= mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount && !isPhysicalSection && currentSection === 'religion') {
-        console.log('Finished religion questions, showing physical section');
-        showPhysicalSection();
-        return;
-      }
       if (currentQuestion >= questions.length) {
-        console.log('Finished all questions, submitting quiz');
-        submitQuiz();
+        switch (currentSection) {
+          case 'mandatory':
+            showOptionalSection();
+            break;
+          case 'optional':
+            showKeeperSeekerSection();
+            break;
+          case 'keeperSeeker':
+            showReligionSection();
+            break;
+          case 'religion':
+            showPhysicalSection();
+            break;
+          case 'physical':
+            submitQuiz();
+            break;
+          default:
+            submitQuiz();
+        }
         return;
       }
 
@@ -1211,19 +1201,8 @@
       console.log(`Displaying question ${currentQuestion + 1}: ${questionData.question}`);
       questionElement.textContent = questionData.question;
 
-      // Update progress based on current section
-      let progress = 0;
-      if (currentSection === 'mandatory') {
-        progress = ((currentQuestion + 1) / mandatoryQuestionCount) * 100;
-      } else if (currentSection === 'optional') {
-        progress = ((currentQuestion - mandatoryQuestionCount + 1) / optionalQuestionCount) * 100;
-      } else if (currentSection === 'keeperSeeker') {
-        progress = ((currentQuestion - mandatoryQuestionCount - optionalQuestionCount + 1) / keeperSeekerQuestionCount) * 100;
-      } else if (currentSection === 'religion') {
-        progress = ((currentQuestion - mandatoryQuestionCount - optionalQuestionCount - keeperSeekerQuestionCount + 1) / religionQuestionCount) * 100;
-      } else if (currentSection === 'physical') {
-        progress = ((currentQuestion - mandatoryQuestionCount - optionalQuestionCount - keeperSeekerQuestionCount - religionQuestionCount + 1) / physicalQuestionCount) * 100;
-      }
+      // Update progress
+      let progress = ((currentQuestion - sectionStart + 1) / (questions.length - sectionStart)) * 100;
       progressBar.style.width = `${Math.min(progress, 100)}%`;
 
       // Clear previous answers
@@ -1538,11 +1517,9 @@
     function showOptionalSection() {
       console.log('Showing optional section');
       currentExtraSection = 'optional';
-      currentSection = 'optional';
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'none';
       optionalSection.style.display = 'block';
-      updateSectionInfo();
       optionalP.textContent = 'Want to refine your matches with deeper maturity questions?';
       optionalSection.classList.add('animate__animated', 'animate__fadeIn');
       setTimeout(() => {
@@ -1553,7 +1530,6 @@
     function showKeeperSeekerSection() {
       console.log('Showing keeper/seeker section');
       currentExtraSection = 'keeperSeeker';
-      currentSection = 'keeperSeeker';
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'none';
       optionalSection.style.display = 'block';
@@ -1568,7 +1544,6 @@
     function showReligionSection() {
       console.log('Showing religion section');
       currentExtraSection = 'religion';
-      currentSection = 'religion';
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'none';
       optionalSection.style.display = 'block';
@@ -1583,7 +1558,6 @@
     function showPhysicalSection() {
       console.log('Showing physical section');
       currentExtraSection = 'physical';
-      currentSection = 'physical';
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'none';
       optionalSection.style.display = 'block';
@@ -1597,8 +1571,10 @@
 
     function continueOptionalQuestions() {
       console.log(`Continuing with optional questions, currentQuestion: ${currentQuestion}`);
+      const oldLength = questions.length;
       questions.push(...optionalMaturityQuestions);
-      currentQuestion = mandatoryQuestionCount;
+      currentQuestion = oldLength;
+      sectionStart = oldLength;
       isOptionalSection = true;
       currentSection = 'optional';
       optionalSection.style.display = 'none';
@@ -1610,8 +1586,10 @@
 
     function continueKeeperSeekerQuestions() {
       console.log(`Continuing with keeper/seeker questions, currentQuestion: ${currentQuestion}`);
+      const oldLength = questions.length;
       questions.push(...keeperSeekerQuestions);
-      currentQuestion = mandatoryQuestionCount + optionalQuestionCount;
+      currentQuestion = oldLength;
+      sectionStart = oldLength;
       isKeeperSeekerSection = true;
       currentSection = 'keeperSeeker';
       optionalSection.style.display = 'none';
@@ -1623,8 +1601,10 @@
 
     function continueReligionQuestions() {
       console.log(`Continuing with religion questions, currentQuestion: ${currentQuestion}`);
+      const oldLength = questions.length;
       questions.push(...religionQuestions);
-      currentQuestion = mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount;
+      currentQuestion = oldLength;
+      sectionStart = oldLength;
       isReligionSection = true;
       currentSection = 'religion';
       optionalSection.style.display = 'none';
@@ -1636,8 +1616,10 @@
 
     function continuePhysicalQuestions() {
       console.log(`Continuing with physical questions, currentQuestion: ${currentQuestion}`);
+      const oldLength = questions.length;
       questions.push(...physicalQuestions);
-      currentQuestion = mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount;
+      currentQuestion = oldLength;
+      sectionStart = oldLength;
       isPhysicalSection = true;
       currentSection = 'physical';
       optionalSection.style.display = 'none';
