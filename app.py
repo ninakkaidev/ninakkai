@@ -64,6 +64,84 @@ app.config.update(
 # Initialize Cloudinary
 configure_cloudinary()
 
+# Personalities dictionary
+PERSONALITIES = {
+    '🌿 Nurturer': {
+        'dominant_type': '🌿 Nurturer',
+        'title': '“You are a Nurturer.”',
+        'description': 'You’re gentle, loyal, and always ready to hold space for someone you love. You build relationships with quiet strength and warmth.',
+        'tagline': '“Soft-hearted, deep-rooted.”',
+        'strengths': ['Gentle', 'Loyal', 'Empathetic'],
+        'compatibility': ['🛡️ Protector', '👂 Listener'],
+        'color': '#4CAF50'  # Green
+    },
+    '🛡️ Protector': {
+        'dominant_type': '🛡️ Protector',
+        'title': '“You are a Protector.”',
+        'description': 'You’re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — and showing up when it matters.',
+        'tagline': '“Safe. Steady. Yours.”',
+        'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
+        'compatibility': ['🌿 Nurturer', '🌙 Dreamer'],
+        'color': '#2196F3'  # Blue
+    },
+    '🌙 Dreamer': {
+        'dominant_type': '🌙 Dreamer',
+        'title': '“You are a Dreamer.”',
+        'description': 'You feel deeply and love boldly. You seek the kind of connection that feels written in the stars. You crave the kind of love that makes your soul glow.',
+        'tagline': '“Romance is your religion.”',
+        'strengths': ['Deep', 'Bold', 'Soulful'],
+        'compatibility': ['💘 Romantic', '🌟 Idealist'],
+        'color': '#9C27B0'  # Purple
+    },
+    '👂 Listener': {
+        'dominant_type': '👂 Listener',
+        'title': '“You are a Listener.”',
+        'description': 'Calm and thoughtful, you hear more than what’s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
+        'tagline': '“Still waters, true heart.”',
+        'strengths': ['Calm', 'Thoughtful', 'Present'],
+        'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
+        'color': '#03A9F4'  # Light Blue
+    },
+    '💘 Romantic': {
+        'dominant_type': '💘 Romantic',
+        'title': '“You are a Romantic.”',
+        'description': 'You lead with your heart, express love freely, and long for emotional electricity. You don’t just fall in love — you dive in.',
+        'tagline': '“Loving loudly. Feeling deeply.”',
+        'strengths': ['Heart-led', 'Expressive', 'Passionate'],
+        'compatibility': ['🌙 Dreamer', '🌟 Idealist'],
+        'color': '#E91E63'  # Pink
+    },
+    '🌟 Idealist': {
+        'dominant_type': '🌟 Idealist',
+        'title': '“You are an Idealist.”',
+        'description': 'You believe love should feel right — clear, mutual, and beautifully real. You wait for the one who understands your soul.',
+        'tagline': '“Only real love will do.”',
+        'strengths': ['Believer', 'Clear', 'Soul-seeking'],
+        'compatibility': ['🌙 Dreamer', '💘 Romantic'],
+        'color': '#FFEB3B'  # Yellow
+    },
+}
+
+# Question types configuration
+QUESTION_TYPES = {
+    'req1': ["👂 Listener", "💘 Romantic", "🌙 Dreamer", "🛡️ Protector"],
+    'req2': ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "💘 Romantic"],
+    'req3': ["🌿 Nurturer", "🛡️ Protector", "👂 Listener", "💘 Romantic"],
+    'req4': ["👂 Listener", "💘 Romantic", "🛡️ Protector", "🌙 Dreamer"],
+    'req5': ["🌿 Nurturer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"],
+    'req6': ["🌿 Nurturer", "💘 Romantic", "🌟 Idealist", "🌙 Dreamer"],
+    'req7': ["🌙 Dreamer", "💘 Romantic", "🌿 Nurturer", "🛡️ Protector"],
+    'req8': ["🌙 Dreamer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"],
+    'req9': ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "🌟 Idealist"],
+    'req10': ["🛡️ Protector", "👂 Listener", "🌟 Idealist", "🌿 Nurturer"],
+    'opt1': ["🌿 Nurturer", "👂 Listener", "💘 Romantic", "🛡️ Protector"],
+    'opt2': ["👂 Listener", "🌿 Nurturer", "🛡️ Protector", "🌙 Dreamer"],
+    'opt3': ["👂 Listener", "🛡️ Protector", "🌙 Dreamer", "🌟 Idealist"],
+    'opt4': ["🌟 Idealist", "👂 Listener", "🌙 Dreamer", "🛡️ Protector"],
+    'opt5': ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "👂 Listener"],
+    'opt6': ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "🌟 Idealist"],
+}
+
 class MongoService:
     def __init__(self):
         self.uri = os.getenv('MONGODB_URI', "mongodb+srv://ninakkaiforyou:9t2GADiJUf8xFhDZ@cluster0.fdoiudh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
@@ -148,8 +226,12 @@ class MongoService:
                 'created_at': datetime.now(timezone.utc),
                 'religion': None,
                 'religion_importance': 'skip',
-                'interfaith_open': False,
                 'religion_public': False,
+                'physical_importance': 'not_important',
+                'physical_preferences': [],
+                'physical_traits': [],
+                'filter_settings': [],
+                'profile_data': [],
             }
             result = self.users.insert_one(user_data)
             return {
@@ -308,10 +390,6 @@ class MongoService:
                         update_data['religion_importance'] = importance_map.get(ans.get('index'), 'skip')
                     elif ans['section'] == 'religion':
                         update_data['religion'] = ans.get('value')
-                    elif ans['section'] == 'interfaith_open':
-                        update_data['interfaith_open'] = ans.get('index') == 0  # 0: Yes, 1: No
-                    elif ans['section'] == 'religion_public':
-                        update_data['religion_public'] = ans.get('index') == 0  # 0: Yes, 1: No
                     elif ans['section'] == 'physical_preferences':
                         importance_map = {
                             0: 'very_important',
@@ -349,12 +427,12 @@ class MongoService:
 
     def _calculate_scores(self, answers: List[Dict[str, Any]]) -> Dict[str, Any]:
         type_counts = {}
-        mandatory_answers = answers[:9]  # Fixed to 9 required questions
+        mandatory_answers = [a for a in answers if 'question_id' in a and a['question_id'].startswith('req')]
         for answer in mandatory_answers:
             if 'type' in answer:
                 answer_type = answer['type']
                 type_counts[answer_type] = type_counts.get(answer_type, 0) + 1
-        optional_answers = answers[9:]
+        optional_answers = [a for a in answers if 'question_id' in a and a['question_id'].startswith('opt')]
         for answer in optional_answers:
             if 'type' in answer:
                 answer_type = answer['type']
@@ -365,16 +443,24 @@ class MongoService:
         max_count = max(type_counts.values())
         tied_types = [t for t, cnt in type_counts.items() if cnt == max_count]
         if len(tied_types) > 1:
-            q2_answer = next((ans for ans in answers if 'ranking' in ans), None)
+            q2_answer = next((ans for ans in answers if ans.get('question_id') == 'req2'), None)
             if q2_answer:
-                ranked_types = self._parse_ranked_types(q2_answer)  # Assume parse returns ordered types
+                ranked_types = self._parse_ranked_types(q2_answer)
                 dominant_type = self._resolve_tie_with_ranking(tied_types, ranked_types)
             else:
                 dominant_type = tied_types[0]
         else:
             dominant_type = max(type_counts, key=type_counts.get)
-        # Keeper Seeker from all answers that match pattern
-        keeper_seeker = self._determine_keeper_seeker(answers)
+        # Keeper Seeker
+        ks_answers = [a for a in answers if 'question_id' in a and a['question_id'].startswith('ks')]
+        keeper_count = sum(1 for a in ks_answers if a.get('keeperSeeker') == 'Keeper')
+        seeker_count = len(ks_answers) - keeper_count
+        if keeper_count > seeker_count:
+            keeper_seeker = "Keeper"
+        elif seeker_count > keeper_count:
+            keeper_seeker = "Seeker"
+        else:
+            keeper_seeker = None
         # Optional boosts
         optional_boosts = self._calculate_optional_boosts(dominant_type, optional_answers)
         # Total for percentages
@@ -405,55 +491,28 @@ class MongoService:
             profile['keeper_seeker_type'] = keeper_seeker
         return profile
 
-    def _parse_ranked_types(self, ranked_answer: str) -> List[str]:
-        if not ranked_answer.startswith("Ranked:"):
+    def _parse_ranked_types(self, ranked_answer: Dict[str, Any]) -> List[str]:
+        ranking = ranked_answer.get('ranking', [])
+        if not ranking:
             return []
-        parts = [p.strip() for p in ranked_answer.split("Ranked:")[1].split(",")]
-        ordered_items = []
-        for part in parts:
-            item = part.split(".", 1)[1].strip() if "." in part else part.strip()
-            ordered_items.append(item)
+        # Sort by rank ascending (1 is highest)
+        sorted_ranking = sorted(ranking, key=lambda r: r['rank'])
         item_to_type = {
             "Trust": "🛡️ Protector",
             "Emotional connection": "🌿 Nurturer",
             "Shared goals": "👂 Listener",
             "Physical intimacy": "💘 Romantic"
         }
-        return [item_to_type.get(item, "") for item in ordered_items if item in item_to_type]
+        # Get the items in order of rank
+        ordered_items = [QUESTION_TYPES['req2'][r['index']] for r in sorted_ranking]  # No, types are for indices
+        # Actually, since types are associated with answers indices
+        return [QUESTION_TYPES['req2'][r['index']] for r in sorted_ranking]
 
     def _resolve_tie_with_ranking(self, tied_types: List[str], ranked_types: List[str]) -> str:
         for type_ in ranked_types:
             if type_ in tied_types:
                 return type_
         return tied_types[0]
-
-    def _determine_keeper_seeker(self, answers: List[Dict[str, Any]]) -> Optional[str]:
-        if not answers:
-            return None
-        keeper_seeker_map = {
-            "A": "Keeper",
-            "B": "Seeker",
-            "C": "Keeper",
-            "D": "Seeker"
-        }
-        keeper_count = 0
-        seeker_count = 0
-        for answer in answers:
-            if 'answer' in answer:
-                ans_text = answer['answer']
-                if re.match(r'^[A-D]\.', ans_text, re.I):
-                    first_char = ans_text[0].upper()
-                    if first_char in keeper_seeker_map:
-                        classification = keeper_seeker_map[first_char]
-                        if classification == "Keeper":
-                            keeper_count += 1
-                        elif classification == "Seeker":
-                            seeker_count += 1
-        if keeper_count > seeker_count:
-            return "Keeper"
-        elif seeker_count > keeper_count:
-            return "Seeker"
-        return None
 
     def _calculate_optional_boosts(self, dominant_type: str, optional_answers: List[Dict[str, Any]]) -> Dict[str, int]:
         boosts = {}
@@ -502,9 +561,11 @@ class MongoService:
             # Get user preferences
             religion_importance = current_user.get('religion_importance', 'skip')
             user_religion = current_user.get('religion')
-            interfaith_open = current_user.get('interfaith_open', False)
             physical_importance = current_user.get('physical_importance', 'not_important')
             physical_preferences = current_user.get('physical_preferences', [])
+            user_ks = user_scores.get('keeper_seeker_type')
+            filter_settings = current_user.get('filter_settings', [])
+            show_only_preferred_physical = any(t['value'] for t in filter_settings if t['label'] == 'Show only preferred physical traits')
             
             all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
             matches = []
@@ -516,26 +577,42 @@ class MongoService:
                 if not other_user_data or other_user_data['gender'] == current_user['gender']:
                     continue
                 
-                # Calculate base match percentage
+                # Step 1: Readiness filter
+                other_ks = other_scores.get('keeper_seeker_type')
+                if user_ks and other_ks and user_ks != other_ks:
+                    continue  # No mismatch allowed
+                
+                # Step 2: Emotional compatibility
                 match_percentage = self._calculate_match_percentage(user_scores, other_scores)
                 
-                # Apply religion filter if important
+                # Step 3: Religion preferences
                 if religion_importance != 'skip' and user_religion:
                     other_religion = other_user_data.get('religion')
-                    if religion_importance == 'high' and other_religion != user_religion:
-                        continue  # Skip if religion doesn't match and it's highly important
-                    elif religion_importance == 'medium' and other_religion != user_religion and not interfaith_open:
-                        match_percentage = max(0, match_percentage - 20)  # Penalty for religion mismatch
+                    is_same_religion = other_religion == user_religion
+                    if religion_importance == 'high' and not is_same_religion:
+                        continue
+                    elif is_same_religion:
+                        if religion_importance == 'medium':
+                            match_percentage += 10
+                        elif religion_importance == 'low':
+                            match_percentage += 5
                 
-                # Apply physical preferences filter if important
+                # Step 4: Physical preferences
                 if physical_importance != 'not_important' and physical_preferences:
                     other_physical = other_user_data.get('physical_traits', [])
                     physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
                     
-                    if physical_importance == 'very_important' and physical_match_score < 0.5:
-                        continue  # Skip if physical doesn't match and it's very important
+                    if physical_importance == 'very_important':
+                        if physical_match_score < 1.0:
+                            continue
                     elif physical_importance == 'somewhat_important':
-                        match_percentage = int(match_percentage * (0.7 + 0.3 * physical_match_score))
+                        match_percentage += int(10 * physical_match_score)
+                    
+                    # Apply filter if set
+                    if show_only_preferred_physical and physical_match_score < 1.0:
+                        continue
+                
+                match_percentage = min(match_percentage, 100)
                 
                 matches.append({
                     'id': str(other_user_data['_id']),
@@ -550,7 +627,7 @@ class MongoService:
                     'rating': '4.5',
                     'dominant_type': other_scores['dominant_type'],
                     'match_percentage': match_percentage,
-                    'keeper_seeker': other_scores.get('keeper_seeker', 'Unknown')
+                    'keeper_seeker': other_scores.get('keeper_seeker_type', 'Unknown')
                 })
             
             return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:20]
@@ -559,25 +636,31 @@ class MongoService:
             return []
 
     def _calculate_physical_match(self, preferences: List, traits: List) -> float:
-        """Calculate how well physical traits match preferences (0-1)"""
         if not preferences or not traits:
-            return 0.5  # Neutral score if no data
+            return 1.0  # Full match if no preferences
         
         match_score = 0
         total_comparisons = 0
         
-        # Simple implementation - in real app, you'd have more sophisticated matching
-        for pref in preferences:
-            if isinstance(pref, dict) and 'label' in pref and 'value' in pref:
-                for trait in traits:
-                    if isinstance(trait, dict) and 'label' in trait and 'value' in trait:
-                        if pref['label'] == trait['label']:
-                            total_comparisons += 1
-                            if pref['value'] == trait['value'] or pref['value'] == 'No Preference':
-                                match_score += 1
-                            # For range values, you'd need more complex logic
+        pref_dict = {p['label']: p['value'] for p in preferences if p['value'] != 'No Preference'}
+        trait_dict = {t['label']: t['value'] for t in traits}
         
-        return match_score / total_comparisons if total_comparisons > 0 else 0.5
+        for label, pref_val in pref_dict.items():
+            total_comparisons += 1
+            if label in trait_dict:
+                trait_val = trait_dict[label]
+                if 'height' in label.lower():
+                    try:
+                        p = int(pref_val)
+                        t = int(trait_val)
+                        if abs(p - t) <= 10:
+                            match_score += 1
+                    except:
+                        pass
+                elif pref_val == trait_val:
+                    match_score += 1
+        
+        return match_score / total_comparisons if total_comparisons > 0 else 1.0
 
     def _calculate_match_percentage(self, user_scores: Dict[str, Any], other_scores: Dict[str, Any]) -> int:
         try:
@@ -585,15 +668,8 @@ class MongoService:
             dominant_match = 40 if user_scores['dominant_type'] == other_scores['dominant_type'] else 20
             secondary_match = 30 if user_scores.get('secondary_type') == other_scores.get('secondary_type') else 10
             
-            # Add bonus for keeper-seeker compatibility
-            keeper_seeker_bonus = 0
-            if user_scores.get('keeper_seeker') == other_scores.get('keeper_seeker'):
-                keeper_seeker_bonus = 15
-            elif (user_scores.get('keeper_seeker') == 'Keeper' and 
-                  other_scores.get('keeper_seeker') == 'Seeker') or \
-                 (user_scores.get('keeper_seeker') == 'Seeker' and 
-                  other_scores.get('keeper_seeker') == 'Keeper'):
-                keeper_seeker_bonus = 5
+            # Add bonus for keeper-seeker compatibility (but already filtered)
+            keeper_seeker_bonus = 15 if user_scores.get('keeper_seeker_type') == other_scores.get('keeper_seeker_type') else 0
             
             return min(dominant_match + secondary_match + keeper_seeker_bonus, 100)
         except Exception as e:
@@ -1543,7 +1619,7 @@ def api_matches():
         per_page = 9  # Number of matches per page
         
         # Get all matches first
-        all_matches = mongo_service.get_filtered_matches(session['user_id'])
+        all_matches = mongo_service.find_matches(session['user_id'])
         
         # Calculate pagination
         start_idx = page * per_page
@@ -1647,64 +1723,8 @@ def user_profile(user_id):
         match_percentage = 50
         if current_quiz and quiz_result:
             match_percentage = mongo_service._calculate_match_percentage(current_quiz['scores'], quiz_result['scores'])
-        third_person_personalities = {
-            '🌿 Nurturer': {
-                'dominant_type': '🌿 Nurturer',
-                'title': '“This person is a Nurturer.”',
-                'description': 'They’re gentle, loyal, and always ready to hold space for someone they love. They build relationships with quiet strength and warmth.',
-                'tagline': '“Soft-hearted, deep-rooted.”',
-                'strengths': ['Gentle', 'Loyal', 'Empathetic'],  # Add some strengths
-                'compatibility': ['🛡️ Protector', '👂 Listener'],  # Examples
-                'color': '#4CAF50'  # Green
-            },
-            '🛡️ Protector': {
-                'dominant_type': '🛡️ Protector',
-                'title': '“This person is a Protector.”',
-                'description': 'They’re grounded, trustworthy, and always ready to stand up for the people they care about. Love means loyalty — and showing up when it matters.',
-                'tagline': '“Safe. Steady. Yours.”',
-                'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
-                'compatibility': ['🌿 Nurturer', '🌙 Dreamer'],
-                'color': '#2196F3'  # Blue
-            },
-            '🌙 Dreamer': {
-                'dominant_type': '🌙 Dreamer',
-                'title': '“This person is a Dreamer.”',
-                'description': 'They feel deeply and love boldly. They seek the kind of connection that feels written in the stars. They crave the kind of love that makes their soul glow.',
-                'tagline': '“Romance is their religion.”',
-                'strengths': ['Deep', 'Bold', 'Soulful'],
-                'compatibility': ['💘 Romantic', '🌟 Idealist'],
-                'color': '#9C27B0'  # Purple
-            },
-            '👂 Listener': {
-                'dominant_type': '👂 Listener',
-                'title': '“This person is a Listener.”',
-                'description': 'Calm and thoughtful, they hear more than what’s said. They bring comfort in silence and meaning in presence. They understand that real love sometimes just means being there.',
-                'tagline': '“Still waters, true heart.”',
-                'strengths': ['Calm', 'Thoughtful', 'Present'],
-                'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
-                'color': '#03A9F4'  # Light Blue
-            },
-            '💘 Romantic': {
-                'dominant_type': '💘 Romantic',
-                'title': '“This person is a Romantic.”',
-                'description': 'They lead with their heart, express love freely, and long for emotional electricity. They don’t just fall in love — they dive in.',
-                'tagline': '“Loving loudly. Feeling deeply.”',
-                'strengths': ['Heart-led', 'Expressive', 'Passionate'],
-                'compatibility': ['🌙 Dreamer', '🌟 Idealist'],
-                'color': '#E91E63'  # Pink
-            },
-            '🌟 Idealist': {
-                'dominant_type': '🌟 Idealist',
-                'title': '“This person is an Idealist.”',
-                'description': 'They believe love should feel right — clear, mutual, and beautifully real. You wait for the one who understands your soul.',
-                'tagline': '“Only real love will do.”',
-                'strengths': ['Believer', 'Clear', 'Soul-seeking'],
-                'compatibility': ['🌙 Dreamer', '💘 Romantic'],
-                'color': '#FFEB3B'  # Yellow
-            },
-        }
         dominant_type = quiz_result['scores']['dominant_type'] if quiz_result else 'N/A'
-        personality_info = third_person_personalities.get(dominant_type, {
+        personality_info = PERSONALITIES.get(dominant_type, {
             'dominant_type': dominant_type,
             'title': f'This person is a {dominant_type.replace(" ", "")}.',
             'description': 'Description not available.',
@@ -1731,10 +1751,15 @@ def user_profile(user_id):
                 'secondary_type': quiz_result['scores']['secondary_type'] if quiz_result else 'N/A',
                 'secondary_percentage': quiz_result['scores']['secondary_percentage'] if quiz_result else 0
             },
-            'personality_info': personality_info
+            'personality_info': personality_info,
+            'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'N/A') if quiz_result else 'N/A',
+            'religion': user.get('religion', 'Not specified') if user.get('religion_public', False) else 'Private',
+            'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])},
+            'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
+            'summary': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), 'N/A')
         }
-        if user.get('religion_public', False):
-            profile['religion'] = user.get('religion', 'Not specified')
+        # Collect interests from profile_data
+        profile['profile_interests'] = [p['value'] for p in user.get('profile_data', []) if p['label'] == 'Interests (select all that apply)']
         return jsonify({'success': True, 'user': profile}), 200
     except Exception as e:
         logger.error(f"User profile endpoint error: {str(e)}")
@@ -1908,64 +1933,8 @@ def profile():
             return render_template('profile.html', profile={}, pending_likers=[], notifications=[])
         quiz_result = mongo_service.get_quiz_results(session['user_id'])
         # Define personalities dict
-        personalities = {
-            '🌿 Nurturer': {
-                'dominant_type': '🌿 Nurturer',
-                'title': '“You are a Nurturer.”',
-                'description': 'You’re gentle, loyal, and always ready to hold space for someone you love. You build relationships with quiet strength and warmth.',
-                'tagline': '“Soft-hearted, deep-rooted.”',
-                'strengths': ['Gentle', 'Loyal', 'Empathetic'],  # Add some strengths
-                'compatibility': ['🛡️ Protector', '👂 Listener'],  # Examples
-                'color': '#4CAF50'  # Green
-            },
-            '🛡️ Protector': {
-                'dominant_type': '🛡️ Protector',
-                'title': '“You are a Protector.”',
-                'description': 'You’re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — and showing up when it matters.',
-                'tagline': '“Safe. Steady. Yours.”',
-                'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
-                'compatibility': ['🌿 Nurturer', '🌙 Dreamer'],
-                'color': '#2196F3'  # Blue
-            },
-            '🌙 Dreamer': {
-                'dominant_type': '🌙 Dreamer',
-                'title': '“You are a Dreamer.”',
-                'description': 'You feel deeply and love boldly. You seek the kind of connection that feels written in the stars. You crave the kind of love that makes your soul glow.',
-                'tagline': '“Romance is your religion.”',
-                'strengths': ['Deep', 'Bold', 'Soulful'],
-                'compatibility': ['💘 Romantic', '🌟 Idealist'],
-                'color': '#9C27B0'  # Purple
-            },
-            '👂 Listener': {
-                'dominant_type': '👂 Listener',
-                'title': '“You are a Listener.”',
-                'description': 'Calm and thoughtful, you hear more than what’s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
-                'tagline': '“Still waters, true heart.”',
-                'strengths': ['Calm', 'Thoughtful', 'Present'],
-                'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
-                'color': '#03A9F4'  # Light Blue
-            },
-            '💘 Romantic': {
-                'dominant_type': '💘 Romantic',
-                'title': '“You are a Romantic.”',
-                'description': 'You lead with your heart, express love freely, and long for emotional electricity. You don’t just fall in love — you dive in.',
-                'tagline': '“Loving loudly. Feeling deeply.”',
-                'strengths': ['Heart-led', 'Expressive', 'Passionate'],
-                'compatibility': ['🌙 Dreamer', '🌟 Idealist'],
-                'color': '#E91E63'  # Pink
-            },
-            '🌟 Idealist': {
-                'dominant_type': '🌟 Idealist',
-                'title': '“You are an Idealist.”',
-                'description': 'You believe love should feel right — clear, mutual, and beautifully real. You wait for the one who understands your soul.',
-                'tagline': '“Only real love will do.”',
-                'strengths': ['Believer', 'Clear', 'Soul-seeking'],
-                'compatibility': ['🌙 Dreamer', '💘 Romantic'],
-                'color': '#FFEB3B'  # Yellow
-            },
-        }
         dominant_type = quiz_result['scores']['dominant_type'] if quiz_result else 'N/A'
-        personality = personalities.get(dominant_type, {
+        personality = PERSONALITIES.get(dominant_type, {
             'dominant_type': dominant_type,
             'title': f'You are a {dominant_type.replace(" ", "")}.',
             'description': 'Description not available.',
@@ -1997,10 +1966,15 @@ def profile():
             'quiz_completed': bool(quiz_result),
             'dominant_type': dominant_type,
             'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0,
-            'personality_info': personality_info
+            'personality_info': personality_info,
+            'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'N/A') if quiz_result else 'N/A',
+            'religion': user.get('religion', 'Not specified') if user.get('religion_public', False) else 'Private',
+            'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])},
+            'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
+            'summary': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), 'N/A')
         }
-        if user.get('religion_public', False):
-            profile['religion'] = user.get('religion', 'Not specified')
+        # Collect interests from profile_data
+        profile['profile_interests'] = [p['value'] for p in user.get('profile_data', []) if p['label'] == 'Interests (select all that apply)']
         pending_likers = mongo_service.get_pending_likers(session['user_id'])
         notifications = mongo_service.get_notifications(session['user_id'])
         return render_template('profile.html', profile=profile, pending_likers=pending_likers, notifications=notifications)
@@ -2039,79 +2013,19 @@ def submit_quiz():
         if not answers:
             return jsonify({'success': False, 'error': 'No answers provided'}), 400
         
-        processed_answers = []
-        required_questions = [
-            {
-                'answers': ["Safe and calm inside", "Excited and full of butterflies", "Like I've found someone truly rare", "Scared of being being too vulnerable"],
-                'types': ["👂 Listener", "💘 Romantic", "🌙 Dreamer", "🛡️ Protector"]
-            },
-            {
-                'answers': ["Trust", "Emotional connection", "Shared goals", "Physical intimacy"],
-                'types': ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "💘 Romantic"],
-                'isRankQuestion': True
-            },
-            {
-                'answers': ["Someone silently sitting with me through pain", "Someone helping me fix the situation", "Someone saying exactly the right words", "Someone holding me tight without speaking"],
-                'types': ["🌿 Nurturer", "🛡️ Protector", "👂 Listener", "💘 Romantic"]
-            },
-            {
-                'answers': ["Try to stay calm and really listen", "Express your emotions openly", "Try to solve it quickly and move on", "Take it personally and overthink it"],
-                'types': ["👂 Listener", "💘 Romantic", "🛡️ Protector", "🌙 Dreamer"]
-            },
-            {
-                'answers': ["Kind and soft", "Strong and independent", "Perfect and without flaws", "Honest and growing"],
-                'types': ["🌿 Nurturer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
-            },
-            {
-                'answers': ["Peace and emotional safety", "Excitement and mystery", "Growth and learning together", "Feeling truly known and accepted"],
-                'types': ["🌿 Nurturer", "💘 Romantic", "🌟 Idealist", "🌙 Dreamer"]
-            },
-            {
-                'answers': ["Deep, late-night emotional conversations", "Intense physical closeness and passion", "When someone notices the little things", "Solving life's problems together"],
-                'types': ["🌙 Dreamer", "💘 Romantic", "🌿 Nurturer", "🛡️ Protector"]
-            },
-            {
-                'answers': ["Cry or let it out", "Get silent and withdraw", "Keep busy to avoid it", "Talk it out with someone trusted"],
-                'types': ["🌙 Dreamer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
-            },
-            {
-                'answers': ["Freedom to spend and still save together", "Clear roles — one earns, one manages", "Always discuss big spending decisions", "Having separate money but shared goals"],
-                'types': ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "🌟 Idealist"]
-            }
-        ]
-        optional_questions = [
-            {
-                'answers': ["I need space to process alone", "I want to talk it through together", "I focus on practical solutions", "I lean on my partner for comfort"],
-                'types': ["🛡️ Protector", "👂 Listener", "🌟 Idealist", "🌿 Nurturer"]
-            },
-            {
-                'answers': ["Dream big and figure it out later", "Set clear goals and timelines", "Go with the flow and see what happens", "Discuss every step together"],
-                'types': ["🌙 Dreamer", "🛡️ Protector", "💘 Romantic", "👂 Listener"]
-            }
-        ]
+        # Add types to answers for emotional questions
+        for ans in answers:
+            qid = ans.get('question_id')
+            if qid in QUESTION_TYPES:
+                if 'index' in ans:
+                    ans['type'] = QUESTION_TYPES[qid][ans['index']]
+                elif 'ranking' in ans:
+                    if ans['ranking']:
+                        top_rank = min(ans['ranking'], key=lambda r: r['rank'])
+                        top_idx = top_rank['index']
+                        ans['type'] = QUESTION_TYPES[qid][top_idx]
         
-        all_questions = required_questions + optional_questions
-        for answer_data in answers:
-            question_idx = answer_data.get('question')
-            if question_idx >= len(all_questions):
-                continue
-            question = all_questions[question_idx]
-            if question.get('isRankQuestion'):
-                ranking = answer_data.get('ranking', [])
-                ranked_answer = "Ranked: " + ", ".join(f"{r['rank']}. {question['answers'][r['index']]}" for r in ranking)
-                processed_answers.append({
-                    'type': question['types'][ranking[0]['index']] if ranking else question['types'][0],
-                    'answer': ranked_answer
-                })
-            else:
-                answer_idx = answer_data.get('answer')
-                if answer_idx is not None and 0 <= answer_idx < len(question['answers']):
-                    processed_answers.append({
-                        'type': question['types'][answer_idx],
-                        'answer': question['answers'][answer_idx]
-                    })
-
-        quiz_data = {'answers': processed_answers}
+        quiz_data = {'answers': answers}
         result = mongo_service.save_quiz_results(session['user_id'], quiz_data)
         if result['success']:
             return jsonify({'success': True}), 200
@@ -2129,64 +2043,7 @@ def personality_results():
     if not quiz_result:
         return jsonify({'success': False, 'error': 'No quiz results found'}), 404
     dominant_type = quiz_result['scores']['dominant_type']
-    # Now, map to the descriptions
-    personalities = {
-        '🌿 Nurturer': {
-            'dominant_type': '🌿 Nurturer',
-            'title': '“You are a Nurturer.”',
-            'description': 'You’re gentle, loyal, and always ready to hold space for someone you love. You build relationships with quiet strength and warmth.',
-            'tagline': '“Soft-hearted, deep-rooted.”',
-            'strengths': ['Gentle', 'Loyal', 'Empathetic'],  # Add some strengths
-            'compatibility': ['🛡️ Protector', '👂 Listener'],  # Examples
-            'color': '#4CAF50'  # Green
-        },
-        '🛡️ Protector': {
-            'dominant_type': '🛡️ Protector',
-            'title': '“You are a Protector.”',
-            'description': 'You’re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — and showing up when it matters.',
-            'tagline': '“Safe. Steady. Yours.”',
-            'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
-            'compatibility': ['🌿 Nurturer', '🌙 Dreamer'],
-            'color': '#2196F3'  # Blue
-        },
-        '🌙 Dreamer': {
-            'dominant_type': '🌙 Dreamer',
-            'title': '“You are a Dreamer.”',
-            'description': 'You feel deeply and love boldly. You seek the kind of connection that feels written in the stars. You crave the kind of love that makes your soul glow.',
-            'tagline': '“Romance is your religion.”',
-            'strengths': ['Deep', 'Bold', 'Soulful'],
-            'compatibility': ['💘 Romantic', '🌟 Idealist'],
-            'color': '#9C27B0'  # Purple
-        },
-        '👂 Listener': {
-            'dominant_type': '👂 Listener',
-            'title': '“You are a Listener.”',
-            'description': 'Calm and thoughtful, you hear more than what’s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
-            'tagline': '“Still waters, true heart.”',
-            'strengths': ['Calm', 'Thoughtful', 'Present'],
-            'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
-            'color': '#03A9F4'  # Light Blue
-        },
-        '💘 Romantic': {
-            'dominant_type': '💘 Romantic',
-            'title': '“You are a Romantic.”',
-            'description': 'You lead with your heart, express love freely, and long for emotional electricity. You don’t just fall in love — you dive in.',
-            'tagline': '“Loving loudly. Feeling deeply.”',
-            'strengths': ['Heart-led', 'Expressive', 'Passionate'],
-            'compatibility': ['🌙 Dreamer', '🌟 Idealist'],
-            'color': '#E91E63'  # Pink
-        },
-        '🌟 Idealist': {
-            'dominant_type': '🌟 Idealist',
-            'title': '“You are an Idealist.”',
-            'description': 'You believe love should feel right — clear, mutual, and beautifully real. You wait for the one who understands your soul.',
-            'tagline': '“Only real love will do.”',
-            'strengths': ['Believer', 'Clear', 'Soul-seeking'],
-            'compatibility': ['🌙 Dreamer', '💘 Romantic'],
-            'color': '#FFEB3B'  # Yellow
-        },
-    }
-    personality_info = personalities.get(dominant_type, {
+    personality_info = PERSONALITIES.get(dominant_type, {
         'dominant_type': dominant_type,
         'title': f'You are a {dominant_type.replace(" ", "")}.',
         'description': 'Description not available.',
