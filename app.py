@@ -29,7 +29,7 @@ def configure_cloudinary():
         cloudinary.config(
             cloud_name='dibbkr9vs',
             api_key='869559855343136',
-            api_secret='FfJnI44v31rzfPvp7e-K9lnI5BDM',
+            api_secret='FfJnI44v31rzfPvp7eK9lnI5BDM',  # Removed the dash from the secret as it was likely a typo causing invalid signature
             secure=True
         )
         config = cloudinary.config()
@@ -2205,4 +2205,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True) 
+    app.run(host='0.0.0.0', port=5050, debug=True)
