@@ -511,6 +511,60 @@
                 <a href="/questions" class="text-pink-500 font-medium">Take Quiz</a>
                 {% endif %}
             </div>
+
+            <!-- Relationship Style (Keeper/Seeker) -->
+            {% if profile.keeper_seeker != 'N/A' %}
+            <div class="mt-6">
+                <h3 class="font-semibold mb-2">Relationship Style</h3>
+                <p class="text-gray-700">{{ profile.keeper_seeker }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Religion -->
+            {% if profile.religion != 'Private' %}
+            <div class="mt-6">
+                <h3 class="font-semibold mb-2">Religion</h3>
+                <p class="text-gray-700">{{ profile.religion }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Physical Traits -->
+            {% if profile.physical_traits %}
+            <div class="mt-6">
+                <h3 class="font-semibold mb-2">Physical Traits</h3>
+                {% for label, value in profile.physical_traits.items() %}
+                <p class="text-gray-700">{{ label }}: {{ value }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Education/Work -->
+            {% if profile.education_work != 'N/A' %}
+            <div class="mt-6">
+                <h3 class="font-semibold mb-2">Education/Work</h3>
+                <p class="text-gray-700">{{ profile.education_work }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Profile Interests -->
+            {% if profile.profile_interests %}
+            <div class="mt-6">
+                <h3 class="font-semibold mb-2">Interests</h3>
+                <div class="flex flex-wrap gap-2">
+                    {% for interest in profile.profile_interests %}
+                    <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">{{ interest }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Self-Summary -->
+            {% if profile.summary != 'N/A' %}
+            <div class="mt-6">
+                <h3 class="font-semibold mb-2">Self-Summary</h3>
+                <p class="text-gray-700">{{ profile.summary }}</p>
+            </div>
+            {% endif %}
             
             <!-- Edit Buttons (shown only in edit mode) -->
             <div id="editButtons" class="edit-field flex justify-end space-x-2 mt-4">
@@ -692,7 +746,7 @@
                                 <span class="text-gray-500 cursor-pointer flex items-center dark:text-gray-400">
                                     English <i class="fas fa-chevron-down ml-1 text-xs"></i>
                                 </span>
-                                <div class="language-options hidden absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg shadow-lg z-10">
+                                <div class="language-options hidden absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg shadow-lg rounded-lg z-10">
                                     <div class="language-option selected px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="en">English</div>
                                     <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="es">Español</div>
                                     <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="fr">Français</div>
