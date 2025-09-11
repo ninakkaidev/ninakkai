@@ -1619,18 +1619,11 @@ def api_matches():
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     try:
         page = request.args.get('page', 0, type=int)
-        per_page = 9  # Number of matches per page
-        
-        # Get all matches first
-        all_matches = mongo_service.find_matches(session['user_id'])
-        
-        # Calculate pagination
-        start_idx = page * per_page
-        end_idx = start_idx + per_page
-        paginated_matches = all_matches[start_idx:end_idx]
-        
-        has_more = end_idx < len(all_matches)
-        
+        num_results = mongo_service.find_matches(session['user_id'])
+        start_idx = page * 9
+        end_idx = start_idx + 9
+        paginated_matches = num_results[start_idx:end_idx]
+        has_more = end_idx < len(num_results)
         return jsonify({
             'success': True, 
             'matches': paginated_matches,
