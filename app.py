@@ -749,6 +749,9 @@ class MongoService:
             logger.error(f"Pass user error: {str(e)}")
             return {'success': False, 'error': str(e)}
 
+    def is_liked(self, user_id: str, matched_user_id: str) -> bool:
+        return self.has_liked_user(user_id, matched_user_id)
+
     def search_matches(self, query: str, user_id: str) -> List[Dict[str, Any]]:
         try:
             current_user = self.get_user_by_id(user_id)
@@ -2016,7 +2019,7 @@ def profile():
             'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0,
             'personality_info': personality_info,
             'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'N/A') if quiz_result else 'N/A',
-            'religion': user.get('religion', 'Not specified') if user.get('religion_public', False) else 'Private',
+            'religion': user.get('religion', 'N/A'),
             'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])},
             'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
             'summary': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), 'N/A')
