@@ -300,7 +300,7 @@
 
         /* Skeleton loading animation */
         .skeleton {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background: linear-gradient(90deg, #f1f1f1 25%, #e0e0e0 50%, #f1f1f1 75%);
             background-size: 200% 100%;
             animation: loading 1.5s infinite;
             border-radius: 8px;
@@ -498,7 +498,6 @@
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Most Matched Suggestions</h2>
                 <button id="refresh-matches" class="text-pink-500 text-sm font-medium mr-2">Refresh</button>
-                <button id="see-all-matches" class="text-pink-500 text-sm font-medium">See All</button>
             </div>
             <div id="matches-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                 <!-- Skeleton loaders for initial loading -->
@@ -530,9 +529,8 @@
         <div id="discovery-section" class="mb-8">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Discover People</h2>
-                <button id="see-all-discovery" class="text-pink-500 text-sm font-medium">See All</button>
             </div>
-            <div id="discovery-grid" class="grid grid-cols-1 gap-4">
+            <div id="discovery-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                 <!-- Skeleton loaders for initial loading -->
                 <div class="discovery-profile">
                     <div class="skeleton w-full h-72 rounded-xl"></div>
@@ -544,13 +542,6 @@
                     <div class="skeleton w-full h-72 rounded-xl"></div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Load More Button -->
-        <div id="load-more-container" class="text-center mt-8 hidden">
-            <button id="load-more-btn" class="bg-pink-500 hover:bg-pink-600 text-white font-medium py-2 px-6 rounded-full transition">
-                Load More Profiles
-            </button>
         </div>
     </main>
 
@@ -582,14 +573,14 @@
             const errorMessage = document.getElementById('error-message');
             const errorText = document.getElementById('error-text');
             const mainHeader = document.getElementById('mainHeader');
-            const loadMoreContainer = document.getElementById('load-more-container');
-            const loadMoreBtn = document.getElementById('load-more-btn');
             const refreshMatchesBtn = document.getElementById('refresh-matches');
             
-            // State for lazy loading
-            let currentPage = 0;
+            // State for loading
             let isLoading = false;
-            let hasMoreMatches = true;
+            
+            // Cache key
+            const CACHE_KEY = 'ninakkai_matches';
+            const CACHE_EXPIRY = 3600000; // 1 hour in ms
             
             // Dark mode persistence
             if (localStorage.theme === 'dark') {
@@ -716,6 +707,13 @@
                                 
                                 // For like, remove card; for unlike, keep it
                                 if (!isLiked) {
+                                    // Update cache by removing the liked user
+                                    const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                                    if (cached) {
+                                        cached.data = cached.data.filter(m => m.id !== userId);
+                                        localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                                    }
+
                                     setTimeout(() => {
                                         const card = this.closest('.discovery-card');
                                         if (card) {
@@ -724,6 +722,8 @@
                                             setTimeout(() => card.remove(), 500);
                                         }
                                     }, 1500);
+                                } else {
+                                    // For unlike, optionally refresh to add back, but skipping for simplicity
                                 }
                             } else {
                                 if (result.error === 'Daily like limit exceeded') {
@@ -741,7 +741,7 @@
                 });
             }
 
-            // Header scroll scroll effect
+            // Header scroll effect
             window.addEventListener('scroll', () => {
                 mainHeader.classList.toggle('scrolled-header', window.scrollY > 10);
             });
@@ -837,68 +837,45 @@
                 `).join('') : '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">No people to discover. Try completing your quiz!</p>';
             }
             
-            // Function to append new matches (for lazy loading)
-            function appendMatches(matches) {
-                const matchesGrid = document.getElementById('matches-grid');
-                const discoveryGrid = document.getElementById('discovery-grid');
+            // Function to load matches with caching
+            async function loadMatches(forceRefresh = false) {
+                if (isLoading) return;
                 
-                // Remove skeleton loaders if they exist
-                const skeletonLoaders = matchesGrid.querySelectorAll('.skeleton');
-                skeletonLoaders.forEach(loader => loader.remove());
+                isLoading = true;
                 
-                matches.forEach(match => {
-                    const matchCard = document.createElement('div');
-                    matchCard.className = 'bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative discovery-card';
-                    matchCard.dataset.userId = match.id;
-                    matchCard.innerHTML = `
-                        <div class="match-percentage text-gray-800 dark:text-gray-100">${match.match_percentage}%</div>
-                        <img src="${match.image}" alt="${match.full_name}" class="profile-image">
-                        <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-                            <div class="flex justify-between items-end">
-                                <div>
-                                    <h3 class="text-gray-100 font-bold">${match.full_name}, ${match.age || 'N/A'}</h3>
-                                    <p class="text-gray-300 dark:text-gray-300 text-sm">${match.occupation} • ${match.distance}</p>
-                                </div>
-                                <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition" 
-                                        data-user-id="${match.id}" 
-                                        data-liked="${match.liked}">
-                                    <i class="fas ${match.liked ? 'fa-check' : 'fa-heart'}"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    matchesGrid.appendChild(matchCard);
+                const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                if (!forceRefresh && cached && Date.now() - cached.timestamp < CACHE_EXPIRY) {
+                    updateMatches(cached.data);
+                    updateDiscovery(cached.data);
+                    attachLikeButtonListeners();
+                    attachProfileClickListeners();
+                    updateLikeButtons();
+                    isLoading = false;
+                    return;
+                }
+
+                showLoading();
+                
+                try {
+                    const response = await fetch('/api/matches');
+                    const result = await response.json();
                     
-                    const discoveryCard = document.createElement('div');
-                    discoveryCard.className = 'discovery-profile discovery-card';
-                    discoveryCard.dataset.userId = match.id;
-                    discoveryCard.innerHTML = `
-                        <img src="${match.image}" alt="Profile" class="discovery-image">
-                        <div class="discovery-rating text-gray-800 dark:text-gray-100">
-                            <i class="fas fa-star text-yellow-500 text-xs mr-1"></i>
-                            <span class="text-xs font-medium">${match.rating}</span>
-                        </div>
-                        <div class="discovery-content">
-                            <div class="flex justify-between items-end">
-                                <div>
-                                    <h3 class="text-gray-100 font-bold text-sm md:text-base">${match.full_name}, ${match.age || 'N/A'}</h3>
-                                    <p class="text-gray-300 dark:text-gray-300 text-xs md:text-sm">${match.distance}</p>
-                                </div>
-                                <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center transition" 
-                                        data-user-id="${match.id}" 
-                                        data-liked="${match.liked}">
-                                    <i class="fas ${match.liked ? 'fa-check' : 'fa-heart text-xs md:text-sm'}"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    discoveryGrid.appendChild(discoveryCard);
-                });
-                
-                // Update like buttons and attach listeners
-                updateLikeButtons();
-                attachLikeButtonListeners();
-                attachProfileClickListeners();
+                    if (result.success) {
+                        localStorage.setItem(CACHE_KEY, JSON.stringify({timestamp: Date.now(), data: result.matches}));
+                        updateMatches(result.matches);
+                        updateDiscovery(result.matches);
+                        attachLikeButtonListeners();
+                        attachProfileClickListeners();
+                        updateLikeButtons();
+                    } else {
+                        showError(result.error || 'Failed to load matches');
+                    }
+                } catch (error) {
+                    showError('Network error while loading matches');
+                } finally {
+                    hideLoading();
+                    isLoading = false;
+                }
             }
 
             // Profile viewer
@@ -1122,6 +1099,13 @@
                                 
                                 // For like, close viewer and remove card; for unlike, keep viewer open
                                 if (!isLiked) {
+                                    // Update cache by removing the liked user
+                                    const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                                    if (cached) {
+                                        cached.data = cached.data.filter(m => m.id !== userId);
+                                        localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                                    }
+
                                     setTimeout(() => {
                                         profileViewer.remove();
                                         mainHeader.style.display = 'flex';
@@ -1163,6 +1147,12 @@
                         
                         if (result.success) {
                             showNotification('Passed');
+                            // Update cache by removing the passed user
+                            const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                            if (cached) {
+                                cached.data = cached.data.filter(m => m.id !== userId);
+                                localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                            }
                             profileViewer.remove();
                             mainHeader.style.display = 'flex';
                             document.body.style.overflow = '';
@@ -1184,77 +1174,7 @@
                 });
             }
             
-            // Function to load matches with pagination
-            async function loadMatches(page = 0) {
-                if (isLoading) return;
-                
-                isLoading = true;
-                showLoading();
-                
-                try {
-                    const response = await fetch(`/api/matches?page=${page}`);
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        if (result.matches.length > 0) {
-                            appendMatches(result.matches);
-                            currentPage = page;
-                            
-                            // Show load more button if there are more matches
-                            if (result.has_more) {
-                                loadMoreContainer.classList.remove('hidden');
-                            } else {
-                                loadMoreContainer.classList.add('hidden');
-                                hasMoreMatches = false;
-                            }
-                        } else {
-                            loadMoreContainer.classList.add('hidden');
-                            hasMoreMatches = false;
-                            if (page === 0) {
-                                const matchesGrid = document.getElementById('matches-grid');
-                                const discoveryGrid = document.getElementById('discovery-grid');
-                                matchesGrid.innerHTML = '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">We will notify you if any matches come for you. Stay on track!</p>';
-                                discoveryGrid.innerHTML = '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">No people to discover yet.</p>';
-                            }
-                        }
-                    } else {
-                        showError(result.error || 'Failed to load matches');
-                    }
-                } catch (error) {
-                    showError('Network error while loading matches');
-                } finally {
-                    hideLoading();
-                    isLoading = false;
-                }
-            }
-
-            // Initial loading state and load first page of matches
-            loadMatches(0);
-            
-            // Load more button event listener
-            loadMoreBtn.addEventListener('click', () => {
-                if (hasMoreMatches && !isLoading) {
-                    loadMatches(currentPage + 1);
-                }
-            });
-            
-            // Refresh button
-            refreshMatchesBtn.addEventListener('click', () => {
-                currentPage = 0;
-                hasMoreMatches = true;
-                document.getElementById('matches-grid').innerHTML = '';
-                document.getElementById('discovery-grid').innerHTML = '';
-                loadMatches(0);
-            });
-
-            // See All buttons (placeholder)
-            document.querySelectorAll('#see-all-matches, #see-all-discovery').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    showError('See All functionality coming soon!');
-                });
-            });
-            
-            // Attach profile click listeners
+            // Function to attach profile click listeners
             function attachProfileClickListeners() {
                 document.querySelectorAll('.discovery-card:not([data-click-attached])').forEach(card => {
                     card.addEventListener('click', function(e) {
@@ -1267,6 +1187,14 @@
                     card.setAttribute('data-click-attached', 'true');
                 });
             }
+
+            // Initial load
+            loadMatches();
+
+            // Refresh button
+            refreshMatchesBtn.addEventListener('click', () => {
+                loadMatches(true);
+            });
         });
     </script>
 </body>

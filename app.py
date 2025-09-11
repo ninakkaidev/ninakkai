@@ -1618,16 +1618,10 @@ def api_matches():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     try:
-        page = request.args.get('page', 0, type=int)
-        num_results = mongo_service.find_matches(session['user_id'])
-        start_idx = page * 9
-        end_idx = start_idx + 9
-        paginated_matches = num_results[start_idx:end_idx]
-        has_more = end_idx < len(num_results)
+        matches = mongo_service.find_matches(session['user_id'])
         return jsonify({
             'success': True, 
-            'matches': paginated_matches,
-            'has_more': has_more
+            'matches': matches
         }), 200
     except Exception as e:
         logger.error(f"API matches error: {str(e)}")
