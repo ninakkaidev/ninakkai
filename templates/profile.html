@@ -912,7 +912,7 @@
                         const result = await response.json();
                         if (result.success) {
                             profileImage.src = result.url;
-                            showNotification('Profile picture updated successfully');
+                            showNotification('Profile picture updated');
                             setTimeout(() => location.reload(), 1000);
                         } else {
                             showNotification('Failed to update profile picture: ' + result.error);
@@ -1375,9 +1375,11 @@
                                 photosContainer.appendChild(img);
                             });
 
-                            const personality = user.personality;
-                            document.getElementById('modalUserPersonality').textContent = 
-                                `Dominant: ${personality.dominant_type} (${personality.dominant_percentage}%), Secondary: ${personality.secondary_type || 'None'} (${personality.secondary_percentage}%)`;
+                            const personalityPara = document.getElementById('modalUserPersonality');
+                            personalityPara.innerHTML = user.personality_info;
+                            if (user.secondary_personality_info) {
+                                personalityPara.innerHTML += '<br>' + user.secondary_personality_info;
+                            }
 
                             document.getElementById('modalAcceptBtn').dataset.userId = currentUserId;
                             document.getElementById('modalDeclineBtn').dataset.userId = currentUserId;

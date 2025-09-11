@@ -1724,7 +1724,7 @@ def user_profile(user_id):
         if current_quiz and quiz_result:
             match_percentage = mongo_service._calculate_match_percentage(current_quiz['scores'], quiz_result['scores'])
         dominant_type = quiz_result['scores']['dominant_type'] if quiz_result else 'N/A'
-        personality_info = PERSONALITIES.get(dominant_type, {
+        personality = PERSONALITIES.get(dominant_type, {
             'dominant_type': dominant_type,
             'title': f'This person is a {dominant_type.replace(" ", "")}.',
             'description': 'Description not available.',
@@ -1733,10 +1733,39 @@ def user_profile(user_id):
             'compatibility': [],
             'color': '#000000'
         })
+        personality_info = f"""
+        <strong>{personality['title']} ({quiz_result['scores']['dominant_percentage'] if quiz_result else 0}%)</strong><br>
+        {personality['description']}<br>
+        <em>{personality['tagline']}</em><br>
+        <strong>Strengths:</strong> {', '.join(personality['strengths'])}<br>
+        <strong>Compatibility:</strong> {', '.join(personality['compatibility'])}
+        """
+
+        secondary_personality_info = None
+        if quiz_result and quiz_result['scores'].get('secondary_type'):
+            secondary_type = quiz_result['scores']['secondary_type']
+            secondary_personality = PERSONALITIES.get(secondary_type, {
+                'dominant_type': secondary_type,
+                'title': f'This person is a {secondary_type.replace(" ", "")}.',
+                'description': 'Description not available.',
+                'tagline': '',
+                'strengths': [],
+                'compatibility': [],
+                'color': '#000000'
+            })
+            secondary_personality_info = f"""
+            <strong>Secondary: {secondary_personality['title']} ({quiz_result['scores']['secondary_percentage']}%)</strong><br>
+            {secondary_personality['description']}<br>
+            <em>{secondary_personality['tagline']}</em><br>
+            <strong>Strengths:</strong> {', '.join(secondary_personality['strengths'])}<br>
+            <strong>Compatibility:</strong> {', '.join(secondary_personality['compatibility'])}
+            """
+
         profile = {
             'id': user['id'],
             'full_name': user['full_name'],
             'age': user.get('age'),
+            'gender': user.get('gender'),
             'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
             'occupation': user.get('occupation', 'N/A'),
             'bio': user.get('bio', 'No bio available'),
@@ -1752,6 +1781,7 @@ def user_profile(user_id):
                 'secondary_percentage': quiz_result['scores']['secondary_percentage'] if quiz_result else 0
             },
             'personality_info': personality_info,
+            'secondary_personality_info': secondary_personality_info,
             'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'N/A') if quiz_result else 'N/A',
             'religion': user.get('religion', 'Not specified') if user.get('religion_public', False) else 'Private',
             'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])},
@@ -1945,12 +1975,30 @@ def profile():
         })
         # Format personality_info as HTML
         personality_info = f"""
-        <strong>{personality['title']}</strong><br>
+        <strong>{personality['title']} ({quiz_result['scores']['dominant_percentage'] if quiz_result else 0}%)</strong><br>
         {personality['description']}<br>
         <em>{personality['tagline']}</em><br>
         <strong>Strengths:</strong> {', '.join(personality['strengths'])}<br>
         <strong>Compatibility:</strong> {', '.join(personality['compatibility'])}
         """
+        if quiz_result['scores']['secondary_type']:
+            secondary_type = quiz_result['scores']['secondary_type']
+            secondary_personality = PERSONALITIES.get(secondary_type, {
+                'dominant_type': secondary_type,
+                'title': f'You are a {secondary_type.replace(" ", "")}.',
+                'description': 'Description not available.',
+                'tagline': '',
+                'strengths': [],
+                'compatibility': [],
+                'color': '#000000'
+            })
+            personality_info += f"""
+            <br><strong>Secondary: {secondary_personality['title']} ({quiz_result['scores']['secondary_percentage']}%)</strong><br>
+            {secondary_personality['description']}<br>
+            <em>{secondary_personality['tagline']}</em><br>
+            <strong>Strengths:</strong> {', '.join(secondary_personality['strengths'])}<br>
+            <strong>Compatibility:</strong> {', '.join(secondary_personality['compatibility'])}
+            """
         profile = {
             'id': user['id'],
             'email': user['email'],
@@ -1997,7 +2045,7 @@ def questions():
     quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
     if quiz_completed:
         return redirect(url_for('explore'))
-    logger.debug(f"Rendering questions.html for user_id: {session['user_id']}")
+    logger.debug(f"Rendering questions.html for user {session['user_id']}")
     return render_template('questions.html')
 
 @app.route('/submit-quiz', methods=['POST'])
