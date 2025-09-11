@@ -29,7 +29,7 @@ def configure_cloudinary():
         cloudinary.config(
             cloud_name='dibbkr9vs',
             api_key='869559855343136',
-            api_secret='FfJnI44v31rzfPvp7eK9lnI5BDM',  # Removed the dash from the secret as it was likely a typo causing invalid signature
+            api_secret='FfJnI44v31rzfPvp7-K9lnI5BDM',
             secure=True
         )
         config = cloudinary.config()
