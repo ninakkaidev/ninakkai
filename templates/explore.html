@@ -530,7 +530,7 @@
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Discover People</h2>
             </div>
-            <div id="discovery-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+            <div id="discovery-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <!-- Skeleton loaders for initial loading -->
                 <div class="discovery-profile">
                     <div class="skeleton w-full h-72 rounded-xl"></div>
@@ -786,55 +786,81 @@
                 }
             });
 
-            // Update matches dynamically
+            // Update matches dynamically with progressive loading
             function updateMatches(matches) {
                 const matchesGrid = document.getElementById('matches-grid');
-                matchesGrid.innerHTML = matches.length ? matches.map(match => `
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="${match.id}">
-                        <div class="match-percentage text-gray-800 dark:text-gray-100">${match.match_percentage}%</div>
-                        <img src="${match.image}" alt="${match.full_name}" class="profile-image">
-                        <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-                            <div class="flex justify-between items-end">
-                                <div>
-                                    <h3 class="text-gray-100 font-bold">${match.full_name}, ${match.age || 'N/A'}</h3>
-                                    <p class="text-gray-300 dark:text-gray-300 text-sm">${match.occupation} • ${match.distance}</p>
+                matchesGrid.innerHTML = '';
+                matches.forEach((match, index) => {
+                    setTimeout(() => {
+                        const card = document.createElement('div');
+                        card.className = 'bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative discovery-card';
+                        card.dataset.userId = match.id;
+                        card.innerHTML = `
+                            <div class="match-percentage text-gray-800 dark:text-gray-100">${match.match_percentage}%</div>
+                            <img src="${match.image}" alt="${match.full_name}" class="profile-image">
+                            <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
+                                <div class="flex justify-between items-end">
+                                    <div>
+                                        <h3 class="text-gray-100 font-bold">${match.full_name}, ${match.age || 'N/A'}</h3>
+                                        <p class="text-gray-300 dark:text-gray-300 text-sm">${match.occupation} • ${match.distance}</p>
+                                    </div>
+                                    <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition" 
+                                            data-user-id="${match.id}" 
+                                            data-liked="${match.liked}">
+                                        <i class="fas ${match.liked ? 'fa-check' : 'fa-heart'}"></i>
+                                    </button>
                                 </div>
-                                <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition" 
-                                        data-user-id="${match.id}" 
-                                        data-liked="${match.liked}">
-                                    <i class="fas ${match.liked ? 'fa-check' : 'fa-heart'}"></i>
-                                </button>
                             </div>
-                        </div>
-                    </div>
-                `).join('') : '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">We will notify you if any matches come for you. Stay on track!</p>';
+                        `;
+                        matchesGrid.appendChild(card);
+                        attachLikeButtonListeners();
+                        attachProfileClickListeners();
+                        updateLikeButtons();
+                    }, index * 200);  // 200ms delay between each card
+                });
+                if (!matches.length) {
+                    matchesGrid.innerHTML = '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">We will notify you if any matches come for you. Stay on track!</p>';
+                }
             }
 
-            // New function to update discovery
+            // Update discovery dynamically with progressive loading
             function updateDiscovery(discovery) {
                 const discoveryGrid = document.getElementById('discovery-grid');
-                discoveryGrid.innerHTML = discovery.length ? discovery.map(match => `
-                    <div class="discovery-profile discovery-card" data-user-id="${match.id}">
-                        <img src="${match.image}" alt="Profile" class="discovery-image">
-                        <div class="discovery-rating text-gray-800 dark:text-gray-100">
-                            <i class="fas fa-star text-yellow-500 text-xs mr-1"></i>
-                            <span class="text-xs font-medium">${match.rating}</span>
-                        </div>
-                        <div class="discovery-content">
-                            <div class="flex justify-between items-end">
-                                <div>
-                                    <h3 class="text-gray-100 font-bold text-sm md:text-base">${match.full_name}, ${match.age || 'N/A'}</h3>
-                                    <p class="text-gray-300 dark:text-gray-300 text-xs md:text-sm">${match.distance}</p>
-                                </div>
-                                <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center transition" 
-                                        data-user-id="${match.id}" 
-                                        data-liked="${match.liked}">
-                                    <i class="fas ${match.liked ? 'fa-check' : 'fa-heart text-xs md:text-sm'}"></i>
-                                </button>
+                discoveryGrid.innerHTML = '';
+                discovery.forEach((match, index) => {
+                    setTimeout(() => {
+                        const card = document.createElement('div');
+                        card.className = 'discovery-profile discovery-card';
+                        card.dataset.userId = match.id;
+                        card.innerHTML = `
+                            <img src="${match.image}" alt="Profile" class="discovery-image">
+                            <div class="discovery-rating text-gray-800 dark:text-gray-100">
+                                <i class="fas fa-star text-yellow-500 text-xs mr-1"></i>
+                                <span class="text-xs font-medium">${match.rating}</span>
                             </div>
-                        </div>
-                    </div>
-                `).join('') : '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">No people to discover. Try completing your quiz!</p>';
+                            <div class="discovery-content">
+                                <div class="flex justify-between items-end">
+                                    <div>
+                                        <h3 class="text-gray-100 font-bold text-sm md:text-base">${match.full_name}, ${match.age || 'N/A'}</h3>
+                                        <p class="text-gray-300 dark:text-gray-300 text-xs md:text-sm">${match.distance}</p>
+                                    </div>
+                                    <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center transition" 
+                                            data-user-id="${match.id}" 
+                                            data-liked="${match.liked}">
+                                        <i class="fas ${match.liked ? 'fa-check' : 'fa-heart text-xs md:text-sm'}"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        discoveryGrid.appendChild(card);
+                        attachLikeButtonListeners();
+                        attachProfileClickListeners();
+                        updateLikeButtons();
+                    }, index * 200);  // 200ms delay between each card
+                });
+                if (!discovery.length) {
+                    discoveryGrid.innerHTML = '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">No people to discover. Try completing your quiz!</p>';
+                }
             }
             
             // Function to load matches with caching
@@ -847,14 +873,11 @@
                 if (!forceRefresh && cached && Date.now() - cached.timestamp < CACHE_EXPIRY) {
                     updateMatches(cached.data);
                     updateDiscovery(cached.data);
-                    attachLikeButtonListeners();
-                    attachProfileClickListeners();
-                    updateLikeButtons();
                     isLoading = false;
                     return;
                 }
 
-                showLoading();
+                // No loader for initial load, skeletons are shown
                 
                 try {
                     const response = await fetch('/api/matches');
@@ -864,16 +887,12 @@
                         localStorage.setItem(CACHE_KEY, JSON.stringify({timestamp: Date.now(), data: result.matches}));
                         updateMatches(result.matches);
                         updateDiscovery(result.matches);
-                        attachLikeButtonListeners();
-                        attachProfileClickListeners();
-                        updateLikeButtons();
                     } else {
                         showError(result.error || 'Failed to load matches');
                     }
                 } catch (error) {
                     showError('Network error while loading matches');
                 } finally {
-                    hideLoading();
                     isLoading = false;
                 }
             }
