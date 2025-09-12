@@ -1492,9 +1492,17 @@ def age_verification():
             file_bytes = file.read()
             files = {'file': ('image.jpg', file_bytes, 'image/jpeg')}
             resp = requests.post(api_url, files=files, headers=headers, timeout=30)  # Add timeout
+
+            # Improved error handling
             if resp.status_code != 200:
-                logger.error(f"API response status: {resp.status_code}, body: {resp.text}")
-                return jsonify({'success': False, 'error': 'API request failed'}), 500
+                try:
+                    error_data = resp.json()
+                    error_msg = error_data.get('detail', resp.text or f"API returned status {resp.status_code}")
+                except:
+                    error_msg = resp.text or f"API returned status {resp.status_code}"
+                logger.error(f"API response error: status {resp.status_code}, body: {error_msg}")
+                return jsonify({'success': False, 'error': error_msg}), resp.status_code
+
             data = resp.json()
             logger.info(f"API response data: {data}")  # Log for debugging
             results = data.get('results', [])
@@ -1530,7 +1538,7 @@ def age_verification():
             return jsonify({'success': True, 'redirect': url_for('questions')}), 200
         except requests.exceptions.RequestException as re:
             logger.error(f"API request exception: {re}")
-            return jsonify({'success': False, 'error': 'API connection failed. Please try again.'}), 500
+            return jsonify({'success': False, 'error': f'API connection failed: {str(re)}'}), 500
         except json.JSONDecodeError as jde:
             logger.error(f"JSON decode error from API: {jde}, response: {resp.text if 'resp' in locals() else 'No response'}")
             return jsonify({'success': False, 'error': 'Invalid API response format'}), 500
@@ -2118,7 +2126,7 @@ def submit_quiz():
         quiz_data = {'answers': answers}
         result = mongo_service.save_quiz_results(session['user_id'], quiz_data)
         if result['success']:
-            return jsonify({'success': True}), 200
+            return jsonify(result), 200
         else:
             return jsonify({'success': False, 'error': result.get('error', 'Failed to save quiz results')}), 500
     except Exception as e:
