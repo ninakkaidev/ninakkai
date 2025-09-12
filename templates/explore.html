@@ -972,6 +972,9 @@
                                 <button class="absolute top-4 left-4 bg-white dark:bg-gray-800 bg-opacity-80 rounded-full w-10 h-10 flex items-center justify-center close-profile">
                                     <i class="fas fa-arrow-left text-gray-800 dark:text-gray-100"></i>
                                 </button>
+                                <button class="absolute top-4 right-4 bg-white dark:bg-gray-800 bg-opacity-80 rounded-full w-10 h-10 flex items-center justify-center report-profile">
+                                    <i class="fas fa-flag text-gray-800 dark:text-gray-100"></i>
+                                </button>
                                 <div class="absolute bottom-4 left-4 bg-white dark:bg-gray-800 bg-opacity-80 rounded-full px-3 py-1">
                                     <span class="font-bold text-gray-800 dark:text-gray-100">${profile.user.match_percentage}% Match</span>
                                 </div>
@@ -1191,6 +1194,64 @@
                         showError('Network error while passing user');
                     }
                 });
+                
+                // Report button listener
+                const reportBtn = profileViewer.querySelector('.report-profile');
+                if (reportBtn) {
+                    reportBtn.addEventListener('click', () => {
+                        const reportModal = document.createElement('div');
+                        reportModal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                        reportModal.innerHTML = `
+                            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-sm w-full">
+                                <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-gray-100">Report User</h3>
+                                <select id="report-reason" class="w-full mb-4 p-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100">
+                                    <option value="">Select reason</option>
+                                    <option value="Inappropriate content">Inappropriate content</option>
+                                    <option value="Fake profile">Fake profile</option>
+                                    <option value="Spam">Spam</option>
+                                    <option value="Harassment">Harassment</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <textarea id="report-details" placeholder="Additional details (optional)" class="w-full p-2 border rounded mb-4 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"></textarea>
+                                <div class="flex justify-end">
+                                    <button class="bg-gray-500 text-white px-4 py-2 rounded mr-2 cancel-report">Cancel</button>
+                                    <button class="bg-red-500 text-white px-4 py-2 rounded submit-report">Submit</button>
+                                </div>
+                            </div>
+                        `;
+                        document.body.appendChild(reportModal);
+                        
+                        reportModal.querySelector('.cancel-report').addEventListener('click', () => reportModal.remove());
+                        
+                        reportModal.querySelector('.submit-report').addEventListener('click', async () => {
+                            const reason = reportModal.querySelector('#report-reason').value;
+                            const details = reportModal.querySelector('#report-details').value;
+                            if (!reason) {
+                                showNotification('Please select a reason');
+                                return;
+                            }
+                            showLoading();
+                            try {
+                                const response = await fetch('/report-user', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ reported_user_id: userId, reason, details })
+                                });
+                                const result = await response.json();
+                                hideLoading();
+                                if (result.success) {
+                                    showNotification('Report submitted successfully');
+                                    reportModal.remove();
+                                } else {
+                                    showNotification('Failed to submit report');
+                                }
+                            } catch (error) {
+                                hideLoading();
+                                showNotification('Network error');
+                            }
+                        });
+                    });
+                }
             }
             
             // Function to attach profile click listeners
