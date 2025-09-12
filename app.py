@@ -157,7 +157,7 @@ class MongoService:
         self.likes = self.db['likes']
         self.passes = self.db['passes']
         self.notifications = self.db['notifications']
-        self.reports = self.db['reports']  # New collection for reports
+        self.reports = self.db['reports']
 
     def check_rate_limit(self, key: str, max_attempts: int, period: timedelta = timedelta(hours=1)) -> bool:
         now = datetime.now(timezone.utc)
@@ -568,37 +568,16 @@ class MongoService:
             filter_settings = current_user.get('filter_settings', [])
             show_only_preferred_physical = any(t['value'] for t in filter_settings if t['label'] == 'Show only preferred physical traits')
             
-            # Get excluded users (liked and passed)
-            liked_users = [ObjectId(like['matched_user_id']) for like in self.likes.find({'user_id': user_id}, {'matched_user_id': 1, '_id': 0})]
-            passed_users = [ObjectId(passed['passed_user_id']) for passed in self.passes.find({'user_id': user_id}, {'passed_user_id': 1, '_id': 0})]
-            excluded_ids = list(set(liked_users + passed_users))
-            
-            # Determine opposite gender
-            opposite_gender = 'female' if current_user['gender'] == 'male' else 'male'
-            
-            # Aggregate pipeline for efficient querying
-            pipeline = [
-                {"$match": {"user_id": {"$ne": ObjectId(user_id), "$nin": excluded_ids}}},
-                {"$lookup": {
-                    "from": "users",
-                    "localField": "user_id",
-                    "foreignField": "_id",
-                    "as": "user_data"
-                }},
-                {"$unwind": "$user_data"},
-                {"$match": {"user_data.gender": opposite_gender}},
-                # You can add more filters here if possible, e.g., religion if high importance
-            ]
-            if religion_importance == 'high' and user_religion:
-                pipeline.append({"$match": {"user_data.religion": user_religion}})
-            
-            all_quizzes = list(self.db.quiz_results.aggregate(pipeline))
-            
+            # OPTIMIZATION: Limit to recent users or add index, here limit to 100 for performance
+            all_users = self.quiz_results.find({'user_id': {'$ne': user_id}}).limit(100)
             matches = []
             
-            for other_quiz in all_quizzes:
-                other_scores = other_quiz['scores']
-                other_user_data = other_quiz['user_data']
+            for other_user in all_users:
+                other_scores = other_user['scores']
+                other_user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
+                
+                if not other_user_data or other_user_data['gender'] == current_user['gender']:
+                    continue
                 
                 # Step 1: Readiness filter
                 other_ks = other_scores.get('keeper_seeker_type')
@@ -608,8 +587,8 @@ class MongoService:
                 # Step 2: Emotional compatibility
                 match_percentage = self._calculate_match_percentage(user_scores, other_scores)
                 
-                # Step 3: Religion preferences (if not already filtered)
-                if religion_importance != 'skip' and user_religion and religion_importance != 'high':
+                # Step 3: Religion preferences
+                if religion_importance != 'skip' and user_religion:
                     other_religion = other_user_data.get('religion')
                     is_same_religion = other_religion == user_religion
                     if religion_importance == 'high' and not is_same_religion:
@@ -650,6 +629,7 @@ class MongoService:
                     'rating': '4.5',
                     'dominant_type': other_scores['dominant_type'],
                     'match_percentage': match_percentage,
+                    'liked': self.has_liked_user(user_id, str(other_user_data['_id'])),
                     'keeper_seeker': other_scores.get('keeper_seeker_type', 'Unknown')
                 })
             
@@ -782,7 +762,7 @@ class MongoService:
                 return []
             query = query.lower().strip()
             matches = []
-            all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
+            all_users = self.quiz_results.find({'user_id': {'$ne': user_id}}).limit(50)  # Limit for performance
             user_quiz = self.get_quiz_results(user_id)
             if not user_quiz:
                 return []
@@ -897,7 +877,7 @@ class MongoService:
             dominant_type = user_scores['dominant_type']
             
             # Get all potential matches excluding the ones user has already interacted with
-            all_users = self.quiz_results.find({'user_id': {'$ne': user_id, '$nin': list(excluded_users)}})
+            all_users = self.quiz_results.find({'user_id': {'$ne': user_id, '$nin': list(excluded_users)}}).limit(100)
             
             matches = []
             for other_user in all_users:
@@ -946,6 +926,22 @@ class MongoService:
             return {'success': result.modified_count > 0}
         except Exception as e:
             logger.error(f"Block user error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
+    def report_user(self, user_id: str, reported_user_id: str, reason: str) -> Dict[str, Any]:
+        try:
+            report_data = {
+                'reporter_id': user_id,
+                'reported_user_id': reported_user_id,
+                'reason': reason,
+                'timestamp': datetime.now(timezone.utc),
+                'status': 'pending'
+            }
+            result = self.reports.insert_one(report_data)
+            logger.info(f"Report submitted: {str(result.inserted_id)}")
+            return {'success': True, 'report_id': str(result.inserted_id)}
+        except Exception as e:
+            logger.error(f"Report user error: {str(e)}")
             return {'success': False, 'error': str(e)}
 
     def add_notification(self, user_id: str, message: str, type: str = 'general', related_id: str = None) -> Dict[str, Any]:
@@ -1595,6 +1591,18 @@ def clear_notifications():
     result = mongo_service.clear_notifications(session['user_id'])
     return jsonify(result)
 
+@app.route('/report-user', methods=['POST'])
+def report_user():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    reported_user_id = data.get('reported_user_id')
+    reason = data.get('reason')
+    if not reported_user_id or not reason:
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+    result = mongo_service.report_user(session['user_id'], reported_user_id, reason)
+    return jsonify(result)
+
 @app.route('/explore')
 def explore():
     logger.debug(f"Session in explore: {session}")
@@ -1799,37 +1807,14 @@ def user_profile(user_id):
             'religion': user.get('religion', 'Not specified') if user.get('religion_public', False) else 'Private',
             'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])},
             'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
-            'summary': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), 'N/A')
+            'summary': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), 'N/A'),
+            'photos': user.get('photos', [])
         }
         # Collect interests from profile_data
         profile['profile_interests'] = [p['value'] for p in user.get('profile_data', []) if p['label'] == 'Interests (select all that apply)']
         return jsonify({'success': True, 'user': profile}), 200
     except Exception as e:
         logger.error(f"User profile endpoint error: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/report-user', methods=['POST'])
-def report_user_endpoint():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    data = request.get_json()
-    reported_user_id = data.get('reported_user_id')
-    reason = data.get('reason')
-    details = data.get('details', '')
-    if not reported_user_id or not reason:
-        return jsonify({'success': False, 'error': 'Missing parameters'}), 400
-    try:
-        report_data = {
-            'reporter_id': session['user_id'],
-            'reported_id': reported_user_id,
-            'reason': reason,
-            'details': details,
-            'timestamp': datetime.now(timezone.utc)
-        }
-        mongo_service.db['reports'].insert_one(report_data)
-        return jsonify({'success': True}), 200
-    except Exception as e:
-        logger.error(f"Report user error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/chat')
