@@ -596,6 +596,9 @@
     </style>
 </head>
 <body>
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+    </div>
     <div class="container">
         <div class="welcome-text">Age Verification</div>
         <div class="age-verification-container">
@@ -612,6 +615,8 @@
         const canvas = document.getElementById('canvas');
         const capture = document.getElementById('capture');
         const message = document.getElementById('message');
+        const loading = document.getElementById('loading');
+        let isProcessing = false;
 
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })  // Use front camera for selfie
             .then(stream => {
@@ -622,36 +627,65 @@
             });
 
         capture.addEventListener('click', () => {
-            // To handle mirroring on canvas, we can flip the context or adjust drawImage
+            if (isProcessing) return;
+            isProcessing = true;
+            loading.style.display = 'flex';
+            capture.disabled = true;
+
             const ctx = canvas.getContext('2d');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             ctx.save();
             ctx.scale(-1, 1);  // Flip horizontally to match the mirrored video
-            ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+            ctx.drawImage(video, -canvas.width, 0, 0, canvas.height);
             ctx.restore();
+
             canvas.toBlob(blob => {
-                const formData = new FormData();
-                formData.append('image', blob, 'photo.jpg');
-                fetch('/age-verification', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.redirect) {
-                        window.location.href = data.redirect;
-                    } else if (data.success) {
-                        window.location.href = '/questions';  // Fallback for success without redirect
-                    } else {
-                        message.textContent = data.error;
-                    }
-                })
-                .catch(err => {
-                    message.textContent = 'Error: ' + err;
-                });
+                sendImage(blob);
             }, 'image/jpeg');
         });
+
+        function sendImage(blob, attempt = 1) {
+            const maxAttempts = 5;
+            const formData = new FormData();
+            formData.append('image', blob, 'photo.jpg');
+
+            fetch('/age-verification', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    loading.style.display = 'none';
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    } else {
+                        window.location.href = '/questions';
+                    }
+                } else {
+                    if (data.error.includes('Your service is almost ready!') && attempt < maxAttempts) {
+                        message.textContent = `Service is starting, retrying in 3 seconds... (attempt ${attempt}/${maxAttempts})`;
+                        setTimeout(() => {
+                            sendImage(blob, attempt + 1);
+                        }, 3000);
+                    } else {
+                        loading.style.display = 'none';
+                        // Strip HTML tags from error message
+                        const strippedError = data.error.replace(/<[^>]*>/g, '');
+                        message.textContent = strippedError;
+                        isProcessing = false;
+                        capture.disabled = false;
+                    }
+                }
+            })
+            .catch(err => {
+                loading.style.display = 'none';
+                message.textContent = 'Error: ' + err;
+                isProcessing = false;
+                capture.disabled = false;
+            });
+        }
     </script>
 </body>
 </html>
