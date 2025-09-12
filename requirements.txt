@@ -6,3 +6,4 @@ pytz
 flask_socketio
 requests
 eventlet
+deepface
