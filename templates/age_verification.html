@@ -641,10 +641,16 @@
 
             while (retries < maxRetries) {
                 try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
                     const res = await fetch('/age-verification', {
                         method: 'POST',
-                        body: formData
+                        body: formData,
+                        signal: controller.signal
                     });
+
+                    clearTimeout(timeoutId);
 
                     const text = await res.text();
 
@@ -665,8 +671,9 @@
                     const data = JSON.parse(text);
                     return data;
 
-                } catch (parseError) {
-                    // If JSON parse fails, it might be an unexpected error page
+                } catch (error) {
+                    // Handle any errors, including timeout (AbortError)
+                    console.error('Send photo error:', error);
                     retries++;
                     if (retries < maxRetries) {
                         await new Promise(resolve => setTimeout(resolve, 5000));
