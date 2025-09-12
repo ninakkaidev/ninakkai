@@ -561,6 +561,7 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 15px;
             margin-bottom: 1rem;
+            transform: scaleX(-1); /* Mirror the video for selfie-like view */
         }
 
         #canvas {
@@ -612,7 +613,7 @@
         const capture = document.getElementById('capture');
         const message = document.getElementById('message');
 
-        navigator.mediaDevices.getUserMedia({ video: true })
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })  // Use front camera for selfie
             .then(stream => {
                 video.srcObject = stream;
             })
@@ -621,7 +622,14 @@
             });
 
         capture.addEventListener('click', () => {
-            canvas.getContext('2d').drawImage(video, 0, 0, 320, 240);
+            // To handle mirroring on canvas, we can flip the context or adjust drawImage
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.save();
+            ctx.scale(-1, 1);  // Flip horizontally to match the mirrored video
+            ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+            ctx.restore();
             canvas.toBlob(blob => {
                 const formData = new FormData();
                 formData.append('image', blob, 'photo.jpg');

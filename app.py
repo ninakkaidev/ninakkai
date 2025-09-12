@@ -1489,34 +1489,53 @@ def age_verification():
             api_key = "74303dce-713f-4b91-829e-7e0a6c76a25c"
             headers = {"x-api-key": api_key}
             file.seek(0)  # Reset file pointer if needed
-            file = file.read()
-            files = {'file': ('image.jpg', file, 'image/jpeg')}
-            resp = requests.post(api_url, files=files, headers=headers)
+            file_bytes = file.read()
+            files = {'file': ('image.jpg', file_bytes, 'image/jpeg')}
+            resp = requests.post(api_url, files=files, headers=headers, timeout=30)  # Add timeout
             if resp.status_code != 200:
+                logger.error(f"API response status: {resp.status_code}, body: {resp.text}")
                 return jsonify({'success': False, 'error': 'API request failed'}), 500
             data = resp.json()
+            logger.info(f"API response data: {data}")  # Log for debugging
             results = data.get('results', [])
             if not results:
                 return jsonify({'success': False, 'error': 'No face detected'}), 400
             prediction = results[0]
-            if 'age' not in prediction or 'gender' in prediction:
+            if 'age' not in prediction:
+                logger.error(f"Invalid API response - missing age: {prediction}")
                 return jsonify({'success': False, 'error': 'Invalid API response'}), 500
             age_group = prediction['age']
-            detected_gender = prediction['gender'].lower()
-            # Parse age
-            try:
-                age_lower, age_upper = map(int, age_group[1:-1].split('-'))
-            except:
+            if not isinstance(age_group, str) or not age_group.startswith('(') or not age_group.endswith(')'):
+                logger.error(f"Unexpected age group format: {age_group}")
                 return jsonify({'success': False, 'error': 'Invalid age group from API'}), 500
-            user = mongo_service.get_user_by_id(session['user_id'])
+            # Parse age, handle potential formats more robustly
+            try:
+                inner = age_group[1:-1]  # Remove parentheses
+                age_lower, age_upper = map(int, inner.split('-'))
+            except ValueError as ve:
+                logger.error(f"Age parsing error: {ve}, age_group: {age_group}")
+                return jsonify({'success': False, 'error': 'Invalid age group from API'}), 500
+            if 'gender' not in prediction:
+                logger.error(f"Missing gender in prediction: {prediction}")
+                return jsonify({'success': False, 'error': 'Invalid API response - missing gender'}), 500
+            detected_gender = prediction['gender'].lower()
             if detected_gender != user['gender']:
                 return jsonify({'success': False, 'error': 'Detected gender does not match registered gender.'}), 403
             if age_lower < 18:
                 return jsonify({'success': False, 'error': 'You must be at least 18 years old. If you think this is a mistake, contact joel@ninakkai.com'}), 403
-            mongo_service.update_user(session['user_id'], {'age_verified': True})
+            update_result = mongo_service.update_user(session['user_id'], {'age_verified': True})
+            if not update_result['success']:
+                logger.error("Failed to update age_verified in DB")
+                return jsonify({'success': False, 'error': 'Database update failed'}), 500
             return jsonify({'success': True, 'redirect': url_for('questions')}), 200
+        except requests.exceptions.RequestException as re:
+            logger.error(f"API request exception: {re}")
+            return jsonify({'success': False, 'error': 'API connection failed. Please try again.'}), 500
+        except json.JSONDecodeError as jde:
+            logger.error(f"JSON decode error from API: {jde}, response: {resp.text if 'resp' in locals() else 'No response'}")
+            return jsonify({'success': False, 'error': 'Invalid API response format'}), 500
         except Exception as e:
-            logger.error(f"Age verification error: {str(e)}")
+            logger.error(f"Unexpected age verification error: {str(e)}")
             return jsonify({'success': False, 'error': 'Verification failed. Please try again.'}), 500
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
