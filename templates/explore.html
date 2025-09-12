@@ -316,6 +316,62 @@
             100% { background-position: -200% 0; }
         }
 
+        /* Report modal styling */
+        .report-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1003;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .report-modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        html.dark .report-modal-content {
+            background: #000000;
+            color: #f3f4f6;
+        }
+
+        .report-option {
+            display: block;
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .report-option:hover {
+            background-color: #f0f0f0;
+        }
+
+        html.dark .report-option {
+            border-color: #374151;
+        }
+
+        html.dark .report-option:hover {
+            background-color: #374151;
+        }
+
+        .report-option.selected {
+            background-color: #ec4899;
+            color: white;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 640px) {
             .profile-image {
@@ -451,26 +507,6 @@
             --tw-gradient-to: #831843 var(--tw-gradient-to-position);
             --tw-gradient-stops: var(--tw-gradient-from), #111827 var(--tw-gradient-via-position), var(--tw-gradient-to);
         }
-
-        /* Report button styling */
-        .report-button {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-            cursor: pointer;
-        }
-
-        html.dark .report-button {
-            background-color: rgba(31, 41, 55, 0.9);
-        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100">
@@ -478,26 +514,6 @@
     <div class="loading" id="loading">
         <div class="loading-spinner"></div>
         <p class="text-gray-100 text-center">Finding your matches...</p>
-    </div>
-
-    <!-- Report Modal -->
-    <div id="reportModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg w-96">
-            <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-gray-100">Report User</h3>
-            <select id="reportReason" class="w-full p-2 border rounded mb-4 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100">
-                <option value="">Select reason</option>
-                <option value="Inappropriate content">Inappropriate content</option>
-                <option value="Fake profile">Fake profile</option>
-                <option value="Spam">Spam</option>
-                <option value="Harassment">Harassment</option>
-                <option value="Other">Other</option>
-            </select>
-            <textarea id="reportDetails" placeholder="Additional details (optional)" class="w-full p-2 border rounded mb-4 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"></textarea>
-            <div class="flex justify-end">
-                <button id="cancelReport" class="mr-2 px-4 py-2 bg-gray-300 dark:bg-gray-600 rounded text-gray-800 dark:text-gray-100">Cancel</button>
-                <button id="submitReport" class="px-4 py-2 bg-red-500 text-white rounded">Submit</button>
-            </div>
-        </div>
     </div>
 
     <!-- Header -->
@@ -614,13 +630,7 @@
             const errorText = document.getElementById('error-text');
             const mainHeader = document.getElementById('mainHeader');
             const refreshMatchesBtn = document.getElementById('refresh-matches');
-            const reportModal = document.getElementById('reportModal');
-            const reportReason = document.getElementById('reportReason');
-            const reportDetails = document.getElementById('reportDetails');
-            const cancelReport = document.getElementById('cancelReport');
-            const submitReport = document.getElementById('submitReport');
             
-            let currentReportUserId = null;
             // State for loading
             let isLoading = false;
             
@@ -672,6 +682,63 @@
                 setTimeout(() => {
                     popup.remove();
                 }, 2000);
+            }
+
+            // Report modal
+            function showReportModal(userId) {
+                const modal = document.createElement('div');
+                modal.className = 'report-modal';
+                modal.innerHTML = `
+                    <div class="report-modal-content">
+                        <h3 class="text-lg font-bold mb-4">Why are you reporting this user?</h3>
+                        <div id="report-options">
+                            <label class="report-option" data-reason="inappropriate">Inappropriate content</label>
+                            <label class="report-option" data-reason="spam">Spam or fake profile</label>
+                            <label class="report-option" data-reason="harassment">Harassment or bullying</label>
+                            <label class="report-option" data-reason="other">Other</label>
+                        </div>
+                        <div class="flex justify-end mt-4 space-x-2">
+                            <button id="cancel-report" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
+                            <button id="submit-report" class="px-4 py-2 bg-red-500 text-white rounded" disabled>Submit Report</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                let selectedReason = null;
+                document.querySelectorAll('.report-option').forEach(option => {
+                    option.addEventListener('click', () => {
+                        document.querySelectorAll('.report-option').forEach(opt => opt.classList.remove('selected'));
+                        option.classList.add('selected');
+                        selectedReason = option.dataset.reason;
+                        document.getElementById('submit-report').disabled = false;
+                    });
+                });
+
+                document.getElementById('cancel-report').addEventListener('click', () => modal.remove());
+                document.getElementById('submit-report').addEventListener('click', async () => {
+                    if (selectedReason) {
+                        showLoading();
+                        try {
+                            const response = await fetch('/report-user', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ reported_user_id: userId, reason: selectedReason })
+                            });
+                            const result = await response.json();
+                            hideLoading();
+                            if (result.success) {
+                                showNotification('Report submitted successfully');
+                                modal.remove();
+                            } else {
+                                showError(result.error || 'Failed to submit report');
+                            }
+                        } catch (error) {
+                            hideLoading();
+                            showError('Network error while submitting report');
+                        }
+                    }
+                });
             }
             
             // Update like buttons based on stored liked status
@@ -820,7 +887,6 @@
                         updateDiscovery(result.matches);
                         attachLikeButtonListeners();
                         attachProfileClickListeners();
-                        attachReportListeners();
                     } else {
                         showError(result.error || 'Failed to search matches');
                     }
@@ -843,7 +909,6 @@
                         card.className = 'bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative discovery-card';
                         card.dataset.userId = match.id;
                         card.innerHTML = `
-                            <button class="report-button" data-user-id="${match.id}"><i class="fas fa-flag text-red-500"></i></button>
                             <div class="match-percentage text-gray-800 dark:text-gray-100">${match.match_percentage}%</div>
                             <img src="${match.image}" alt="${match.full_name}" class="profile-image">
                             <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
@@ -854,7 +919,7 @@
                                     </div>
                                     <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition" 
                                             data-user-id="${match.id}" 
-                                            data-liked="${match.liked || false}">
+                                            data-liked="${match.liked}">
                                         <i class="fas ${match.liked ? 'fa-check' : 'fa-heart'}"></i>
                                     </button>
                                 </div>
@@ -863,7 +928,6 @@
                         matchesGrid.appendChild(card);
                         attachLikeButtonListeners();
                         attachProfileClickListeners();
-                        attachReportListeners();
                         updateLikeButtons();
                     }, index * 200);  // 200ms delay between each card
                 });
@@ -882,7 +946,6 @@
                         card.className = 'discovery-profile discovery-card';
                         card.dataset.userId = match.id;
                         card.innerHTML = `
-                            <button class="report-button" data-user-id="${match.id}"><i class="fas fa-flag text-red-500"></i></button>
                             <img src="${match.image}" alt="Profile" class="discovery-image">
                             <div class="discovery-rating text-gray-800 dark:text-gray-100">
                                 <i class="fas fa-star text-yellow-500 text-xs mr-1"></i>
@@ -896,7 +959,7 @@
                                     </div>
                                     <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center transition" 
                                             data-user-id="${match.id}" 
-                                            data-liked="${match.liked || false}">
+                                            data-liked="${match.liked}">
                                         <i class="fas ${match.liked ? 'fa-check' : 'fa-heart text-xs md:text-sm'}"></i>
                                     </button>
                                 </div>
@@ -905,7 +968,6 @@
                         discoveryGrid.appendChild(card);
                         attachLikeButtonListeners();
                         attachProfileClickListeners();
-                        attachReportListeners();
                         updateLikeButtons();
                     }, index * 200);  // 200ms delay between each card
                 });
@@ -919,19 +981,17 @@
                 if (isLoading) return;
                 
                 isLoading = true;
+                showLoading(); // Show loader on refresh
                 
                 const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
                 if (!forceRefresh && cached && Date.now() - cached.timestamp < CACHE_EXPIRY) {
                     updateMatches(cached.data);
                     updateDiscovery(cached.data);
-                    attachReportListeners();
                     isLoading = false;
+                    hideLoading();
                     return;
                 }
 
-                // Show loader for fetch
-                showLoading();
-                
                 try {
                     const response = await fetch('/api/matches');
                     const result = await response.json();
@@ -940,15 +1000,14 @@
                         localStorage.setItem(CACHE_KEY, JSON.stringify({timestamp: Date.now(), data: result.matches}));
                         updateMatches(result.matches);
                         updateDiscovery(result.matches);
-                        attachReportListeners();
                     } else {
                         showError(result.error || 'Failed to load matches');
                     }
                 } catch (error) {
                     showError('Network error while loading matches');
                 } finally {
-                    hideLoading();
                     isLoading = false;
+                    hideLoading();
                 }
             }
 
@@ -1027,9 +1086,6 @@
                                 <button class="absolute top-4 left-4 bg-white dark:bg-gray-800 bg-opacity-80 rounded-full w-10 h-10 flex items-center justify-center close-profile">
                                     <i class="fas fa-arrow-left text-gray-800 dark:text-gray-100"></i>
                                 </button>
-                                <button class="report-button absolute top-4 right-4 bg-white dark:bg-gray-800 bg-opacity-80 rounded-full w-10 h-10 flex items-center justify-center" data-user-id="${userId}">
-                                    <i class="fas fa-flag text-red-500"></i>
-                                </button>
                                 <div class="absolute bottom-4 left-4 bg-white dark:bg-gray-800 bg-opacity-80 rounded-full px-3 py-1">
                                     <span class="font-bold text-gray-800 dark:text-gray-100">${profile.user.match_percentage}% Match</span>
                                 </div>
@@ -1086,6 +1142,9 @@
                                     <button class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-full px-6 py-3 flex-1 mr-2 hover:bg-gray-300 dark:hover:bg-gray-600 transition pass-button" data-user-id="${userId}">
                                         <i class="fas fa-times mr-2"></i> Pass
                                     </button>
+                                    <button class="bg-red-500 text-white rounded-full px-6 py-3 flex-1 ml-2 transition report-button" data-user-id="${userId}">
+                                        <i class="fas fa-flag mr-2"></i> Report
+                                    </button>
                                     <button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full px-6 py-3 flex-1 ml-2 transition" 
                                             data-user-id="${userId}" 
                                             data-liked="${profile.user.liked}">
@@ -1102,10 +1161,16 @@
                             mainHeader.style.display = 'flex';
                             document.body.style.overflow = '';
                         });
+
+                        // Attach report button listener
+                        profileViewer.querySelector('.report-button').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const userId = e.currentTarget.dataset.userId;
+                            showReportModal(userId);
+                        });
                         
                         // Attach event listeners to buttons in profile viewer
                         attachProfileViewerListeners(profileViewer, userId);
-                        attachReportListeners();
                     })
                     .catch(error => {
                         hideLoading();
@@ -1256,8 +1321,8 @@
             function attachProfileClickListeners() {
                 document.querySelectorAll('.discovery-card:not([data-click-attached])').forEach(card => {
                     card.addEventListener('click', function(e) {
-                        // Don't open profile if clicking on like button or report button
-                        if (!e.target.closest('.like-button') && !e.target.closest('.report-button')) {
+                        // Don't open profile if clicking on like button
+                        if (!e.target.closest('.like-button')) {
                             const userId = this.dataset.userId;
                             openProfileViewer(userId);
                         }
@@ -1266,62 +1331,16 @@
                 });
             }
 
-            // Function to attach report listeners
-            function attachReportListeners() {
-                document.querySelectorAll('.report-button:not([data-report-attached])').forEach(button => {
-                    button.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        currentReportUserId = this.dataset.userId;
-                        reportModal.classList.remove('hidden');
-                    });
-                    button.setAttribute('data-report-attached', 'true');
-                });
-            }
-
-            // Report modal handlers
-            cancelReport.addEventListener('click', () => {
-                reportModal.classList.add('hidden');
-                reportReason.value = '';
-                reportDetails.value = '';
-            });
-
-            submitReport.addEventListener('click', async () => {
-                const reason = reportReason.value;
-                const details = reportDetails.value;
-                if (!reason) {
-                    showError('Please select a reason');
-                    return;
-                }
-                showLoading();
-                try {
-                    const response = await fetch('/report-user', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ reported_user_id: currentReportUserId, reasons: [reason], details })
-                    });
-                    const result = await response.json();
-                    hideLoading();
-                    if (result.success) {
-                        showNotification('Report submitted successfully');
-                        reportModal.classList.add('hidden');
-                        reportReason.value = '';
-                        reportDetails.value = '';
-                    } else {
-                        showError(result.error || 'Failed to submit report');
-                    }
-                } catch (error) {
-                    hideLoading();
-                    showError('Network error while submitting report');
-                }
-            });
-
             // Initial load
             loadMatches();
 
-            // Refresh button
-            refreshMatchesBtn.addEventListener('click', () => {
-                loadMatches(true);
-            });
+            // Refresh button - ensure it's wired
+            if (refreshMatchesBtn) {
+                refreshMatchesBtn.addEventListener('click', () => {
+                    localStorage.removeItem(CACHE_KEY); // Clear cache on manual refresh
+                    loadMatches(true);
+                });
+            }
         });
     </script>
 </body>

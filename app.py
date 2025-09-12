@@ -551,11 +551,6 @@ class MongoService:
             current_user = self.get_user_by_id(user_id)
             if not current_user:
                 return []
-            
-            # Exclude liked, passed, and self
-            liked_users = [str(like['matched_user_id']) for like in self.likes.find({'user_id': user_id})]
-            passed_users = [str(passed['passed_user_id']) for passed in self.passes.find({'user_id': user_id})]
-            excluded_users = set(liked_users + passed_users + [user_id])
                 
             user_quiz = self.get_quiz_results(user_id)
             if not user_quiz:
@@ -573,7 +568,7 @@ class MongoService:
             filter_settings = current_user.get('filter_settings', [])
             show_only_preferred_physical = any(t['value'] for t in filter_settings if t['label'] == 'Show only preferred physical traits')
             
-            all_users = self.quiz_results.find({'user_id': {'$nin': list(excluded_users)}})
+            all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
             matches = []
             
             for other_user in all_users:
@@ -634,12 +629,61 @@ class MongoService:
                     'dominant_type': other_scores['dominant_type'],
                     'match_percentage': match_percentage,
                     'keeper_seeker': other_scores.get('keeper_seeker_type', 'Unknown'),
-                    'liked': False
+                    'liked': self.has_liked_user(user_id, str(other_user_data['_id']))
                 })
             
             return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:20]
         except Exception as e:
             logger.error(f"Find matches error: {str(e)}")
+            return []
+
+    def get_filtered_matches(self, user_id: str) -> List[Dict[str, Any]]:
+        try:
+            current_user = self.get_user_by_id(user_id)
+            if not current_user:
+                return []
+            user_quiz = self.get_quiz_results(user_id)
+            if not user_quiz:
+                return []
+            
+            # Get all users that current user has liked or passed on
+            liked_users = [str(like['matched_user_id']) for like in self.likes.find({'user_id': user_id})]
+            passed_users = [str(passed['passed_user_id']) for passed in self.passes.find({'user_id': user_id})]
+            excluded_users = set(liked_users + passed_users)
+            
+            user_scores = user_quiz['scores']
+            dominant_type = user_scores['dominant_type']
+            
+            # Get all potential matches excluding the ones user has already interacted with
+            all_users = self.quiz_results.find({'user_id': {'$ne': user_id, '$nin': list(excluded_users)}})
+            
+            matches = []
+            for other_user in all_users:
+                other_scores = other_user['scores']
+                match_percentage = self._calculate_match_percentage(user_scores, other_scores)
+                
+                if other_scores['dominant_type'] == dominant_type or other_scores.get('secondary_type') == dominant_type:
+                    user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
+                    if user_data and user_data['gender'] != current_user['gender']:
+                        matches.append({
+                            'id': str(user_data['_id']),
+                            'full_name': user_data['full_name'],
+                            'age': user_data.get('age'),
+                            'gender': user_data.get('gender'),
+                            'image': user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+                            'occupation': user_data.get('occupation', 'N/A'),
+                            'bio': user_data.get('bio', 'No bio available'),
+                            'interests': user_data.get('interests', []),
+                            'distance': 'N/A',
+                            'rating': '4.5',
+                            'dominant_type': other_scores['dominant_type'],
+                            'match_percentage': match_percentage,
+                            'liked': False  # Since filtered, always False
+                        })
+            
+            return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:20]
+        except Exception as e:
+            logger.error(f"Get filtered matches error: {str(e)}")
             return []
 
     def _calculate_physical_match(self, preferences: List, traits: List) -> float:
@@ -756,6 +800,22 @@ class MongoService:
             logger.error(f"Pass user error: {str(e)}")
             return {'success': False, 'error': str(e)}
 
+    def report_user(self, reporter_id: str, reported_id: str, reason: str) -> Dict[str, Any]:
+        try:
+            report_data = {
+                'reporter_id': reporter_id,
+                'reported_id': reported_id,
+                'reason': reason,
+                'timestamp': datetime.now(timezone.utc),
+                'status': 'pending'
+            }
+            result = self.reports.insert_one(report_data)
+            logger.info(f"Report submitted: reporter {reporter_id}, reported {reported_id}, reason {reason}")
+            return {'success': True, 'report_id': str(result.inserted_id)}
+        except Exception as e:
+            logger.error(f"Report user error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
     def is_liked(self, user_id: str, matched_user_id: str) -> bool:
         return self.has_liked_user(user_id, matched_user_id)
 
@@ -764,13 +824,9 @@ class MongoService:
             current_user = self.get_user_by_id(user_id)
             if not current_user:
                 return []
-            # Exclude liked, passed, and self
-            liked_users = [str(like['matched_user_id']) for like in self.likes.find({'user_id': user_id})]
-            passed_users = [str(passed['passed_user_id']) for passed in self.passes.find({'user_id': user_id})]
-            excluded_users = set(liked_users + passed_users + [user_id])
             query = query.lower().strip()
             matches = []
-            all_users = self.quiz_results.find({'user_id': {'$nin': list(excluded_users)}})
+            all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
             user_quiz = self.get_quiz_results(user_id)
             if not user_quiz:
                 return []
@@ -792,7 +848,7 @@ class MongoService:
                         'rating': '4.5',
                         'dominant_type': other_user['scores']['dominant_type'],
                         'match_percentage': match_percentage,
-                        'liked': False
+                        'liked': self.has_liked_user(user_id, str(user_data['_id']))
                     })
             return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:10]
         except Exception as e:
@@ -819,10 +875,11 @@ class MongoService:
 
     def get_pending_likers(self, user_id: str) -> List[Dict[str, Any]]:
         try:
-            likers = [str(l['user_id']) for l in self.likes.find({'matched_user_id': user_id})]
+            likers = self.likes.find({'matched_user_id': user_id, 'user_id': {'$ne': user_id}})
+            liker_ids = [str(l['user_id']) for l in likers]
             my_likes = [str(l['matched_user_id']) for l in self.likes.find({'user_id': user_id})]
             passed = [str(p['passed_user_id']) for p in self.passes.find({'user_id': user_id})]
-            pending_ids = [pid for pid in likers if pid not in my_likes and pid not in passed]
+            pending_ids = [pid for pid in liker_ids if pid not in my_likes and pid not in passed]
             pending_users = []
             for pid in pending_ids:
                 user = self.get_user_by_id(pid)
@@ -845,6 +902,7 @@ class MongoService:
             self.passes.delete_many({'$or': [{'user_id': user_id}, {'passed_user_id': user_id}]})
             self.quiz_results.delete_many({'user_id': user_id})
             self.notifications.delete_many({'user_id': user_id})
+            self.reports.delete_many({'$or': [{'reporter_id': user_id}, {'reported_id': user_id}]})
             return {'success': True}
         except Exception as e:
             logger.error(f"Delete account error: {str(e)}")
@@ -866,54 +924,6 @@ class MongoService:
             logger.error(f"Has passed user error: {str(e)}")
             return False
 
-    def get_filtered_matches(self, user_id: str) -> List[Dict[str, Any]]:
-        try:
-            current_user = self.get_user_by_id(user_id)
-            if not current_user:
-                return []
-            
-            # Exclude liked, passed, and self
-            liked_users = [str(like['matched_user_id']) for like in self.likes.find({'user_id': user_id})]
-            passed_users = [str(passed['passed_user_id']) for passed in self.passes.find({'user_id': user_id})]
-            excluded_users = set(liked_users + passed_users + [user_id])
-            
-            user_quiz = self.get_quiz_results(user_id)
-            if not user_quiz:
-                return []
-            
-            user_scores = user_quiz['scores']
-            dominant_type = user_scores['dominant_type']
-            
-            all_users = self.quiz_results.find({'user_id': {'$nin': list(excluded_users)}})
-            
-            matches = []
-            for other_user in all_users:
-                other_scores = other_user['scores']
-                if other_scores['dominant_type'] == dominant_type or other_scores.get('secondary_type') == dominant_type:
-                    user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
-                    if user_data and user_data['gender'] != current_user['gender']:
-                        match_percentage = self._calculate_match_percentage(user_scores, other_scores)
-                        matches.append({
-                            'id': str(user_data['_id']),
-                            'full_name': user_data['full_name'],
-                            'age': user_data.get('age'),
-                            'gender': user_data.get('gender'),
-                            'image': user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-                            'occupation': user_data.get('occupation', 'N/A'),
-                            'bio': user_data.get('bio', 'No bio available'),
-                            'interests': user_data.get('interests', []),
-                            'distance': 'N/A',
-                            'rating': '4.5',
-                            'dominant_type': other_scores['dominant_type'],
-                            'match_percentage': match_percentage,
-                            'liked': False  # Since filtered, always False
-                        })
-            
-            return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:20]
-        except Exception as e:
-            logger.error(f"Get filtered matches error: {str(e)}")
-            return []
-
     def unlike_user(self, user_id: str, matched_user_id: str) -> Dict[str, Any]:
         try:
             result = self.likes.delete_one({'user_id': user_id, 'matched_user_id': matched_user_id})
@@ -932,21 +942,6 @@ class MongoService:
             return {'success': result.modified_count > 0}
         except Exception as e:
             logger.error(f"Block user error: {str(e)}")
-            return {'success': False, 'error': str(e)}
-
-    def report_user(self, reporter_id: str, reported_id: str, reasons: List[str], details: str = '') -> Dict[str, Any]:
-        try:
-            report_data = {
-                'reporter_id': reporter_id,
-                'reported_id': reported_id,
-                'reasons': reasons,
-                'details': details,
-                'timestamp': datetime.now(timezone.utc)
-            }
-            result = self.reports.insert_one(report_data)
-            return {'success': True, 'report_id': str(result.inserted_id)}
-        except Exception as e:
-            logger.error(f"Report user error: {str(e)}")
             return {'success': False, 'error': str(e)}
 
     def add_notification(self, user_id: str, message: str, type: str = 'general', related_id: str = None) -> Dict[str, Any]:
@@ -1596,6 +1591,18 @@ def clear_notifications():
     result = mongo_service.clear_notifications(session['user_id'])
     return jsonify(result)
 
+@app.route('/report-user', methods=['POST'])
+def report_user_endpoint():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    reported_user_id = data.get('reported_user_id')
+    reason = data.get('reason')
+    if not reported_user_id or not reason:
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+    result = mongo_service.report_user(session['user_id'], reported_user_id, reason)
+    return jsonify(result)
+
 @app.route('/explore')
 def explore():
     logger.debug(f"Session in explore: {session}")
@@ -1642,7 +1649,8 @@ def api_matches():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     try:
-        matches = mongo_service.find_matches(session['user_id'])
+        # Use get_filtered_matches to exclude liked and passed users
+        matches = mongo_service.get_filtered_matches(session['user_id'])
         return jsonify({
             'success': True, 
             'matches': matches
@@ -1724,19 +1732,6 @@ def search_matches():
         logger.error(f"Search matches endpoint error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/report-user', methods=['POST'])
-def report_user_endpoint():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    data = request.get_json()
-    reported_user_id = data.get('reported_user_id')
-    reasons = data.get('reasons', [])
-    details = data.get('details', '')
-    if not reported_user_id or not reasons:
-        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
-    result = mongo_service.report_user(session['user_id'], reported_user_id, reasons, details)
-    return jsonify(result)
-
 @app.route('/user-profile/<user_id>')
 def user_profile(user_id):
     if 'user_id' not in session:
@@ -1809,7 +1804,12 @@ def user_profile(user_id):
             },
             'personality_info': personality_info,
             'secondary_personality_info': secondary_personality_info,
-            'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'Unknown') if quiz_result else 'Unknown'
+            'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'N/A') if quiz_result else 'N/A',
+            'religion': user.get('religion', 'Not specified') if user.get('religion_public', False) else 'Private',
+            'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])},
+            'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
+            'summary': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), 'N/A'),
+            'photos': user.get('photos', [])
         }
         # Collect interests from profile_data
         profile['profile_interests'] = [p['value'] for p in user.get('profile_data', []) if p['label'] == 'Interests (select all that apply)']
