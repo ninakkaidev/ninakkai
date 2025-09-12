@@ -442,6 +442,10 @@
             align-items: center;
         }
 
+        .loading.active {
+            display: flex;
+        }
+
         .loading-spinner {
             border: 5px solid #f3f3f3;
             border-top: 5px solid #4e54c8;
@@ -596,9 +600,6 @@
     </style>
 </head>
 <body>
-    <div class="loading" id="loading">
-        <div class="loading-spinner"></div>
-    </div>
     <div class="container">
         <div class="welcome-text">Age Verification</div>
         <div class="age-verification-container">
@@ -610,13 +611,17 @@
         </div>
     </div>
 
+    <!-- Loading Overlay -->
+    <div id="loading" class="loading">
+        <div class="loading-spinner"></div>
+    </div>
+
     <script>
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const capture = document.getElementById('capture');
         const message = document.getElementById('message');
         const loading = document.getElementById('loading');
-        let isProcessing = false;
 
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })  // Use front camera for selfie
             .then(stream => {
@@ -626,66 +631,86 @@
                 message.textContent = 'Error accessing webcam: ' + err;
             });
 
-        capture.addEventListener('click', () => {
-            if (isProcessing) return;
-            isProcessing = true;
-            loading.style.display = 'flex';
-            capture.disabled = true;
+        // Function to send photo with retry logic for Koyeb sleep
+        async function sendPhoto(blob) {
+            const formData = new FormData();
+            formData.append('image', blob, 'photo.jpg');
+            let retries = 0;
+            const maxRetries = 10;
+            const sleepPagePhrase = 'Your service is almost ready!'; // Key phrase to detect Koyeb sleep page
 
+            while (retries < maxRetries) {
+                try {
+                    const res = await fetch('/age-verification', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const text = await res.text();
+
+                    // Check if it's the Koyeb sleep page
+                    if (text.includes(sleepPagePhrase)) {
+                        retries++;
+                        if (retries < maxRetries) {
+                            // Exponential backoff: wait 5s * retries
+                            const waitTime = 5000 * retries;
+                            await new Promise(resolve => setTimeout(resolve, waitTime));
+                            continue; // Retry
+                        } else {
+                            throw new Error('Maximum retries reached. Service may be unavailable.');
+                        }
+                    }
+
+                    // If not sleep page, try to parse as JSON
+                    const data = JSON.parse(text);
+                    return data;
+
+                } catch (parseError) {
+                    // If JSON parse fails, it might be an unexpected error page
+                    retries++;
+                    if (retries < maxRetries) {
+                        await new Promise(resolve => setTimeout(resolve, 5000));
+                        continue;
+                    }
+                    throw new Error('Failed to process response after retries.');
+                }
+            }
+        }
+
+        capture.addEventListener('click', async () => {
+            // Show loader and disable button
+            loading.classList.add('active');
+            capture.disabled = true;
+            message.textContent = ''; // Clear previous messages
+
+            // To handle mirroring on canvas, we can flip the context or adjust drawImage
             const ctx = canvas.getContext('2d');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             ctx.save();
             ctx.scale(-1, 1);  // Flip horizontally to match the mirrored video
-            ctx.drawImage(video, -canvas.width, 0, 0, canvas.height);
+            ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
             ctx.restore();
 
-            canvas.toBlob(blob => {
-                sendImage(blob);
-            }, 'image/jpeg');
-        });
-
-        function sendImage(blob, attempt = 1) {
-            const maxAttempts = 5;
-            const formData = new FormData();
-            formData.append('image', blob, 'photo.jpg');
-
-            fetch('/age-verification', {
-                method: 'POST',
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    loading.style.display = 'none';
+            canvas.toBlob(async (blob) => {
+                try {
+                    const data = await sendPhoto(blob);
                     if (data.redirect) {
                         window.location.href = data.redirect;
+                    } else if (data.success) {
+                        window.location.href = '/questions';  // Fallback for success without redirect
                     } else {
-                        window.location.href = '/questions';
+                        message.textContent = data.error || 'Verification failed.';
                     }
-                } else {
-                    if (data.error.includes('Your service is almost ready!') && attempt < maxAttempts) {
-                        message.textContent = `Service is starting, retrying in 3 seconds... (attempt ${attempt}/${maxAttempts})`;
-                        setTimeout(() => {
-                            sendImage(blob, attempt + 1);
-                        }, 3000);
-                    } else {
-                        loading.style.display = 'none';
-                        // Strip HTML tags from error message
-                        const strippedError = data.error.replace(/<[^>]*>/g, '');
-                        message.textContent = strippedError;
-                        isProcessing = false;
-                        capture.disabled = false;
-                    }
+                } catch (err) {
+                    message.textContent = 'Error: ' + err.message;
+                } finally {
+                    // Hide loader and re-enable button
+                    loading.classList.remove('active');
+                    capture.disabled = false;
                 }
-            })
-            .catch(err => {
-                loading.style.display = 'none';
-                message.textContent = 'Error: ' + err;
-                isProcessing = false;
-                capture.disabled = false;
-            });
-        }
+            }, 'image/jpeg');
+        });
     </script>
 </body>
 </html>
