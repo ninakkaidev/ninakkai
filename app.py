@@ -504,8 +504,6 @@ class MongoService:
             "Shared goals": "👂 Listener",
             "Physical intimacy": "💘 Romantic"
         }
-        # Get the items in order of rank
-        ordered_items = [QUESTION_TYPES['req2'][r['index']] for r in sorted_ranking]  # No, types are for indices
         # Actually, since types are associated with answers indices
         return [QUESTION_TYPES['req2'][r['index']] for r in sorted_ranking]
 
@@ -629,7 +627,8 @@ class MongoService:
                     'dominant_type': other_scores['dominant_type'],
                     'match_percentage': match_percentage,
                     'keeper_seeker': other_scores.get('keeper_seeker_type', 'Unknown'),
-                    'liked': self.has_liked_user(user_id, str(other_user_data['_id']))
+                    'liked': self.has_liked_user(user_id, str(other_user_data['_id'])),
+                    'passed': self.has_passed_user(user_id, str(other_user_data['_id']))
                 })
             
             return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:20]
@@ -637,53 +636,96 @@ class MongoService:
             logger.error(f"Find matches error: {str(e)}")
             return []
 
-    def get_filtered_matches(self, user_id: str) -> List[Dict[str, Any]]:
+    def get_potential_matches(self, user_id: str) -> List[Dict[str, Any]]:
         try:
             current_user = self.get_user_by_id(user_id)
             if not current_user:
                 return []
+                
             user_quiz = self.get_quiz_results(user_id)
             if not user_quiz:
                 return []
-            
-            # Get all users that current user has liked or passed on
-            liked_users = [str(like['matched_user_id']) for like in self.likes.find({'user_id': user_id})]
-            passed_users = [str(passed['passed_user_id']) for passed in self.passes.find({'user_id': user_id})]
-            excluded_users = set(liked_users + passed_users)
-            
+                
             user_scores = user_quiz['scores']
             dominant_type = user_scores['dominant_type']
             
-            # Get all potential matches excluding the ones user has already interacted with
-            all_users = self.quiz_results.find({'user_id': {'$ne': user_id, '$nin': list(excluded_users)}})
+            # Get user preferences
+            religion_importance = current_user.get('religion_importance', 'skip')
+            user_religion = current_user.get('religion')
+            physical_importance = current_user.get('physical_importance', 'not_important')
+            physical_preferences = current_user.get('physical_preferences', [])
+            user_ks = user_scores.get('keeper_seeker_type')
+            filter_settings = current_user.get('filter_settings', [])
+            show_only_preferred_physical = any(t['value'] for t in filter_settings if t['label'] == 'Show only preferred physical traits')
             
+            all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
             matches = []
+            
             for other_user in all_users:
                 other_scores = other_user['scores']
+                other_user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
+                
+                if not other_user_data or other_user_data['gender'] == current_user['gender']:
+                    continue
+                
+                # Step 1: Readiness filter
+                other_ks = other_scores.get('keeper_seeker_type')
+                if user_ks and other_ks and user_ks != other_ks:
+                    continue  # No mismatch allowed
+                
+                # Step 2: Emotional compatibility
                 match_percentage = self._calculate_match_percentage(user_scores, other_scores)
                 
-                if other_scores['dominant_type'] == dominant_type or other_scores.get('secondary_type') == dominant_type:
-                    user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
-                    if user_data and user_data['gender'] != current_user['gender']:
-                        matches.append({
-                            'id': str(user_data['_id']),
-                            'full_name': user_data['full_name'],
-                            'age': user_data.get('age'),
-                            'gender': user_data.get('gender'),
-                            'image': user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-                            'occupation': user_data.get('occupation', 'N/A'),
-                            'bio': user_data.get('bio', 'No bio available'),
-                            'interests': user_data.get('interests', []),
-                            'distance': 'N/A',
-                            'rating': '4.5',
-                            'dominant_type': other_scores['dominant_type'],
-                            'match_percentage': match_percentage,
-                            'liked': False  # Since filtered, always False
-                        })
+                # Step 3: Religion preferences
+                if religion_importance != 'skip' and user_religion:
+                    other_religion = other_user_data.get('religion')
+                    is_same_religion = other_religion == user_religion
+                    if religion_importance == 'high' and not is_same_religion:
+                        continue
+                    elif is_same_religion:
+                        if religion_importance == 'medium':
+                            match_percentage += 10
+                        elif religion_importance == 'low':
+                            match_percentage += 5
+                
+                # Step 4: Physical preferences
+                if physical_importance != 'not_important' and physical_preferences:
+                    other_physical = other_user_data.get('physical_traits', [])
+                    physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
+                    
+                    if physical_importance == 'very_important':
+                        if physical_match_score < 1.0:
+                            continue
+                    elif physical_importance == 'somewhat_important':
+                        match_percentage += int(10 * physical_match_score)
+                    
+                    # Apply filter if set
+                    if show_only_preferred_physical and physical_match_score < 1.0:
+                        continue
+                
+                match_percentage = min(match_percentage, 100)
+                
+                matches.append({
+                    'id': str(other_user_data['_id']),
+                    'full_name': other_user_data['full_name'],
+                    'age': other_user_data.get('age'),
+                    'gender': other_user_data.get('gender'),
+                    'image': other_user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+                    'occupation': other_user_data.get('occupation', 'N/A'),
+                    'bio': other_user_data.get('bio', 'No bio available'),
+                    'interests': other_user_data.get('interests', []),
+                    'distance': 'N/A',
+                    'rating': '4.5',
+                    'dominant_type': other_scores['dominant_type'],
+                    'match_percentage': match_percentage,
+                    'keeper_seeker': other_scores.get('keeper_seeker_type', 'Unknown'),
+                    'liked': self.has_liked_user(user_id, str(other_user_data['_id'])),
+                    'passed': self.has_passed_user(user_id, str(other_user_data['_id']))
+                })
             
             return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:20]
         except Exception as e:
-            logger.error(f"Get filtered matches error: {str(e)}")
+            logger.error(f"Get potential matches error: {str(e)}")
             return []
 
     def _calculate_physical_match(self, preferences: List, traits: List) -> float:
@@ -848,7 +890,8 @@ class MongoService:
                         'rating': '4.5',
                         'dominant_type': other_user['scores']['dominant_type'],
                         'match_percentage': match_percentage,
-                        'liked': self.has_liked_user(user_id, str(user_data['_id']))
+                        'liked': self.has_liked_user(user_id, str(user_data['_id'])),
+                        'passed': self.has_passed_user(user_id, str(user_data['_id']))
                     })
             return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:10]
         except Exception as e:
@@ -1676,8 +1719,7 @@ def api_matches():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     try:
-        # Use get_filtered_matches to exclude liked and passed users
-        matches = mongo_service.get_filtered_matches(session['user_id'])
+        matches = mongo_service.get_potential_matches(session['user_id'])
         return jsonify({
             'success': True, 
             'matches': matches
@@ -1823,6 +1865,7 @@ def user_profile(user_id):
             'rating': '4.5',
             'match_percentage': match_percentage,
             'liked': mongo_service.has_liked_user(session['user_id'], user_id),
+            'passed': mongo_service.has_passed_user(session['user_id'], user_id),
             'personality': {
                 'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
                 'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0,

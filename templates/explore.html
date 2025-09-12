@@ -776,7 +776,7 @@
                             const response = await fetch(endpoint, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(isLiked ? { matched_user_id: userId } : { matched_user_id: userId })
+                                body: JSON.stringify({ matched_user_id: userId })
                             });
                             const result = await response.json();
                             hideLoading();
@@ -818,15 +818,19 @@
                                     }
                                 }
                                 
+                                // Update cache
+                                const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                                if (cached) {
+                                    const match = cached.data.find(m => m.id === userId);
+                                    if (match) {
+                                        match.liked = !isLiked;
+                                    }
+                                    localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                                }
+
                                 // For like, remove card; for unlike, keep it
                                 if (!isLiked) {
-                                    // Update cache by removing the liked user
-                                    const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
-                                    if (cached) {
-                                        cached.data = cached.data.filter(m => m.id !== userId);
-                                        localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
-                                    }
-
+                                    // No need to filter cache since we updated the flag
                                     setTimeout(() => {
                                         const card = this.closest('.discovery-card');
                                         if (card) {
@@ -903,11 +907,28 @@
             function updateMatches(matches) {
                 const matchesGrid = document.getElementById('matches-grid');
                 matchesGrid.innerHTML = '';
-                matches.forEach((match, index) => {
+                const unseen = matches.filter(m => !m.liked && !m.passed);
+                let displayMatches = unseen;
+                if (unseen.length === 0 && matches.length > 0) {
+                    displayMatches = matches;
+                    showNotification('No new suggestions found. Showing previous ones.');
+                }
+                displayMatches.sort((a, b) => b.match_percentage - a.match_percentage);
+                displayMatches.forEach((match, index) => {
                     setTimeout(() => {
                         const card = document.createElement('div');
                         card.className = 'bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative discovery-card';
                         card.dataset.userId = match.id;
+                        let likeButtonHTML;
+                        if (match.passed) {
+                            likeButtonHTML = `<button class="bg-gray-500 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center" disabled>Passed</button>`;
+                        } else {
+                            likeButtonHTML = `<button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition" 
+                                            data-user-id="${match.id}" 
+                                            data-liked="${match.liked}">
+                                        <i class="fas ${match.liked ? 'fa-check' : 'fa-heart'}"></i>
+                                    </button>`;
+                        }
                         card.innerHTML = `
                             <div class="match-percentage text-gray-800 dark:text-gray-100">${match.match_percentage}%</div>
                             <img src="${match.image}" alt="${match.full_name}" class="profile-image">
@@ -917,11 +938,7 @@
                                         <h3 class="text-gray-100 font-bold">${match.full_name}, ${match.age || 'N/A'}</h3>
                                         <p class="text-gray-300 dark:text-gray-300 text-sm">${match.occupation} • ${match.distance}</p>
                                     </div>
-                                    <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition" 
-                                            data-user-id="${match.id}" 
-                                            data-liked="${match.liked}">
-                                        <i class="fas ${match.liked ? 'fa-check' : 'fa-heart'}"></i>
-                                    </button>
+                                    ${likeButtonHTML}
                                 </div>
                             </div>
                         `;
@@ -931,20 +948,37 @@
                         updateLikeButtons();
                     }, index * 200);  // 200ms delay between each card
                 });
-                if (!matches.length) {
+                if (!displayMatches.length) {
                     matchesGrid.innerHTML = '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">We will notify you if any matches come for you. Stay on track!</p>';
                 }
             }
 
             // Update discovery dynamically with progressive loading
-            function updateDiscovery(discovery) {
+            function updateDiscovery(matches) {
                 const discoveryGrid = document.getElementById('discovery-grid');
                 discoveryGrid.innerHTML = '';
-                discovery.forEach((match, index) => {
+                const unseen = matches.filter(m => !m.liked && !m.passed);
+                let displayMatches = unseen;
+                if (unseen.length === 0 && matches.length > 0) {
+                    displayMatches = matches;
+                    showNotification('No new suggestions found. Showing previous ones.');
+                }
+                displayMatches.sort((a, b) => b.match_percentage - a.match_percentage);
+                displayMatches.forEach((match, index) => {
                     setTimeout(() => {
                         const card = document.createElement('div');
                         card.className = 'discovery-profile discovery-card';
                         card.dataset.userId = match.id;
+                        let likeButtonHTML;
+                        if (match.passed) {
+                            likeButtonHTML = `<button class="bg-gray-500 text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center" disabled>Passed</button>`;
+                        } else {
+                            likeButtonHTML = `<button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center transition" 
+                                            data-user-id="${match.id}" 
+                                            data-liked="${match.liked}">
+                                        <i class="fas ${match.liked ? 'fa-check' : 'fa-heart text-xs md:text-sm'}"></i>
+                                    </button>`;
+                        }
                         card.innerHTML = `
                             <img src="${match.image}" alt="Profile" class="discovery-image">
                             <div class="discovery-rating text-gray-800 dark:text-gray-100">
@@ -957,11 +991,7 @@
                                         <h3 class="text-gray-100 font-bold text-sm md:text-base">${match.full_name}, ${match.age || 'N/A'}</h3>
                                         <p class="text-gray-300 dark:text-gray-300 text-xs md:text-sm">${match.distance}</p>
                                     </div>
-                                    <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center transition" 
-                                            data-user-id="${match.id}" 
-                                            data-liked="${match.liked}">
-                                        <i class="fas ${match.liked ? 'fa-check' : 'fa-heart text-xs md:text-sm'}"></i>
-                                    </button>
+                                    ${likeButtonHTML}
                                 </div>
                             </div>
                         `;
@@ -971,7 +1001,7 @@
                         updateLikeButtons();
                     }, index * 200);  // 200ms delay between each card
                 });
-                if (!discovery.length) {
+                if (!displayMatches.length) {
                     discoveryGrid.innerHTML = '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">No people to discover. Try completing your quiz!</p>';
                 }
             }
@@ -984,31 +1014,30 @@
                 showLoading(); // Show loader on refresh
                 
                 const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                let data;
                 if (!forceRefresh && cached && Date.now() - cached.timestamp < CACHE_EXPIRY) {
-                    updateMatches(cached.data);
-                    updateDiscovery(cached.data);
-                    isLoading = false;
-                    hideLoading();
-                    return;
-                }
-
-                try {
-                    const response = await fetch('/api/matches');
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        localStorage.setItem(CACHE_KEY, JSON.stringify({timestamp: Date.now(), data: result.matches}));
-                        updateMatches(result.matches);
-                        updateDiscovery(result.matches);
-                    } else {
-                        showError(result.error || 'Failed to load matches');
+                    data = cached.data;
+                } else {
+                    try {
+                        const response = await fetch('/api/matches');
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            localStorage.setItem(CACHE_KEY, JSON.stringify({timestamp: Date.now(), data: result.matches}));
+                            data = result.matches;
+                        } else {
+                            showError(result.error || 'Failed to load matches');
+                            data = cached ? cached.data : [];
+                        }
+                    } catch (error) {
+                        showError('Network error while loading matches');
+                        data = cached ? cached.data : [];
                     }
-                } catch (error) {
-                    showError('Network error while loading matches');
-                } finally {
-                    isLoading = false;
-                    hideLoading();
                 }
+                updateMatches(data);
+                updateDiscovery(data);
+                isLoading = false;
+                hideLoading();
             }
 
             // Profile viewer
@@ -1080,6 +1109,38 @@
                                 </div>
                             `;
                         }
+                        let topLikeButtonHTML;
+                        if (profile.user.passed) {
+                            topLikeButtonHTML = `<button class="bg-gray-500 text-white rounded-full w-12 h-12 flex items-center justify-center" disabled>Passed</button>`;
+                        } else {
+                            topLikeButtonHTML = `<button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-12 h-12 flex items-center justify-center transition" 
+                                            data-user-id="${userId}" 
+                                            data-liked="${profile.user.liked}">
+                                        <i class="fas ${profile.user.liked ? 'fa-check' : 'fa-heart'} text-xl"></i>
+                                    </button>`;
+                        }
+                        let passButtonHTML;
+                        if (profile.user.passed) {
+                            passButtonHTML = `<button class="bg-gray-500 text-white rounded-full px-6 py-3 flex-1 mr-2 transition" disabled>
+                                <i class="fas fa-times mr-2"></i> Passed
+                            </button>`;
+                        } else {
+                            passButtonHTML = `<button class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-full px-6 py-3 flex-1 mr-2 hover:bg-gray-300 dark:hover:bg-gray-600 transition pass-button" data-user-id="${userId}">
+                                <i class="fas fa-times mr-2"></i> Pass
+                            </button>`;
+                        }
+                        let bottomLikeHTML;
+                        if (profile.user.passed) {
+                            bottomLikeHTML = `<button class="bg-gray-500 text-white rounded-full px-6 py-3 flex-1 ml-2 transition" disabled>
+                                <i class="fas fa-heart mr-2"></i> Like
+                            </button>`;
+                        } else {
+                            bottomLikeHTML = `<button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full px-6 py-3 flex-1 ml-2 transition" 
+                                            data-user-id="${userId}" 
+                                            data-liked="${profile.user.liked}">
+                                        <i class="fas ${profile.user.liked ? 'fa-check' : 'fa-heart'} mr-2"></i> ${profile.user.liked ? 'Liked' : 'Like'}
+                                    </button>`;
+                        }
                         profileViewer.innerHTML = `
                             <div class="relative">
                                 <img src="${profile.user.image}" alt="${profile.user.full_name}" class="profile-viewer-image">
@@ -1096,11 +1157,7 @@
                                         <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">${profile.user.full_name}, ${profile.user.age || 'N/A'}</h2>
                                         <p class="text-gray-600 dark:text-gray-400">${profile.user.occupation} • ${profile.user.distance}</p>
                                     </div>
-                                    <button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-12 h-12 flex items-center justify-center transition" 
-                                            data-user-id="${userId}" 
-                                            data-liked="${profile.user.liked}">
-                                        <i class="fas ${profile.user.liked ? 'fa-check' : 'fa-heart'} text-xl"></i>
-                                    </button>
+                                    ${topLikeButtonHTML}
                                 </div>
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">About</h3>
@@ -1139,17 +1196,11 @@
                                     `}
                                 </div>
                                 <div class="flex justify-between mt-8">
-                                    <button class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-full px-6 py-3 flex-1 mr-2 hover:bg-gray-300 dark:hover:bg-gray-600 transition pass-button" data-user-id="${userId}">
-                                        <i class="fas fa-times mr-2"></i> Pass
-                                    </button>
+                                    ${passButtonHTML}
                                     <button class="bg-red-500 text-white rounded-full px-6 py-3 flex-1 ml-2 transition report-button" data-user-id="${userId}">
                                         <i class="fas fa-flag mr-2"></i> Report
                                     </button>
-                                    <button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full px-6 py-3 flex-1 ml-2 transition" 
-                                            data-user-id="${userId}" 
-                                            data-liked="${profile.user.liked}">
-                                        <i class="fas ${profile.user.liked ? 'fa-check' : 'fa-heart'} mr-2"></i> ${profile.user.liked ? 'Liked' : 'Like'}
-                                    </button>
+                                    ${bottomLikeHTML}
                                 </div>
                             </div>
                         `;
@@ -1240,15 +1291,18 @@
                                     }
                                 }
                                 
+                                // Update cache
+                                const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                                if (cached) {
+                                    const match = cached.data.find(m => m.id === userId);
+                                    if (match) {
+                                        match.liked = !isLiked;
+                                    }
+                                    localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                                }
+
                                 // For like, close viewer and remove card; for unlike, keep viewer open
                                 if (!isLiked) {
-                                    // Update cache by removing the liked user
-                                    const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
-                                    if (cached) {
-                                        cached.data = cached.data.filter(m => m.id !== userId);
-                                        localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
-                                    }
-
                                     setTimeout(() => {
                                         profileViewer.remove();
                                         mainHeader.style.display = 'flex';
@@ -1277,44 +1331,50 @@
                     });
                 });
                 
-                profileViewer.querySelector('.pass-button').addEventListener('click', async function() {
-                    showLoading();
-                    try {
-                        const response = await fetch('/pass-user', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ passed_user_id: userId })
-                        });
-                        const result = await response.json();
-                        hideLoading();
-                        
-                        if (result.success) {
-                            showNotification('Passed');
-                            // Update cache by removing the passed user
-                            const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
-                            if (cached) {
-                                cached.data = cached.data.filter(m => m.id !== userId);
-                                localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
-                            }
-                            profileViewer.remove();
-                            mainHeader.style.display = 'flex';
-                            document.body.style.overflow = '';
+                const passButton = profileViewer.querySelector('.pass-button');
+                if (passButton) {
+                    passButton.addEventListener('click', async function() {
+                        showLoading();
+                        try {
+                            const response = await fetch('/pass-user', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ passed_user_id: userId })
+                            });
+                            const result = await response.json();
+                            hideLoading();
                             
-                            // Remove the card from the main view
-                            const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
-                            if (card) {
-                                card.style.opacity = '0';
-                                card.style.transition = 'opacity 0.5s ease';
-                                setTimeout(() => card.remove(), 500);
+                            if (result.success) {
+                                showNotification('Passed');
+                                // Update cache
+                                const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                                if (cached) {
+                                    const match = cached.data.find(m => m.id === userId);
+                                    if (match) {
+                                        match.passed = true;
+                                    }
+                                    localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                                }
+                                profileViewer.remove();
+                                mainHeader.style.display = 'flex';
+                                document.body.style.overflow = '';
+                                
+                                // Remove the card from the main view
+                                const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
+                                if (card) {
+                                    card.style.opacity = '0';
+                                    card.style.transition = 'opacity 0.5s ease';
+                                    setTimeout(() => card.remove(), 500);
+                                }
+                            } else {
+                                showError(result.error || 'Failed to pass user');
                             }
-                        } else {
-                            showError(result.error || 'Failed to pass user');
+                        } catch (error) {
+                            hideLoading();
+                            showError('Network error while passing user');
                         }
-                    } catch (error) {
-                        hideLoading();
-                        showError('Network error while passing user');
-                    }
-                });
+                    });
+                }
             }
             
             // Function to attach profile click listeners
@@ -1337,7 +1397,6 @@
             // Refresh button - ensure it's wired
             if (refreshMatchesBtn) {
                 refreshMatchesBtn.addEventListener('click', () => {
-                    localStorage.removeItem(CACHE_KEY); // Clear cache on manual refresh
                     loadMatches(true);
                 });
             }
