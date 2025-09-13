@@ -761,9 +761,7 @@
       function startConvPolling() {
         if (convPollInterval) clearInterval(convPollInterval);
         convPollInterval = setInterval(() => {
-          if (!currentChatUserId) {  // Only poll when in conversations list
-            loadConversations();
-          }
+          loadConversations();
         }, 10000);  // Every 10 seconds
       }
 
