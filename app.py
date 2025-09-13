@@ -22,6 +22,7 @@ import pytz
 import json
 import http.client
 import requests
+import time
 
 # Configure Cloudinary with explicit credentials and enhanced logging
 def configure_cloudinary():
@@ -1530,17 +1531,27 @@ def age_verification():
 
         try:
             api_url = "https://sure-myrilla-mhdashikofficial-61e061ec.koyeb.app/predict"
-            api_key = "74303dce-713f-4b91-829e-7e0a6c76a25c"
+            api_key = "74303dce-713f-4b91-829e-4e0a6c76a25c"
             headers = {"x-api-key": api_key}
             file.seek(0)  # Reset file pointer if needed
             file_bytes = file.read()
             files = {'file': ('image.jpg', file_bytes, 'image/jpeg')}
-            resp = requests.post(api_url, files=files, headers=headers, timeout=30)  # Add timeout
-
-            # Improved error handling
-            if resp.status_code != 200:
-                logger.error(f"API response error: status {resp.status_code}, body: {resp.text}")
-                return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
+            retries = 0
+            max_retries = 10
+            while retries < max_retries:
+                resp = requests.post(api_url, files=files, headers=headers, timeout=30)
+                if resp.status_code == 200:
+                    break
+                elif resp.status_code == 503:
+                    retries += 1
+                    wait_time = 5 * retries
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    logger.error(f"API response error: status {resp.status_code}, body: {resp.text}")
+                    return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
+            if retries == max_retries:
+                return jsonify({'success': False, 'error': 'Service unavailable after retries. Try again later.'}), 503
 
             data = resp.json()
             logger.info(f"API response data: {data}")  # Log for debugging
