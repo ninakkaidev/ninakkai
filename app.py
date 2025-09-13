@@ -204,9 +204,9 @@ class MongoService:
             verification_token = secrets.token_urlsafe(32)
             default_image = 'https://randomuser.me/api/portraits/women/44.jpg'
             if gender == 'male':
-                default_image = 'https://i.ibb.co/4RbtYQBM/luthfi-alfarizi-jl-Jp-DBK17-Hw-unsplash.jpg'
+                default_image = 'https://i.ibb.co/GQTZQ0hR/653324ed-3b9c-48b1-b9b2-d1d8b16931ff.jpg'
             elif gender == 'female':
-                default_image = 'https://i.ibb.co/Ld65xcCC/luthfi-alfarizi-y-XAGGb-Vuh-EY-unsplash.jpg'
+                default_image = 'https://i.ibb.co/cSXFsTvD/8e2b61f2-44cc-43cd-bc55-e5ebcaae9130.jpg'
             user_data = {
                 'email': email,
                 'password': hashed_password,
