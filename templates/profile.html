@@ -289,7 +289,7 @@
         }
 
         .toggle-status {
-            min-width: 30px;
+            min-width: 50px; /* Adjusted for Public/Private */
             transition: color 0.3s ease;
         }
 
@@ -523,7 +523,16 @@
             <!-- Religion -->
             {% if profile.religion != 'N/A' %}
             <div class="mt-6">
-                <h3 class="font-semibold mb-2">Religion</h3>
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-semibold">Religion</h3>
+                    <div class="toggle-container">
+                        <input type="checkbox" id="religionPublicToggle" class="sr-only peer" {% if profile.religion_public %}checked{% endif %}>
+                        <label for="religionPublicToggle" class="toggle-label relative inline-block w-11 h-6 bg-gray-200 rounded-full cursor-pointer peer-checked:bg-pink-500 transition-colors duration-300">
+                            <span class="toggle-knob absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm transform peer-checked:translate-x-5 transition-transform duration-300"></span>
+                        </label>
+                        <span class="toggle-status text-sm text-gray-500 ml-2 dark:text-gray-400"></span>
+                    </div>
+                </div>
                 <p class="text-gray-700">{{ profile.religion }}</p>
             </div>
             {% endif %}
@@ -531,7 +540,16 @@
             <!-- Physical Traits -->
             {% if profile.physical_traits %}
             <div class="mt-6">
-                <h3 class="font-semibold mb-2">Physical Traits</h3>
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-semibold">Physical Traits</h3>
+                    <div class="toggle-container">
+                        <input type="checkbox" id="physicalPublicToggle" class="sr-only peer" {% if profile.physical_public %}checked{% endif %}>
+                        <label for="physicalPublicToggle" class="toggle-label relative inline-block w-11 h-6 bg-gray-200 rounded-full cursor-pointer peer-checked:bg-pink-500 transition-colors duration-300">
+                            <span class="toggle-knob absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm transform peer-checked:translate-x-5 transition-transform duration-300"></span>
+                        </label>
+                        <span class="toggle-status text-sm text-gray-500 ml-2 dark:text-gray-400"></span>
+                    </div>
+                </div>
                 {% for label, value in profile.physical_traits.items() %}
                 <p class="text-gray-700">{{ label }}: {{ value }}</p>
                 {% endfor %}
@@ -1109,7 +1127,11 @@
             function updateToggleStatus(toggle) {
                 const status = toggle.parentElement.querySelector('.toggle-status');
                 if (status) {
-                    status.textContent = toggle.checked ? 'On' : 'Off';
+                    if (toggle.id === 'religionPublicToggle' || toggle.id === 'physicalPublicToggle') {
+                        status.textContent = toggle.checked ? 'Public' : 'Private';
+                    } else {
+                        status.textContent = toggle.checked ? 'On' : 'Off';
+                    }
                     status.classList.toggle('text-pink-500', toggle.checked);
                     status.classList.toggle('text-gray-500', !toggle.checked);
                 }
@@ -1601,6 +1623,63 @@
                     confirmation.querySelector('.cancel-btn').addEventListener('click', () => {
                         confirmation.remove();
                     });
+                });
+            }
+
+            // Visibility toggles for religion and physical appearance
+            const religionPublicToggle = document.getElementById('religionPublicToggle');
+            if (religionPublicToggle) {
+                updateToggleStatus(religionPublicToggle);
+                religionPublicToggle.addEventListener('change', async function() {
+                    try {
+                        const response = await fetch('/update_profile', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ religion_public: this.checked }),
+                            credentials: 'include'
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            showNotification(`Religion visibility set to ${this.checked ? 'public' : 'private'}`);
+                            updateToggleStatus(this);
+                        } else {
+                            this.checked = !this.checked;
+                            updateToggleStatus(this);
+                            showNotification('Failed to update visibility');
+                        }
+                    } catch (error) {
+                        this.checked = !this.checked;
+                        updateToggleStatus(this);
+                        showNotification('Error updating visibility');
+                    }
+                });
+            }
+
+            const physicalPublicToggle = document.getElementById('physicalPublicToggle');
+            if (physicalPublicToggle) {
+                updateToggleStatus(physicalPublicToggle);
+                physicalPublicToggle.addEventListener('change', async function() {
+                    try {
+                        const response = await fetch('/update_profile', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ physical_public: this.checked }),
+                            credentials: 'include'
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            showNotification(`Physical traits visibility set to ${this.checked ? 'public' : 'private'}`);
+                            updateToggleStatus(this);
+                        } else {
+                            this.checked = !this.checked;
+                            updateToggleStatus(this);
+                            showNotification('Failed to update visibility');
+                        }
+                    } catch (error) {
+                        this.checked = !this.checked;
+                        updateToggleStatus(this);
+                        showNotification('Error updating visibility');
+                    }
                 });
             }
         });

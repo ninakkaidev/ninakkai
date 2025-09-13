@@ -228,6 +228,7 @@ class MongoService:
                 'religion': None,
                 'religion_importance': 'skip',
                 'religion_public': False,
+                'physical_public': False,  # Added for physical traits visibility
                 'physical_importance': 'not_important',
                 'physical_preferences': [],
                 'physical_traits': [],
@@ -1876,7 +1877,7 @@ def user_profile(user_id):
             'secondary_personality_info': secondary_personality_info,
             'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'N/A') if quiz_result else 'N/A',
             'religion': user.get('religion', 'Not specified') if user.get('religion_public', False) else 'Private',
-            'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])},
+            'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])} if user.get('physical_public', False) else 'Private',  # Added conditional visibility
             'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
             'summary': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), 'N/A'),
             'photos': user.get('photos', [])
@@ -2110,7 +2111,9 @@ def profile():
             'personality_info': personality_info,
             'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'N/A') if quiz_result else 'N/A',
             'religion': user.get('religion', 'N/A'),
+            'religion_public': user.get('religion_public', False),  # Added for toggle
             'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])},
+            'physical_public': user.get('physical_public', False),  # Added for toggle
             'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
             'summary': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), 'N/A')
         }
@@ -2302,6 +2305,10 @@ def update_profile():
         update_data['location'] = data['location']
     if 'interests' in data:
         update_data['interests'] = data['interests']
+    if 'religion_public' in data:
+        update_data['religion_public'] = data['religion_public']
+    if 'physical_public' in data:
+        update_data['physical_public'] = data['physical_public']
     if update_data:
         result = mongo_service.update_user(session['user_id'], update_data)
         return jsonify(result)
