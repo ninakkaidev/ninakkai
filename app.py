@@ -2313,6 +2313,10 @@ def update_profile():
         update_data['religion_importance'] = data['religion_importance']
     if 'physical_importance' in data:
         update_data['physical_importance'] = data['physical_importance']
+    if 'physical_traits' in data:
+        traits_dict = data['physical_traits']
+        traits_list = [{'label': k, 'value': v} for k, v in traits_dict.items()]
+        update_data['physical_traits'] = traits_list
     if update_data:
         result = mongo_service.update_user(session['user_id'], update_data)
         return jsonify(result)
