@@ -1178,7 +1178,7 @@ chat_service = ChatService()
 def send_verification_email(email: str, verification_token: str) -> Dict[str, Any]:
     try:
         smtp_server = 'smtp.gmail.com'
-        smtp_port = 587
+        smtp_port = '587'
         smtp_user = 'ninakkaiforyou@gmail.com'
         smtp_password = os.environ.get('SMTP_PASSWORD', 'porz cqqt bumr wdgj')
         verification_url = f"https://www.ninakkai.com/verify-email?token={verification_token}"
@@ -1530,7 +1530,7 @@ def age_verification():
 
         try:
             api_url = "https://sure-myrilla-mhdashikofficial-61e061ec.koyeb.app/predict"
-            api_key = "74303dce-713f-4b91-829e-7e0a6c76a25c"
+            api_key = "74303dce-713f-4b91-829e-4e0a6c76a25c"
             headers = {"x-api-key": api_key}
             file.seek(0)  # Reset file pointer if needed
             file_bytes = file.read()
@@ -1821,7 +1821,7 @@ def user_profile(user_id):
             'color': '#000000'
         })
         personality_info = f"""
-        <strong>{personality['title']} ({quiz_result['scores']['dominant_percentage'] if quiz_result else 0}%)</strong><br>
+        <strong>{personality['title']}</strong><br>
         {personality['description']}<br>
         <em>{personality['tagline']}</em><br>
         <strong>Strengths:</strong> {', '.join(personality['strengths'])}<br>
@@ -1841,7 +1841,7 @@ def user_profile(user_id):
                 'color': '#000000'
             })
             secondary_personality_info = f"""
-            <strong>Secondary: {secondary_personality['title']} ({quiz_result['scores']['secondary_percentage']}%)</strong><br>
+            <br><strong>Secondary: {secondary_personality['title']}</strong><br>
             {secondary_personality['description']}<br>
             <em>{secondary_personality['tagline']}</em><br>
             <strong>Strengths:</strong> {', '.join(secondary_personality['strengths'])}<br>
@@ -2064,7 +2064,7 @@ def profile():
         })
         # Format personality_info as HTML
         personality_info = f"""
-        <strong>{personality['title']} ({quiz_result['scores']['dominant_percentage'] if quiz_result else 0}%)</strong><br>
+        <strong>{personality['title']}</strong><br>
         {personality['description']}<br>
         <em>{personality['tagline']}</em><br>
         <strong>Strengths:</strong> {', '.join(personality['strengths'])}<br>
@@ -2082,7 +2082,7 @@ def profile():
                 'color': '#000000'
             })
             personality_info += f"""
-            <br><strong>Secondary: {secondary_personality['title']} ({quiz_result['scores']['secondary_percentage']}%)</strong><br>
+            <br><strong>Secondary: {secondary_personality['title']}</strong><br>
             {secondary_personality['description']}<br>
             <em>{secondary_personality['tagline']}</em><br>
             <strong>Strengths:</strong> {', '.join(secondary_personality['strengths'])}<br>
