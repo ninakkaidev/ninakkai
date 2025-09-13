@@ -15,11 +15,11 @@
       --secondary: #00b894;
       --secondary-dark: #00997e;
       --bg-dark: #000000;
-      --card-dark: #2d3436;
+      --card-dark: #0a0a0a;
       --text-light: #f5f6fa;
-      --text-gray: #b2bec3;
+      --text-gray: #8a8a8a;
       --message-sent: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
-      --message-received: #3c4852;
+      --message-received: #1a1a1a;
     }
 
     body {
@@ -33,10 +33,10 @@
     }
 
     .navbar {
-      background-color: var(--card-dark);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      background-color: var(--bg-dark);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
       padding: 0.75rem 1rem;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
       z-index: 1000;
     }
 
@@ -64,19 +64,19 @@
     .chat-container { height: calc(100vh - 56px); overflow: hidden; }
     .conversations-col, .chat-area {
       background-color: var(--card-dark); border-radius: 0; height: 100%; overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.03);
     }
 
     .welcome-screen {
       display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;
-      text-align: center; padding: 2rem; background: linear-gradient(rgba(30,39,46,0.8), rgba(30,39,46,0.9)); border-radius: 0; padding-right: 30%;
+      text-align: center; padding: 2rem; background: rgba(0,0,0,0.95); border-radius: 0; padding-right: 30%;
     }
     .welcome-icon { font-size: 4rem; margin-bottom: 1.5rem; background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
     .welcome-title { font-size: 1.75rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-light); }
     .welcome-text { color: var(--text-gray); max-width: 400px; margin-bottom: 2rem; line-height: 1.6; }
 
     .conversations-header {
-      padding: 1rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; background-color: var(--card-dark);
+      padding: 1rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center; background-color: var(--card-dark);
     }
     .conversations-back-btn { display: none; color: var(--text-gray); }
     .conversations-header h2 { font-weight: 700; font-size: 1.25rem; margin: 0; flex: 1; text-align: center; color: var(--text-light); }
@@ -84,7 +84,7 @@
     .search-conversations { padding: 0.75rem 1rem; position: relative; }
     .search-conversations input {
       width: 100%; padding: 0.5rem 1rem 0.5rem 2.25rem; border-radius: 6px;
-      border: 1px solid rgba(255,255,255,0.1); background-color: rgba(255,255,255,0.05); font-size: 0.875rem; color: var(--text-light);
+      border: 1px solid rgba(255,255,255,0.03); background-color: rgba(255,255,255,0.03); font-size: 0.875rem; color: var(--text-light);
     }
     .search-conversations input::placeholder { color: var(--text-gray); }
     .search-conversations i { position: absolute; left: 1.75rem; top: 50%; transform: translateY(-50%); color: var(--text-gray); font-size: 0.875rem; }
@@ -92,11 +92,11 @@
     .conversations-list { overflow-y: auto; height: calc(100% - 110px); -webkit-overflow-scrolling: touch; }
 
     .conversation {
-      display: flex; padding: 0.875rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex; padding: 0.875rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.03);
       cursor: pointer; transition: background-color 0.2s; position: relative;
     }
-    .conversation:hover { background-color: rgba(255,255,255,0.05); }
-    .conversation.active { background-color: rgba(108,92,231,0.1); }
+    .conversation:hover { background-color: rgba(255,255,255,0.03); }
+    .conversation.active { background-color: rgba(108,92,231,0.08); }
 
     .conversation-pic img {
       width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--text-gray);
@@ -105,14 +105,14 @@
 
     .conversation-info { flex: 1; min-width: 0; }
     .conversation-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.125rem; }
-    .conversation-header h5 { font-weight: 600; font-size: 0.9375rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-light); }
+    .conversation-header h5 { font-weight: 600; font-size: 0.9375rem; margin: 0; white-space: nowrap; overflow: hidden; text-overspect: ellipsis; color: var(--text-light); }
     .conversation-header .time { font-size: 0.75rem; color: var(--text-gray); }
     .last-message { font-size: 0.8125rem; color: var(--text-gray); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .unread-dot { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; background-color: var(--primary-light); }
 
     .chat-area { display: flex; flex-direction: column; height: 100%; }
     .chat-header {
-      padding: 0.5rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center;
+      padding: 0.5rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.03); display: flex; align-items: center;
       background-color: var(--card-dark); position: sticky; top: 0; z-index: 50;
     }
     .chat-back-btn { display: none; color: var(--text-gray); }
@@ -150,12 +150,12 @@
     }
 
     .message-input-container {
-      padding: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1); background-color: var(--card-dark);
+      padding: 0.5rem; border-top: 1px solid rgba(255,255,255,0.03); background-color: var(--card-dark);
       position: sticky; bottom: 0; left: 0; width: 100%; z-index: 1000; min-height: 60px;
     }
     .message-input {
-      display: flex; align-items: center; background-color: rgba(255,255,255,0.05); border-radius: 8px;
-      padding: 0.5rem 0.75rem; border: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; background-color: rgba(255,255,255,0.03); border-radius: 8px;
+      padding: 0.5rem 0.75rem; border: 1px solid rgba(255,255,255,0.03);
     }
     .message-input input { flex: 1; border: none; background: transparent; padding: 0.5rem; outline: none; font-size: 0.875rem; color: var(--text-light); }
     .message-input input::placeholder { color: var(--text-gray); }
@@ -170,9 +170,9 @@
 
     .emoji-picker {
       position: fixed; bottom: 70px; left: 10px; width: 280px; background-color: var(--card-dark); border-radius: 8px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2); padding: 0.75rem; z-index: 1002; display: none;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.5); padding: 0.75rem; z-index: 1002; display: none;
     }
-    .emoji-categories { display: flex; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
+    .emoji-categories { display: flex; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
     .emoji-categories button { background: transparent; border: none; font-size: 0.875rem; color: var(--text-gray); padding: 0.375rem; }
     .emoji-categories button.active { color: var(--primary-light); }
     .emoji-container { display: grid; grid-template-columns: repeat(auto-fill, 28px); gap: 6px; max-height: 180px; overflow-y: auto; }
@@ -184,28 +184,28 @@
       z-index: 100; transform: translateX(100%); transition: transform 0.3s ease; overflow-y: auto; display: none;
     }
     .profile-sidebar.active { transform: translateX(0); display: block; }
-    .sidebar-header { padding: 1rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
+    .sidebar-header { padding: 1rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center; }
     .sidebar-header h4 { font-weight: 700; font-size: 0.9375rem; margin: 0; color: var(--text-light); }
     .btn-close-sidebar { background: transparent; border: none; color: var(--text-gray); }
 
-    .sidebar-profile { padding: 1.25rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-profile { padding: 1.25rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.03); }
     .sidebar-profile img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--text-gray); margin-bottom: 0.75rem; loading: lazy; }
     .sidebar-profile h3 { font-weight: 700; font-size: 1.125rem; margin-bottom: 0.25rem; color: var(--text-light); }
     .personality, .compatibility p { color: var(--text-gray); font-size: 0.875rem; }
     .compatibility-score { width: 50px; height: 50px; background: var(--gradient); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 0.25rem; }
-    .sidebar-section { padding: 1rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-section { padding: 1rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
     .sidebar-section h5 { font-weight: 600; font-size: 0.875rem; margin-bottom: 0.75rem; color: var(--text-light); }
     .detail { display: flex; align-items: center; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-light); }
     .detail i { color: var(--text-gray); margin-right: 0.5rem; width: 18px; }
     .interests { display: flex; flex-wrap: wrap; gap: 0.375rem; }
-    .interest { background-color: rgba(255,255,255,0.1); color: var(--text-light); padding: 0.25rem 0.625rem; border-radius: 12px; font-size: 0.75rem; }
+    .interest { background-color: rgba(255,255,255,0.05); color: var(--text-light); padding: 0.25rem 0.625rem; border-radius: 12px; font-size: 0.75rem; }
     .sidebar-actions .btn { width: 100%; margin-bottom: 0.5rem; border-radius: 6px; padding: 0.5rem; font-size: 0.875rem; }
     .btn-primary { background: var(--gradient); border: none; color: white; }
     .btn-primary:hover { background: linear-gradient(135deg, #e84868 0%, #5e9edb 100%); }
 
     .new-message-notice {
       position: fixed; bottom: 80px; right: 20px; background: var(--gradient); color: white; border: none; border-radius: 20px;
-      padding: 8px 16px; font-size: 0.875rem; cursor: pointer; z-index: 1001; display: none; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      padding: 8px 16px; font-size: 0.875rem; cursor: pointer; z-index: 1001; display: none; box-shadow: 0 2px 10px rgba(0,0,0,0.5);
     }
 
     @media (max-width: 992px) {
@@ -223,7 +223,7 @@
     }
 
     @media (min-width: 993px) {
-      .conversations-col { width: 30%; border-right: 1px solid rgba(255,255,255,0.1); }
+      .conversations-col { width: 30%; border-right: 1px solid rgba(255,255,255,0.03); }
       .chat-area-col { width: 70%; }
       .chat-area { transform: translateX(0); }
       .chat-back-btn, .conversations-back-btn { display: none !important; }
@@ -239,17 +239,17 @@
     }
 
     ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); }
+    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
     ::-webkit-scrollbar-thumb { background: var(--text-gray); border-radius: 3px; }
 
     .message-content .replied-message {
-      background-color: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px; margin-bottom: 6px;
+      background-color: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; margin-bottom: 6px;
       font-size: 0.75rem; font-style: italic; color: inherit; opacity: 0.8;
     }
 
     .replying-to {
-      display: flex; align-items: center; padding: 0.5rem; background-color: rgba(255,255,255,0.05);
-      border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.8125rem; color: var(--text-gray);
+      display: flex; align-items: center; padding: 0.5rem; background-color: rgba(255,255,255,0.03);
+      border-top: 1px solid rgba(255,255,255,0.03); font-size: 0.8125rem; color: var(--text-gray);
     }
     .replying-to span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cancel-reply { background: transparent; border: none; color: var(--text-gray); font-size: 0.875rem; margin-left: 0.5rem; }
