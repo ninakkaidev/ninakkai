@@ -521,7 +521,6 @@
             {% endif %}
 
             <!-- Religion -->
-            {% if profile.religion != 'N/A' %}
             <div class="mt-6">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-semibold">Religion</h3>
@@ -533,9 +532,33 @@
                         <span class="toggle-status text-sm text-gray-500 ml-2 dark:text-gray-400"></span>
                     </div>
                 </div>
-                <p class="text-gray-700">{{ profile.religion }}</p>
+                <p id="religionView" class="view-field text-gray-700">{{ profile.religion if profile.religion != 'N/A' else 'Not set' }}</p>
+                <select id="religionEdit" class="edit-field w-full border rounded px-3 py-2">
+                    <option value="Christianity" {% if profile.religion == 'Christianity' %}selected{% endif %}>Christianity</option>
+                    <option value="Islam" {% if profile.religion == 'Islam' %}selected{% endif %}>Islam</option>
+                    <option value="Hinduism" {% if profile.religion == 'Hinduism' %}selected{% endif %}>Hinduism</option>
+                    <option value="Buddhism" {% if profile.religion == 'Buddhism' %}selected{% endif %}>Buddhism</option>
+                    <option value="Judaism" {% if profile.religion == 'Judaism' %}selected{% endif %}>Judaism</option>
+                    <option value="Sikhism" {% if profile.religion == 'Sikhism' %}selected{% endif %}>Sikhism</option>
+                    <option value="Spiritual but not religious" {% if profile.religion == 'Spiritual but not religious' %}selected{% endif %}>Spiritual but not religious</option>
+                    <option value="Agnostic" {% if profile.religion == 'Agnostic' %}selected{% endif %}>Agnostic</option>
+                    <option value="Atheist" {% if profile.religion == 'Atheist' %}selected{% endif %}>Atheist</option>
+                    <option value="Other" {% if profile.religion == 'Other' %}selected{% endif %}>Other</option>
+                    <option value="Prefer not to say" {% if profile.religion == 'Prefer not to say' %}selected{% endif %}>Prefer not to say</option>
+                </select>
             </div>
-            {% endif %}
+
+            <!-- Religion Importance -->
+            <div class="mt-6">
+                <h3 class="font-semibold mb-2">Religion Importance in Matching</h3>
+                <p id="religionImportanceView" class="view-field text-gray-700">{{ profile.religion_importance | capitalize if profile.religion_importance != 'skip' else 'Skip' }}</p>
+                <select id="religionImportanceEdit" class="edit-field w-full border rounded px-3 py-2">
+                    <option value="skip" {% if profile.religion_importance == 'skip' %}selected{% endif %}>Skip</option>
+                    <option value="low" {% if profile.religion_importance == 'low' %}selected{% endif %}>Low</option>
+                    <option value="medium" {% if profile.religion_importance == 'medium' %}selected{% endif %}>Medium</option>
+                    <option value="high" {% if profile.religion_importance == 'high' %}selected{% endif %}>High</option>
+                </select>
+            </div>
 
             <!-- Physical Traits -->
             {% if profile.physical_traits %}
@@ -555,6 +578,17 @@
                 {% endfor %}
             </div>
             {% endif %}
+
+            <!-- Physical Importance -->
+            <div class="mt-6">
+                <h3 class="font-semibold mb-2">Physical Preference Importance in Matching</h3>
+                <p id="physicalImportanceView" class="view-field text-gray-700">{{ profile.physical_importance | capitalize if profile.physical_importance != 'not_important' else 'Not Important' }}</p>
+                <select id="physicalImportanceEdit" class="edit-field w-full border rounded px-3 py-2">
+                    <option value="very_important" {% if profile.physical_importance == 'very_important' %}selected{% endif %}>Very Important</option>
+                    <option value="somewhat_important" {% if profile.physical_importance == 'somewhat_important' %}selected{% endif %}>Somewhat Important</option>
+                    <option value="not_important" {% if profile.physical_importance == 'not_important' %}selected{% endif %}>Not Important</option>
+                </select>
+            </div>
 
             <!-- Education/Work -->
             {% if profile.education_work != 'N/A' %}
@@ -939,7 +973,10 @@
                     full_name: document.getElementById('nameEdit').value,
                     age: document.getElementById('ageEdit').value,
                     location: document.getElementById('locationEdit').value,
-                    bio: document.getElementById('bioEdit').value
+                    bio: document.getElementById('bioEdit').value,
+                    religion: document.getElementById('religionEdit').value,
+                    religion_importance: document.getElementById('religionImportanceEdit').value,
+                    physical_importance: document.getElementById('physicalImportanceEdit').value
                 };
                 try {
                     const response = await fetch('/update_profile', {
@@ -954,6 +991,9 @@
                         document.getElementById('ageView').textContent = data.age ? ', ' + data.age : '';
                         document.getElementById('locationView').textContent = data.location;
                         document.getElementById('bioView').textContent = data.bio;
+                        document.getElementById('religionView').textContent = data.religion;
+                        document.getElementById('religionImportanceView').textContent = data.religion_importance.charAt(0).toUpperCase() + data.religion_importance.slice(1);
+                        document.getElementById('physicalImportanceView').textContent = data.physical_importance.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
                         
                         profileSection.classList.remove('edit-mode');
                         showNotification('Profile updated successfully');

@@ -147,11 +147,6 @@ class MongoService:
     def __init__(self):
         self.uri = os.getenv('MONGODB_URI', "mongodb+srv://ninakkaiforyou:9t2GADiJUf8xFhDZ@cluster0.fdoiudh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
         self.client = MongoClient(self.uri, tlsAllowInvalidCertificates=True)
-        try:
-            self.client.admin.command('ping')
-            logger.info("MongoDB connection successful")
-        except Exception as e:
-            logger.error(f"MongoDB connection failed: {str(e)}")
         self.db = self.client['ninakkai']
         self.users = self.db['users']
         self.quiz_results = self.db['quiz_results']
@@ -205,9 +200,9 @@ class MongoService:
             verification_token = secrets.token_urlsafe(32)
             default_image = 'https://randomuser.me/api/portraits/women/44.jpg'
             if gender == 'male':
-                default_image = 'https://i.ibb.co/GQTZQ0hR/653324ed-3b9c-48b1-b9b2-d1d8b16931ff.jpg'
+                default_image = 'https://i.ibb.co/GQTZQ0h/653324ed-3b9c-48b1-91d8b16931ff.jpg'
             elif gender == 'female':
-                default_image = 'https://i.ibb.co/cSXFsTvD/8e2b61f2-44cc-43cd-bc55-e5ebcaae9130.jpg'
+                default_image = 'https://i.ibb.co/cSXFsTv/8e2b61f2-44cc-43cd-bc55-e5ebcaae9130.jpg'
             user_data = {
                 'email': email,
                 'password': hashed_password,
@@ -229,7 +224,7 @@ class MongoService:
                 'religion': None,
                 'religion_importance': 'skip',
                 'religion_public': False,
-                'physical_public': False,  # Added for physical traits visibility
+                'physical_public': False,
                 'physical_importance': 'not_important',
                 'physical_preferences': [],
                 'physical_traits': [],
@@ -379,7 +374,7 @@ class MongoService:
             }
             result = self.quiz_results.insert_one(quiz_result)
 
-            # Parse optional preferences from answers and update user
+            # Parse optional optional from answers and update user
             update_data = {}
             for ans in quiz_data['answers']:
                 if 'section' in ans:
@@ -401,16 +396,12 @@ class MongoService:
                         }
                         update_data['physical_importance'] = importance_map.get(ans.get('index'), 'not_important')
                     elif ans['section'] == 'physical_traits_preferred':
-                        # Store physical preferences
                         update_data['physical_preferences'] = ans.get('responses', [])
                     elif ans['section'] == 'physical_traits_own':
-                        # Store own physical traits
                         update_data['physical_traits'] = ans.get('responses', [])
                     elif ans['section'] == 'filter_settings':
-                        # Store filter settings
                         update_data['filter_settings'] = ans.get('toggles', [])
                     elif ans['section'] == 'profile_setup':
-                        # Store profile setup data
                         update_data['profile_data'] = ans.get('responses', [])
 
             if update_data:
@@ -1260,7 +1251,6 @@ def log_session_info():
 @app.route('/', endpoint='home')
 def index():
     logger.debug(f"Session in index: {session}")
-    logger.debug(f"Incoming cookies: {request.cookies}")
     if 'user_id' in session:
         quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
         return redirect(url_for('explore') if quiz_completed else url_for('questions'))
@@ -2117,8 +2107,10 @@ def profile():
             'personality_info': personality_info,
             'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'N/A') if quiz_result else 'N/A',
             'religion': user.get('religion', 'N/A'),
+            'religion_importance': user.get('religion_importance', 'skip'),
             'religion_public': user.get('religion_public', False),  # Added for toggle
             'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])},
+            'physical_importance': user.get('physical_importance', 'not_important'),
             'physical_public': user.get('physical_public', False),  # Added for toggle
             'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
             'summary': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), 'N/A')
@@ -2315,6 +2307,12 @@ def update_profile():
         update_data['religion_public'] = data['religion_public']
     if 'physical_public' in data:
         update_data['physical_public'] = data['physical_public']
+    if 'religion' in data:
+        update_data['religion'] = data['religion']
+    if 'religion_importance' in data:
+        update_data['religion_importance'] = data['religion_importance']
+    if 'physical_importance' in data:
+        update_data['physical_importance'] = data['physical_importance']
     if update_data:
         result = mongo_service.update_user(session['user_id'], update_data)
         return jsonify(result)
