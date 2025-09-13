@@ -597,6 +597,48 @@
                 max-width: 100%;
             }
         }
+
+        #preview {
+            width: 100%;
+            max-width: 320px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            margin-bottom: 1rem;
+        }
+
+        #preview-text {
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        #retake, #verify {
+            padding: 15px;
+            border: none;
+            border-radius: 30px;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+        }
+
+        #retake {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        #retake:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        #verify {
+            background: linear-gradient(45deg, #4e54c8, #8f94fb);
+        }
+
+        #verify:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -607,6 +649,12 @@
             <video id="video" autoplay></video>
             <button id="capture" class="submit-btn">Take Photo</button>
             <canvas id="canvas"></canvas>
+            <div id="preview-container" style="display: none;">
+                <p id="preview-text">Make sure this picture is clear and sharp and your face is visible for verification.</p>
+                <img id="preview" />
+                <button id="retake">Retake</button>
+                <button id="verify">Verify</button>
+            </div>
             <div id="message" class="error-message"></div>
         </div>
     </div>
@@ -620,6 +668,8 @@
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const capture = document.getElementById('capture');
+        const retake = document.getElementById('retake');
+        const verify = document.getElementById('verify');
         const message = document.getElementById('message');
         const loading = document.getElementById('loading');
 
@@ -684,13 +734,7 @@
             }
         }
 
-        capture.addEventListener('click', async () => {
-            // Show loader and disable button
-            loading.classList.add('active');
-            capture.disabled = true;
-            message.textContent = ''; // Clear previous messages
-
-            // To handle mirroring on canvas, we can flip the context or adjust drawImage
+        capture.addEventListener('click', () => {
             const ctx = canvas.getContext('2d');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -699,24 +743,46 @@
             ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
             ctx.restore();
 
-            canvas.toBlob(async (blob) => {
-                try {
-                    const data = await sendPhoto(blob);
-                    if (data.redirect) {
-                        window.location.href = data.redirect;
-                    } else if (data.success) {
-                        window.location.href = '/questions';  // Fallback for success without redirect
-                    } else {
-                        message.textContent = data.error || 'Verification failed.';
-                    }
-                } catch (err) {
-                    message.textContent = 'Error: ' + err.message;
-                } finally {
-                    // Hide loader and re-enable button
-                    loading.classList.remove('active');
-                    capture.disabled = false;
-                }
+            canvas.toBlob(blob => {
+                const preview = document.getElementById('preview');
+                preview.src = URL.createObjectURL(blob);
+                document.getElementById('preview-container').style.display = 'block';
+                video.style.display = 'none';
+                capture.style.display = 'none';
+                window.currentBlob = blob;
             }, 'image/jpeg');
+        });
+
+        retake.addEventListener('click', () => {
+            document.getElementById('preview-container').style.display = 'none';
+            video.style.display = 'block';
+            capture.style.display = 'block';
+            message.textContent = '';
+        });
+
+        verify.addEventListener('click', async () => {
+            loading.classList.add('active');
+            verify.disabled = true;
+            retake.disabled = true;
+            message.textContent = ''; // Clear previous messages
+
+            try {
+                const data = await sendPhoto(window.currentBlob);
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else if (data.success) {
+                    window.location.href = '/questions';  // Fallback for success without redirect
+                } else {
+                    message.textContent = data.error || 'Verification failed.';
+                }
+            } catch (err) {
+                message.textContent = 'Error: ' + err.message;
+            } finally {
+                // Hide loader and re-enable buttons
+                loading.classList.remove('active');
+                verify.disabled = false;
+                retake.disabled = false;
+            }
         });
     </script>
 </body>
