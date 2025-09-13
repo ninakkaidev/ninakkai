@@ -1530,7 +1530,7 @@ def age_verification():
 
         try:
             api_url = "https://sure-myrilla-mhdashikofficial-61e061ec.koyeb.app/predict"
-            api_key = "74303dce-713f-4b91-829e-4e0a6c76a25c"
+            api_key = "74303dce-713f-4b91-829e-7e0a6c76a25c"
             headers = {"x-api-key": api_key}
             file.seek(0)  # Reset file pointer if needed
             file_bytes = file.read()
