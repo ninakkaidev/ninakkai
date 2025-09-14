@@ -127,7 +127,7 @@
       display: flex; flex-direction: column; scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
     }
 
-    .message { max-width: 75%; margin-bottom: 0.75rem; display: flex; align-self: flex-start; }
+    .message { max-width: 75%; margin-bottom: 0.75rem; display: flex; align-self: flex-start; position: relative; }
     .message.sent { align-self: flex-end; margin-right: 0.5rem; }
     .message-content { padding: 0.625rem 0.875rem; border-radius: 12px; word-wrap: break-word; line-height: 1.4; position: relative; }
     .message.received .message-content { background-color: var(--message-received); border-top-left-radius: 4px; color: var(--text-light); }
@@ -139,8 +139,9 @@
     .message-actions {
       position: absolute; top: -20px; right: 10px; display: flex; gap: 0.125rem; opacity: 0; transition: opacity 0.2s;
       background-color: var(--card-dark); border-radius: 12px; padding: 0.125rem; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      pointer-events: none;
     }
-    .message:hover .message-actions { opacity: 1; }
+    .message:hover .message-actions { opacity: 1; pointer-events: auto; }
     .message-actions button { background: transparent; border: none; color: var(--text-gray); font-size: 0.75rem; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
     .message-actions button:hover { color: var(--primary-light); }
 
@@ -785,11 +786,44 @@
       const chatContainer = document.querySelector('.chat-container');
       const profileSidebar = document.querySelector('.profile-sidebar');
 
+      // Enhanced message actions handling for mobile (tap to show/hide)
       messagesContainer.addEventListener('click', (e) => {
         const replyBtn = e.target.closest('.reply-btn');
-        if (replyBtn) { replyToMessage(replyBtn.dataset.messageId); return; }
+        if (replyBtn) { 
+          replyToMessage(replyBtn.dataset.messageId); 
+          // Hide all actions after action
+          document.querySelectorAll('.message-actions').forEach(a => a.style.opacity = '0');
+          return; 
+        }
         const deleteBtn = e.target.closest('.delete-btn');
-        if (deleteBtn) { deleteMessage(deleteBtn.dataset.messageId); return; }
+        if (deleteBtn) { 
+          deleteMessage(deleteBtn.dataset.messageId);
+          // Hide all actions after action
+          document.querySelectorAll('.message-actions').forEach(a => a.style.opacity = '0');
+          return; 
+        }
+        // If clicked on message (not button), show actions for this message, hide others
+        const message = e.target.closest('.message');
+        if (message && !e.target.closest('.message-actions')) {
+          // Hide all actions first
+          document.querySelectorAll('.message-actions').forEach(a => a.style.opacity = '0');
+          // Show this one
+          const actions = message.querySelector('.message-actions');
+          if (actions) {
+            actions.style.opacity = '1';
+            actions.style.pointerEvents = 'auto';
+          }
+        }
+      });
+
+      // Hide actions when clicking outside messages container
+      document.addEventListener('click', (e) => {
+        if (!messagesContainer.contains(e.target)) {
+          document.querySelectorAll('.message-actions').forEach(a => {
+            a.style.opacity = '0';
+            a.style.pointerEvents = 'none';
+          });
+        }
       });
 
       messagesContainer.addEventListener('scroll', () => {
