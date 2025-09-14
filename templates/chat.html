@@ -395,6 +395,7 @@
       let stopTypingTimer = null;
       const TYPING_DEBOUNCE_MS = 250;
       const STOP_TYPING_AFTER_MS = 1200;
+      const pendingMessages = new Map(); // tempId => {message, timestamp}
       let deletedIds = new Set();
 
       // ---------- Emoji Picker ----------
@@ -529,7 +530,7 @@
         if (el) el.remove();
 
         if (messageId.startsWith('temp-')) {
-          // For temp, just remove locally, send will handle deletion if needed
+          pendingMessages.delete(messageId);
           return;
         }
 
@@ -610,6 +611,8 @@
         attachBottomSentinel();
         smartScrollToBottom(true);
 
+        pendingMessages.set(tempId, {message: optimisticMsg.message, timestamp: optimisticMsg.timestamp});
+
         messageInput.value = '';
         messageInput.dataset.replyingTo = '';
         const replyingDiv = document.querySelector('.replying-to');
@@ -626,19 +629,23 @@
           if (!data.success) {
             const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
             if (tempMsg) tempMsg.remove();
+            pendingMessages.delete(tempId);
             alert('Failed to send message.');
           } else {
             const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
             if (tempMsg) {
               tempMsg.dataset.messageId = data.message_id;
+              pendingMessages.delete(tempId);
             } else {
               // Deleted locally while sending, delete on server
-              deleteMessage(data.message_id);
+              fetch('/delete_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message_id: data.message_id }) });
+              pendingMessages.delete(tempId);
             }
           }
         } catch {
           const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
           if (tempMsg) tempMsg.remove();
+          pendingMessages.delete(tempId);
           alert('Error sending message.');
         }
       }
@@ -752,24 +759,39 @@
               result.messages.forEach(msg => {
                 if (deletedIds.has(msg.id)) return;
                 if (!currentMsgsIds.includes(msg.id)) {
-                  const isSent = msg.sender_id === '{{ current_user_id }}';
-                  const el = createMessageElement(msg, isSent);
-                  messagesContainer.appendChild(el);
-                  attachBottomSentinel();
-                  if (document.hidden || !atBottom) {
-                    showNewMessageNotice();
-                    if ('Notification' in window && Notification.permission === 'granted' && !isSent) {
-                      new Notification('New Message', { body: msg.message });
+                  let matchingTemp = null;
+                  for (let [tempId, pend] of pendingMessages) {
+                    if (pend.message === sanitizeHTML(msg.message) && Math.abs(new Date(pend.timestamp) - new Date(msg.timestamp)) < 5000) {
+                      matchingTemp = tempId;
+                      break;
                     }
+                  }
+                  if (matchingTemp) {
+                    const tempMsg = document.querySelector(`[data-message-id="${matchingTemp}"]`);
+                    if (tempMsg) {
+                      tempMsg.dataset.messageId = msg.id;
+                    }
+                    pendingMessages.delete(matchingTemp);
                   } else {
-                    smartScrollToBottom(true);
+                    const isSent = msg.sender_id === '{{ current_user_id }}';
+                    const el = createMessageElement(msg, isSent);
+                    messagesContainer.appendChild(el);
+                    attachBottomSentinel();
+                    if (document.hidden || !atBottom) {
+                      showNewMessageNotice();
+                      if ('Notification' in window && Notification.permission === 'granted' && !isSent) {
+                        new Notification('New Message', { body: msg.message });
+                      }
+                    } else {
+                      smartScrollToBottom(true);
+                    }
                   }
                 }
               });
-              // Remove deleted messages
               const serverIds = result.messages.map(msg => msg.id);
               Array.from(messagesContainer.querySelectorAll('.message')).forEach(el => {
-                if (!serverIds.includes(el.dataset.messageId)) {
+                const id = el.dataset.messageId;
+                if (!serverIds.includes(id) && !pendingMessages.has(id)) {
                   el.remove();
                 }
               });

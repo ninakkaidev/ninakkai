@@ -2263,7 +2263,7 @@ def upload_photo():
         upload_result = cloudinary.uploader.upload(file, folder="user_photos")
         url = upload_result['secure_url']
         logger.info(f"Uploaded photo URL: {url}")
-        photos= user.get('photos', []) + [url]
+        photos = user.get('photos', []) + [url]
         update_result = mongo_service.update_user(session['user_id'], {'photos': photos})
         if update_result['success']:
             # Notify matched users
