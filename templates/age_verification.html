@@ -6,6 +6,8 @@
     <title>Age Verification - Ninakkai</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@latest"></script>
     <style>
         * {
             margin: 0;
@@ -568,6 +570,23 @@
             transform: scaleX(-1); /* Mirror the video for selfie-like view */
         }
 
+        #face-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1); /* Mirror the overlay to match video */
+            pointer-events: none;
+        }
+
+        #video-container {
+            position: relative;
+            display: inline-block;
+            max-width: 320px;
+            margin-bottom: 1rem;
+        }
+
         #canvas {
             display: none;
         }
@@ -590,6 +609,30 @@
             color: rgba(255, 255, 255, 0.8);
             margin-bottom: 1.5rem;
             font-size: 14px;
+        }
+
+        .instructions {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 1.5rem;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+        }
+
+        .example-image {
+            width: 100%;
+            max-width: 200px;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .example-caption {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            margin-bottom: 1rem;
         }
 
         @media (max-width: 480px) {
@@ -646,8 +689,22 @@
         <div class="welcome-text">Age Verification</div>
         <div class="age-verification-container">
             <p class="age-verification-text">We don't show this picture in your profile or store them in our server so don't worry.</p>
-            <video id="video" autoplay></video>
-            <button id="capture" class="submit-btn">Take Photo</button>
+            <div class="instructions">
+                <strong>Instructions:</strong>
+                <ul>
+                    <li>Position your face in the center of the frame. A green box will appear when your face is detected.</li>
+                    <li>Ensure good lighting and remove glasses, hats, or anything covering your face.</li>
+                    <li>Look directly at the camera and keep your expression neutral.</li>
+                    <li>The "Take Photo" button will enable only when a face is detected.</li>
+                </ul>
+            </div>
+            <img src="https://i.ibb.co/209FLrxR/Chat-GPT-Image-Sep-14-2025-11-36-52-AM.png" alt="Example of a good photo" class="example-image">
+            <p class="example-caption">Example of a good photo</p>
+            <div id="video-container">
+                <video id="video" autoplay></video>
+                <canvas id="face-overlay"></canvas>
+            </div>
+            <button id="capture" class="submit-btn" disabled>Take Photo</button>
             <canvas id="canvas"></canvas>
             <div id="preview-container" style="display: none;">
                 <p id="preview-text">Make sure this picture is clear and sharp and your face is visible for verification.</p>
@@ -666,6 +723,7 @@
 
     <script>
         const video = document.getElementById('video');
+        const overlay = document.getElementById('face-overlay');
         const canvas = document.getElementById('canvas');
         const capture = document.getElementById('capture');
         const retake = document.getElementById('retake');
@@ -674,14 +732,88 @@
         const loading = document.getElementById('loading');
         const preview = document.getElementById('preview');
         let currentPreviewURL = null; // Track current preview URL
+        let detectionInterval = null;
+        let faceDetected = false;
 
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })  // Use front camera for selfie
+        // Set up video and overlay
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
             .then(stream => {
                 video.srcObject = stream;
+                video.addEventListener('loadedmetadata', () => {
+                    overlay.width = video.videoWidth;
+                    overlay.height = video.videoHeight;
+                });
             })
             .catch(err => {
                 message.textContent = 'Error accessing webcam: ' + err;
             });
+
+        // Load face-api models
+        Promise.all([
+            faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
+        ]).then(startDetection)
+          .catch(err => {
+              message.textContent = 'Error loading face detection models: ' + err;
+          });
+
+        function startDetection() {
+            detectionInterval = setInterval(async () => {
+                if (video.paused || video.ended) return;
+                const detections = await faceapi.detectAllFaces(video);
+                const ctx = overlay.getContext('2d');
+                ctx.clearRect(0, 0, overlay.width, overlay.height);
+                faceDetected = detections.length > 0;
+                capture.disabled = !faceDetected;
+
+                if (faceDetected) {
+                    detections.forEach(detection => {
+                        const { x, y, width, height } = detection.box;
+                        ctx.strokeStyle = '#00FF00';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(x, y, width, height);
+                    });
+                }
+            }, 100);
+        }
+
+        capture.addEventListener('click', () => {
+            if (!faceDetected) return; // Double-check
+            clearInterval(detectionInterval); // Stop detection
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.save();
+            ctx.scale(-1, 1);  // Flip horizontally to match the mirrored video
+            ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+            ctx.restore();
+
+            canvas.toBlob(blob => {
+                // Revoke old URL if exists
+                if (currentPreviewURL) {
+                    URL.revokeObjectURL(currentPreviewURL);
+                }
+                currentPreviewURL = URL.createObjectURL(blob);
+                preview.src = currentPreviewURL;
+                document.getElementById('preview-container').style.display = 'block';
+                document.getElementById('video-container').style.display = 'none';
+                capture.style.display = 'none';
+                window.currentBlob = blob;
+            }, 'image/jpeg');
+        });
+
+        retake.addEventListener('click', () => {
+            document.getElementById('preview-container').style.display = 'none';
+            document.getElementById('video-container').style.display = 'block';
+            capture.style.display = 'block';
+            message.textContent = '';
+            // Revoke and clear preview
+            if (currentPreviewURL) {
+                URL.revokeObjectURL(currentPreviewURL);
+                currentPreviewURL = null;
+            }
+            preview.src = '';
+            startDetection(); // Restart detection
+        });
 
         // Function to send photo with retry logic for Koyeb sleep
         async function sendPhoto(blob) {
@@ -735,42 +867,6 @@
                 }
             }
         }
-
-        capture.addEventListener('click', () => {
-            const ctx = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.save();
-            ctx.scale(-1, 1);  // Flip horizontally to match the mirrored video
-            ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
-            ctx.restore();
-
-            canvas.toBlob(blob => {
-                // Revoke old URL if exists
-                if (currentPreviewURL) {
-                    URL.revokeObjectURL(currentPreviewURL);
-                }
-                currentPreviewURL = URL.createObjectURL(blob);
-                preview.src = currentPreviewURL;
-                document.getElementById('preview-container').style.display = 'block';
-                video.style.display = 'none';
-                capture.style.display = 'none';
-                window.currentBlob = blob;
-            }, 'image/jpeg');
-        });
-
-        retake.addEventListener('click', () => {
-            document.getElementById('preview-container').style.display = 'none';
-            video.style.display = 'block';
-            capture.style.display = 'block';
-            message.textContent = '';
-            // Revoke and clear preview
-            if (currentPreviewURL) {
-                URL.revokeObjectURL(currentPreviewURL);
-                currentPreviewURL = null;
-            }
-            preview.src = '';
-        });
 
         verify.addEventListener('click', async () => {
             loading.classList.add('active');
