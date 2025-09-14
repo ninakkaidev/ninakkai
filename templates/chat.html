@@ -127,7 +127,7 @@
       display: flex; flex-direction: column; scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
     }
 
-    .message { max-width: 75%; margin-bottom: 0.75rem; display: flex; align-self: flex-start; position: relative; }
+    .message { max-width: 75%; margin-bottom: 0.75rem; display: flex; align-self: flex-start; }
     .message.sent { align-self: flex-end; margin-right: 0.5rem; }
     .message-content { padding: 0.625rem 0.875rem; border-radius: 12px; word-wrap: break-word; line-height: 1.4; position: relative; }
     .message.received .message-content { background-color: var(--message-received); border-top-left-radius: 4px; color: var(--text-light); }
@@ -220,26 +220,6 @@
       .welcome-screen { display: none; }
       .profile-sidebar { width: 100%; }
       .emoji-picker { bottom: 70px; left: 10px; width: 90%; max-width: 300px; }
-      /* Fix for mobile: Make message actions always visible */
-      .message-actions {
-        opacity: 1 !important;
-        top: 0;
-        right: 0;
-        background-color: rgba(0,0,0,0.7);
-        padding: 2px;
-        border-radius: 0 0 8px 0;
-        transition: none;
-      }
-      .message.sent .message-actions {
-        right: 0;
-        border-radius: 0 0 0 8px;
-      }
-      .message-content {
-        border-bottom-right-radius: 0;
-      }
-      .message.sent .message-content {
-        border-bottom-left-radius: 0;
-      }
     }
 
     @media (min-width: 993px) {
@@ -552,25 +532,13 @@
         }
 
         try {
-          const res = await fetch('/delete_message', { 
-            method: 'POST', 
-            headers: {'Content-Type': 'application/json'}, 
-            body: JSON.stringify({ message_id: messageId }) 
-          });
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-          }
+          const res = await fetch('/delete_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message_id: messageId }) });
           const data = await res.json();
           if (data.success) {
             const el = document.querySelector(`[data-message-id="${messageId}"]`);
             if (el) el.remove();
-          } else {
-            alert('Failed to delete message.');
-          }
-        } catch (error) {
-          console.error('Delete message error:', error);
-          alert('Error deleting message. Please check your connection and try again.');
-        }
+          } else alert('Failed to delete message.');
+        } catch { alert('Error deleting message.'); }
       }
 
       // ---------- Bottom sentinel + observer (robust "new message" banner) ----------
@@ -649,9 +617,6 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ to_user_id: currentChatUserId, message, replied_to: repliedTo })
           });
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
           const data = await response.json();
           if (!data.success) {
             const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
@@ -661,11 +626,10 @@
             const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
             if (tempMsg) tempMsg.dataset.messageId = data.message_id;
           }
-        } catch (error) {
-          console.error('Send message error:', error);
+        } catch {
           const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
           if (tempMsg) tempMsg.remove();
-          alert('Error sending message. Please check your connection.');
+          alert('Error sending message.');
         }
       }
 
@@ -714,9 +678,6 @@
         currentChatUserId = userId;
         try {
           const response = await fetch(`/messages/${userId}`);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
           const result = await response.json();
           if (result.success) {
             messagesContainer.innerHTML = '';
@@ -761,8 +722,7 @@
 
             startPolling();
           } else alert('Failed to load messages. Please try again.');
-        } catch (error) {
-          console.error('Load messages error:', error);
+        } catch {
           alert('Error loading messages. Please check your connection.');
         }
       }
@@ -774,9 +734,6 @@
           if (!currentChatUserId) return;
           try {
             const response = await fetch(`/messages/${currentChatUserId}`);
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
             const result = await response.json();
             if (result.success) {
               const currentMsgsIds = Array.from(messagesContainer.querySelectorAll('.message')).map(el => el.dataset.messageId);
@@ -815,7 +772,7 @@
           if (!currentChatUserId) {  // Only poll when in conversations list
             loadConversations();
           }
-        }, 3000);  // Reduced to every 3 seconds for more live updates
+        }, 10000);  // Every 10 seconds
       }
 
       // ---------- Responsive / viewport fixes ----------
@@ -899,15 +856,14 @@
       handleResize();
 
       // Conversation handlers (populated after fetch)
-      document.addEventListener('click', (e) => {
-        const conv = e.target.closest('.conversation');
-        if (conv) {
+      document.querySelectorAll('.conversation').forEach(conv => {
+        conv.addEventListener('click', async function(e) {
           e.preventDefault();
           document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
-          conv.classList.add('active');
-          loadMessages(conv.dataset.userId);
+          this.classList.add('active');
+          await loadMessages(this.dataset.userId);
           navigationHistory.push('chat');
-        }
+        });
       });
 
       // Format times present at load
@@ -931,8 +887,6 @@
           document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
         }
         navigationHistory.pop();
-        // Force immediate reload of conversations list for live updates
-        loadConversations();
       });
 
       conversationsBackBtn.addEventListener('click', () => {
@@ -947,9 +901,6 @@
         if (!q) { location.reload(); return; }
         try {
           const response = await fetch(`/search-matches?q=${encodeURIComponent(q)}`);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
           const result = await response.json();
           if (result.success) {
             const list = document.querySelector('.conversations-list');
@@ -973,9 +924,7 @@
               list.appendChild(convDiv);
             });
           }
-        } catch (e) { 
-          console.error('Error searching conversations:', e); 
-        }
+        } catch (e) { console.error('Error searching conversations:', e); }
       }, 300));
 
       // Initial conversations load
@@ -984,9 +933,6 @@
         loadingSpinner.style.display = 'block';
         try {
           const response = await fetch('/api/conversations');
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
           const result = await response.json();
           if (result.success) {
             const list = document.querySelector('.conversations-list');
