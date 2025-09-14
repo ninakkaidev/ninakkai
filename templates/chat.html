@@ -469,6 +469,8 @@
             sidebar.classList.remove('active');
             const conv = document.querySelector(`.conversation[data-user-id="${currentChatUserId}"]`);
             if (conv) conv.remove();
+            // Immediately refresh conversations list
+            if (!currentChatUserId) loadConversations();
           } else alert('Failed to block user.');
         } catch { alert('Error blocking user.'); }
       });
@@ -528,6 +530,9 @@
         if (messageId.startsWith('temp-')) {
           const el = document.querySelector(`[data-message-id="${messageId}"]`);
           if (el) el.remove();
+          // Re-attach sentinel and scroll if needed
+          attachBottomSentinel();
+          smartScrollToBottom(true);
           return;
         }
 
@@ -537,6 +542,13 @@
           if (data.success) {
             const el = document.querySelector(`[data-message-id="${messageId}"]`);
             if (el) el.remove();
+            // Re-attach sentinel and scroll if needed
+            attachBottomSentinel();
+            smartScrollToBottom(true);
+            // Trigger a manual poll to ensure sync across devices
+            if (pollInterval) clearInterval(pollInterval);
+            await fetchMessagesAndUpdate();
+            startPolling();
           } else alert('Failed to delete message.');
         } catch { alert('Error deleting message.'); }
       }
@@ -625,6 +637,8 @@
           } else {
             const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
             if (tempMsg) tempMsg.dataset.messageId = data.message_id;
+            // Update conversations list immediately after send
+            updateConversationList(currentChatUserId, message);
           }
         } catch {
           const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
@@ -635,6 +649,35 @@
 
       messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
       sendBtn.addEventListener('click', sendMessage);
+
+      // Function to update specific conversation in list
+      function updateConversationList(userId, lastMessage) {
+        const conv = document.querySelector(`.conversation[data-user-id="${userId}"]`);
+        if (conv) {
+          const timeEl = conv.querySelector('.time');
+          const lastMsgEl = conv.querySelector('.last-message');
+          if (lastMsgEl) lastMsgEl.textContent = lastMessage;
+          const now = new Date();
+          if (timeEl) {
+            timeEl.textContent = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+            timeEl.dataset.isoTime = now.toISOString();
+          }
+          // Re-sort conversations if needed (simple bubble up for latest)
+          const conversationsList = document.querySelector('.conversations-list');
+          const conversations = Array.from(conversationsList.querySelectorAll('.conversation'));
+          const targetIndex = conversations.findIndex(c => c.dataset.userId === userId);
+          if (targetIndex > 0) {
+            const prevConv = conversations[targetIndex - 1];
+            const targetTime = new Date(conv.querySelector('.time').dataset.isoTime || now.toISOString());
+            const prevTime = new Date(prevConv.querySelector('.time').dataset.isoTime || '1970-01-01');
+            if (targetTime > prevTime) {
+              conversationsList.insertBefore(conv, prevConv);
+              prevConv.classList.remove('active');
+              conv.classList.add('active');
+            }
+          }
+        }
+      }
 
       // ---------- Typing indicator (HTTP polling) ----------
       async function sendTypingStart() {
@@ -674,12 +717,13 @@
       });
 
       // ---------- Load messages ----------
-      async function loadMessages(userId) {
-        currentChatUserId = userId;
+      async function fetchMessagesAndUpdate() {
+        if (!currentChatUserId) return;
         try {
-          const response = await fetch(`/messages/${userId}`);
+          const response = await fetch(`/messages/${currentChatUserId}`);
           const result = await response.json();
           if (result.success) {
+            const currentMsgsIds = Array.from(messagesContainer.querySelectorAll('.message')).map(el => el.dataset.messageId).filter(id => !id.startsWith('temp-'));
             messagesContainer.innerHTML = '';
             result.messages.forEach(msg => {
               const el = createMessageElement(msg, msg.sender_id === '{{ current_user_id }}');
@@ -687,41 +731,55 @@
             });
             attachBottomSentinel();
             smartScrollToBottom(true);
-
-            const responseProfile = await fetch(`/user-profile/${userId}`);
-            const resultProfile = await responseProfile.json();
-            if (resultProfile.success) {
-              const user = resultProfile.user;
-              document.getElementById('chat-partner-img').src = user.image || 'https://randomuser.me/api/portraits/women/44.jpg';
-              document.getElementById('chat-partner-name').textContent = user.full_name || 'Unknown';
-            }
-
-            const chatArea = document.querySelector('.chat-area');
-            const welcomeScreen = document.querySelector('.welcome-screen');
-            const conversationsCol = document.querySelector('.conversations-col');
-
-            chatArea.style.display = 'flex';
-            if (window.innerWidth <= 992) {
-              conversationsCol.classList.add('hidden');
-              chatArea.classList.add('active');
-              document.body.classList.add('chat-mode');
-              welcomeScreen.style.display = 'none';
+            if (result.is_typing) {
+              showTypingIndicator();
             } else {
-              welcomeScreen.style.display = 'none';
-              chatArea.style.display = 'flex';
-              conversationsCol.classList.remove('hidden');
+              hideTypingIndicator();
             }
+          }
+        } catch (e) {
+          console.error('Fetch messages error:', e);
+        }
+      }
 
-            navigationHistory.push('chat');
+      async function loadMessages(userId) {
+        currentChatUserId = userId;
+        await fetchMessagesAndUpdate();
 
-            const conv = document.querySelector(`.conversation[data-user-id="${currentChatUserId}"]`);
-            if (conv) {
-              const unread = conv.querySelector('.unread-dot');
-              if (unread) unread.remove();
-            }
+        try {
+          const responseProfile = await fetch(`/user-profile/${userId}`);
+          const resultProfile = await responseProfile.json();
+          if (resultProfile.success) {
+            const user = resultProfile.user;
+            document.getElementById('chat-partner-img').src = user.image || 'https://randomuser.me/api/portraits/women/44.jpg';
+            document.getElementById('chat-partner-name').textContent = user.full_name || 'Unknown';
+          }
 
-            startPolling();
-          } else alert('Failed to load messages. Please try again.');
+          const chatArea = document.querySelector('.chat-area');
+          const welcomeScreen = document.querySelector('.welcome-screen');
+          const conversationsCol = document.querySelector('.conversations-col');
+
+          chatArea.style.display = 'flex';
+          if (window.innerWidth <= 992) {
+            conversationsCol.classList.add('hidden');
+            chatArea.classList.add('active');
+            document.body.classList.add('chat-mode');
+            welcomeScreen.style.display = 'none';
+          } else {
+            welcomeScreen.style.display = 'none';
+            chatArea.style.display = 'flex';
+            conversationsCol.classList.remove('hidden');
+          }
+
+          navigationHistory.push('chat');
+
+          const conv = document.querySelector(`.conversation[data-user-id="${currentChatUserId}"]`);
+          if (conv) {
+            const unread = conv.querySelector('.unread-dot');
+            if (unread) unread.remove();
+          }
+
+          startPolling();
         } catch {
           alert('Error loading messages. Please check your connection.');
         }
@@ -732,36 +790,7 @@
         if (pollInterval) clearInterval(pollInterval);
         pollInterval = setInterval(async () => {
           if (!currentChatUserId) return;
-          try {
-            const response = await fetch(`/messages/${currentChatUserId}`);
-            const result = await response.json();
-            if (result.success) {
-              const currentMsgsIds = Array.from(messagesContainer.querySelectorAll('.message')).map(el => el.dataset.messageId);
-              result.messages.forEach(msg => {
-                if (!currentMsgsIds.includes(msg.id)) {
-                  const isSent = msg.sender_id === '{{ current_user_id }}';
-                  const el = createMessageElement(msg, isSent);
-                  messagesContainer.appendChild(el);
-                  attachBottomSentinel();
-                  if (document.hidden || !atBottom) {
-                    showNewMessageNotice();
-                    if ('Notification' in window && Notification.permission === 'granted' && !isSent) {
-                      new Notification('New Message', { body: msg.message });
-                    }
-                  } else {
-                    smartScrollToBottom(true);
-                  }
-                }
-              });
-              if (result.is_typing) {
-                showTypingIndicator();
-              } else {
-                hideTypingIndicator();
-              }
-            }
-          } catch (e) {
-            console.error('Polling error:', e);
-          }
+          await fetchMessagesAndUpdate();
         }, 2000);  // Poll every 2 seconds
       }
 
@@ -772,7 +801,7 @@
           if (!currentChatUserId) {  // Only poll when in conversations list
             loadConversations();
           }
-        }, 10000);  // Every 10 seconds
+        }, 5000);  // Reduced to 5 seconds for more live feel
       }
 
       // ---------- Responsive / viewport fixes ----------
@@ -856,14 +885,15 @@
       handleResize();
 
       // Conversation handlers (populated after fetch)
-      document.querySelectorAll('.conversation').forEach(conv => {
-        conv.addEventListener('click', async function(e) {
+      document.addEventListener('click', async (e) => {
+        const conv = e.target.closest('.conversation');
+        if (conv) {
           e.preventDefault();
           document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
-          this.classList.add('active');
-          await loadMessages(this.dataset.userId);
+          conv.classList.add('active');
+          await loadMessages(conv.dataset.userId);
           navigationHistory.push('chat');
-        });
+        }
       });
 
       // Format times present at load
@@ -887,6 +917,8 @@
           document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
         }
         navigationHistory.pop();
+        // Refresh conversations on back to list
+        loadConversations();
       });
 
       conversationsBackBtn.addEventListener('click', () => {
