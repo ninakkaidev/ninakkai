@@ -1576,9 +1576,9 @@ def age_verification():
                 return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
             detected_gender = prediction['gender'].lower()
             if detected_gender != user['gender']:
-                return jsonify({'success': False, 'error': 'Detected gender does not match registered gender. Try again or contact help`@ninakkai.com'}), 403
+                return jsonify({'success': False, 'error': 'gender_mismatch', 'detected_gender': detected_gender}), 403
             if age_lower < 18:
-                return jsonify({'success': False, 'error': 'You must be at least 18 years old. If you think this is a mistake, contact joel@ninakkai.com'}), 403
+                return jsonify({'success': False, 'error': 'You must be at least 18 years old. If you think this is a mistake, contact help@ninakkai.com'}), 403
             update_result = mongo_service.update_user(session['user_id'], {'age_verified': True})
             if not update_result['success']:
                 logger.error("Failed to update age_verified in DB")
@@ -1593,6 +1593,30 @@ def age_verification():
         except Exception as e:
             logger.error(f"Unexpected age verification error: {str(e)}")
             return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
+
+@app.route('/update_gender', methods=['POST'])
+def update_gender():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    new_gender = data.get('new_gender')
+    if new_gender not in ['male', 'female']:
+        return jsonify({'success': False, 'error': 'Invalid gender'}), 400
+    user = mongo_service.get_user_by_id(session['user_id'])
+    if user['gender'] == new_gender:
+        return jsonify({'success': False, 'error': 'Same gender'}), 400
+    # Update gender and set age_verified True
+    update_data = {'gender': new_gender, 'age_verified': True}
+    old_gender = user['gender']
+    old_default = 'https://i.ibb.co/tTg9CkS/653324ed-3b9c-48b1-b9b2-d1d8b16931ff.png' if old_gender == 'male' else 'https://i.ibb.co/KpKdK9xy/8e2b61f2-44cc-43cd-bc55-e5ebcaae9130.png'
+    new_default = 'https://i.ibb.co/tTg9CkS/653324ed-3b9c-48b1-b9b2-d1d8b16931ff.png' if new_gender == 'male' else 'https://i.ibb.co/KpKdK9xy/8e2b61f2-44cc-43cd-bc55-e5ebcaae9130.png'
+    if user.get('image') == old_default:
+        update_data['image'] = new_default
+    update_result = mongo_service.update_user(session['user_id'], update_data)
+    if update_result['success']:
+        return jsonify({'success': True, 'redirect': url_for('questions')}), 200
+    else:
+        return jsonify({'success': False, 'error': 'Failed to update gender'}), 500
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password_endpoint():
