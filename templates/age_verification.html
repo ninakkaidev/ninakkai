@@ -689,22 +689,27 @@
         <div class="welcome-text">Age Verification</div>
         <div class="age-verification-container">
             <p class="age-verification-text">We don't show this picture in your profile or store them in our server so don't worry.</p>
-            <div class="instructions">
-                <strong>Instructions:</strong>
-                <ul>
-                    <li>Position your face in the center of the frame. A green box will appear when your face is detected.</li>
-                    <li>Ensure good lighting and remove glasses, hats, or anything covering your face.</li>
-                    <li>Look directly at the camera and keep your expression neutral.</li>
-                    <li>The "Take Photo" button will enable only when a face is detected.</li>
-                </ul>
+            <div id="instruction-slide">
+                <div class="instructions">
+                    <strong>Instructions:</strong>
+                    <ul>
+                        <li>Position your face in the center of the frame. A green box will appear when your face is detected.</li>
+                        <li>Ensure good lighting and remove glasses, hats, or anything covering your face.</li>
+                        <li>Look directly at the camera and keep your expression neutral.</li>
+                        <li>The "Take Photo" button will enable only when a face is detected.</li>
+                    </ul>
+                </div>
+                <img src="https://i.ibb.co/209FLrx/Chat-GPT-Image-Sep-14-2025-11-36-52-AM.png" alt="Example of a good photo" class="example-image">
+                <p class="example-caption">Example of a good photo</p>
+                <button id="next-to-capture" class="submit-btn">Next</button>
             </div>
-            <img src="https://i.ibb.co/209FLrxR/Chat-GPT-Image-Sep-14-2025-11-36-52-AM.png" alt="Example of a good photo" class="example-image">
-            <p class="example-caption">Example of a good photo</p>
-            <div id="video-container">
-                <video id="video" autoplay></video>
-                <canvas id="face-overlay"></canvas>
+            <div id="capture-slide" style="display: none;">
+                <div id="video-container">
+                    <video id="video" autoplay></video>
+                    <canvas id="face-overlay"></canvas>
+                </div>
+                <button id="capture" class="submit-btn" disabled>Take Photo</button>
             </div>
-            <button id="capture" class="submit-btn" disabled>Take Photo</button>
             <canvas id="canvas"></canvas>
             <div id="preview-container" style="display: none;">
                 <p id="preview-text">Make sure this picture is clear and sharp and your face is visible for verification.</p>
@@ -731,50 +736,71 @@
         const message = document.getElementById('message');
         const loading = document.getElementById('loading');
         const preview = document.getElementById('preview');
+        const nextToCapture = document.getElementById('next-to-capture');
+        const instructionSlide = document.getElementById('instruction-slide');
+        const captureSlide = document.getElementById('capture-slide');
         let currentPreviewURL = null; // Track current preview URL
         let detectionInterval = null;
         let faceDetected = false;
+        let stream = null; // To hold the media stream
 
-        // Set up video and overlay
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
-            .then(stream => {
+        // Load face-api models on page load
+        Promise.all([
+            faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
+        ]).then(() => {
+            console.log('Face detection models loaded successfully');
+        }).catch(err => {
+            console.error('Error loading face detection models:', err);
+            message.textContent = 'Error loading face detection models: ' + err;
+        });
+
+        // Function to start video stream
+        async function startVideo() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
                 video.srcObject = stream;
                 video.addEventListener('loadedmetadata', () => {
                     overlay.width = video.videoWidth;
                     overlay.height = video.videoHeight;
+                    startDetection();
                 });
-            })
-            .catch(err => {
+            } catch (err) {
+                console.error('Error accessing webcam:', err);
                 message.textContent = 'Error accessing webcam: ' + err;
-            });
+            }
+        }
 
-        // Load face-api models
-        Promise.all([
-            faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
-        ]).then(startDetection)
-          .catch(err => {
-              message.textContent = 'Error loading face detection models: ' + err;
-          });
-
+        // Function to start face detection
         function startDetection() {
             detectionInterval = setInterval(async () => {
                 if (video.paused || video.ended) return;
-                const detections = await faceapi.detectAllFaces(video);
-                const ctx = overlay.getContext('2d');
-                ctx.clearRect(0, 0, overlay.width, overlay.height);
-                faceDetected = detections.length > 0;
-                capture.disabled = !faceDetected;
+                try {
+                    const detections = await faceapi.detectAllFaces(video);
+                    const ctx = overlay.getContext('2d');
+                    ctx.clearRect(0, 0, overlay.width, overlay.height);
+                    faceDetected = detections.length > 0;
+                    capture.disabled = !faceDetected;
 
-                if (faceDetected) {
-                    detections.forEach(detection => {
-                        const { x, y, width, height } = detection.box;
-                        ctx.strokeStyle = '#00FF00';
-                        ctx.lineWidth = 2;
-                        ctx.strokeRect(x, y, width, height);
-                    });
+                    if (faceDetected) {
+                        detections.forEach(detection => {
+                            const { x, y, width, height } = detection.box;
+                            ctx.strokeStyle = '#00FF00';
+                            ctx.lineWidth = 2;
+                            ctx.strokeRect(x, y, width, height);
+                        });
+                    }
+                } catch (err) {
+                    console.error('Detection error:', err);
                 }
             }, 100);
         }
+
+        // Next button to proceed to capture slide
+        nextToCapture.addEventListener('click', () => {
+            instructionSlide.style.display = 'none';
+            captureSlide.style.display = 'block';
+            startVideo(); // Start video and detection only after next
+        });
 
         capture.addEventListener('click', () => {
             if (!faceDetected) return; // Double-check
@@ -795,16 +821,14 @@
                 currentPreviewURL = URL.createObjectURL(blob);
                 preview.src = currentPreviewURL;
                 document.getElementById('preview-container').style.display = 'block';
-                document.getElementById('video-container').style.display = 'none';
-                capture.style.display = 'none';
+                captureSlide.style.display = 'none';
                 window.currentBlob = blob;
             }, 'image/jpeg');
         });
 
         retake.addEventListener('click', () => {
             document.getElementById('preview-container').style.display = 'none';
-            document.getElementById('video-container').style.display = 'block';
-            capture.style.display = 'block';
+            captureSlide.style.display = 'block';
             message.textContent = '';
             // Revoke and clear preview
             if (currentPreviewURL) {
@@ -890,6 +914,13 @@
                 loading.classList.remove('active');
                 verify.disabled = false;
                 retake.disabled = false;
+            }
+        });
+
+        // Cleanup on unload
+        window.addEventListener('beforeunload', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
             }
         });
     </script>
