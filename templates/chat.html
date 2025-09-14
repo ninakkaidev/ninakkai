@@ -139,11 +139,23 @@
     .message-actions {
       position: absolute; top: -20px; right: 10px; display: flex; gap: 0.125rem; opacity: 0; transition: opacity 0.2s;
       background-color: var(--card-dark); border-radius: 12px; padding: 0.125rem; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-      pointer-events: none;
+      pointer-events: none; /* Initially disable pointer events when invisible */
     }
     .message:hover .message-actions { opacity: 1; pointer-events: auto; }
     .message-actions button { background: transparent; border: none; color: var(--text-gray); font-size: 0.75rem; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
     .message-actions button:hover { color: var(--primary-light); }
+
+    /* Fix for mobile: Always show actions for sent messages on small screens, adjust position to bottom for better visibility */
+    @media (max-width: 992px) {
+      .message.sent .message-actions {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        top: auto !important;
+        bottom: -25px !important;
+        right: 10px !important;
+      }
+      .message { max-width: 85%; }
+    }
 
     .typing-indicator {
       display: none; font-size: 0.8125rem; color: var(--text-gray); padding: 0.625rem 0.875rem; border-radius: 12px;
@@ -786,45 +798,40 @@
       const chatContainer = document.querySelector('.chat-container');
       const profileSidebar = document.querySelector('.profile-sidebar');
 
-      // Enhanced message actions handling for mobile (tap to show/hide)
+      // Enhanced event listener for messages to handle both click and touch events for better mobile support
       messagesContainer.addEventListener('click', (e) => {
+        handleMessageAction(e);
+      }, { passive: true });
+
+      // Add touchstart for mobile to prevent issues with click delay
+      messagesContainer.addEventListener('touchstart', (e) => {
+        // Allow default touch behavior but ensure actions are handled
+        const target = e.target;
+        const replyBtn = target.closest('.reply-btn');
+        const deleteBtn = target.closest('.delete-btn');
+        if (replyBtn || deleteBtn) {
+          e.stopPropagation();
+        }
+      }, { passive: true });
+
+      messagesContainer.addEventListener('touchend', (e) => {
+        handleMessageAction(e);
+      }, { passive: false });  // Prevent default to avoid scroll issues if needed
+
+      function handleMessageAction(e) {
         const replyBtn = e.target.closest('.reply-btn');
         if (replyBtn) { 
+          e.preventDefault();
           replyToMessage(replyBtn.dataset.messageId); 
-          // Hide all actions after action
-          document.querySelectorAll('.message-actions').forEach(a => a.style.opacity = '0');
           return; 
         }
         const deleteBtn = e.target.closest('.delete-btn');
         if (deleteBtn) { 
-          deleteMessage(deleteBtn.dataset.messageId);
-          // Hide all actions after action
-          document.querySelectorAll('.message-actions').forEach(a => a.style.opacity = '0');
+          e.preventDefault();
+          deleteMessage(deleteBtn.dataset.messageId); 
           return; 
         }
-        // If clicked on message (not button), show actions for this message, hide others
-        const message = e.target.closest('.message');
-        if (message && !e.target.closest('.message-actions')) {
-          // Hide all actions first
-          document.querySelectorAll('.message-actions').forEach(a => a.style.opacity = '0');
-          // Show this one
-          const actions = message.querySelector('.message-actions');
-          if (actions) {
-            actions.style.opacity = '1';
-            actions.style.pointerEvents = 'auto';
-          }
-        }
-      });
-
-      // Hide actions when clicking outside messages container
-      document.addEventListener('click', (e) => {
-        if (!messagesContainer.contains(e.target)) {
-          document.querySelectorAll('.message-actions').forEach(a => {
-            a.style.opacity = '0';
-            a.style.pointerEvents = 'none';
-          });
-        }
-      });
+      }
 
       messagesContainer.addEventListener('scroll', () => {
         if (atBottom && newMessageNotice) newMessageNotice.style.display = 'none';
