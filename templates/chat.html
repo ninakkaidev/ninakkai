@@ -105,7 +105,7 @@
 
     .conversation-info { flex: 1; min-width: 0; }
     .conversation-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.125rem; }
-    .conversation-header h5 { font-weight: 600; font-size: 0.9375rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-light); }
+    .conversation-header h5 { font-weight: 600; font-size: 0.9375rem; margin: 0; white-space: nowrap; overflow: hidden; text-overspect: ellipsis; color: var(--text-light); }
     .conversation-header .time { font-size: 0.75rem; color: var(--text-gray); }
     .last-message { font-size: 0.8125rem; color: var(--text-gray); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .unread-dot { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; background-color: var(--primary-light); }
@@ -395,7 +395,6 @@
       let stopTypingTimer = null;
       const TYPING_DEBOUNCE_MS = 250;
       const STOP_TYPING_AFTER_MS = 1200;
-      let lastMessageTime = null;
 
       // ---------- Emoji Picker ----------
       const emojiBtn = document.querySelector('.btn-emoji');
@@ -470,8 +469,6 @@
             sidebar.classList.remove('active');
             const conv = document.querySelector(`.conversation[data-user-id="${currentChatUserId}"]`);
             if (conv) conv.remove();
-            // Immediately refresh conversations list
-            if (!currentChatUserId) loadConversations();
           } else alert('Failed to block user.');
         } catch { alert('Error blocking user.'); }
       });
@@ -483,8 +480,6 @@
         const el = document.createElement('div');
         el.className = `message ${isSent ? 'sent' : 'received'}`;
         el.dataset.messageId = msg.id;
-        el.dataset.sender = msg.sender_id;
-        el.dataset.timestamp = msg.timestamp;
 
         const formattedTime = new Date(msg.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
 
@@ -533,9 +528,6 @@
         if (messageId.startsWith('temp-')) {
           const el = document.querySelector(`[data-message-id="${messageId}"]`);
           if (el) el.remove();
-          // Re-attach sentinel and scroll if needed
-          attachBottomSentinel();
-          smartScrollToBottom(true);
           return;
         }
 
@@ -545,13 +537,6 @@
           if (data.success) {
             const el = document.querySelector(`[data-message-id="${messageId}"]`);
             if (el) el.remove();
-            // Re-attach sentinel and scroll if needed
-            attachBottomSentinel();
-            smartScrollToBottom(true);
-            // Trigger a manual poll to ensure sync across devices
-            if (pollInterval) clearInterval(pollInterval);
-            await fetchMessagesAndUpdate();
-            startPolling();
           } else alert('Failed to delete message.');
         } catch { alert('Error deleting message.'); }
       }
@@ -616,8 +601,7 @@
           replied_text: repliedTo ? document.querySelector(`[data-message-id="${repliedTo}"] .message-content p`).textContent : null
         };
         const messageDiv = createMessageElement(optimisticMsg, true);
-        messageDiv.dataset.temp = 'true';
-        messagesContainer.insertBefore(messageDiv, bottomSentinel);
+        messagesContainer.appendChild(messageDiv);
         attachBottomSentinel();
         smartScrollToBottom(true);
 
@@ -640,16 +624,7 @@
             alert('Failed to send message.');
           } else {
             const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
-            if (tempMsg) {
-              tempMsg.dataset.messageId = data.message.id;
-              tempMsg.dataset.timestamp = data.message.timestamp;
-              tempMsg.removeAttribute('data-temp');
-              const timeEl = tempMsg.querySelector('.message-time');
-              if (timeEl) timeEl.textContent = new Date(data.message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
-            }
-            lastMessageTime = data.message.timestamp;
-            // Update conversations list immediately after send
-            updateConversationList(currentChatUserId, message);
+            if (tempMsg) tempMsg.dataset.messageId = data.message_id;
           }
         } catch {
           const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
@@ -660,35 +635,6 @@
 
       messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
       sendBtn.addEventListener('click', sendMessage);
-
-      // Function to update specific conversation in list
-      function updateConversationList(userId, lastMessage) {
-        const conv = document.querySelector(`.conversation[data-user-id="${userId}"]`);
-        if (conv) {
-          const timeEl = conv.querySelector('.time');
-          const lastMsgEl = conv.querySelector('.last-message');
-          if (lastMsgEl) lastMsgEl.textContent = lastMessage;
-          const now = new Date();
-          if (timeEl) {
-            timeEl.textContent = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
-            timeEl.dataset.isoTime = now.toISOString();
-          }
-          // Re-sort conversations if needed (simple bubble up for latest)
-          const conversationsList = document.querySelector('.conversations-list');
-          const conversations = Array.from(conversationsList.querySelectorAll('.conversation'));
-          const targetIndex = conversations.findIndex(c => c.dataset.userId === userId);
-          if (targetIndex > 0) {
-            const prevConv = conversations[targetIndex - 1];
-            const targetTime = new Date(conv.querySelector('.time').dataset.isoTime || now.toISOString());
-            const prevTime = new Date(prevConv.querySelector('.time').dataset.isoTime || '1970-01-01');
-            if (targetTime > prevTime) {
-              conversationsList.insertBefore(conv, prevConv);
-              prevConv.classList.remove('active');
-              conv.classList.add('active');
-            }
-          }
-        }
-      }
 
       // ---------- Typing indicator (HTTP polling) ----------
       async function sendTypingStart() {
@@ -705,7 +651,7 @@
           ti = document.createElement('div');
           ti.className = 'typing-indicator';
           ti.textContent = 'Typing...';
-          messagesContainer.insertBefore(ti, bottomSentinel);
+          messagesContainer.appendChild(ti);
         }
         ti.style.display = 'block';
         clearTimeout(stopTypingTimer);
@@ -728,95 +674,54 @@
       });
 
       // ---------- Load messages ----------
-      async function fetchMessagesAndUpdate() {
-        if (!currentChatUserId) return;
-        let url = `/messages/${currentChatUserId}`;
-        if (lastMessageTime) url += `?since=${lastMessageTime}`;
-        try {
-          const response = await fetch(url);
-          const result = await response.json();
-          if (result.success) {
-            result.messages.forEach(msg => {
-              const existing = document.querySelector(`[data-message-id="${msg.id}"]`);
-              if (existing) return;
-
-              // Check for matching temp
-              const temps = Array.from(document.querySelectorAll('.message[data-temp="true"]'));
-              const matchingTemp = temps.find(t => {
-                return t.querySelector('p').textContent === msg.message &&
-                       t.dataset.sender === msg.sender_id &&
-                       Math.abs(new Date(t.dataset.timestamp) - new Date(msg.timestamp)) < 5000; // 5s window
-              });
-
-              if (matchingTemp) {
-                matchingTemp.dataset.messageId = msg.id;
-                matchingTemp.dataset.timestamp = msg.timestamp;
-                matchingTemp.removeAttribute('data-temp');
-                const timeEl = matchingTemp.querySelector('.message-time');
-                if (timeEl) timeEl.textContent = new Date(msg.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
-              } else {
-                const el = createMessageElement(msg, msg.sender_id === '{{ current_user_id }}');
-                messagesContainer.insertBefore(el, bottomSentinel);
-              }
-            });
-            if (result.messages.length > 0) {
-              lastMessageTime = result.messages[result.messages.length - 1].timestamp;
-              if (!atBottom) {
-                showNewMessageNotice();
-              } else {
-                smartScrollToBottom(true);
-              }
-            }
-            if (result.is_typing) {
-              showTypingIndicator();
-            } else {
-              hideTypingIndicator();
-            }
-          }
-        } catch (e) {
-          console.error('Fetch messages error:', e);
-        }
-      }
-
       async function loadMessages(userId) {
         currentChatUserId = userId;
-        lastMessageTime = null; // Reset to fetch all
-        await fetchMessagesAndUpdate();
-
         try {
-          const responseProfile = await fetch(`/user-profile/${userId}`);
-          const resultProfile = await responseProfile.json();
-          if (resultProfile.success) {
-            const user = resultProfile.user;
-            document.getElementById('chat-partner-img').src = user.image || 'https://randomuser.me/api/portraits/women/44.jpg';
-            document.getElementById('chat-partner-name').textContent = user.full_name || 'Unknown';
-          }
+          const response = await fetch(`/messages/${userId}`);
+          const result = await response.json();
+          if (result.success) {
+            messagesContainer.innerHTML = '';
+            result.messages.forEach(msg => {
+              const el = createMessageElement(msg, msg.sender_id === '{{ current_user_id }}');
+              messagesContainer.appendChild(el);
+            });
+            attachBottomSentinel();
+            smartScrollToBottom(true);
 
-          const chatArea = document.querySelector('.chat-area');
-          const welcomeScreen = document.querySelector('.welcome-screen');
-          const conversationsCol = document.querySelector('.conversations-col');
+            const responseProfile = await fetch(`/user-profile/${userId}`);
+            const resultProfile = await responseProfile.json();
+            if (resultProfile.success) {
+              const user = resultProfile.user;
+              document.getElementById('chat-partner-img').src = user.image || 'https://randomuser.me/api/portraits/women/44.jpg';
+              document.getElementById('chat-partner-name').textContent = user.full_name || 'Unknown';
+            }
 
-          chatArea.style.display = 'flex';
-          if (window.innerWidth <= 992) {
-            conversationsCol.classList.add('hidden');
-            chatArea.classList.add('active');
-            document.body.classList.add('chat-mode');
-            welcomeScreen.style.display = 'none';
-          } else {
-            welcomeScreen.style.display = 'none';
+            const chatArea = document.querySelector('.chat-area');
+            const welcomeScreen = document.querySelector('.welcome-screen');
+            const conversationsCol = document.querySelector('.conversations-col');
+
             chatArea.style.display = 'flex';
-            conversationsCol.classList.remove('hidden');
-          }
+            if (window.innerWidth <= 992) {
+              conversationsCol.classList.add('hidden');
+              chatArea.classList.add('active');
+              document.body.classList.add('chat-mode');
+              welcomeScreen.style.display = 'none';
+            } else {
+              welcomeScreen.style.display = 'none';
+              chatArea.style.display = 'flex';
+              conversationsCol.classList.remove('hidden');
+            }
 
-          navigationHistory.push('chat');
+            navigationHistory.push('chat');
 
-          const conv = document.querySelector(`.conversation[data-user-id="${currentChatUserId}"]`);
-          if (conv) {
-            const unread = conv.querySelector('.unread-dot');
-            if (unread) unread.remove();
-          }
+            const conv = document.querySelector(`.conversation[data-user-id="${currentChatUserId}"]`);
+            if (conv) {
+              const unread = conv.querySelector('.unread-dot');
+              if (unread) unread.remove();
+            }
 
-          startPolling();
+            startPolling();
+          } else alert('Failed to load messages. Please try again.');
         } catch {
           alert('Error loading messages. Please check your connection.');
         }
@@ -827,7 +732,36 @@
         if (pollInterval) clearInterval(pollInterval);
         pollInterval = setInterval(async () => {
           if (!currentChatUserId) return;
-          await fetchMessagesAndUpdate();
+          try {
+            const response = await fetch(`/messages/${currentChatUserId}`);
+            const result = await response.json();
+            if (result.success) {
+              const currentMsgsIds = Array.from(messagesContainer.querySelectorAll('.message')).map(el => el.dataset.messageId);
+              result.messages.forEach(msg => {
+                if (!currentMsgsIds.includes(msg.id)) {
+                  const isSent = msg.sender_id === '{{ current_user_id }}';
+                  const el = createMessageElement(msg, isSent);
+                  messagesContainer.appendChild(el);
+                  attachBottomSentinel();
+                  if (document.hidden || !atBottom) {
+                    showNewMessageNotice();
+                    if ('Notification' in window && Notification.permission === 'granted' && !isSent) {
+                      new Notification('New Message', { body: msg.message });
+                    }
+                  } else {
+                    smartScrollToBottom(true);
+                  }
+                }
+              });
+              if (result.is_typing) {
+                showTypingIndicator();
+              } else {
+                hideTypingIndicator();
+              }
+            }
+          } catch (e) {
+            console.error('Polling error:', e);
+          }
         }, 2000);  // Poll every 2 seconds
       }
 
@@ -838,7 +772,7 @@
           if (!currentChatUserId) {  // Only poll when in conversations list
             loadConversations();
           }
-        }, 5000);  // Reduced to 5 seconds for more live feel
+        }, 10000);  // Every 10 seconds
       }
 
       // ---------- Responsive / viewport fixes ----------
@@ -922,15 +856,14 @@
       handleResize();
 
       // Conversation handlers (populated after fetch)
-      document.addEventListener('click', async (e) => {
-        const conv = e.target.closest('.conversation');
-        if (conv) {
+      document.querySelectorAll('.conversation').forEach(conv => {
+        conv.addEventListener('click', async function(e) {
           e.preventDefault();
           document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
-          conv.classList.add('active');
-          await loadMessages(conv.dataset.userId);
+          this.classList.add('active');
+          await loadMessages(this.dataset.userId);
           navigationHistory.push('chat');
-        }
+        });
       });
 
       // Format times present at load
@@ -954,8 +887,6 @@
           document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
         }
         navigationHistory.pop();
-        // Refresh conversations on back to list
-        loadConversations();
       });
 
       conversationsBackBtn.addEventListener('click', () => {
