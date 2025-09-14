@@ -612,11 +612,11 @@ class MongoService:
                     'age': other_user_data.get('age'),
                     'gender': other_user_data.get('gender'),
                     'image': other_user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-                    'occupation': other_user_data.get('occupation', 'N/A'),
-                    'bio': other_user_data.get('bio', 'No bio available'),
+                    'occupation': other_user_data.get('occupation', ''),
+                    'bio': other_user_data.get('bio', ''),
                     'interests': other_user_data.get('interests', []),
-                    'distance': 'N/A',
-                    'rating': '4.5',
+                    'distance': '',
+                    'rating': '',
                     'dominant_type': other_scores['dominant_type'],
                     'match_percentage': match_percentage,
                     'keeper_seeker': other_scores.get('keeper_seeker_type', 'Unknown'),
@@ -704,11 +704,11 @@ class MongoService:
                     'age': other_user_data.get('age'),
                     'gender': other_user_data.get('gender'),
                     'image': other_user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-                    'occupation': other_user_data.get('occupation', 'N/A'),
-                    'bio': other_user_data.get('bio', 'No bio available'),
+                    'occupation': other_user_data.get('occupation', ''),
+                    'bio': other_user_data.get('bio', ''),
                     'interests': other_user_data.get('interests', []),
-                    'distance': 'N/A',
-                    'rating': '4.5',
+                    'distance': '',
+                    'rating': '',
                     'dominant_type': other_scores['dominant_type'],
                     'match_percentage': match_percentage,
                     'keeper_seeker': other_scores.get('keeper_seeker_type', 'Unknown'),
@@ -884,11 +884,11 @@ class MongoService:
                         'age': user_data.get('age'),
                         'gender': user_data.get('gender'),
                         'image': user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-                        'occupation': user_data.get('occupation', 'N/A'),
-                        'bio': user_data.get('bio', 'No bio available'),
+                        'occupation': user_data.get('occupation', ''),
+                        'bio': user_data.get('bio', ''),
                         'interests': user_data.get('interests', []),
-                        'distance': 'N/A',
-                        'rating': '4.5',
+                        'distance': '',
+                        'rating': '',
                         'dominant_type': other_user['scores']['dominant_type'],
                         'match_percentage': match_percentage,
                         'liked': self.has_liked_user(user_id, str(user_data['_id'])),
@@ -910,7 +910,7 @@ class MongoService:
                         'id': user['id'],
                         'full_name': user['full_name'],
                         'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-                        'occupation': user.get('occupation', 'N/A')
+                        'occupation': user.get('occupation', '')
                     })
             return liked_users
         except Exception as e:
@@ -932,7 +932,7 @@ class MongoService:
                         'id': user['id'],
                         'full_name': user['full_name'],
                         'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-                        'occupation': user.get('occupation', 'N/A')
+                        'occupation': user.get('occupation', '')
                     })
             return pending_users
         except Exception as e:
@@ -1702,11 +1702,11 @@ def explore():
             'id': user['id'],
             'full_name': user['full_name'],
             'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-            'occupation': user.get('occupation', 'N/A'),
-            'bio': user.get('bio', 'No bio available'),
+            'occupation': user.get('occupation', ''),
+            'bio': user.get('bio', ''),
             'interests': user.get('interests', []),
-            'distance': 'N/A',
-            'rating': '4.5',
+            'distance': '',
+            'rating': '',
             'dominant_type': quiz_result['scores']['dominant_type'],
             'match_percentage': 50
         }
@@ -1863,11 +1863,11 @@ def user_profile(user_id):
             'age': user.get('age'),
             'gender': user.get('gender'),
             'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-            'occupation': user.get('occupation', 'N/A'),
-            'bio': user.get('bio', 'No bio available'),
+            'occupation': user.get('occupation', ''),
+            'bio': user.get('bio', ''),
             'interests': user.get('interests', []),
-            'distance': 'N/A',
-            'rating': '4.5',
+            'distance': '',
+            'rating': '',
             'match_percentage': match_percentage,
             'liked': mongo_service.has_liked_user(session['user_id'], user_id),
             'passed': mongo_service.has_passed_user(session['user_id'], user_id),
@@ -1880,10 +1880,10 @@ def user_profile(user_id):
             'personality_info': personality_info,
             'secondary_personality_info': secondary_personality_info,
             'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'N/A') if quiz_result else 'N/A',
-            'religion': user.get('religion', 'Not specified') if user.get('religion_public', False) else 'Private',
-            'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])} if user.get('physical_public', False) else 'Private',  # Added conditional visibility
-            'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
-            'summary': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), 'N/A'),
+            'religion': user.get('religion', '') if user.get('religion_public', False) else 'Private',
+            'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])} if user.get('physical_public', False) else {},
+            'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), ''),
+            'summary': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), ''),
             'photos': user.get('photos', [])
         }
         # Collect interests from profile_data
@@ -1920,8 +1920,8 @@ def chat():
             'age': user.get('age'),
             'gender': user.get('gender'),
             'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-            'occupation': user.get('occupation', 'N/A'),
-            'bio': user.get('bio', 'No bio available'),
+            'occupation': user.get('occupation', ''),
+            'bio': user.get('bio', ''),
             'interests': user.get('interests', []),
             'dominant_type': quiz_completed['scores']['dominant_type'],
             'dominant_percentage': quiz_completed['scores']['dominant_percentage'],
@@ -2104,8 +2104,8 @@ def profile():
             'age': user.get('age'),
             'gender': user.get('gender'),
             'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-            'occupation': user.get('occupation', 'N/A'),
-            'bio': user.get('bio', 'No bio available'),
+            'occupation': user.get('occupation', ''),
+            'bio': user.get('bio', ''),
             'interests': user.get('interests', []),
             'photos': user.get('photos', []),
             'location': user.get('location', ''),
@@ -2114,14 +2114,14 @@ def profile():
             'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0,
             'personality_info': personality_info,
             'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'N/A') if quiz_result else 'N/A',
-            'religion': user.get('religion', 'N/A'),
+            'religion': user.get('religion', ''),
             'religion_importance': user.get('religion_importance', 'skip'),
             'religion_public': user.get('religion_public', False),  # Added for toggle
             'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])},
             'physical_importance': user.get('physical_importance', 'not_important'),
             'physical_public': user.get('physical_public', False),  # Added for toggle
-            'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
-            'summary': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), 'N/A')
+            'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), ''),
+            'summary': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), '')
         }
         # Collect interests from profile_data
         profile['profile_interests'] = [p['value'] for p in user.get('profile_data', []) if p['label'] == 'Interests (select all that apply)']
