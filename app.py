@@ -1879,7 +1879,7 @@ def user_profile(user_id):
             },
             'personality_info': personality_info,
             'secondary_personality_info': secondary_personality_info,
-            'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'N/A') if quiz_result else 'N/A',
+            'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'Unknown') if quiz_result else 'Unknown',
             'religion': user.get('religion', 'Not specified') if user.get('religion_public', False) else 'Private',
             'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])} if user.get('physical_public', False) else 'Private',  # Added conditional visibility
             'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
@@ -2263,7 +2263,7 @@ def upload_photo():
         upload_result = cloudinary.uploader.upload(file, folder="user_photos")
         url = upload_result['secure_url']
         logger.info(f"Uploaded photo URL: {url}")
-        photos = user.get('photos', []) + [url]
+        photos= user.get('photos', []) + [url]
         update_result = mongo_service.update_user(session['user_id'], {'photos': photos})
         if update_result['success']:
             # Notify matched users

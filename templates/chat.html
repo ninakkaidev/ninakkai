@@ -105,7 +105,7 @@
 
     .conversation-info { flex: 1; min-width: 0; }
     .conversation-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.125rem; }
-    .conversation-header h5 { font-weight: 600; font-size: 0.9375rem; margin: 0; white-space: nowrap; overflow: hidden; text-overspect: ellipsis; color: var(--text-light); }
+    .conversation-header h5 { font-weight: 600; font-size: 0.9375rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-light); }
     .conversation-header .time { font-size: 0.75rem; color: var(--text-gray); }
     .last-message { font-size: 0.8125rem; color: var(--text-gray); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .unread-dot { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; background-color: var(--primary-light); }
@@ -395,6 +395,7 @@
       let stopTypingTimer = null;
       const TYPING_DEBOUNCE_MS = 250;
       const STOP_TYPING_AFTER_MS = 1200;
+      let deletedIds = new Set();
 
       // ---------- Emoji Picker ----------
       const emojiBtn = document.querySelector('.btn-emoji');
@@ -524,10 +525,11 @@
       async function deleteMessage(messageId) {
         if (!confirm('Delete this message?')) return;
 
-        // Handle temporary messages locally (optimistic UI)
+        const el = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (el) el.remove();
+
         if (messageId.startsWith('temp-')) {
-          const el = document.querySelector(`[data-message-id="${messageId}"]`);
-          if (el) el.remove();
+          // For temp, just remove locally, send will handle deletion if needed
           return;
         }
 
@@ -535,10 +537,13 @@
           const res = await fetch('/delete_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message_id: messageId }) });
           const data = await res.json();
           if (data.success) {
-            const el = document.querySelector(`[data-message-id="${messageId}"]`);
-            if (el) el.remove();
-          } else alert('Failed to delete message.');
-        } catch { alert('Error deleting message.'); }
+            deletedIds.add(messageId);
+          } else {
+            alert('Failed to delete message.');
+          }
+        } catch {
+          alert('Error deleting message.');
+        }
       }
 
       // ---------- Bottom sentinel + observer (robust "new message" banner) ----------
@@ -624,7 +629,12 @@
             alert('Failed to send message.');
           } else {
             const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
-            if (tempMsg) tempMsg.dataset.messageId = data.message_id;
+            if (tempMsg) {
+              tempMsg.dataset.messageId = data.message_id;
+            } else {
+              // Deleted locally while sending, delete on server
+              deleteMessage(data.message_id);
+            }
           }
         } catch {
           const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
@@ -682,7 +692,9 @@
           if (result.success) {
             messagesContainer.innerHTML = '';
             result.messages.forEach(msg => {
-              const el = createMessageElement(msg, msg.sender_id === '{{ current_user_id }}');
+              if (deletedIds.has(msg.id)) return;
+              const isSent = msg.sender_id === '{{ current_user_id }}';
+              const el = createMessageElement(msg, isSent);
               messagesContainer.appendChild(el);
             });
             attachBottomSentinel();
@@ -738,6 +750,7 @@
             if (result.success) {
               const currentMsgsIds = Array.from(messagesContainer.querySelectorAll('.message')).map(el => el.dataset.messageId);
               result.messages.forEach(msg => {
+                if (deletedIds.has(msg.id)) return;
                 if (!currentMsgsIds.includes(msg.id)) {
                   const isSent = msg.sender_id === '{{ current_user_id }}';
                   const el = createMessageElement(msg, isSent);
@@ -751,6 +764,13 @@
                   } else {
                     smartScrollToBottom(true);
                   }
+                }
+              });
+              // Remove deleted messages
+              const serverIds = result.messages.map(msg => msg.id);
+              Array.from(messagesContainer.querySelectorAll('.message')).forEach(el => {
+                if (!serverIds.includes(el.dataset.messageId)) {
+                  el.remove();
                 }
               });
               if (result.is_typing) {
