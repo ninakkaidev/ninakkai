@@ -200,9 +200,9 @@ class MongoService:
             verification_token = secrets.token_urlsafe(32)
             default_image = 'https://randomuser.me/api/portraits/women/44.jpg'
             if gender == 'male':
-                default_image = 'https://i.ibb.co/GQTZQ0h/653324ed-3b9c-48b1-91d8b16931ff.jpg'
+                default_image = 'https://i.ibb.co/tTg9CkjS/653324ed-3b9c-48b1-b9b2-d1d8b16931ff.png'
             elif gender == 'female':
-                default_image = 'https://i.ibb.co/cSXFsTv/8e2b61f2-44cc-43cd-bc55-e5ebcaae9130.jpg'
+                default_image = 'https://i.ibb.co/KpKdK9xy/8e2b61f2-44cc-43cd-bc55-e5ebcaae9130.png'
             user_data = {
                 'email': email,
                 'password': hashed_password,
@@ -750,14 +750,22 @@ class MongoService:
 
     def _calculate_match_percentage(self, user_scores: Dict[str, Any], other_scores: Dict[str, Any]) -> int:
         try:
-            # Base match on personality compatibility
-            dominant_match = 40 if user_scores['dominant_type'] == other_scores['dominant_type'] else 20
-            secondary_match = 30 if user_scores.get('secondary_type') == other_scores.get('secondary_type') else 10
-            
-            # Add bonus for keeper-seeker compatibility (but already filtered)
+            user_types = user_scores.get('type_counts', {})
+            other_types = other_scores.get('type_counts', {})
+            all_types = set(user_types.keys()).union(other_types.keys())
+            similarity = 0
+            total = 0
+            for t in all_types:
+                u = user_types.get(t, 0)
+                o = other_types.get(t, 0)
+                similarity += min(u, o)
+                total += max(u, o)
+            base_percentage = int((similarity / total * 100) if total > 0 else 50)
+
+            # Add bonuses
             keeper_seeker_bonus = 15 if user_scores.get('keeper_seeker_type') == other_scores.get('keeper_seeker_type') else 0
-            
-            return min(dominant_match + secondary_match + keeper_seeker_bonus, 100)
+
+            return min(base_percentage + keeper_seeker_bonus, 100)
         except Exception as e:
             logger.error(f"Calculate match percentage error: {str(e)}")
             return 50
