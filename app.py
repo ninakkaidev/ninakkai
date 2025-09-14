@@ -380,9 +380,9 @@ class MongoService:
                 if 'section' in ans:
                     if ans['section'] == 'religion_importance':
                         importance_map = {
-                            0: 'very_important',
-                            1: 'somewhat_important',
-                            2: 'not_important',
+                            0: 'high',
+                            1: 'medium',
+                            2: 'low',
                             3: 'skip'
                         }
                         update_data['religion_importance'] = importance_map.get(ans.get('index'), 'skip')
@@ -581,12 +581,12 @@ class MongoService:
                 if religion_importance != 'skip' and user_religion:
                     other_religion = other_user_data.get('religion')
                     is_same_religion = other_religion == user_religion
-                    if religion_importance == 'very_important' and not is_same_religion:
+                    if religion_importance == 'high' and not is_same_religion:
                         continue
                     elif is_same_religion:
-                        if religion_importance == 'somewhat_important':
+                        if religion_importance == 'medium':
                             match_percentage += 10
-                        elif religion_importance == 'not_important':
+                        elif religion_importance == 'low':
                             match_percentage += 5
                 
                 # Step 4: Physical preferences
@@ -673,12 +673,12 @@ class MongoService:
                 if religion_importance != 'skip' and user_religion:
                     other_religion = other_user_data.get('religion')
                     is_same_religion = other_religion == user_religion
-                    if religion_importance == 'very_important' and not is_same_religion:
+                    if religion_importance == 'high' and not is_same_religion:
                         continue
                     elif is_same_religion:
-                        if religion_importance == 'somewhat_important':
+                        if religion_importance == 'medium':
                             match_percentage += 10
-                        elif religion_importance == 'not_important':
+                        elif religion_importance == 'low':
                             match_percentage += 5
                 
                 # Step 4: Physical preferences
@@ -1808,7 +1808,7 @@ def pass_user():
         result = mongo_service.pass_user(session['user_id'], passed_user_id)
         if result['success']:
             logger.info(f"Pass successful for user_id: {session['user_id']}, passed_user_id: {passed_user_id}")
-            return jsonify(result), 200
+            return jsonify({'success': True}), 200
         else:
             logger.error(f"Pass failed: {result.get('error', 'Unknown error')}")
             return jsonify({'success': False, 'error': result.get('error', 'Failed to pass user')}), 500
@@ -1892,8 +1892,9 @@ def user_profile(user_id):
             'interests': user.get('interests', []),
             'distance': 'N/A',
             'rating': '4.5',
-            'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
             'match_percentage': match_percentage,
+            'liked': mongo_service.has_liked_user(session['user_id'], user_id),
+            'passed': mongo_service.has_passed_user(session['user_id'], user_id),
             'personality': {
                 'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
                 'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0,
@@ -1902,7 +1903,7 @@ def user_profile(user_id):
             },
             'personality_info': personality_info,
             'secondary_personality_info': secondary_personality_info,
-            'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'Unknown') if quiz_result else 'Unknown',
+            'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'N/A') if quiz_result else 'N/A',
             'religion': user.get('religion', 'Not specified') if user.get('religion_public', False) else 'Private',
             'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])} if user.get('physical_public', False) else 'Private',  # Added conditional visibility
             'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
@@ -2155,6 +2156,78 @@ def profile():
         logger.error(f"Profile error: {str(e)}")
         return render_template('profile.html', profile={}, pending_likers=[], notifications=[])
 
+@app.route('/questions', methods=['GET'])
+def questions():
+    logger.debug(f"Session in questions: {session}")
+    if 'user_id' not in session:
+        logger.debug("No user_id in session for /questions")
+        return redirect(url_for('auth'))
+    user = mongo_service.get_user_by_id(session['user_id'])
+    if not user.get('age_verified', False):
+        return redirect(url_for('age_verification'))
+    retake = request.args.get('retake') == 'true'
+    if retake:
+        mongo_service.delete_quiz_results(session['user_id'])
+    quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
+    if quiz_completed:
+        return redirect(url_for('explore'))
+    logger.debug(f"Rendering questions.html for user {session['user_id']}")
+    return render_template('questions.html')
+
+@app.route('/submit-quiz', methods=['POST'])
+def submit_quiz():
+    logger.debug(f"Session in submit-quiz: {session}")
+    if 'user_id' not in session:
+        logger.debug("No user_id in session for /submit-quiz")
+        return redirect(url_for('auth'))
+    
+    try:
+        data = request.get_json()
+        answers = data.get('answers', [])
+        if not answers:
+            return jsonify({'success': False, 'error': 'No answers provided'}), 400
+        
+        # Add types to answers for emotional questions
+        for ans in answers:
+            qid = ans.get('question_id')
+            if qid in QUESTION_TYPES:
+                if 'index' in ans:
+                    ans['type'] = QUESTION_TYPES[qid][ans['index']]
+                elif 'ranking' in ans:
+                    if ans['ranking']:
+                        top_rank = min(ans['ranking'], key=lambda r: r['rank'])
+                        top_idx = top_rank['index']
+                        ans['type'] = QUESTION_TYPES[qid][top_idx]
+        
+        quiz_data = {'answers': answers}
+        result = mongo_service.save_quiz_results(session['user_id'], quiz_data)
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify({'success': False, 'error': result.get('error', 'Failed to save quiz results')}), 500
+    except Exception as e:
+        logger.error(f"Submit quiz error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/personality_results', methods=['GET'])
+def personality_results():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    quiz_result = mongo_service.get_quiz_results(session['user_id'])
+    if not quiz_result:
+        return jsonify({'success': False, 'error': 'No quiz results found'}), 404
+    dominant_type = quiz_result['scores']['dominant_type']
+    personality_info = PERSONALITIES.get(dominant_type, {
+        'dominant_type': dominant_type,
+        'title': f'You are a {dominant_type.replace(" ", "")}.',
+        'description': 'Description not available.',
+        'tagline': '',
+        'strengths': [],
+        'compatibility': [],
+        'color': '#000000'
+    })
+    return jsonify({'success': True, 'personality_info': personality_info})
+
 @app.route('/logout', methods=['GET'])
 def logout():
     logger.debug(f"Session in logout: {session}")
@@ -2266,10 +2339,16 @@ def update_profile():
         update_data['religion_public'] = data['religion_public']
     if 'physical_public' in data:
         update_data['physical_public'] = data['physical_public']
+    if 'religion' in data:
+        update_data['religion'] = data['religion']
     if 'religion_importance' in data:
         update_data['religion_importance'] = data['religion_importance']
     if 'physical_importance' in data:
         update_data['physical_importance'] = data['physical_importance']
+    if 'physical_traits' in data:
+        traits_dict = data['physical_traits']
+        traits_list = [{'label': k, 'value': v} for k, v in traits_dict.items()]
+        update_data['physical_traits'] = traits_list
     if update_data:
         result = mongo_service.update_user(session['user_id'], update_data)
         return jsonify(result)
