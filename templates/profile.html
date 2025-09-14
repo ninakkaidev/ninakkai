@@ -534,29 +534,9 @@
                             </label>
                             <span class="toggle-status text-sm text-gray-500 ml-2 dark:text-gray-400"></span>
                         </div>
-                        <button id="editReligionBtn" class="ml-2 text-pink-500 hover:text-pink-600 dark:text-pink-400 dark:hover:text-pink-300">
-                            <i class="fas fa-pencil-alt text-sm"></i>
-                        </button>
                     </div>
                 </div>
                 <p id="religionView" class="view-field text-gray-700">{{ profile.religion if profile.religion != 'N/A' else 'Not set' }}</p>
-                <select id="religionEdit" class="edit-field w-full border rounded px-3 py-2">
-                    <option value="Christianity" {% if profile.religion == 'Christianity' %}selected{% endif %}>Christianity</option>
-                    <option value="Islam" {% if profile.religion == 'Islam' %}selected{% endif %}>Islam</option>
-                    <option value="Hinduism" {% if profile.religion == 'Hinduism' %}selected{% endif %}>Hinduism</option>
-                    <option value="Buddhism" {% if profile.religion == 'Buddhism' %}selected{% endif %}>Buddhism</option>
-                    <option value="Judaism" {% if profile.religion == 'Judaism' %}selected{% endif %}>Judaism</option>
-                    <option value="Sikhism" {% if profile.religion == 'Sikhism' %}selected{% endif %}>Sikhism</option>
-                    <option value="Spiritual but not religious" {% if profile.religion == 'Spiritual but not religious' %}selected{% endif %}>Spiritual but not religious</option>
-                    <option value="Agnostic" {% if profile.religion == 'Agnostic' %}selected{% endif %}>Agnostic</option>
-                    <option value="Atheist" {% if profile.religion == 'Atheist' %}selected{% endif %}>Atheist</option>
-                    <option value="Other" {% if profile.religion == 'Other' %}selected{% endif %}>Other</option>
-                    <option value="Prefer not to say" {% if profile.religion == 'Prefer not to say' %}selected{% endif %}>Prefer not to say</option>
-                </select>
-                <div id="religionEditButtons" class="edit-field flex justify-end space-x-2 mt-4">
-                    <button id="cancelReligionBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</button>
-                    <button id="saveReligionBtn" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600">Save</button>
-                </div>
             </div>
 
             <!-- Religion Importance -->
@@ -567,12 +547,12 @@
                         <i class="fas fa-pencil-alt text-sm"></i>
                     </button>
                 </div>
-                <p id="religionImportanceView" class="view-field text-gray-700">{{ profile.religion_importance | capitalize if profile.religion_importance != 'skip' else 'Skip' }}</p>
+                <p id="religionImportanceView" class="view-field text-gray-700">{{ profile.religion_importance | replace('_', ' ') | title if profile.religion_importance != 'skip' else 'Skip' }}</p>
                 <select id="religionImportanceEdit" class="edit-field w-full border rounded px-3 py-2">
                     <option value="skip" {% if profile.religion_importance == 'skip' %}selected{% endif %}>Skip</option>
-                    <option value="low" {% if profile.religion_importance == 'low' %}selected{% endif %}>Low</option>
-                    <option value="medium" {% if profile.religion_importance == 'medium' %}selected{% endif %}>Medium</option>
-                    <option value="high" {% if profile.religion_importance == 'high' %}selected{% endif %}>High</option>
+                    <option value="not_important" {% if profile.religion_importance == 'not_important' %}selected{% endif %}>Not Important</option>
+                    <option value="somewhat_important" {% if profile.religion_importance == 'somewhat_important' %}selected{% endif %}>Somewhat Important</option>
+                    <option value="very_important" {% if profile.religion_importance == 'very_important' %}selected{% endif %}>Very Important</option>
                 </select>
                 <div id="religionImportanceEditButtons" class="edit-field flex justify-end space-x-2 mt-4">
                     <button id="cancelReligionImportanceBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</button>
@@ -593,24 +573,13 @@
                             </label>
                             <span class="toggle-status text-sm text-gray-500 ml-2 dark:text-gray-400"></span>
                         </div>
-                        <button id="editPhysicalTraitsBtn" class="ml-2 text-pink-500 hover:text-pink-600 dark:text-pink-400 dark:hover:text-pink-300">
-                            <i class="fas fa-pencil-alt text-sm"></i>
-                        </button>
                     </div>
                 </div>
                 {% for label, value in profile.physical_traits.items() %}
                 <div class="trait-item">
                     <p class="view-field text-gray-700">{{ label }}: {{ value }}</p>
-                    <div class="edit-field flex items-center text-gray-700 dark:text-gray-300">
-                        <label class="font-medium">{{ label }}:</label>
-                        <input type="text" value="{{ value }}" class="ml-2 w-full border rounded px-2 py-1" data-label="{{ label }}">
-                    </div>
                 </div>
                 {% endfor %}
-                <div id="physicalTraitsEditButtons" class="edit-field flex justify-end space-x-2 mt-4">
-                    <button id="cancelPhysicalTraitsBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</button>
-                    <button id="savePhysicalTraitsBtn" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600">Save</button>
-                </div>
             </div>
             {% endif %}
 
@@ -1044,45 +1013,6 @@
                 }
             });
             
-            // Separate edit for Religion
-            const religionSection = document.querySelector('.religion-section');
-            const editReligionBtn = document.getElementById('editReligionBtn');
-            const cancelReligionBtn = document.getElementById('cancelReligionBtn');
-            const saveReligionBtn = document.getElementById('saveReligionBtn');
-
-            editReligionBtn.addEventListener('click', () => {
-                religionSection.classList.add('edit-mode');
-            });
-
-            cancelReligionBtn.addEventListener('click', () => {
-                religionSection.classList.remove('edit-mode');
-            });
-
-            saveReligionBtn.addEventListener('click', async () => {
-                const data = {
-                    religion: document.getElementById('religionEdit').value,
-                };
-                try {
-                    const response = await fetch('/update_profile', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data),
-                        credentials: 'include'
-                    });
-                    const result = await response.json();
-                    if (result.success) {
-                        document.getElementById('religionView').textContent = data.religion !== 'N/A' ? data.religion : 'Not set';
-                        religionSection.classList.remove('edit-mode');
-                        showNotification('Religion updated successfully');
-                        setTimeout(() => location.reload(), 1000);
-                    } else {
-                        showNotification('Failed to update religion');
-                    }
-                } catch (error) {
-                    showNotification('Error updating religion');
-                }
-            });
-
             // Separate edit for Religion Importance
             const religionImportanceSection = document.querySelector('.religion-importance-section');
             const editReligionImportanceBtn = document.getElementById('editReligionImportanceBtn');
@@ -1110,7 +1040,8 @@
                     });
                     const result = await response.json();
                     if (result.success) {
-                        document.getElementById('religionImportanceView').textContent = data.religion_importance.charAt(0).toUpperCase() + data.religion_importance.slice(1);
+                        let displayText = data.religion_importance === 'skip' ? 'Skip' : data.religion_importance.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                        document.getElementById('religionImportanceView').textContent = displayText;
                         religionImportanceSection.classList.remove('edit-mode');
                         showNotification('Religion importance updated successfully');
                         setTimeout(() => location.reload(), 1000);
@@ -1121,56 +1052,6 @@
                     showNotification('Error updating religion importance');
                 }
             });
-
-            // Separate edit for Physical Traits (if exists)
-            const physicalTraitsSection = document.querySelector('.physical-traits-section');
-            if (physicalTraitsSection) {
-                const editPhysicalTraitsBtn = document.getElementById('editPhysicalTraitsBtn');
-                const cancelPhysicalTraitsBtn = document.getElementById('cancelPhysicalTraitsBtn');
-                const savePhysicalTraitsBtn = document.getElementById('savePhysicalTraitsBtn');
-
-                editPhysicalTraitsBtn.addEventListener('click', () => {
-                    physicalTraitsSection.classList.add('edit-mode');
-                });
-
-                cancelPhysicalTraitsBtn.addEventListener('click', () => {
-                    physicalTraitsSection.classList.remove('edit-mode');
-                });
-
-                savePhysicalTraitsBtn.addEventListener('click', async () => {
-                    const traits = {};
-                    physicalTraitsSection.querySelectorAll('.edit-field input').forEach(input => {
-                        traits[input.dataset.label] = input.value;
-                    });
-                    const data = {
-                        physical_traits: traits,
-                    };
-                    try {
-                        const response = await fetch('/update_profile', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(data),
-                            credentials: 'include'
-                        });
-                        const result = await response.json();
-                        if (result.success) {
-                            // Update views
-                            physicalTraitsSection.querySelectorAll('.trait-item').forEach(item => {
-                                const label = item.querySelector('input').dataset.label;
-                                const value = item.querySelector('input').value;
-                                item.querySelector('.view-field').textContent = `${label}: ${value}`;
-                            });
-                            physicalTraitsSection.classList.remove('edit-mode');
-                            showNotification('Physical traits updated successfully');
-                            setTimeout(() => location.reload(), 1000);
-                        } else {
-                            showNotification('Failed to update physical traits');
-                        }
-                    } catch (error) {
-                        showNotification('Error updating physical traits');
-                    }
-                });
-            }
 
             // Separate edit for Physical Importance
             const physicalImportanceSection = document.querySelector('.physical-importance-section');
