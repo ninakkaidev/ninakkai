@@ -1576,7 +1576,7 @@ def age_verification():
                 return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
             detected_gender = prediction['gender'].lower()
             if detected_gender != user['gender']:
-                return jsonify({'success': False, 'error': 'Detected gender does not match registered gender. Try again or contact joel@ninakkai.com'}), 403
+                return jsonify({'success': False, 'error': 'Detected gender does not match registered gender. Try again or contact help@ninakkai.com'}), 403
             if age_lower < 18:
                 return jsonify({'success': False, 'error': 'You must be at least 18 years old. If you think this is a mistake, contact joel@ninakkai.com'}), 403
             update_result = mongo_service.update_user(session['user_id'], {'age_verified': True})
