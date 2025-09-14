@@ -139,9 +139,8 @@
     .message-actions {
       position: absolute; top: -20px; right: 10px; display: flex; gap: 0.125rem; opacity: 0; transition: opacity 0.2s;
       background-color: var(--card-dark); border-radius: 12px; padding: 0.125rem; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-      pointer-events: none;
     }
-    .message:hover .message-actions { opacity: 1; pointer-events: auto; }
+    .message:hover .message-actions { opacity: 1; }
     .message-actions button { background: transparent; border: none; color: var(--text-gray); font-size: 0.75rem; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
     .message-actions button:hover { color: var(--primary-light); }
 
@@ -221,6 +220,26 @@
       .welcome-screen { display: none; }
       .profile-sidebar { width: 100%; }
       .emoji-picker { bottom: 70px; left: 10px; width: 90%; max-width: 300px; }
+      /* Fix for mobile: Make message actions always visible */
+      .message-actions {
+        opacity: 1 !important;
+        top: 0;
+        right: 0;
+        background-color: rgba(0,0,0,0.7);
+        padding: 2px;
+        border-radius: 0 0 8px 0;
+        transition: none;
+      }
+      .message.sent .message-actions {
+        right: 0;
+        border-radius: 0 0 0 8px;
+      }
+      .message-content {
+        border-bottom-right-radius: 0;
+      }
+      .message.sent .message-content {
+        border-bottom-left-radius: 0;
+      }
     }
 
     @media (min-width: 993px) {
@@ -533,13 +552,25 @@
         }
 
         try {
-          const res = await fetch('/delete_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message_id: messageId }) });
+          const res = await fetch('/delete_message', { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({ message_id: messageId }) 
+          });
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          }
           const data = await res.json();
           if (data.success) {
             const el = document.querySelector(`[data-message-id="${messageId}"]`);
             if (el) el.remove();
-          } else alert('Failed to delete message.');
-        } catch { alert('Error deleting message.'); }
+          } else {
+            alert('Failed to delete message.');
+          }
+        } catch (error) {
+          console.error('Delete message error:', error);
+          alert('Error deleting message. Please check your connection and try again.');
+        }
       }
 
       // ---------- Bottom sentinel + observer (robust "new message" banner) ----------
@@ -618,6 +649,9 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ to_user_id: currentChatUserId, message, replied_to: repliedTo })
           });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
           const data = await response.json();
           if (!data.success) {
             const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
@@ -627,10 +661,11 @@
             const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
             if (tempMsg) tempMsg.dataset.messageId = data.message_id;
           }
-        } catch {
+        } catch (error) {
+          console.error('Send message error:', error);
           const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
           if (tempMsg) tempMsg.remove();
-          alert('Error sending message.');
+          alert('Error sending message. Please check your connection.');
         }
       }
 
@@ -679,6 +714,9 @@
         currentChatUserId = userId;
         try {
           const response = await fetch(`/messages/${userId}`);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
           const result = await response.json();
           if (result.success) {
             messagesContainer.innerHTML = '';
@@ -723,7 +761,8 @@
 
             startPolling();
           } else alert('Failed to load messages. Please try again.');
-        } catch {
+        } catch (error) {
+          console.error('Load messages error:', error);
           alert('Error loading messages. Please check your connection.');
         }
       }
@@ -735,6 +774,9 @@
           if (!currentChatUserId) return;
           try {
             const response = await fetch(`/messages/${currentChatUserId}`);
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
             const result = await response.json();
             if (result.success) {
               const currentMsgsIds = Array.from(messagesContainer.querySelectorAll('.message')).map(el => el.dataset.messageId);
@@ -773,7 +815,7 @@
           if (!currentChatUserId) {  // Only poll when in conversations list
             loadConversations();
           }
-        }, 10000);  // Every 10 seconds
+        }, 3000);  // Reduced to every 3 seconds for more live updates
       }
 
       // ---------- Responsive / viewport fixes ----------
@@ -786,44 +828,11 @@
       const chatContainer = document.querySelector('.chat-container');
       const profileSidebar = document.querySelector('.profile-sidebar');
 
-      // Enhanced message actions handling for mobile (tap to show/hide)
       messagesContainer.addEventListener('click', (e) => {
         const replyBtn = e.target.closest('.reply-btn');
-        if (replyBtn) { 
-          replyToMessage(replyBtn.dataset.messageId); 
-          // Hide all actions after action
-          document.querySelectorAll('.message-actions').forEach(a => a.style.opacity = '0');
-          return; 
-        }
+        if (replyBtn) { replyToMessage(replyBtn.dataset.messageId); return; }
         const deleteBtn = e.target.closest('.delete-btn');
-        if (deleteBtn) { 
-          deleteMessage(deleteBtn.dataset.messageId);
-          // Hide all actions after action
-          document.querySelectorAll('.message-actions').forEach(a => a.style.opacity = '0');
-          return; 
-        }
-        // If clicked on message (not button), show actions for this message, hide others
-        const message = e.target.closest('.message');
-        if (message && !e.target.closest('.message-actions')) {
-          // Hide all actions first
-          document.querySelectorAll('.message-actions').forEach(a => a.style.opacity = '0');
-          // Show this one
-          const actions = message.querySelector('.message-actions');
-          if (actions) {
-            actions.style.opacity = '1';
-            actions.style.pointerEvents = 'auto';
-          }
-        }
-      });
-
-      // Hide actions when clicking outside messages container
-      document.addEventListener('click', (e) => {
-        if (!messagesContainer.contains(e.target)) {
-          document.querySelectorAll('.message-actions').forEach(a => {
-            a.style.opacity = '0';
-            a.style.pointerEvents = 'none';
-          });
-        }
+        if (deleteBtn) { deleteMessage(deleteBtn.dataset.messageId); return; }
       });
 
       messagesContainer.addEventListener('scroll', () => {
@@ -890,14 +899,15 @@
       handleResize();
 
       // Conversation handlers (populated after fetch)
-      document.querySelectorAll('.conversation').forEach(conv => {
-        conv.addEventListener('click', async function(e) {
+      document.addEventListener('click', (e) => {
+        const conv = e.target.closest('.conversation');
+        if (conv) {
           e.preventDefault();
           document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
-          this.classList.add('active');
-          await loadMessages(this.dataset.userId);
+          conv.classList.add('active');
+          loadMessages(conv.dataset.userId);
           navigationHistory.push('chat');
-        });
+        }
       });
 
       // Format times present at load
@@ -921,6 +931,8 @@
           document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
         }
         navigationHistory.pop();
+        // Force immediate reload of conversations list for live updates
+        loadConversations();
       });
 
       conversationsBackBtn.addEventListener('click', () => {
@@ -935,6 +947,9 @@
         if (!q) { location.reload(); return; }
         try {
           const response = await fetch(`/search-matches?q=${encodeURIComponent(q)}`);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
           const result = await response.json();
           if (result.success) {
             const list = document.querySelector('.conversations-list');
@@ -958,7 +973,9 @@
               list.appendChild(convDiv);
             });
           }
-        } catch (e) { console.error('Error searching conversations:', e); }
+        } catch (e) { 
+          console.error('Error searching conversations:', e); 
+        }
       }, 300));
 
       // Initial conversations load
@@ -967,6 +984,9 @@
         loadingSpinner.style.display = 'block';
         try {
           const response = await fetch('/api/conversations');
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
           const result = await response.json();
           if (result.success) {
             const list = document.querySelector('.conversations-list');
