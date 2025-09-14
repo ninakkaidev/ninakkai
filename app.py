@@ -1088,6 +1088,15 @@ class ChatService:
                 {'sender_id': user1, 'receiver_id': user2},
                 {'sender_id': user2, 'receiver_id': user1}
             ]}
+            since_str = request.args.get('since')
+            if since_str:
+                try:
+                    since_dt = datetime.fromisoformat(since_str)
+                    if since_dt.tzinfo is None:
+                        since_dt = pytz.UTC.localize(since_dt)
+                    query['timestamp'] = {'$gt': since_dt}
+                except ValueError:
+                    pass  # ignore invalid since
             msgs = list(self.messages.find(query).sort('timestamp', 1))
             updated = self.messages.update_many(
                 {'receiver_id': user1, 'sender_id': user2, 'read': False},
