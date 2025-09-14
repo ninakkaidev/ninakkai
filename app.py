@@ -497,7 +497,7 @@ class MongoService:
             "Shared goals": "👂 Listener",
             "Physical intimacy": "💘 Romantic"
         }
-        # Parse actually based on indices
+        # Actually, since types are associated with answers indices
         return [QUESTION_TYPES['req2'][r['index']] for r in sorted_ranking]
 
     def _resolve_tie_with_ranking(self, tied_types: List[str], ranked_types: List[str]) -> str:
@@ -609,8 +609,8 @@ class MongoService:
                 matches.append({
                     'id': str(other_user_data['_id']),
                     'full_name': other_user_data['full_name'],
-                    'age': other_user_data['age'],
-                    'gender': other_user_data['gender'],
+                    'age': other_user_data.get('age'),
+                    'gender': other_user_data.get('gender'),
                     'image': other_user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
                     'occupation': other_user_data.get('occupation', 'N/A'),
                     'bio': other_user_data.get('bio', 'No bio available'),
@@ -2339,10 +2339,16 @@ def update_profile():
         update_data['religion_public'] = data['religion_public']
     if 'physical_public' in data:
         update_data['physical_public'] = data['physical_public']
+    if 'religion' in data:
+        update_data['religion'] = data['religion']
     if 'religion_importance' in data:
         update_data['religion_importance'] = data['religion_importance']
     if 'physical_importance' in data:
         update_data['physical_importance'] = data['physical_importance']
+    if 'physical_traits' in data:
+        traits_dict = data['physical_traits']
+        traits_list = [{'label': k, 'value': v} for k, v in traits_dict.items()]
+        update_data['physical_traits'] = traits_list
     if update_data:
         result = mongo_service.update_user(session['user_id'], update_data)
         return jsonify(result)
