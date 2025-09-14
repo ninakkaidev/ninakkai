@@ -105,7 +105,7 @@
 
     .conversation-info { flex: 1; min-width: 0; }
     .conversation-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.125rem; }
-    .conversation-header h5 { font-weight: 600; font-size: 0.9375rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-light); }
+    .conversation-header h5 { font-weight: 600; font-size: 0.9375rem; margin: 0; white-space: nowrap; overflow: hidden; text-overspect: ellipsis; color: var(--text-light); }
     .conversation-header .time { font-size: 0.75rem; color: var(--text-gray); }
     .last-message { font-size: 0.8125rem; color: var(--text-gray); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .unread-dot { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; background-color: var(--primary-light); }
@@ -395,8 +395,6 @@
       let stopTypingTimer = null;
       const TYPING_DEBOUNCE_MS = 250;
       const STOP_TYPING_AFTER_MS = 1200;
-      const pendingMessages = new Map(); // tempId => {message, timestamp}
-      let deletedIds = new Set();
 
       // ---------- Emoji Picker ----------
       const emojiBtn = document.querySelector('.btn-emoji');
@@ -526,11 +524,10 @@
       async function deleteMessage(messageId) {
         if (!confirm('Delete this message?')) return;
 
-        const el = document.querySelector(`[data-message-id="${messageId}"]`);
-        if (el) el.remove();
-
+        // Handle temporary messages locally (optimistic UI)
         if (messageId.startsWith('temp-')) {
-          pendingMessages.delete(messageId);
+          const el = document.querySelector(`[data-message-id="${messageId}"]`);
+          if (el) el.remove();
           return;
         }
 
@@ -538,13 +535,10 @@
           const res = await fetch('/delete_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message_id: messageId }) });
           const data = await res.json();
           if (data.success) {
-            deletedIds.add(messageId);
-          } else {
-            alert('Failed to delete message.');
-          }
-        } catch {
-          alert('Error deleting message.');
-        }
+            const el = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (el) el.remove();
+          } else alert('Failed to delete message.');
+        } catch { alert('Error deleting message.'); }
       }
 
       // ---------- Bottom sentinel + observer (robust "new message" banner) ----------
@@ -611,8 +605,6 @@
         attachBottomSentinel();
         smartScrollToBottom(true);
 
-        pendingMessages.set(tempId, {message: optimisticMsg.message, timestamp: optimisticMsg.timestamp});
-
         messageInput.value = '';
         messageInput.dataset.replyingTo = '';
         const replyingDiv = document.querySelector('.replying-to');
@@ -629,23 +621,14 @@
           if (!data.success) {
             const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
             if (tempMsg) tempMsg.remove();
-            pendingMessages.delete(tempId);
             alert('Failed to send message.');
           } else {
             const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
-            if (tempMsg) {
-              tempMsg.dataset.messageId = data.message_id;
-              pendingMessages.delete(tempId);
-            } else {
-              // Deleted locally while sending, delete on server
-              fetch('/delete_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message_id: data.message_id }) });
-              pendingMessages.delete(tempId);
-            }
+            if (tempMsg) tempMsg.dataset.messageId = data.message_id;
           }
         } catch {
           const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
           if (tempMsg) tempMsg.remove();
-          pendingMessages.delete(tempId);
           alert('Error sending message.');
         }
       }
@@ -699,9 +682,7 @@
           if (result.success) {
             messagesContainer.innerHTML = '';
             result.messages.forEach(msg => {
-              if (deletedIds.has(msg.id)) return;
-              const isSent = msg.sender_id === '{{ current_user_id }}';
-              const el = createMessageElement(msg, isSent);
+              const el = createMessageElement(msg, msg.sender_id === '{{ current_user_id }}');
               messagesContainer.appendChild(el);
             });
             attachBottomSentinel();
@@ -757,42 +738,19 @@
             if (result.success) {
               const currentMsgsIds = Array.from(messagesContainer.querySelectorAll('.message')).map(el => el.dataset.messageId);
               result.messages.forEach(msg => {
-                if (deletedIds.has(msg.id)) return;
                 if (!currentMsgsIds.includes(msg.id)) {
-                  let matchingTemp = null;
-                  for (let [tempId, pend] of pendingMessages) {
-                    if (pend.message === sanitizeHTML(msg.message) && Math.abs(new Date(pend.timestamp) - new Date(msg.timestamp)) < 5000) {
-                      matchingTemp = tempId;
-                      break;
+                  const isSent = msg.sender_id === '{{ current_user_id }}';
+                  const el = createMessageElement(msg, isSent);
+                  messagesContainer.appendChild(el);
+                  attachBottomSentinel();
+                  if (document.hidden || !atBottom) {
+                    showNewMessageNotice();
+                    if ('Notification' in window && Notification.permission === 'granted' && !isSent) {
+                      new Notification('New Message', { body: msg.message });
                     }
-                  }
-                  if (matchingTemp) {
-                    const tempMsg = document.querySelector(`[data-message-id="${matchingTemp}"]`);
-                    if (tempMsg) {
-                      tempMsg.dataset.messageId = msg.id;
-                    }
-                    pendingMessages.delete(matchingTemp);
                   } else {
-                    const isSent = msg.sender_id === '{{ current_user_id }}';
-                    const el = createMessageElement(msg, isSent);
-                    messagesContainer.appendChild(el);
-                    attachBottomSentinel();
-                    if (document.hidden || !atBottom) {
-                      showNewMessageNotice();
-                      if ('Notification' in window && Notification.permission === 'granted' && !isSent) {
-                        new Notification('New Message', { body: msg.message });
-                      }
-                    } else {
-                      smartScrollToBottom(true);
-                    }
+                    smartScrollToBottom(true);
                   }
-                }
-              });
-              const serverIds = result.messages.map(msg => msg.id);
-              Array.from(messagesContainer.querySelectorAll('.message')).forEach(el => {
-                const id = el.dataset.messageId;
-                if (!serverIds.includes(id) && !pendingMessages.has(id)) {
-                  el.remove();
                 }
               });
               if (result.is_typing) {
