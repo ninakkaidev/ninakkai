@@ -904,6 +904,23 @@
                     window.location.href = data.redirect;
                 } else if (data.success) {
                     window.location.href = '/questions';  // Fallback for success without redirect
+                } else if (data.error === 'gender_mismatch') {
+                    const confirmUpdate = confirm(`Detected gender is ${data.detected_gender}, but registered as opposite. Do you want to update your gender to ${data.detected_gender}?`);
+                    if (confirmUpdate) {
+                        const updateRes = await fetch('/update_gender', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({new_gender: data.detected_gender})
+                        });
+                        const updateData = await updateRes.json();
+                        if (updateData.success) {
+                            window.location.href = updateData.redirect || '/questions';
+                        } else {
+                            message.textContent = updateData.error || 'Failed to update gender.';
+                        }
+                    } else {
+                        message.textContent = 'Detected gender does not match registered gender. Try again or contact help@ninakkai.com';
+                    }
                 } else {
                     message.textContent = data.error || 'Verification failed.';
                 }
