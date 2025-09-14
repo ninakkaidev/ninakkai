@@ -672,6 +672,8 @@
         const verify = document.getElementById('verify');
         const message = document.getElementById('message');
         const loading = document.getElementById('loading');
+        const preview = document.getElementById('preview');
+        let currentPreviewURL = null; // Track current preview URL
 
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })  // Use front camera for selfie
             .then(stream => {
@@ -744,8 +746,12 @@
             ctx.restore();
 
             canvas.toBlob(blob => {
-                const preview = document.getElementById('preview');
-                preview.src = URL.createObjectURL(blob);
+                // Revoke old URL if exists
+                if (currentPreviewURL) {
+                    URL.revokeObjectURL(currentPreviewURL);
+                }
+                currentPreviewURL = URL.createObjectURL(blob);
+                preview.src = currentPreviewURL;
                 document.getElementById('preview-container').style.display = 'block';
                 video.style.display = 'none';
                 capture.style.display = 'none';
@@ -758,6 +764,12 @@
             video.style.display = 'block';
             capture.style.display = 'block';
             message.textContent = '';
+            // Revoke and clear preview
+            if (currentPreviewURL) {
+                URL.revokeObjectURL(currentPreviewURL);
+                currentPreviewURL = null;
+            }
+            preview.src = '';
         });
 
         verify.addEventListener('click', async () => {
