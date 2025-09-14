@@ -105,7 +105,7 @@
 
     .conversation-info { flex: 1; min-width: 0; }
     .conversation-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.125rem; }
-    .conversation-header h5 { font-weight: 600; font-size: 0.9375rem; margin: 0; white-space: nowrap; overflow: hidden; text-overspect: ellipsis; color: var(--text-light); }
+    .conversation-header h5 { font-weight: 600; font-size: 0.9375rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-light); }
     .conversation-header .time { font-size: 0.75rem; color: var(--text-gray); }
     .last-message { font-size: 0.8125rem; color: var(--text-gray); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .unread-dot { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; background-color: var(--primary-light); }
@@ -395,6 +395,7 @@
       let stopTypingTimer = null;
       const TYPING_DEBOUNCE_MS = 250;
       const STOP_TYPING_AFTER_MS = 1200;
+      let lastMessageTime = null;
 
       // ---------- Emoji Picker ----------
       const emojiBtn = document.querySelector('.btn-emoji');
@@ -482,6 +483,8 @@
         const el = document.createElement('div');
         el.className = `message ${isSent ? 'sent' : 'received'}`;
         el.dataset.messageId = msg.id;
+        el.dataset.sender = msg.sender_id;
+        el.dataset.timestamp = msg.timestamp;
 
         const formattedTime = new Date(msg.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
 
@@ -613,7 +616,8 @@
           replied_text: repliedTo ? document.querySelector(`[data-message-id="${repliedTo}"] .message-content p`).textContent : null
         };
         const messageDiv = createMessageElement(optimisticMsg, true);
-        messagesContainer.appendChild(messageDiv);
+        messageDiv.dataset.temp = 'true';
+        messagesContainer.insertBefore(messageDiv, bottomSentinel);
         attachBottomSentinel();
         smartScrollToBottom(true);
 
@@ -636,7 +640,14 @@
             alert('Failed to send message.');
           } else {
             const tempMsg = document.querySelector(`[data-message-id="${tempId}"]`);
-            if (tempMsg) tempMsg.dataset.messageId = data.message_id;
+            if (tempMsg) {
+              tempMsg.dataset.messageId = data.message.id;
+              tempMsg.dataset.timestamp = data.message.timestamp;
+              tempMsg.removeAttribute('data-temp');
+              const timeEl = tempMsg.querySelector('.message-time');
+              if (timeEl) timeEl.textContent = new Date(data.message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+            }
+            lastMessageTime = data.message.timestamp;
             // Update conversations list immediately after send
             updateConversationList(currentChatUserId, message);
           }
@@ -694,7 +705,7 @@
           ti = document.createElement('div');
           ti.className = 'typing-indicator';
           ti.textContent = 'Typing...';
-          messagesContainer.appendChild(ti);
+          messagesContainer.insertBefore(ti, bottomSentinel);
         }
         ti.style.display = 'block';
         clearTimeout(stopTypingTimer);
@@ -719,18 +730,43 @@
       // ---------- Load messages ----------
       async function fetchMessagesAndUpdate() {
         if (!currentChatUserId) return;
+        let url = `/messages/${currentChatUserId}`;
+        if (lastMessageTime) url += `?since=${lastMessageTime}`;
         try {
-          const response = await fetch(`/messages/${currentChatUserId}`);
+          const response = await fetch(url);
           const result = await response.json();
           if (result.success) {
-            const currentMsgsIds = Array.from(messagesContainer.querySelectorAll('.message')).map(el => el.dataset.messageId).filter(id => !id.startsWith('temp-'));
-            messagesContainer.innerHTML = '';
             result.messages.forEach(msg => {
-              const el = createMessageElement(msg, msg.sender_id === '{{ current_user_id }}');
-              messagesContainer.appendChild(el);
+              const existing = document.querySelector(`[data-message-id="${msg.id}"]`);
+              if (existing) return;
+
+              // Check for matching temp
+              const temps = Array.from(document.querySelectorAll('.message[data-temp="true"]'));
+              const matchingTemp = temps.find(t => {
+                return t.querySelector('p').textContent === msg.message &&
+                       t.dataset.sender === msg.sender_id &&
+                       Math.abs(new Date(t.dataset.timestamp) - new Date(msg.timestamp)) < 5000; // 5s window
+              });
+
+              if (matchingTemp) {
+                matchingTemp.dataset.messageId = msg.id;
+                matchingTemp.dataset.timestamp = msg.timestamp;
+                matchingTemp.removeAttribute('data-temp');
+                const timeEl = matchingTemp.querySelector('.message-time');
+                if (timeEl) timeEl.textContent = new Date(msg.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+              } else {
+                const el = createMessageElement(msg, msg.sender_id === '{{ current_user_id }}');
+                messagesContainer.insertBefore(el, bottomSentinel);
+              }
             });
-            attachBottomSentinel();
-            smartScrollToBottom(true);
+            if (result.messages.length > 0) {
+              lastMessageTime = result.messages[result.messages.length - 1].timestamp;
+              if (!atBottom) {
+                showNewMessageNotice();
+              } else {
+                smartScrollToBottom(true);
+              }
+            }
             if (result.is_typing) {
               showTypingIndicator();
             } else {
@@ -744,6 +780,7 @@
 
       async function loadMessages(userId) {
         currentChatUserId = userId;
+        lastMessageTime = null; // Reset to fetch all
         await fetchMessagesAndUpdate();
 
         try {
