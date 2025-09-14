@@ -547,9 +547,8 @@
                         <i class="fas fa-pencil-alt text-sm"></i>
                     </button>
                 </div>
-                <p id="religionImportanceView" class="view-field text-gray-700">{{ profile.religion_importance | replace('_', ' ') | title if profile.religion_importance != 'skip' else 'Skip' }}</p>
+                <p id="religionImportanceView" class="view-field text-gray-700">{{ profile.religion_importance | replace('_', ' ') | title }}</p>
                 <select id="religionImportanceEdit" class="edit-field w-full border rounded px-3 py-2">
-                    <option value="skip" {% if profile.religion_importance == 'skip' %}selected{% endif %}>Skip</option>
                     <option value="not_important" {% if profile.religion_importance == 'not_important' %}selected{% endif %}>Not Important</option>
                     <option value="somewhat_important" {% if profile.religion_importance == 'somewhat_important' %}selected{% endif %}>Somewhat Important</option>
                     <option value="very_important" {% if profile.religion_importance == 'very_important' %}selected{% endif %}>Very Important</option>
@@ -1040,7 +1039,7 @@
                     });
                     const result = await response.json();
                     if (result.success) {
-                        let displayText = data.religion_importance === 'skip' ? 'Skip' : data.religion_importance.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                        let displayText = data.religion_importance.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
                         document.getElementById('religionImportanceView').textContent = displayText;
                         religionImportanceSection.classList.remove('edit-mode');
                         showNotification('Religion importance updated successfully');
