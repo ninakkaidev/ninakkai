@@ -181,51 +181,6 @@
             background-color: #000000 !important;
         }
         
-        /* Language Selector Styles */
-        .language-selector-selector {
-            position: relative;
-        }
-        
-        .language-options {
-            position: absolute;
-            right: 0;
-            top: 100%;
-            width: 150px;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            z-index: 10;
-            display: none;
-        }
-        
-        .dark .language-options {
-            background-color: #1f2937;
-            border-color: #374151;
-        }
-        
-        .language-options.active {
-            display: block;
-        }
-        
-        .language-option {
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-        }
-        
-        .language-option:hover {
-            background-color: #f9fafb;
-        }
-        
-        .dark .language-option:hover {
-            background-color: #374151;
-        }
-        
-        .language-option.selected {
-            color: #ec4899;
-            font-weight: 500;
-        }
-        
         /* Change Password Modal */
         #changePasswordModal {
             transition: all 0.3s ease;
@@ -804,27 +759,11 @@
                                 <span class="toggle-status text-sm text-gray-500 ml-2 dark:text-gray-400"></span>
                             </div>
                         </div>
-                        <div class="flex justify-between items-center dark:text-gray-300">
-                            <span>Language</span>
-                            <div class="language-selector relative">
-                                <span class="text-gray-500 cursor-pointer flex items-center dark:text-gray-400">
-                                    English <i class="fas fa-chevron-down ml-1 text-xs"></i>
-                                </span>
-                                <div class="language-options hidden absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg shadow-lg rounded-lg z-10">
-                                    <div class="language-option selected px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="en">English</div>
-                                    <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="es">Español</div>
-                                    <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="fr">Français</div>
-                                    <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="de">Deutsch</div>
-                                    <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="ja">日本語</div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 
                 <!-- Danger Zone -->
                 <div class="settings-option p-3 rounded-lg border border-red-100 dark:border-red-900 dark:bg-gray-700">
-                    <h3 class="font-medium mb-2 text-red-500 dark:text-red-400">Danger Zone</h3>
                     <div class="space-y-3">
                         <button id="deleteAccountBtn" class="w-full text-left text-red-500 dark:text-red-400">Delete Account</button>
                         <button id="logoutBtn" class="w-full text-left text-red-500 dark:text-red-400">Log Out</button>
@@ -1296,43 +1235,6 @@
                     showNotification('Dark mode disabled');
                 }
                 updateToggleStatus(this);
-            });
-            
-            // Language selector functionality
-            const languageSelectors = document.querySelectorAll('.language-selector');
-            
-            languageSelectors.forEach(selector => {
-                const toggle = selector.querySelector('span');
-                const options = selector.querySelector('.language-options');
-                
-                toggle.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    options.classList.toggle('hidden');
-                });
-                
-                selector.querySelectorAll('.language-option').forEach(option => {
-                    option.addEventListener('click', function() {
-                        const lang = this.getAttribute('data-lang');
-                        
-                        selector.querySelectorAll('.language-option').forEach(opt => {
-                            opt.classList.remove('selected');
-                        });
-                        this.classList.add('selected');
-                        
-                        toggle.innerHTML = `${this.textContent} <i class="fas fa-chevron-down ml-1 text-xs"></i>`;
-                        options.classList.add('hidden');
-                        
-                        showNotification(`Language changed to ${this.textContent}`);
-                    });
-                });
-            });
-            
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.language-selector')) {
-                    document.querySelectorAll('.language-options').forEach(options => {
-                        options.classList.add('hidden');
-                    });
-                }
             });
             
             // Change Password functionality
