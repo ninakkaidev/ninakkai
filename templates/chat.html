@@ -127,7 +127,7 @@
       display: flex; flex-direction: column; scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
     }
 
-    .message { max-width: 75%; margin-bottom: 0.75rem; display: flex; align-self: flex-start; }
+    .message { max-width: 75%; margin-bottom: 0.75rem; display: flex; align-self: flex-start; position: relative; }
     .message.sent { align-self: flex-end; margin-right: 0.5rem; }
     .message-content { padding: 0.625rem 0.875rem; border-radius: 12px; word-wrap: break-word; line-height: 1.4; position: relative; }
     .message.received .message-content { background-color: var(--message-received); border-top-left-radius: 4px; color: var(--text-light); }
@@ -143,6 +143,32 @@
     .message:hover .message-actions { opacity: 1; }
     .message-actions button { background: transparent; border: none; color: var(--text-gray); font-size: 0.75rem; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
     .message-actions button:hover { color: var(--primary-light); }
+
+    .message.deleting {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .message.deleting .message-actions {
+      display: none !important;
+    }
+    .message.deleting::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      margin: -10px 0 0 -10px;
+      border: 2px solid transparent;
+      border-top: 2px solid var(--text-gray);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      z-index: 10;
+    }
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
 
     .typing-indicator {
       display: none; font-size: 0.8125rem; color: var(--text-gray); padding: 0.625rem 0.875rem; border-radius: 12px;
@@ -524,21 +550,31 @@
       async function deleteMessage(messageId) {
         if (!confirm('Delete this message?')) return;
 
+        const el = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (!el) return;
+
         // Handle temporary messages locally (optimistic UI)
         if (messageId.startsWith('temp-')) {
-          const el = document.querySelector(`[data-message-id="${messageId}"]`);
-          if (el) el.remove();
+          el.remove();
           return;
         }
+
+        // Add deleting class for loader effect
+        el.classList.add('deleting');
 
         try {
           const res = await fetch('/delete_message', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message_id: messageId }) });
           const data = await res.json();
           if (data.success) {
-            const el = document.querySelector(`[data-message-id="${messageId}"]`);
-            if (el) el.remove();
-          } else alert('Failed to delete message.');
-        } catch { alert('Error deleting message.'); }
+            el.remove();
+          } else {
+            alert('Failed to delete message.');
+            el.classList.remove('deleting');
+          }
+        } catch (error) {
+          alert('Error deleting message.');
+          el.classList.remove('deleting');
+        }
       }
 
       // ---------- Bottom sentinel + observer (robust "new message" banner) ----------
