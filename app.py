@@ -65,7 +65,27 @@ app.config.update(
 # Initialize Cloudinary
 configure_cloudinary()
 
-# Personalities dictionary
+# Personality compatibility matrix (short names)
+COMPATIBILITY_MATRIX = {
+    'Prot': {'Prot': 70, 'Nurt': 85, 'Rom': 65, 'List': 82, 'Dream': 60, 'Ideal': 72},
+    'Nurt': {'Prot': 85, 'Nurt': 75, 'Rom': 87, 'List': 92, 'Dream': 78, 'Ideal': 82},
+    'Rom': {'Prot': 65, 'Nurt': 87, 'Rom': 80, 'List': 88, 'Dream': 70, 'Ideal': 75},
+    'List': {'Prot': 82, 'Nurt': 92, 'Rom': 88, 'List': 85, 'Dream': 77, 'Ideal': 80},
+    'Dream': {'Prot': 60, 'Nurt': 78, 'Rom': 70, 'List': 77, 'Dream': 75, 'Ideal': 68},
+    'Ideal': {'Prot': 72, 'Nurt': 82, 'Rom': 75, 'List': 80, 'Dream': 68, 'Ideal': 78},
+}
+
+# Type mapping from emoji to short name
+TYPE_MAP = {
+    '🛡️ Protector': 'Prot',
+    '🌿 Nurturer': 'Nurt',
+    '💘 Romantic': 'Rom',
+    '👂 Listener': 'List',
+    '🌙 Dreamer': 'Dream',
+    '🌟 Idealist': 'Ideal'
+}
+
+# Personalities dictionary (updated compatibility lists based on top percentages from matrix)
 PERSONALITIES = {
     '🌿 Nurturer': {
         'dominant_type': '🌿 Nurturer',
@@ -73,7 +93,7 @@ PERSONALITIES = {
         'description': 'You’re gentle, loyal, and always ready to hold space for someone you love. You build relationships with quiet strength and warmth.',
         'tagline': '“Soft-hearted, deep-rooted.”',
         'strengths': ['Gentle', 'Loyal', 'Empathetic'],
-        'compatibility': ['🛡️ Protector', '👂 Listener'],
+        'compatibility': ['👂 Listener', '💘 Romantic'],  # Updated: 92% List, 87% Rom
         'color': '#4CAF50'  # Green
     },
     '🛡️ Protector': {
@@ -82,7 +102,7 @@ PERSONALITIES = {
         'description': 'You’re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — and showing up when it matters.',
         'tagline': '“Safe. Steady. Yours.”',
         'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
-        'compatibility': ['🌿 Nurturer', '🌙 Dreamer'],
+        'compatibility': ['🌿 Nurturer', '👂 Listener'],  # Updated: 85% Nurt, 82% List
         'color': '#2196F3'  # Blue
     },
     '🌙 Dreamer': {
@@ -91,7 +111,7 @@ PERSONALITIES = {
         'description': 'You feel deeply and love boldly. You seek the kind of connection that feels written in the stars. You crave the kind of love that makes your soul glow.',
         'tagline': '“Romance is your religion.”',
         'strengths': ['Deep', 'Bold', 'Soulful'],
-        'compatibility': ['💘 Romantic', '🌟 Idealist'],
+        'compatibility': ['🌿 Nurturer', '👂 Listener'],  # Updated: 78% Nurt, 77% List
         'color': '#9C27B0'  # Purple
     },
     '👂 Listener': {
@@ -100,7 +120,7 @@ PERSONALITIES = {
         'description': 'Calm and thoughtful, you hear more than what’s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
         'tagline': '“Still waters, true heart.”',
         'strengths': ['Calm', 'Thoughtful', 'Present'],
-        'compatibility': ['🌿 Nurturer', '🛡️ Protector'],
+        'compatibility': ['🌿 Nurturer', '💘 Romantic'],  # Updated: 92% Nurt, 88% Rom
         'color': '#03A9F4'  # Light Blue
     },
     '💘 Romantic': {
@@ -109,7 +129,7 @@ PERSONALITIES = {
         'description': 'You lead with your heart, express love freely, and long for emotional electricity. You don’t just fall in love — you dive in.',
         'tagline': '“Loving loudly. Feeling deeply.”',
         'strengths': ['Heart-led', 'Expressive', 'Passionate'],
-        'compatibility': ['🌙 Dreamer', '🌟 Idealist'],
+        'compatibility': ['👂 Listener', '🌿 Nurturer'],  # Updated: 88% List, 87% Nurt
         'color': '#E91E63'  # Pink
     },
     '🌟 Idealist': {
@@ -118,7 +138,7 @@ PERSONALITIES = {
         'description': 'You believe love should feel right — clear, mutual, and beautifully real. You wait for the one who understands your soul.',
         'tagline': '“Only real love will do.”',
         'strengths': ['Believer', 'Clear', 'Soul-seeking'],
-        'compatibility': ['🌙 Dreamer', '💘 Romantic'],
+        'compatibility': ['🌿 Nurturer', '👂 Listener'],  # Updated: 82% Nurt, 80% List
         'color': '#FFEB3B'  # Yellow
     },
 }
@@ -750,22 +770,32 @@ class MongoService:
 
     def _calculate_match_percentage(self, user_scores: Dict[str, Any], other_scores: Dict[str, Any]) -> int:
         try:
-            user_types = user_scores.get('type_counts', {})
-            other_types = other_scores.get('type_counts', {})
-            all_types = set(user_types.keys()).union(other_types.keys())
-            similarity = 0
-            total = 0
-            for t in all_types:
-                u = user_types.get(t, 0)
-                o = other_types.get(t, 0)
-                similarity += min(u, o)
-                total += max(u, o)
-            base_percentage = int((similarity / total * 100) if total > 0 else 50)
+            user_dom = user_scores['dominant_type']
+            other_dom = other_scores['dominant_type']
+            user_dom_short = TYPE_MAP.get(user_dom)
+            other_dom_short = TYPE_MAP.get(other_dom)
+            if not user_dom_short or not other_dom_short:
+                return 50
+            base_percentage = COMPATIBILITY_MATRIX.get(user_dom_short, {}).get(other_dom_short, 50)
 
-            # Add bonuses
+            # Secondary bonus
+            user_sec = user_scores.get('secondary_type')
+            other_sec = other_scores.get('secondary_type')
+            sec_bonus = 0
+            if user_sec:
+                user_sec_short = TYPE_MAP.get(user_sec)
+                sec_perc = COMPATIBILITY_MATRIX.get(user_sec_short, {}).get(other_dom_short, 0)
+                sec_bonus += sec_perc * 0.3
+            if other_sec:
+                other_sec_short = TYPE_MAP.get(other_sec)
+                sec_perc = COMPATIBILITY_MATRIX.get(user_dom_short, {}).get(other_sec_short, 0)
+                sec_bonus += sec_perc * 0.3
+            base_percentage += sec_bonus / 2
+
+            # Keeper seeker bonus
             keeper_seeker_bonus = 15 if user_scores.get('keeper_seeker_type') == other_scores.get('keeper_seeker_type') else 0
 
-            return min(base_percentage + keeper_seeker_bonus, 100)
+            return int(min(base_percentage + keeper_seeker_bonus, 100))
         except Exception as e:
             logger.error(f"Calculate match percentage error: {str(e)}")
             return 50
