@@ -380,6 +380,18 @@
             border-color: #ec4899 !important;
             box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.5) !important;
         }
+
+        /* Personality Styles */
+        .primary-personality {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #000; /* Darker color for highlight */
+        }
+
+        .secondary-personality {
+            font-size: 0.9em;
+            color: #666; /* Lighter color for less highlight */
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -477,23 +489,6 @@
             </div>
             {% endif %}
 
-            <!-- Religion -->
-            <div class="mt-6 religion-section">
-                <div class="flex justify-between items-center mb-2">
-                    <h3 class="font-semibold">Religion</h3>
-                    <div class="flex items-center">
-                        <div class="toggle-container">
-                            <input type="checkbox" id="religionPublicToggle" class="sr-only peer" {% if profile.religion_public %}checked{% endif %}>
-                            <label for="religionPublicToggle" class="toggle-label relative inline-block w-11 h-6 bg-gray-200 rounded-full cursor-pointer peer-checked:bg-pink-500 transition-colors duration-300">
-                                <span class="toggle-knob absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm transform peer-checked:translate-x-5 transition-transform duration-300"></span>
-                            </label>
-                            <span class="toggle-status text-sm text-gray-500 ml-2 dark:text-gray-400"></span>
-                        </div>
-                    </div>
-                </div>
-                <p id="religionView" class="view-field text-gray-700">{{ profile.religion if profile.religion != 'N/A' else 'Not set' }}</p>
-            </div>
-
             <!-- Religion Importance -->
             <div class="mt-6 religion-importance-section">
                 <div class="flex justify-between items-center mb-2">
@@ -513,29 +508,6 @@
                     <button id="saveReligionImportanceBtn" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600">Save</button>
                 </div>
             </div>
-
-            <!-- Physical Traits -->
-            {% if profile.physical_traits %}
-            <div class="mt-6 physical-traits-section">
-                <div class="flex justify-between items-center mb-2">
-                    <h3 class="font-semibold">Physical Traits</h3>
-                    <div class="flex items-center">
-                        <div class="toggle-container">
-                            <input type="checkbox" id="physicalPublicToggle" class="sr-only peer" {% if profile.physical_public %}checked{% endif %}>
-                            <label for="physicalPublicToggle" class="toggle-label relative inline-block w-11 h-6 bg-gray-200 rounded-full cursor-pointer peer-checked:bg-pink-500 transition-colors duration-300">
-                                <span class="toggle-knob absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm transform peer-checked:translate-x-5 transition-transform duration-300"></span>
-                            </label>
-                            <span class="toggle-status text-sm text-gray-500 ml-2 dark:text-gray-400"></span>
-                        </div>
-                    </div>
-                </div>
-                {% for label, value in profile.physical_traits.items() %}
-                <div class="trait-item">
-                    <p class="view-field text-gray-700">{{ label }}: {{ value }}</p>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
 
             <!-- Physical Importance -->
             <div class="mt-6 physical-importance-section">
@@ -1192,11 +1164,7 @@
             function updateToggleStatus(toggle) {
                 const status = toggle.parentElement.querySelector('.toggle-status');
                 if (status) {
-                    if (toggle.id === 'religionPublicToggle' || toggle.id === 'physicalPublicToggle') {
-                        status.textContent = toggle.checked ? 'Public' : 'Private';
-                    } else {
-                        status.textContent = toggle.checked ? 'On' : 'Off';
-                    }
+                    status.textContent = toggle.checked ? 'On' : 'Off';
                     status.classList.toggle('text-pink-500', toggle.checked);
                     status.classList.toggle('text-gray-500', !toggle.checked);
                 }
@@ -1651,63 +1619,6 @@
                     confirmation.querySelector('.cancel-btn').addEventListener('click', () => {
                         confirmation.remove();
                     });
-                });
-            }
-
-            // Visibility toggles for religion and physical appearance
-            const religionPublicToggle = document.getElementById('religionPublicToggle');
-            if (religionPublicToggle) {
-                updateToggleStatus(religionPublicToggle);
-                religionPublicToggle.addEventListener('change', async function() {
-                    try {
-                        const response = await fetch('/update_profile', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ religion_public: this.checked }),
-                            credentials: 'include'
-                        });
-                        const result = await response.json();
-                        if (result.success) {
-                            showNotification(`Religion visibility set to ${this.checked ? 'public' : 'private'}`);
-                            updateToggleStatus(this);
-                        } else {
-                            this.checked = !this.checked;
-                            updateToggleStatus(this);
-                            showNotification('Failed to update visibility');
-                        }
-                    } catch (error) {
-                        this.checked = !this.checked;
-                        updateToggleStatus(this);
-                        showNotification('Error updating visibility');
-                    }
-                });
-            }
-
-            const physicalPublicToggle = document.getElementById('physicalPublicToggle');
-            if (physicalPublicToggle) {
-                updateToggleStatus(physicalPublicToggle);
-                physicalPublicToggle.addEventListener('change', async function() {
-                    try {
-                        const response = await fetch('/update_profile', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ physical_public: this.checked }),
-                            credentials: 'include'
-                        });
-                        const result = await response.json();
-                        if (result.success) {
-                            showNotification(`Physical traits visibility set to ${this.checked ? 'public' : 'private'}`);
-                            updateToggleStatus(this);
-                        } else {
-                            this.checked = !this.checked;
-                            updateToggleStatus(this);
-                            showNotification('Failed to update visibility');
-                        }
-                    } catch (error) {
-                        this.checked = !this.checked;
-                        updateToggleStatus(this);
-                        showNotification('Error updating visibility');
-                    }
                 });
             }
         });

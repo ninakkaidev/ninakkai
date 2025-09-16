@@ -1854,11 +1854,13 @@ def user_profile(user_id):
             'color': '#000000'
         })
         personality_info = f"""
+        <span class="primary-personality">
         <strong>{personality['title']}</strong><br>
         {personality['description']}<br>
         <em>{personality['tagline']}</em><br>
         <strong>Strengths:</strong> {', '.join(personality['strengths'])}<br>
         <strong>Compatibility:</strong> {', '.join(personality['compatibility'])}
+        </span>
         """
 
         secondary_personality_info = None
@@ -1874,11 +1876,13 @@ def user_profile(user_id):
                 'color': '#000000'
             })
             secondary_personality_info = f"""
+            <span class="secondary-personality">
             <br><strong>Secondary: {secondary_personality['title']}</strong><br>
             {secondary_personality['description']}<br>
             <em>{secondary_personality['tagline']}</em><br>
             <strong>Strengths:</strong> {', '.join(secondary_personality['strengths'])}<br>
             <strong>Compatibility:</strong> {', '.join(secondary_personality['compatibility'])}
+            </span>
             """
 
         profile = {
@@ -2095,13 +2099,15 @@ def profile():
             'compatibility': [],
             'color': '#000000'
         })
-        # Format personality_info as HTML
+        # Format personality_info as HTML with classes
         personality_info = f"""
+        <span class="primary-personality">
         <strong>{personality['title']}</strong><br>
         {personality['description']}<br>
         <em>{personality['tagline']}</em><br>
         <strong>Strengths:</strong> {', '.join(personality['strengths'])}<br>
         <strong>Compatibility:</strong> {', '.join(personality['compatibility'])}
+        </span>
         """
         if quiz_result['scores']['secondary_type']:
             secondary_type = quiz_result['scores']['secondary_type']
@@ -2115,11 +2121,13 @@ def profile():
                 'color': '#000000'
             })
             personality_info += f"""
+            <span class="secondary-personality">
             <br><strong>Secondary: {secondary_personality['title']}</strong><br>
             {secondary_personality['description']}<br>
             <em>{secondary_personality['tagline']}</em><br>
             <strong>Strengths:</strong> {', '.join(secondary_personality['strengths'])}<br>
             <strong>Compatibility:</strong> {', '.join(secondary_personality['compatibility'])}
+            </span>
             """
         profile = {
             'id': user['id'],

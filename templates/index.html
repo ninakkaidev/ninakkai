@@ -248,9 +248,9 @@
       transform: scale(1.05);
     }
 
-    /* Updated About Section */
+    /* Updated About Section - More compact */
     .about-section {
-      padding: 80px 20px;
+      padding: 60px 20px;
       background-color: #fff;
     }
 
@@ -259,7 +259,7 @@
       margin: 0 auto;
       display: flex;
       flex-wrap: wrap;
-      gap: 40px;
+      gap: 30px;
       align-items: center;
     }
 
@@ -288,30 +288,30 @@
     }
 
     .about-title {
-      font-size: 2.5rem;
+      font-size: 2rem;
       color: #333;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       text-align: center;
     }
 
     .about-text {
       color: #555;
-      line-height: 1.8;
-      font-size: 1.1rem;
-      margin-bottom: 25px;
+      line-height: 1.6;
+      font-size: 1rem;
+      margin-bottom: 20px;
     }
 
     .about-text p {
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
 
     .about-highlight {
       background: linear-gradient(120deg, rgba(255,77,109,0.1) 0%, rgba(255,77,109,0.3) 100%);
       border-left: 4px solid var(--primary);
-      padding: 20px;
+      padding: 15px;
       border-radius: 0 8px 8px 0;
-      margin: 30px 0;
-      font-size: 1.15rem;
+      margin: 20px 0;
+      font-size: 1rem;
       font-weight: 600;
     }
 
@@ -324,20 +324,20 @@
     .about-features {
       display: flex;
       flex-wrap: wrap;
-      gap: 15px;
-      margin-top: 30px;
+      gap: 10px;
+      margin-top: 20px;
     }
 
     .feature-item {
       flex: 1 1 200px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .feature-icon {
       color: var(--primary);
-      font-size: 1.2rem;
+      font-size: 1.1rem;
     }
 
     .hamburger {
@@ -575,7 +575,7 @@
       }
 
       .about-title {
-        font-size: 2rem;
+        font-size: 1.8rem;
       }
 
       .about-container {
@@ -782,7 +782,7 @@
       <button class="btn-hero" onclick="location.href='{{ url_for('auth') }}'">Get Started</button>
     </div>
 
-    <!-- Updated About Section -->
+    <!-- Updated About Section - More compact -->
     <section class="about-section" id="about-section">
       <h2 class="about-title">About Ninakkai</h2>
       <div class="about-container">
@@ -865,7 +865,7 @@
   </div>
 
   <script>
-    // Loader functionality
+    // Loader functionality - Reduced time from 1500ms to 1000ms
     window.addEventListener('load', function() {
       setTimeout(function() {
         document.getElementById('loader').style.opacity = '0';
@@ -874,7 +874,7 @@
         setTimeout(function() {
           document.getElementById('loader').style.display = 'none';
         }, 500);
-      }, 1500); // Show loader for 1.5 seconds
+      }, 1000); // Show loader for 1 second (reduced from 1.5 seconds)
     });
 
     window.addEventListener('scroll', function () {
