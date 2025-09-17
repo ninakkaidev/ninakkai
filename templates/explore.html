@@ -840,7 +840,7 @@
                                             card.style.transition = 'opacity 0.5s ease';
                                             setTimeout(() => card.remove(), 500);
                                         }
-                                    }, 1500);
+                                    }, 150);
                                 } else {
                                     // For unlike, optionally refresh to add back, but skipping for simplicity
                                 }
@@ -905,7 +905,7 @@
                 }
             });
 
-            // Update matches dynamically with progressive loading
+            // Search dynamically with progressive loading
             function updateMatches(matches) {
                 const matchesGrid = document.getElementById('matches-grid');
                 matchesGrid.innerHTML = '';
@@ -1059,7 +1059,7 @@
                         const profileViewer = document.createElement('div');
                         profileViewer.className = 'profile-viewer bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100';
                         let additionalSections = '';
-                        if (profile.user.religion && profile.user.religion !== 'Private') {
+                        if (profile.user.religion && profile.user.religion !== 'Private' && profile.user.religion !== 'Not specified') {
                             additionalSections += `
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Religion</h3>
@@ -1067,7 +1067,7 @@
                                 </div>
                             `;
                         }
-                        if (typeof profile.user.physical_traits === 'object' && profile.user.physical_traits !== null && Object.keys(profile.user.physical_traits).length > 0) {
+                        if (profile.user.physical_traits && typeof profile.user.physical_traits === 'object' && !Array.isArray(profile.user.physical_traits) && Object.keys(profile.user.physical_traits).length > 0) {
                             additionalSections += `
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Physical Traits</h3>
@@ -1183,23 +1183,23 @@
                                         ${profile.user.secondary_personality_info.compatibility && profile.user.secondary_personality_info.compatibility.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Compatibility:</strong> ${profile.user.secondary_personality_info.compatibility.join(', ')}</p>` : ''}
                                     ` : ''}
                                 </div>
+                                ${profile.user.interests && profile.user.interests.length > 0 ? `
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Interests</h3>
                                     <div class="flex flex-wrap gap-2">
-                                        ${profile.user.interests && profile.user.interests.length ? profile.user.interests.map(interest => `<span class="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100 px-3 py-1 rounded-full text-sm">${interest}</span>`).join('') : '<span class="text-gray-600 dark:text-gray-400">No interests listed</span>'}
+                                        ${profile.user.interests.map(interest => `<span class="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100 px-3 py-1 rounded-full text-sm">${interest}</span>`).join('')}
                                     </div>
                                 </div>
+                                ` : ''}
                                 ${additionalSections}
+                                ${profile.user.photos && profile.user.photos.length > 0 ? `
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Photos</h3>
-                                    ${profile.user.photos && profile.user.photos.length ? `
-                                        <div class="grid grid-cols-2 gap-4">
-                                            ${profile.user.photos.map(photo => `<img src="${photo}" alt="User photo" class="rounded-lg object-cover h-40 w-full">`).join('')}
-                                        </div>
-                                    ` : `
-                                        <p class="text-gray-700 dark:text-gray-300">No pictures uploaded yet</p>
-                                    `}
+                                    <div class="grid grid-cols-2 gap-4">
+                                        ${profile.user.photos.map(photo => `<img src="${photo}" alt="User photo" class="rounded-lg object-cover h-40 w-full">`).join('')}
+                                    </div>
                                 </div>
+                                ` : ''}
                                 <div class="flex justify-between mt-8">
                                     ${passButtonHTML}
                                     <button class="bg-red-500 text-white rounded-full px-6 py-3 flex-1 ml-2 transition report-button" data-user-id="${userId}">
