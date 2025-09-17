@@ -1067,7 +1067,7 @@
                                 </div>
                             `;
                         }
-                        if (Object.keys(profile.user.physical_traits).length > 0) {
+                        if (typeof profile.user.physical_traits === 'object' && profile.user.physical_traits !== null && Object.keys(profile.user.physical_traits).length > 0) {
                             additionalSections += `
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Physical Traits</h3>
