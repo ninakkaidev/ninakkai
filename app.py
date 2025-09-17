@@ -1874,7 +1874,7 @@ def user_profile(user_id):
         if current_quiz and quiz_result:
             match_percentage = mongo_service._calculate_match_percentage(current_quiz['scores'], quiz_result['scores'])
         dominant_type = quiz_result['scores']['dominant_type'] if quiz_result else 'N/A'
-        personality = PERSONALITIES.get(dominant_type, {
+        personality_info = PERSONALITIES.get(dominant_type, {
             'dominant_type': dominant_type,
             'title': f'This person is a {dominant_type.replace(" ", "")}.',
             'description': 'Description not available.',
@@ -1883,25 +1883,10 @@ def user_profile(user_id):
             'compatibility': [],
             'color': '#000000'
         })
-        # Build personality_info conditionally
-        personality_info = f"""
-        <span class="primary-personality">
-        <strong>{personality['title']}</strong><br>
-        """
-        if personality['description'] and personality['description'] != 'Description not available.':
-            personality_info += f"{personality['description']}<br>"
-        if personality['tagline']:
-            personality_info += f"<em>{personality['tagline']}</em><br>"
-        if personality['strengths']:
-            personality_info += f"<strong>Strengths:</strong> {', '.join(personality['strengths'])}<br>"
-        if personality['compatibility']:
-            personality_info += f"<strong>Compatibility:</strong> {', '.join(personality['compatibility'])}"
-        personality_info += "</span>"
-
         secondary_personality_info = None
         if quiz_result and quiz_result['scores'].get('secondary_type'):
             secondary_type = quiz_result['scores']['secondary_type']
-            secondary_personality = PERSONALITIES.get(secondary_type, {
+            secondary_personality_info = PERSONALITIES.get(secondary_type, {
                 'dominant_type': secondary_type,
                 'title': f'This person is a {secondary_type.replace(" ", "")}.',
                 'description': 'Description not available.',
@@ -1910,20 +1895,6 @@ def user_profile(user_id):
                 'compatibility': [],
                 'color': '#000000'
             })
-            secondary_personality_info = f"""
-            <span class="secondary-personality">
-            <br><strong>Secondary: {secondary_personality['title']}</strong><br>
-            """
-            if secondary_personality['description'] and secondary_personality['description'] != 'Description not available.':
-                secondary_personality_info += f"{secondary_personality['description']}<br>"
-            if secondary_personality['tagline']:
-                secondary_personality_info += f"<em>{secondary_personality['tagline']}</em><br>"
-            if secondary_personality['strengths']:
-                secondary_personality_info += f"<strong>Strengths:</strong> {', '.join(secondary_personality['strengths'])}<br>"
-            if secondary_personality['compatibility']:
-                secondary_personality_info += f"<strong>Compatibility:</strong> {', '.join(secondary_personality['compatibility'])}"
-            secondary_personality_info += "</span>"
-
         profile = {
             'id': user['id'],
             'full_name': user['full_name'],
@@ -1946,7 +1917,7 @@ def user_profile(user_id):
             },
             'personality_info': personality_info,
             'secondary_personality_info': secondary_personality_info,
-            'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'N/A') if quiz_result else 'N/A',
+            'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'Unknown') if quiz_result else 'Unknown',
             'religion': user.get('religion', 'Not specified') if user.get('religion_public', False) else 'Private',
             'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])} if user.get('physical_public', False) else 'Private',  # Added conditional visibility
             'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
@@ -2142,16 +2113,12 @@ def profile():
         personality_info = f"""
         <span class="primary-personality">
         <strong>{personality['title']}</strong><br>
+        {personality['description']}<br>
+        <em>{personality['tagline']}</em><br>
+        <strong>Strengths:</strong> {', '.join(personality['strengths'])}<br>
+        <strong>Compatibility:</strong> {', '.join(personality['compatibility'])}
+        </span>
         """
-        if personality['description'] and personality['description'] != 'Description not available.':
-            personality_info += f"{personality['description']}<br>"
-        if personality['tagline']:
-            personality_info += f"<em>{personality['tagline']}</em><br>"
-        if personality['strengths']:
-            personality_info += f"<strong>Strengths:</strong> {', '.join(personality['strengths'])}<br>"
-        if personality['compatibility']:
-            personality_info += f"<strong>Compatibility:</strong> {', '.join(personality['compatibility'])}"
-        personality_info += "</span>"
         if quiz_result['scores']['secondary_type']:
             secondary_type = quiz_result['scores']['secondary_type']
             secondary_personality = PERSONALITIES.get(secondary_type, {
@@ -2166,16 +2133,12 @@ def profile():
             personality_info += f"""
             <span class="secondary-personality">
             <br><strong>Secondary: {secondary_personality['title']}</strong><br>
+            {secondary_personality['description']}<br>
+            <em>{secondary_personality['tagline']}</em><br>
+            <strong>Strengths:</strong> {', '.join(secondary_personality['strengths'])}<br>
+            <strong>Compatibility:</strong> {', '.join(secondary_personality['compatibility'])}
+            </span>
             """
-            if secondary_personality['description'] and secondary_personality['description'] != 'Description not available.':
-                personality_info += f"{secondary_personality['description']}<br>"
-            if secondary_personality['tagline']:
-                personality_info += f"<em>{secondary_personality['tagline']}</em><br>"
-            if secondary_personality['strengths']:
-                personality_info += f"<strong>Strengths:</strong> {', '.join(secondary_personality['strengths'])}<br>"
-            if secondary_personality['compatibility']:
-                personality_info += f"<strong>Compatibility:</strong> {', '.join(secondary_personality['compatibility'])}"
-            personality_info += "</span>"
         profile = {
             'id': user['id'],
             'email': user['email'],

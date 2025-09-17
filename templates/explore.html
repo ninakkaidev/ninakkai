@@ -1168,12 +1168,20 @@
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Personality Details</h3>
                                     ${profile.user.personality_info ? `
-                                        <p class="text-gray-700 dark:text-gray-300"><strong>${profile.user.personality_info.title || 'Personality Information'}</strong></p>
-                                        <p class="text-gray-700 dark:text-gray-300">${profile.user.personality_info.description || 'No description available'}</p>
-                                        <p class="text-gray-700 dark:text-gray-300"><em>${profile.user.personality_info.tagline || ''}</em></p>
-                                        <p class="text-gray-700 dark:text-gray-300"><strong>Strengths:</strong> ${profile.user.personality_info.strengths ? profile.user.personality_info.strengths.join(', ') : 'Not specified'}</p>
-                                        <p class="text-gray-700 dark:text-gray-300"><strong>Compatibility:</strong> ${profile.user.personality_info.compatibility ? profile.user.personality_info.compatibility.join(', ') : 'Not specified'}</p>
+                                        ${profile.user.personality_info.title ? `<p class="text-gray-700 dark:text-gray-300"><strong>${profile.user.personality_info.title}</strong></p>` : ''}
+                                        ${profile.user.personality_info.description && profile.user.personality_info.description !== 'Description not available.' ? `<p class="text-gray-700 dark:text-gray-300">${profile.user.personality_info.description}</p>` : ''}
+                                        ${profile.user.personality_info.tagline ? `<p class="text-gray-700 dark:text-gray-300"><em>${profile.user.personality_info.tagline}</em></p>` : ''}
+                                        ${profile.user.personality_info.strengths && profile.user.personality_info.strengths.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Strengths:</strong> ${profile.user.personality_info.strengths.join(', ')}</p>` : ''}
+                                        ${profile.user.personality_info.compatibility && profile.user.personality_info.compatibility.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Compatibility:</strong> ${profile.user.personality_info.compatibility.join(', ')}</p>` : ''}
                                     ` : '<p class="text-gray-700 dark:text-gray-300">No personality information available</p>'}
+                                    ${profile.user.secondary_personality_info ? `
+                                        <p class="text-gray-700 dark:text-gray-300"><strong>Secondary Personality</strong></p>
+                                        ${profile.user.secondary_personality_info.title ? `<p class="text-gray-700 dark:text-gray-300"><strong>${profile.user.secondary_personality_info.title}</strong></p>` : ''}
+                                        ${profile.user.secondary_personality_info.description && profile.user.secondary_personality_info.description !== 'Description not available.' ? `<p class="text-gray-700 dark:text-gray-300">${profile.user.secondary_personality_info.description}</p>` : ''}
+                                        ${profile.user.secondary_personality_info.tagline ? `<p class="text-gray-700 dark:text-gray-300"><em>${profile.user.secondary_personality_info.tagline}</em></p>` : ''}
+                                        ${profile.user.secondary_personality_info.strengths && profile.user.secondary_personality_info.strengths.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Strengths:</strong> ${profile.user.secondary_personality_info.strengths.join(', ')}</p>` : ''}
+                                        ${profile.user.secondary_personality_info.compatibility && profile.user.secondary_personality_info.compatibility.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Compatibility:</strong> ${profile.user.secondary_personality_info.compatibility.join(', ')}</p>` : ''}
+                                    ` : ''}
                                 </div>
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Interests</h3>
