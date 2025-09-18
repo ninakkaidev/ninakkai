@@ -1382,7 +1382,10 @@
         submitButton.className = 'rank-submit';
         submitButton.textContent = 'Submit Ranking';
         submitButton.disabled = true;
-        submitButton.addEventListener('click', submitRank);
+        submitButton.addEventListener('click', () => {
+          submitButton.disabled = true;
+          submitRank();
+        });
         answersElement.appendChild(submitButton);
       } else if (questionData.isTextInput) {
         console.log('Displaying text input question');
@@ -1396,6 +1399,7 @@
         submitButton.textContent = 'Submit';
         submitButton.addEventListener('click', () => {
           if (input.value.trim()) {
+            submitButton.disabled = true;
             selectAnswer({ value: input.value, section: questionData.section });
             input.classList.add('animate__animated', 'animate__pulse');
             setTimeout(() => {
@@ -1447,6 +1451,7 @@
             val = otherInput.value.trim() || 'Other';
           }
           if (val) {
+            submitButton.disabled = true;
             selectAnswer({ value: val, section: questionData.section });
             submitButton.classList.add('animate__animated', 'animate__pulse');
             setTimeout(() => {
@@ -1531,6 +1536,7 @@
         submitButton.className = 'rank-submit';
         submitButton.textContent = questionData.submitText || 'Submit';
         submitButton.addEventListener('click', () => {
+          submitButton.disabled = true;
           const responses = [];
           const inputs = answersElement.querySelectorAll('.form-control, .chip.selected');
           inputs.forEach(input => {
@@ -1571,6 +1577,7 @@
         submitButton.className = 'rank-submit';
         submitButton.textContent = 'Submit';
         submitButton.addEventListener('click', () => {
+          submitButton.disabled = true;
           const toggles = [];
           toggleContainer.querySelectorAll('input').forEach(input => {
             toggles.push({ label: input.dataset.label, value: input.checked });
@@ -1589,7 +1596,8 @@
           const button = document.createElement('button');
           button.textContent = answer;
           button.addEventListener('click', () => {
-            // For keeper/seeker questions, store the keeperSeeker value instead of type
+            const allBtns = answersElement.querySelectorAll('button');
+            allBtns.forEach(b => b.disabled = true);
             if (questionData.keeperSeeker) {
               selectAnswer({ index, keeperSeeker: questionData.keeperSeeker[index] });
             } else {
@@ -1598,7 +1606,6 @@
             button.classList.add('animate__animated', 'animate__pulse');
             setTimeout(() => {
               button.classList.remove('animate__animated', 'animate__pulse');
-              // Check for dynamic next question
               if (questionData.nextQuestion) {
                 const next = questionData.nextQuestion(index);
                 if (next) {
@@ -1611,7 +1618,7 @@
           answersElement.appendChild(button);
         });
       }
-      // Animate question and answers
+      // Animate question box
       questionBox.classList.add('animate__animated', 'animate__fadeIn');
       setTimeout(() => {
         questionBox.classList.remove('animate__animated', 'animate__fadeIn');
