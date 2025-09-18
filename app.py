@@ -419,7 +419,16 @@ class MongoService:
                     elif ans['section'] == 'filter_settings':
                         update_data['filter_settings'] = ans.get('toggles', [])
                     elif ans['section'] == 'profile_setup':
-                        update_data['profile_data'] = ans.get('responses', [])
+                        responses = ans.get('responses', [])
+                        # Filter profile data
+                        profile_keys = ['Education / Work', 'Interests (select all that apply)', 'One-line self-summary (optional)']
+                        update_data['profile_data'] = [r for r in responses if r['label'] in profile_keys]
+                        # Handle filters
+                        for r in responses:
+                            if r['label'] == 'Religion Match Filters' and 'toggles' in r:
+                                update_data['religion_filter'] = r['toggles']
+                            elif r['label'] == 'Physical Match Filters' and 'toggles' in r:
+                                update_data['filter_settings'] = r['toggles']
 
             if update_data:
                 self.update_user(user_id, update_data)
@@ -2296,4 +2305,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True) 
+    app.run(host='0.0.0.0', port=5050, debug=True)

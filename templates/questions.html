@@ -1036,6 +1036,22 @@
             label: "One-line self-summary (optional)",
             type: "text",
             optional: true
+          },
+          {
+            label: "Religion Match Filters",
+            type: "toggle",
+            toggles: [
+              { label: "Show only same religion matches", value: false },
+              { label: "Show all emotionally compatible matches", value: true }
+            ]
+          },
+          {
+            label: "Physical Match Filters",
+            type: "toggle",
+            toggles: [
+              { label: "Show only preferred physical traits", value: false },
+              { label: "Show all emotionally compatible matches", value: true }
+            ]
           }
         ],
         submitText: "Start Matching"
@@ -1425,6 +1441,22 @@
               chipContainer.appendChild(chip);
             });
             formGroup.appendChild(chipContainer);
+          } else if (inputData.type === 'toggle') {
+            const toggleContainer = document.createElement('div');
+            toggleContainer.className = 'toggle-container';
+            toggleContainer.dataset.groupLabel = inputData.label;
+            inputData.toggles.forEach(toggle => {
+              const toggleLabel = document.createElement('label');
+              toggleLabel.className = 'toggle-label';
+              const inputEl = document.createElement('input');
+              inputEl.type = 'checkbox';
+              inputEl.checked = toggle.value;
+              inputEl.dataset.sublabel = toggle.label;
+              toggleLabel.appendChild(inputEl);
+              toggleLabel.appendChild(document.createTextNode(` ${toggle.label}`));
+              toggleContainer.appendChild(toggleLabel);
+            });
+            formGroup.appendChild(toggleContainer);
           }
           answersElement.appendChild(formGroup);
         });
@@ -1436,7 +1468,8 @@
           const inputs = answersElement.querySelectorAll('.form-control, .chip.selected');
           inputs.forEach(input => {
             if (input.classList && input.classList.contains('chip')) {
-              responses.push({ label: input.parentElement.previousSibling.textContent, value: input.dataset.value });
+              const chipLabel = input.parentElement.parentElement.querySelector('label').textContent;
+              responses.push({ label: chipLabel, value: input.dataset.value });
             } else {
               const labelEl = input.previousElementSibling;
               if (labelEl && labelEl.tagName === 'LABEL') {
@@ -1444,6 +1477,19 @@
               }
             }
           });
+          // Add for toggles
+          const toggleGroups = answersElement.querySelectorAll('.toggle-container');
+          for (let group of toggleGroups) {
+            const groupLabel = group.dataset.groupLabel;
+            const toggles = [];
+            group.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+              const sublabel = checkbox.dataset.sublabel;
+              toggles.push({ label: sublabel, value: checkbox.checked });
+            });
+            if (toggles.length > 0) {
+              responses.push({ label: groupLabel, toggles: toggles });
+            }
+          }
           selectAnswer({ responses, section: questionData.section });
           submitButton.classList.add('animate__animated', 'animate__pulse');
           setTimeout(() => {
