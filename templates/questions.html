@@ -1057,6 +1057,36 @@
       }
     };
 
+    // Rebuild questions based on flags
+    function rebuildQuestions() {
+      questions = [...mandatoryQuestions];
+      if (isKeeperSeekerSection) {
+        questions = questions.concat(keeperSeekerQuestions);
+      }
+      if (isReligionSection) {
+        questions = questions.concat(religionQuestions);
+      }
+      if (isPhysicalSection) {
+        questions = questions.concat(physicalQuestions);
+      }
+      if (isProfileSetupSection) {
+        questions = questions.concat(profileSetupQuestions);
+      }
+    }
+
+    // Get start index for a section
+    function getSectionStart(sectionName) {
+      let start = mandatoryQuestionCount;
+      if (sectionName === 'keeperSeeker') return start;
+      if (isKeeperSeekerSection) start += keeperSeekerQuestionCount;
+      if (sectionName === 'religion') return start;
+      if (isReligionSection) start += religionQuestions.length;  // base 1
+      if (sectionName === 'physical') return start;
+      if (isPhysicalSection) start += physicalQuestions.length;  // 2
+      if (sectionName === 'profileSetup') return start;
+      return 0;
+    }
+
     // State Variables
     let currentQuestion = 0;
     let questions = [...mandatoryQuestions];
@@ -1073,9 +1103,11 @@
     let nextDynamicQuestion = null;
     const mandatoryQuestionCount = mandatoryQuestions.length;
     const keeperSeekerQuestionCount = keeperSeekerQuestions.length;
-    const religionQuestionCount = 2; // Fixed: importance + select
-    const physicalQuestionCount = 2; // Fixed: preferences + own traits
+    const religionQuestionCount = 2;  // importance + potential select
+    const physicalQuestionCount = 2;  // preferences + own, potential traits_pref dynamic
     const profileSetupQuestionCount = profileSetupQuestions.length;
+
+    rebuildQuestions();
 
     // Back button functionality
     backButton.addEventListener('click', goToPreviousQuestion);
@@ -1135,9 +1167,9 @@
         let keeperCount = selectedAnswers.filter(a => a.question_id && a.question_id.startsWith('ks')).length;
         let religionCount = selectedAnswers.filter(a => a.section === 'religion').length;
         let physicalCount = selectedAnswers.filter(a => a.section && a.section.startsWith('physical_')).length;
-        let profileCount = selectedAnswers.filter(a => a.section === 'profile_setup' || a.question_id === 'filter_settings').length;
+        let profileCount = selectedAnswers.filter(a => a.section && (a.section === 'profile_setup' || a.section === 'filter_settings')).length;
 
-        currentQuestion = selectedAnswers.length;
+        // Reset
         questions = [...mandatoryQuestions];
         currentSection = 'mandatory';
         currentSectionStart = 0;
@@ -1146,37 +1178,59 @@
         isPhysicalSection = false;
         isProfileSetupSection = false;
 
-        let cumulativeStart = mandatoryQuestionCount;
         if (mandatoryCount >= mandatoryQuestionCount && keeperCount > 0) {
-          questions = [...questions, ...keeperSeekerQuestions];
           isKeeperSeekerSection = true;
-          currentSection = 'keeperSeeker';
-          currentSectionStart = cumulativeStart;
-          cumulativeStart += keeperSeekerQuestionCount;
         }
         if (keeperCount >= keeperSeekerQuestionCount && religionCount > 0) {
-          questions = [...questions, ...religionQuestions];
           isReligionSection = true;
-          currentSection = 'religion';
-          currentSectionStart = cumulativeStart;
-          cumulativeStart += religionQuestionCount;
         }
         if (religionCount >= religionQuestionCount && physicalCount > 0) {
-          questions = [...questions, ...physicalQuestions];
           isPhysicalSection = true;
-          currentSection = 'physical';
-          currentSectionStart = cumulativeStart;
-          cumulativeStart += physicalQuestionCount;
         }
         if (physicalCount >= physicalQuestionCount && profileCount > 0) {
-          questions = [...questions, ...profileSetupQuestions];
           isProfileSetupSection = true;
-          currentSection = 'profileSetup';
-          currentSectionStart = cumulativeStart;
         }
 
-        sessionStorage.removeItem('quiz_answers');
-        const secInfo = determineCurrentSection(currentQuestion - 1); // Last question
+        rebuildQuestions();
+
+        // Handle dynamic questions for religion
+        const relAnswers = selectedAnswers.filter(a => a.section === 'religion');
+        if (relAnswers.length > 0) {
+          const impIndex = relAnswers[0].index;
+          if (impIndex !== 3 && relAnswers.length === 1) {
+            questions.push(religionSelect);
+          }
+        }
+
+        // Handle dynamic for physical
+        const physAnswers = selectedAnswers.filter(a => a.section && a.section.startsWith('physical_'));
+        if (physAnswers.length > 0) {
+          const prefIndex = physAnswers[0].index;
+          if (prefIndex !== 2) {  // very or somewhat
+            const traitsPrefQ = {
+              id: 'physical_traits_preferred',
+              question: "Select your preferred physical traits",
+              answers: [],
+              isCustomInput: true,
+              section: "physical_traits_preferred",
+              inputs: [
+                { label: "Preferred skin tone", type: "select", options: ["Fair", "Brown", "Dark", "No Preference"] },
+                { label: "Preferred height range (cm)", type: "range", min: 140, max: 200, step: 5 },
+                { label: "Preferred body type", type: "select", options: ["Slim", "Average", "Fit", "No Preference"] }
+              ]
+            };
+            if (physAnswers.length === 1 || (physAnswers.length > 1 && physAnswers[1].section !== 'physical_traits_preferred')) {
+              // Insert before own_traits
+              const ownIndex = questions.findIndex(q => q.id === 'physical_traits_own');
+              if (ownIndex !== -1) {
+                questions.splice(ownIndex, 0, traitsPrefQ);
+              }
+            }
+          }
+        }
+
+        currentQuestion = selectedAnswers.length;
+        const secInfo = determineCurrentSection(currentQuestion - 1);
         currentSection = secInfo.section;
         currentSectionStart = secInfo.start;
         updateSectionInfo();
@@ -1700,13 +1754,10 @@
 
     function continueKeeperSeekerQuestions() {
       console.log(`Continuing with keeper/seeker questions, currentQuestion: ${currentQuestion}`);
-      let start = questions.length;
-      if (!isKeeperSeekerSection) {
-        questions.push(...keeperSeekerQuestions);
-      }
-      currentQuestion = start;
-      currentSectionStart = start;
       isKeeperSeekerSection = true;
+      rebuildQuestions();
+      currentQuestion = getSectionStart('keeperSeeker');
+      currentSectionStart = currentQuestion;
       currentSection = 'keeperSeeker';
       optionalSection.style.display = 'none';
       questionBox.style.display = 'flex';
@@ -1717,13 +1768,10 @@
 
     function continueReligionQuestions() {
       console.log(`Continuing with religion questions, currentQuestion: ${currentQuestion}`);
-      let start = questions.length;
-      if (!isReligionSection) {
-        questions.push(...religionQuestions);
-      }
-      currentQuestion = start;
-      currentSectionStart = start;
       isReligionSection = true;
+      rebuildQuestions();
+      currentQuestion = getSectionStart('religion');
+      currentSectionStart = currentQuestion;
       currentSection = 'religion';
       optionalSection.style.display = 'none';
       questionBox.style.display = 'flex';
@@ -1734,13 +1782,10 @@
 
     function continuePhysicalQuestions() {
       console.log(`Continuing with physical questions, currentQuestion: ${currentQuestion}`);
-      let start = questions.length;
-      if (!isPhysicalSection) {
-        questions.push(...physicalQuestions);
-      }
-      currentQuestion = start;
-      currentSectionStart = start;
       isPhysicalSection = true;
+      rebuildQuestions();
+      currentQuestion = getSectionStart('physical');
+      currentSectionStart = currentQuestion;
       currentSection = 'physical';
       optionalSection.style.display = 'none';
       questionBox.style.display = 'flex';
@@ -1751,13 +1796,10 @@
 
     function continueProfileSetupQuestions() {
       console.log(`Continuing with profile setup questions, currentQuestion: ${currentQuestion}`);
-      let start = questions.length;
-      if (!isProfileSetupSection) {
-        questions.push(...profileSetupQuestions);
-      }
-      currentQuestion = start;
-      currentSectionStart = start;
       isProfileSetupSection = true;
+      rebuildQuestions();
+      currentQuestion = getSectionStart('profileSetup');
+      currentSectionStart = currentQuestion;
       currentSection = 'profileSetup';
       optionalSection.style.display = 'none';
       questionBox.style.display = 'flex';
@@ -1830,9 +1872,27 @@
           currentSectionStart = prevStart;
           selectedAnswers = selectedAnswers.slice(0, currentQuestion + 1);
         } else {
-          // Normal back - pop answer and decrement
+          // Normal back
+          const oldSection = currentSection;
           selectedAnswers.pop();
           currentQuestion--;
+          const secInfo = determineCurrentSection(currentQuestion);
+          currentSection = secInfo.section;
+          currentSectionStart = secInfo.start;
+          if (currentSection !== oldSection) {
+            // Crossed section boundary backward - reset old section flag and rebuild
+            if (oldSection === 'keeperSeeker') {
+              isKeeperSeekerSection = false;
+            } else if (oldSection === 'religion') {
+              isReligionSection = false;
+            } else if (oldSection === 'physical') {
+              isPhysicalSection = false;
+            } else if (oldSection === 'profileSetup') {
+              isProfileSetupSection = false;
+            }
+            rebuildQuestions();
+            selectedAnswers = selectedAnswers.slice(0, currentQuestion + 1);
+          }
         }
         // Update section info based on new currentQuestion
         const secInfo = determineCurrentSection(currentQuestion);
