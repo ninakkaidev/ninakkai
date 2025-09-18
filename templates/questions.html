@@ -1363,8 +1363,6 @@
       answersElement.innerHTML = '';
       rankInstructions.style.display = 'none';
 
-      let selected = selectedAnswers[currentQuestion];
-
       if (questionData.isRankQuestion) {
         console.log('Displaying ranking question');
         rankInstructions.style.display = 'block';
@@ -1389,28 +1387,6 @@
           submitRank();
         });
         answersElement.appendChild(submitButton);
-
-        // Prefill if selected
-        if (selected && selected.ranking) {
-          rankedItems = selected.ranking.slice();
-          currentRank = rankedItems.length + 1;
-          answersElement.querySelectorAll('.rank-item').forEach(item => {
-            const idx = parseInt(item.dataset.index);
-            const rank = rankedItems.find(r => r.index === idx);
-            if (rank) {
-              item.classList.add('selected');
-              const rankNumber = document.createElement('span');
-              rankNumber.className = 'rank-number';
-              rankNumber.textContent = rank.rank;
-              item.appendChild(rankNumber);
-            }
-          });
-          if (currentRank > questionData.answers.length) {
-            submitButton.disabled = false;
-          }
-          // To disable changes, optionally
-          // answersElement.querySelectorAll('.rank-item').forEach(item => item.style.pointerEvents = 'none');
-        }
       } else if (questionData.isTextInput) {
         console.log('Displaying text input question');
         const input = document.createElement('input');
@@ -1429,8 +1405,12 @@
             setTimeout(() => {
               input.classList.remove('animate__animated', 'animate__pulse');
               // Chain next questions if defined
-              handleDynamicInsert(questionData, selected);
-              currentQuestion++;
+              if (questionData.nextQuestion) {
+                const next = questionData.nextQuestion();
+                if (next) {
+                  questions.splice(currentQuestion + 1, 0, next);
+                }
+              }
               displayQuestion();
             }, 300);
           } else {
@@ -1438,11 +1418,6 @@
           }
         });
         answersElement.appendChild(submitButton);
-
-        // Prefill
-        if (selected && selected.value) {
-          input.value = selected.value;
-        }
       } else if (questionData.isSelectWithOther) {
         console.log('Displaying select with other option');
         const select = document.createElement('select');
@@ -1482,8 +1457,12 @@
             setTimeout(() => {
               submitButton.classList.remove('animate__animated', 'animate__pulse');
               // Chain next
-              handleDynamicInsert(questionData, selected);
-              currentQuestion++;
+              if (questionData.nextQuestion) {
+                const next = questionData.nextQuestion();
+                if (next) {
+                  questions.splice(currentQuestion + 1, 0, next);
+                }
+              }
               displayQuestion();
             }, 300);
           } else {
@@ -1491,17 +1470,6 @@
           }
         });
         answersElement.appendChild(submitButton);
-
-        // Prefill
-        if (selected && selected.value) {
-          if (questionData.answers.includes(selected.value)) {
-            select.value = selected.value;
-          } else {
-            select.value = 'Other';
-            otherInput.value = selected.value;
-            otherInput.style.display = 'block';
-          }
-        }
       } else if (questionData.isCustomInput) {
         console.log('Displaying custom input question');
         questionData.inputs.forEach(inputData => {
@@ -1585,46 +1553,30 @@
           submitButton.classList.add('animate__animated', 'animate__pulse');
           setTimeout(() => {
             submitButton.classList.remove('animate__animated', 'animate__pulse');
-            // No chain for custom
-            currentQuestion++;
             displayQuestion();
           }, 300);
         });
         answersElement.appendChild(submitButton);
-
-        // Prefill
-        if (selected && selected.responses) {
-          const formGroups = answersElement.querySelectorAll('.form-group');
-          selected.responses.forEach(resp => {
-            formGroups.forEach(group => {
-              const labelText = group.querySelector('label').textContent.trim();
-              if (labelText === resp.label) {
-                const input = group.querySelector('input, select');
-                if (input) {
-                  if (input.type === 'range') {
-                    input.value = resp.value;
-                    group.querySelector('span').textContent = resp.value;
-                  } else if (input.tagName === 'SELECT') {
-                    input.value = resp.value;
-                  } else {
-                    input.value = resp.value;
-                  }
-                }
-              } else if (labelText === 'Interests (select all that apply)') {
-                group.querySelectorAll('.chip').forEach(chip => {
-                  if (chip.dataset.value === resp.value) {
-                    chip.classList.add('selected');
-                  }
-                });
-              }
-            });
-          });
-        }
       } else if (questionData.isToggleInput) {
         console.log('Displaying toggle input question');
         const toggleContainer = document.createElement('div');
         toggleContainer.className = 'toggle-container';
-        questionData.toggles.forEach(toggle => {
+
+        // Filter toggles based on whether sections were answered
+        let religionAnswered = selectedAnswers.some(ans => ans.section === 'religion_importance' && ans.index !== 3);
+        let physicalAnswered = selectedAnswers.some(ans => ans.section === 'physical_preferences' && ans.index !== 2);
+
+        let filteredToggles = questionData.toggles.filter(t => {
+          if (t.label === "Show only same religion matches") {
+            return religionAnswered;
+          } else if (t.label === "Show only preferred physical traits") {
+            return physicalAnswered;
+          } else {
+            return true;
+          }
+        });
+
+        filteredToggles.forEach(toggle => {
           const label = document.createElement('label');
           label.className = 'toggle-label';
           const input = document.createElement('input');
@@ -1649,28 +1601,18 @@
           submitButton.classList.add('animate__animated', 'animate__pulse');
           setTimeout(() => {
             submitButton.classList.remove('animate__animated', 'animate__pulse');
-            currentQuestion++;
             displayQuestion();
           }, 300);
         });
         answersElement.appendChild(submitButton);
-
-        // Prefill
-        if (selected && selected.toggles) {
-          toggleContainer.querySelectorAll('input').forEach(input => {
-            const t = selected.toggles.find(tt => tt.label === input.dataset.label);
-            if (t) input.checked = t.value;
-          });
-        }
       } else {
         console.log('Displaying multiple-choice question');
         questionData.answers.forEach((answer, index) => {
           const button = document.createElement('button');
           button.textContent = answer;
           button.addEventListener('click', () => {
-            // Remove selected from others
-            answersElement.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
-            button.classList.add('selected');
+            const allBtns = answersElement.querySelectorAll('button');
+            allBtns.forEach(b => b.disabled = true);
             if (questionData.keeperSeeker) {
               selectAnswer({ index, keeperSeeker: questionData.keeperSeeker[index] });
             } else {
@@ -1679,25 +1621,21 @@
             button.classList.add('animate__animated', 'animate__pulse');
             setTimeout(() => {
               button.classList.remove('animate__animated', 'animate__pulse');
-              handleDynamicInsert(questionData, {index});
-              // Skip own if not important in physical
+              if (questionData.nextQuestion) {
+                const next = questionData.nextQuestion(index);
+                if (next) {
+                  questions.splice(currentQuestion + 1, 0, next);
+                }
+              }
+              // Skip own traits if physical not important
               if (questionData.id === 'physical_preferences' && index === 2) {
                 currentQuestion++;
               }
-              currentQuestion++;
               displayQuestion();
             }, 300);
           });
           answersElement.appendChild(button);
-       });
-
-        // Prefill
-        if (selected && 'index' in selected) {
-          const buttons = answersElement.querySelectorAll('button');
-          if (buttons[selected.index]) {
-            buttons[selected.index].classList.add('selected');
-          }
-        }
+        });
       }
       // Animate question box
       questionBox.classList.add('animate__animated', 'animate__fadeIn');
@@ -1710,37 +1648,6 @@
         backButton.style.display = 'flex';
       } else {
         backButton.style.display = 'none';
-      }
-    }
-
-    function handleDynamicInsert(questionData, selected) {
-      let insertedId;
-      if (questionData.id === 'physical_preferences') {
-        insertedId = 'physical_traits_preferred';
-      } else if (questionData.id === 'religion_importance') {
-        insertedId = 'religion';
-      }
-      if (!insertedId) return;
-
-      const nextQ = questionData.nextQuestion(selected.index);
-      const nextIndex = currentQuestion; // Since currentQuestion already ++'d? Wait, no, currentQuestion not ++ yet, wait in call, it's before ++
-      // Wait, in click, setTimeout has handleDynamicInsert(questionData, {index}), then currentQuestion++
-
-      // So currentQuestion is still the current
-
-      const currentNextId = questions[currentQuestion + 1] ? questions[currentQuestion + 1].id : null;
-
-      if (nextQ) {
-        if (currentNextId !== nextQ.id) {
-          questions.splice(currentQuestion + 1, 0, nextQ);
-          selectedAnswers.splice(currentQuestion + 1, 1); // if any, but splice insert null? No, splice 0, nextQ no, for insert, splice(nextIndex,0, nextQ)
-          selectedAnswers.splice(currentQuestion + 1, 0, null);
-        }
-      } else {
-        if (currentNextId === insertedId) {
-          questions.splice(currentQuestion + 1, 1);
-          selectedAnswers.splice(currentQuestion + 1, 1);
-        }
       }
     }
 
@@ -1758,11 +1665,12 @@
         data.keeperSeeker = questionData.keeperSeeker[data.index];
       }
       
-      selectedAnswers[currentQuestion] = { 
+      selectedAnswers.push({ 
         question: currentQuestion, 
         question_id: questionData.id, 
         ...data 
-      };
+      });
+      currentQuestion++;
     }
 
     function selectRankItem(rankItem, index) {
@@ -1791,7 +1699,7 @@
         return;
       }
       console.log(`Submitting ranking for question ${currentQuestion}:`, rankedItems);
-      selectAnswer({ ranking: rankedItems });
+      selectedAnswers.push({ question: currentQuestion, question_id: questions[currentQuestion].id, ranking: rankedItems });
       currentQuestion++;
       displayQuestion();
     }
@@ -1988,15 +1896,17 @@
           currentQuestion = prevQuestion;
           currentSection = prevSection;
           currentSectionStart = prevStart;
+          selectedAnswers = selectedAnswers.slice(0, currentQuestion + 1);
         } else {
           // Normal back
           const oldSection = currentSection;
+          selectedAnswers.pop();
           currentQuestion--;
           const secInfo = determineCurrentSection(currentQuestion);
           currentSection = secInfo.section;
           currentSectionStart = secInfo.start;
           if (currentSection !== oldSection) {
-            // crossed boundary backward - reset old section flag and rebuild
+            // Crossed section boundary backward - reset old section flag and rebuild
             if (oldSection === 'keeperSeeker') {
               isKeeperSeekerSection = false;
             } else if (oldSection === 'religion') {
@@ -2007,7 +1917,7 @@
               isProfileSetupSection = false;
             }
             rebuildQuestions();
-            // No slice, since answers indexed
+            selectedAnswers = selectedAnswers.slice(0, currentQuestion + 1);
           }
         }
         // Update section info based on new currentQuestion
