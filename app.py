@@ -155,12 +155,6 @@ QUESTION_TYPES = {
     'req8': ["🌙 Dreamer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"],
     'req9': ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "🌟 Idealist"],
     'req10': ["🛡️ Protector", "👂 Listener", "🌟 Idealist", "🌿 Nurturer"],
-    'opt1': ["🌿 Nurturer", "👂 Listener", "💘 Romantic", "🛡️ Protector"],
-    'opt2': ["👂 Listener", "🌿 Nurturer", "🛡️ Protector", "🌙 Dreamer"],
-    'opt3': ["👂 Listener", "🛡️ Protector", "🌙 Dreamer", "🌟 Idealist"],
-    'opt4': ["🌟 Idealist", "👂 Listener", "🌙 Dreamer", "🛡️ Protector"],
-    'opt5': ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "👂 Listener"],
-    'opt6': ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "🌟 Idealist"],
 }
 
 class MongoService:
@@ -446,11 +440,6 @@ class MongoService:
             if 'type' in answer:
                 answer_type = answer['type']
                 type_counts[answer_type] = type_counts.get(answer_type, 0) + 1
-        optional_answers = [a for a in answers if 'question_id' in a and a['question_id'].startswith('opt')]
-        for answer in optional_answers:
-            if 'type' in answer:
-                answer_type = answer['type']
-                type_counts[answer_type] = type_counts.get(answer_type, 0.0) + 0.2  # Little variation for optional
         if not type_counts:
             return {'dominant_type': None, 'dominant_percentage': 0}
         # Resolve tie if any
@@ -475,30 +464,14 @@ class MongoService:
             keeper_seeker = "Seeker"
         else:
             keeper_seeker = None
-        # Optional boosts
-        optional_boosts = self._calculate_optional_boosts(dominant_type, optional_answers)
         # Total for percentages
         total = sum(type_counts.values())
         dominant_score = type_counts.get(dominant_type, 0)
         dominant_percentage = int((dominant_score / total) * 100) if total > 0 else 0
-        secondary_type = None
-        secondary_score = 0
-        secondary_percentage = 0
-        temp_counts = type_counts.copy()
-        if dominant_type in temp_counts:
-            del temp_counts[dominant_type]
-        if temp_counts:
-            secondary_type = max(temp_counts, key=temp_counts.get)
-            secondary_score = temp_counts[secondary_type]
-            secondary_percentage = int((secondary_score / total) * 100) if total > 0 else 0
         profile = {
             'dominant_type': dominant_type,
             'dominant_score': dominant_score,
             'dominant_percentage': dominant_percentage,
-            'secondary_type': secondary_type,
-            'secondary_score': secondary_score,
-            'secondary_percentage': secondary_percentage,
-            'optional_traits_boost': optional_boosts,
             'type_counts': type_counts
         }
         if keeper_seeker:
@@ -525,17 +498,6 @@ class MongoService:
             if type_ in tied_types:
                 return type_
         return tied_types[0]
-
-    def _calculate_optional_boosts(self, dominant_type: str, optional_answers: List[Dict[str, Any]]) -> Dict[str, int]:
-        boosts = {}
-        for answer in optional_answers:
-            if 'type' in answer:
-                answer_type = answer['type']
-                if answer_type == dominant_type:
-                    boosts[dominant_type] = boosts.get(dominant_type, 0) + 1
-                elif answer_type in boosts:
-                    boosts[answer_type] += 1
-        return boosts
 
     def get_quiz_results(self, user_id: str) -> Optional[Dict[str, Any]]:
         try:
@@ -777,20 +739,6 @@ class MongoService:
             if not user_dom_short or not other_dom_short:
                 return 50
             base_percentage = COMPATIBILITY_MATRIX.get(user_dom_short, {}).get(other_dom_short, 50)
-
-            # Secondary bonus
-            user_sec = user_scores.get('secondary_type')
-            other_sec = other_scores.get('secondary_type')
-            sec_bonus = 0
-            if user_sec:
-                user_sec_short = TYPE_MAP.get(user_sec)
-                sec_perc = COMPATIBILITY_MATRIX.get(user_sec_short, {}).get(other_dom_short, 0)
-                sec_bonus += sec_perc * 0.3
-            if other_sec:
-                other_sec_short = TYPE_MAP.get(other_sec)
-                sec_perc = COMPATIBILITY_MATRIX.get(user_dom_short, {}).get(other_sec_short, 0)
-                sec_bonus += sec_perc * 0.3
-            base_percentage += sec_bonus / 2
 
             # Keeper seeker bonus
             keeper_seeker_bonus = 15 if user_scores.get('keeper_seeker_type') == other_scores.get('keeper_seeker_type') else 0
@@ -1883,18 +1831,6 @@ def user_profile(user_id):
             'compatibility': [],
             'color': '#000000'
         })
-        secondary_personality_info = None
-        if quiz_result and quiz_result['scores'].get('secondary_type'):
-            secondary_type = quiz_result['scores']['secondary_type']
-            secondary_personality_info = PERSONALITIES.get(secondary_type, {
-                'dominant_type': secondary_type,
-                'title': f'This person is a {secondary_type.replace(" ", "")}.',
-                'description': 'Description not available.',
-                'tagline': '',
-                'strengths': [],
-                'compatibility': [],
-                'color': '#000000'
-            })
         profile = {
             'id': user['id'],
             'full_name': user['full_name'],
@@ -1911,12 +1847,9 @@ def user_profile(user_id):
             'passed': mongo_service.has_passed_user(session['user_id'], user_id),
             'personality': {
                 'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
-                'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0,
-                'secondary_type': quiz_result['scores']['secondary_type'] if quiz_result else 'N/A',
-                'secondary_percentage': quiz_result['scores']['secondary_percentage'] if quiz_result else 0
+                'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0
             },
             'personality_info': personality_info,
-            'secondary_personality_info': secondary_personality_info,
             'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'Unknown') if quiz_result else 'Unknown',
             'religion': user.get('religion', 'Not specified') if user.get('religion_public', False) else 'Private',
             'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])} if user.get('physical_public', False) else 'Private',  # Added conditional visibility
@@ -1962,9 +1895,7 @@ def chat():
             'bio': user.get('bio', 'No bio available'),
             'interests': user.get('interests', []),
             'dominant_type': quiz_completed['scores']['dominant_type'],
-            'dominant_percentage': quiz_completed['scores']['dominant_percentage'],
-            'secondary_type': quiz_completed['scores']['secondary_type'],
-            'secondary_percentage': quiz_completed['scores']['secondary_percentage']
+            'dominant_percentage': quiz_completed['scores']['dominant_percentage']
         }
         
         # Render with empty conversations for lazy loading
@@ -2119,26 +2050,6 @@ def profile():
         <strong>Compatibility:</strong> {', '.join(personality['compatibility'])}
         </span>
         """
-        if quiz_result['scores']['secondary_type']:
-            secondary_type = quiz_result['scores']['secondary_type']
-            secondary_personality = PERSONALITIES.get(secondary_type, {
-                'dominant_type': secondary_type,
-                'title': f'You are a {secondary_type.replace(" ", "")}.',
-                'description': 'Description not available.',
-                'tagline': '',
-                'strengths': [],
-                'compatibility': [],
-                'color': '#000000'
-            })
-            personality_info += f"""
-            <span class="secondary-personality">
-            <br><strong>Secondary: {secondary_personality['title']}</strong><br>
-            {secondary_personality['description']}<br>
-            <em>{secondary_personality['tagline']}</em><br>
-            <strong>Strengths:</strong> {', '.join(secondary_personality['strengths'])}<br>
-            <strong>Compatibility:</strong> {', '.join(secondary_personality['compatibility'])}
-            </span>
-            """
         profile = {
             'id': user['id'],
             'email': user['email'],

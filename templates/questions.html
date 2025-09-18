@@ -855,75 +855,6 @@
       }
     ];
 
-    const optionalMaturityQuestions = [
-      { 
-        id: 'opt1',
-        question: "You see your partner being emotionally close to a friend. You feel…", 
-        answers: [
-          "Curious and ask openly",
-          "Completely fine",
-          "A little jealous but trust them",
-          "Insecure and silent"
-        ],
-        types: ["🌿 Nurturer", "👂 Listener", "💘 Romantic", "🛡️ Protector"]
-      },
-      { 
-        id: 'opt2',
-        question: "Your partner has a serious conflict with your family. You…", 
-        answers: [
-          "Support your partner but stay neutral.",
-          "Try to fix the situation without taking sides.",
-          "Defend your family — they raised me.",
-          "Fully support my partner, even if it causes tension."
-        ],
-        types: ["👂 Listener", "🌿 Nurturer", "🛡️ Protector", "🌙 Dreamer"]
-      },
-      { 
-        id: 'opt3',
-        question: "How do you handle emotional overwhelm?", 
-        answers: [
-          "Talk it out immediately",
-          "Need space to calm down",
-          "Write or reflect privately",
-          "Look for distraction or activity"
-        ],
-        types: ["👂 Listener", "🛡️ Protector", "🌙 Dreamer", "🌟 Idealist"]
-      },
-      { 
-        id: 'opt4',
-        question: "What’s your biggest fear in love?", 
-        answers: [
-          "Being misunderstood",
-          "Losing emotional connection",
-          "Getting hurt or rejected",
-          "Not being able to protect the person I love"
-        ],
-        types: ["🌟 Idealist", "👂 Listener", "🌙 Dreamer", "🛡️ Protector"]
-      },
-      { 
-        id: 'opt5',
-        question: "What do you quietly need most in a relationship?", 
-        answers: [
-          "To feel safe and protected",
-          "To be emotionally understood",
-          "To give and receive open affection",
-          "To be accepted without pressure"
-        ],
-        types: ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "👂 Listener"]
-      },
-      { 
-        id: 'opt6',
-        question: "Which quality do you most admire in a partner?", 
-        answers: [
-          "Loyalty",
-          "Compassion",
-          "Passion",
-          "Wisdom"
-        ],
-        types: ["🛡️ Protector", "🌿 Nurturer", "💘 Romantic", "🌟 Idealist"]
-      }
-    ];
-
     const keeperSeekerQuestions = [
       {
         id: 'ks1',
@@ -1096,10 +1027,6 @@
         title: "Emotional Compatibility",
         description: "These 10 questions are the heart of Ninakkai, designed to uncover your emotional type and how you naturally connect in relationships. Answer honestly, and we’ll use your emotional profile to find matches who truly understand and align with you."
       },
-      optional: {
-        title: "Optional Maturity Questions",
-        description: "These optional questions add more depth, helping us capture finer details about your maturity and traits. By answering them, you’ll get even more precise and meaningful match results."
-      },
       keeperSeeker: {
         title: "Relationship Readiness",
         description: "These three questions are optional, but very important. They show whether you’re looking for long-term commitment or still exploring. Answering them will help us match you with people who want the same level of relationship as you."
@@ -1123,7 +1050,6 @@
     let questions = [...mandatoryQuestions];
     let selectedAnswers = [];
     let currentSection = 'mandatory';
-    let isOptionalSection = false;
     let isKeeperSeekerSection = false;
     let isReligionSection = false;
     let isPhysicalSection = false;
@@ -1133,7 +1059,6 @@
     let currentRank = 1;
     let nextDynamicQuestion = null;
     const mandatoryQuestionCount = mandatoryQuestions.length;
-    const optionalQuestionCount = optionalMaturityQuestions.length;
     const keeperSeekerQuestionCount = keeperSeekerQuestions.length;
     const religionQuestionCount = religionQuestions.length;
     const physicalQuestionCount = physicalQuestions.length;
@@ -1164,26 +1089,21 @@
         
         // Determine which section we're in based on progress
         if (currentQuestion >= mandatoryQuestionCount) {
-          isOptionalSection = true;
-          questions = [...mandatoryQuestions, ...optionalMaturityQuestions];
-          currentSection = 'optional';
-        }
-        if (currentQuestion >= mandatoryQuestionCount + optionalQuestionCount) {
           isKeeperSeekerSection = true;
           questions = [...questions, ...keeperSeekerQuestions];
           currentSection = 'keeperSeeker';
         }
-        if (currentQuestion >= mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount) {
+        if (currentQuestion >= mandatoryQuestionCount + keeperSeekerQuestionCount) {
           isReligionSection = true;
           questions = [...questions, ...religionQuestions];
           currentSection = 'religion';
         }
-        if (currentQuestion >= mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount) {
+        if (currentQuestion >= mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount) {
           isPhysicalSection = true;
           questions = [...questions, ...physicalQuestions];
           currentSection = 'physical';
         }
-        if (currentQuestion >= mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount) {
+        if (currentQuestion >= mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount) {
           isProfileSetupSection = true;
           questions = [...questions, ...profileSetupQuestions];
           currentSection = 'profileSetup';
@@ -1210,9 +1130,7 @@
     });
 
     function handleYes() {
-      if (currentExtraSection === 'optional') {
-        continueOptionalQuestions();
-      } else if (currentExtraSection === 'keeperSeeker') {
+      if (currentExtraSection === 'keeperSeeker') {
         continueKeeperSeekerQuestions();
       } else if (currentExtraSection === 'religion') {
         continueReligionQuestions();
@@ -1247,21 +1165,13 @@
 
     function updateCurrentSection() {
       const mandEnd = mandatoryQuestionCount;
-      const optEnd = mandEnd + (isOptionalSection ? optionalQuestionCount : 0);
-      const ksEnd = optEnd + (isKeeperSeekerSection ? keeperSeekerQuestionCount : 0);
+      const ksEnd = mandEnd + (isKeeperSeekerSection ? keeperSeekerQuestionCount : 0);
       const relEnd = ksEnd + (isReligionSection ? religionQuestionCount : 0);
       const phyEnd = relEnd + (isPhysicalSection ? physicalQuestionCount : 0);
       const profEnd = phyEnd + (isProfileSetupSection ? profileSetupQuestionCount : 0);
 
       if (currentQuestion < mandEnd) {
         currentSection = 'mandatory';
-        isOptionalSection = false;
-        isKeeperSeekerSection = false;
-        isReligionSection = false;
-        isPhysicalSection = false;
-        isProfileSetupSection = false;
-      } else if (currentQuestion < optEnd) {
-        currentSection = 'optional';
         isKeeperSeekerSection = false;
         isReligionSection = false;
         isPhysicalSection = false;
@@ -1287,27 +1197,22 @@
       console.log(`Current state: currentQuestion=${currentQuestion}, questions.length=${questions.length}, currentSection=${currentSection}`);
       
       // Check if we need to transition to the next section
-      if (currentQuestion >= mandatoryQuestionCount && !isOptionalSection && currentSection === 'mandatory') {
-        console.log('Finished mandatory questions, showing optional section');
-        showOptionalSection();
-        return;
-      }
-      if (currentQuestion >= mandatoryQuestionCount + optionalQuestionCount && !isKeeperSeekerSection && currentSection === 'optional') {
-        console.log('Finished optional questions, showing keeper/seeker section');
+      if (currentQuestion >= mandatoryQuestionCount && !isKeeperSeekerSection && currentSection === 'mandatory') {
+        console.log('Finished mandatory questions, showing keeper/seeker section');
         showKeeperSeekerSection();
         return;
       }
-      if (currentQuestion >= mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount && !isReligionSection && currentSection === 'keeperSeeker') {
+      if (currentQuestion >= mandatoryQuestionCount + keeperSeekerQuestionCount && !isReligionSection && currentSection === 'keeperSeeker') {
         console.log('Finished keeper/seeker questions, showing religion section');
         showReligionSection();
         return;
       }
-      if (currentQuestion >= mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount && !isPhysicalSection && currentSection === 'religion') {
+      if (currentQuestion >= mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount && !isPhysicalSection && currentSection === 'religion') {
         console.log('Finished religion questions, showing physical section');
         showPhysicalSection();
         return;
       }
-      if (currentQuestion >= mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount && !isProfileSetupSection && currentSection === 'physical') {
+      if (currentQuestion >= mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount && !isProfileSetupSection && currentSection === 'physical') {
         console.log('Finished physical questions, showing profile setup section');
         showProfileSetupSection();
         return;
@@ -1326,16 +1231,14 @@
       let progress = 0;
       if (currentSection === 'mandatory') {
         progress = ((currentQuestion + 1) / mandatoryQuestionCount) * 100;
-      } else if (currentSection === 'optional') {
-        progress = ((currentQuestion - mandatoryQuestionCount + 1) / optionalQuestionCount) * 100;
       } else if (currentSection === 'keeperSeeker') {
-        progress = ((currentQuestion - mandatoryQuestionCount - optionalQuestionCount + 1) / keeperSeekerQuestionCount) * 100;
+        progress = ((currentQuestion - mandatoryQuestionCount + 1) / keeperSeekerQuestionCount) * 100;
       } else if (currentSection === 'religion') {
-        progress = ((currentQuestion - mandatoryQuestionCount - optionalQuestionCount - keeperSeekerQuestionCount + 1) / religionQuestionCount) * 100;
+        progress = ((currentQuestion - mandatoryQuestionCount - keeperSeekerQuestionCount + 1) / religionQuestionCount) * 100;
       } else if (currentSection === 'physical') {
-        progress = ((currentQuestion - mandatoryQuestionCount - optionalQuestionCount - keeperSeekerQuestionCount - religionQuestionCount + 1) / physicalQuestionCount) * 100;
+        progress = ((currentQuestion - mandatoryQuestionCount - keeperSeekerQuestionCount - religionQuestionCount + 1) / physicalQuestionCount) * 100;
       } else if (currentSection === 'profileSetup') {
-        progress = ((currentQuestion - mandatoryQuestionCount - optionalQuestionCount - keeperSeekerQuestionCount - religionQuestionCount - physicalQuestionCount + 1) / profileSetupQuestionCount) * 100;
+        progress = ((currentQuestion - mandatoryQuestionCount - keeperSeekerQuestionCount - religionQuestionCount - physicalQuestionCount + 1) / profileSetupQuestionCount) * 100;
       }
       progressBar.style.width = `${Math.min(progress, 100)}%`;
 
@@ -1655,24 +1558,6 @@
       displayQuestion();
     }
 
-    function showOptionalSection() {
-      console.log('Showing optional section');
-      currentExtraSection = 'optional';
-      currentSection = 'optional';
-      qaContainer.style.display = 'flex';
-      questionBox.style.display = 'none';
-      optionalSection.style.display = 'block';
-      updateSectionInfo();
-      optionalP.textContent = 'Want to refine your matches with deeper maturity questions?';
-      optionalSection.classList.add('animate__animated', 'animate__fadeIn');
-      setTimeout(() => {
-        optionalSection.classList.remove('animate__animated', 'animate__fadeIn');
-      }, 1000);
-      
-      // Show back button
-      backButton.style.display = 'flex';
-    }
-
     function showKeeperSeekerSection() {
       console.log('Showing keeper/seeker section');
       currentExtraSection = 'keeperSeeker';
@@ -1745,27 +1630,12 @@
       backButton.style.display = 'flex';
     }
 
-    function continueOptionalQuestions() {
-      console.log(`Continuing with optional questions, currentQuestion: ${currentQuestion}`);
-      if (!isOptionalSection) {
-        questions.push(...optionalMaturityQuestions);
-      }
-      currentQuestion = mandatoryQuestionCount;
-      isOptionalSection = true;
-      currentSection = 'optional';
-      optionalSection.style.display = 'none';
-      questionBox.style.display = 'flex';
-      qaContainer.style.display = 'flex';
-      updateSectionInfo();
-      displayQuestion();
-    }
-
     function continueKeeperSeekerQuestions() {
       console.log(`Continuing with keeper/seeker questions, currentQuestion: ${currentQuestion}`);
       if (!isKeeperSeekerSection) {
         questions.push(...keeperSeekerQuestions);
       }
-      currentQuestion = mandatoryQuestionCount + optionalQuestionCount;
+      currentQuestion = mandatoryQuestionCount;
       isKeeperSeekerSection = true;
       currentSection = 'keeperSeeker';
       optionalSection.style.display = 'none';
@@ -1780,7 +1650,7 @@
       if (!isReligionSection) {
         questions.push(...religionQuestions);
       }
-      currentQuestion = mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount;
+      currentQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount;
       isReligionSection = true;
       currentSection = 'religion';
       optionalSection.style.display = 'none';
@@ -1795,7 +1665,7 @@
       if (!isPhysicalSection) {
         questions.push(...physicalQuestions);
       }
-      currentQuestion = mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount;
+      currentQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount;
       isPhysicalSection = true;
       currentSection = 'physical';
       optionalSection.style.display = 'none';
@@ -1810,7 +1680,7 @@
       if (!isProfileSetupSection) {
         questions.push(...profileSetupQuestions);
       }
-      currentQuestion = mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount;
+      currentQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount;
       isProfileSetupSection = true;
       currentSection = 'profileSetup';
       optionalSection.style.display = 'none';
@@ -1832,26 +1702,22 @@
           questionBox.style.display = 'flex';
           
           // Update section info based on where we're going back to
-          if (currentExtraSection === 'optional') {
+          if (currentExtraSection === 'keeperSeeker') {
             currentSection = 'mandatory';
             currentQuestion = mandatoryQuestionCount - 1;
             selectedAnswers = selectedAnswers.slice(0, mandatoryQuestionCount);
-          } else if (currentExtraSection === 'keeperSeeker') {
-            currentSection = 'optional';
-            currentQuestion = mandatoryQuestionCount + optionalQuestionCount - 1;
-            selectedAnswers = selectedAnswers.slice(0, mandatoryQuestionCount + optionalQuestionCount);
           } else if (currentExtraSection === 'religion') {
             currentSection = 'keeperSeeker';
-            currentQuestion = mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount - 1;
-            selectedAnswers = selectedAnswers.slice(0, mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount);
+            currentQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount - 1;
+            selectedAnswers = selectedAnswers.slice(0, mandatoryQuestionCount + keeperSeekerQuestionCount);
           } else if (currentExtraSection === 'physical') {
             currentSection = 'religion';
-            currentQuestion = mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount - 1;
-            selectedAnswers = selectedAnswers.slice(0, mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount);
+            currentQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount - 1;
+            selectedAnswers = selectedAnswers.slice(0, mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount);
           } else if (currentExtraSection === 'profileSetup') {
             currentSection = 'physical';
-            currentQuestion = mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount - 1;
-            selectedAnswers = selectedAnswers.slice(0, mandatoryQuestionCount + optionalQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount);
+            currentQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount - 1;
+            selectedAnswers = selectedAnswers.slice(0, mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount);
           }
         }
 
