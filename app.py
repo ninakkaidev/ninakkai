@@ -85,6 +85,22 @@ TYPE_MAP = {
     '🌟 Idealist': 'Ideal'
 }
 
+# Function to get top 2 compatible types based on the matrix (excluding self)
+def get_top_compatibles(dominant_type: str) -> List[str]:
+    if not dominant_type:
+        return []
+    short = TYPE_MAP.get(dominant_type)
+    if not short:
+        return []
+    scores = COMPATIBILITY_MATRIX.get(short, {})
+    # Sort by percentage descending, exclude self
+    sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    top_shorts = [s for s, p in sorted_scores if s != short][:2]
+    # Reverse map to full names
+    rev_type_map = {v: k for k, v in TYPE_MAP.items()}
+    full_names = [rev_type_map.get(s) for s in top_shorts if rev_type_map.get(s)]
+    return full_names
+
 # Personalities dictionary (updated compatibility lists based on top percentages from matrix)
 PERSONALITIES = {
     '🌿 Nurturer': {
@@ -93,7 +109,7 @@ PERSONALITIES = {
         'description': 'You’re gentle, loyal, and always ready to hold space for someone you love. You build relationships with quiet strength and warmth.',
         'tagline': '“Soft-hearted, deep-rooted.”',
         'strengths': ['Gentle', 'Loyal', 'Empathetic'],
-        'compatibility': ['👂 Listener', '💘 Romantic'],  # Updated: 92% List, 87% Rom
+        'compatibility': get_top_compatibles('🌿 Nurturer'),  # Dynamic: ['👂 Listener', '💘 Romantic']
         'color': '#4CAF50'  # Green
     },
     '🛡️ Protector': {
@@ -102,7 +118,7 @@ PERSONALITIES = {
         'description': 'You’re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — and showing up when it matters.',
         'tagline': '“Safe. Steady. Yours.”',
         'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
-        'compatibility': ['🌿 Nurturer', '👂 Listener'],  # Updated: 85% Nurt, 82% List
+        'compatibility': get_top_compatibles('🛡️ Protector'),  # Dynamic: ['🌿 Nurturer', '👂 Listener']
         'color': '#2196F3'  # Blue
     },
     '🌙 Dreamer': {
@@ -111,7 +127,7 @@ PERSONALITIES = {
         'description': 'You feel deeply and love boldly. You seek the kind of connection that feels written in the stars. You crave the kind of love that makes your soul glow.',
         'tagline': '“Romance is your religion.”',
         'strengths': ['Deep', 'Bold', 'Soulful'],
-        'compatibility': ['🌿 Nurturer', '👂 Listener'],  # Updated: 78% Nurt, 77% List
+        'compatibility': get_top_compatibles('🌙 Dreamer'),  # Dynamic: ['🌿 Nurturer', '👂 Listener']
         'color': '#9C27B0'  # Purple
     },
     '👂 Listener': {
@@ -120,7 +136,7 @@ PERSONALITIES = {
         'description': 'Calm and thoughtful, you hear more than what’s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
         'tagline': '“Still waters, true heart.”',
         'strengths': ['Calm', 'Thoughtful', 'Present'],
-        'compatibility': ['🌿 Nurturer', '💘 Romantic'],  # Updated: 92% Nurt, 88% Rom
+        'compatibility': get_top_compatibles('👂 Listener'),  # Dynamic: ['🌿 Nurturer', '💘 Romantic']
         'color': '#03A9F4'  # Light Blue
     },
     '💘 Romantic': {
@@ -129,7 +145,7 @@ PERSONALITIES = {
         'description': 'You lead with your heart, express love freely, and long for emotional electricity. You don’t just fall in love — you dive in.',
         'tagline': '“Loving loudly. Feeling deeply.”',
         'strengths': ['Heart-led', 'Expressive', 'Passionate'],
-        'compatibility': ['👂 Listener', '🌿 Nurturer'],  # Updated: 88% List, 87% Nurt
+        'compatibility': get_top_compatibles('💘 Romantic'),  # Dynamic: ['👂 Listener', '🌿 Nurturer']
         'color': '#E91E63'  # Pink
     },
     '🌟 Idealist': {
@@ -138,7 +154,7 @@ PERSONALITIES = {
         'description': 'You believe love should feel right — clear, mutual, and beautifully real. You wait for the one who understands your soul.',
         'tagline': '“Only real love will do.”',
         'strengths': ['Believer', 'Clear', 'Soul-seeking'],
-        'compatibility': ['🌿 Nurturer', '👂 Listener'],  # Updated: 82% Nurt, 80% List
+        'compatibility': get_top_compatibles('🌟 Idealist'),  # Dynamic: ['🌿 Nurturer', '👂 Listener']
         'color': '#FFEB3B'  # Yellow
     },
 }
@@ -1844,7 +1860,7 @@ def user_profile(user_id):
             'description': 'Description not available.',
             'tagline': '',
             'strengths': [],
-            'compatibility': [],
+            'compatibility': get_top_compatibles(dominant_type),
             'color': '#000000'
         })
         profile = {
@@ -2054,7 +2070,7 @@ def profile():
             'description': 'Description not available.',
             'tagline': '',
             'strengths': [],
-            'compatibility': [],
+            'compatibility': get_top_compatibles(dominant_type),
             'color': '#000000'
         })
         # Format personality_info as HTML with classes
@@ -2169,7 +2185,7 @@ def personality_results():
         'description': 'Description not available.',
         'tagline': '',
         'strengths': [],
-        'compatibility': [],
+        'compatibility': get_top_compatibles(dominant_type),
         'color': '#000000'
     })
     return jsonify({'success': True, 'personality_info': personality_info})
