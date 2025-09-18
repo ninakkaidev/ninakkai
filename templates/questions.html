@@ -889,33 +889,54 @@
     ];
 
     // FIXED: Religion section now has exactly 2 questions
-    const religionQuestions = [
-      {
-        id: 'religion_importance',
-        question: "How important is religion/faith in a future partner?",
-        answers: ["High - Must match my faith", "Medium - Prefer same faith", "Low - Note but not prioritize", "Skip - Religion won't affect matches"],
-        section: "religion"
-      },
-      {
-        id: 'religion',
-        question: "What is your religion/faith?",
-        answers: [
-          "Christianity",
-          "Islam",
-          "Hinduism",
-          "Buddhism",
-          "Judaism",
-          "Sikhism",
-          "Spiritual but not religious",
-          "Agnostic",
-          "Atheist",
-          "Prefer not to say",
-          "Other"
-        ],
-        isSelectWithOther: true,
-        section: "religion"
+    const religionImportance = {
+      id: 'religion_importance',
+      question: "How important is religion/faith in a future partner?",
+      answers: ["High - Must match my faith", "Medium - Prefer same faith", "Low - Note but not prioritize", "Skip - Religion won't affect matches"],
+      section: "religion",
+      nextQuestion: (index) => {
+        if (index === 3) {
+          return null;
+        } else {
+          return religionSelect;
+        }
       }
-    ];
+    };
+
+    const religionSelect = {
+      id: 'religion',
+      question: "What is your religion/faith?",
+      answers: [
+        "Christianity",
+        "Islam",
+        "Hinduism",
+        "Buddhism",
+        "Judaism",
+        "Sikhism",
+        "Spiritual but not religious",
+        "Agnostic",
+        "Atheist",
+        "Prefer not to say",
+        "Other"
+      ],
+      isSelectWithOther: true,
+      section: "religion",
+      nextQuestion: () => religionFilter
+    };
+
+    const religionFilter = {
+      id: 'religion_filter',
+      question: "Set your religion match filters",
+      answers: [],
+      isToggleInput: true,
+      section: "religion_filter",
+      toggles: [
+        { label: "Show only same religion matches", value: false },
+        { label: "Show all emotionally compatible matches", value: true }
+      ]
+    };
+
+    const religionQuestions = [religionImportance];
 
     const physicalQuestions = [
       {
@@ -1060,7 +1081,7 @@
     let nextDynamicQuestion = null;
     const mandatoryQuestionCount = mandatoryQuestions.length;
     const keeperSeekerQuestionCount = keeperSeekerQuestions.length;
-    const religionQuestionCount = religionQuestions.length;
+    const religionQuestionCount = 1; // Only importance initially
     const physicalQuestionCount = physicalQuestions.length;
     const profileSetupQuestionCount = profileSetupQuestions.length;
 
@@ -1125,9 +1146,21 @@
     });
     btnYes.addEventListener('click', handleYes);
     btnNo.addEventListener('click', () => {
-      console.log('Skipping, submitting quiz');
-      submitQuiz();
+      console.log('Skipping, moving to next section');
+      goToNextSectionAfterSkip();
     });
+
+    function goToNextSectionAfterSkip() {
+      if (currentExtraSection === 'keeperSeeker') {
+        showReligionSection();
+      } else if (currentExtraSection === 'religion') {
+        showPhysicalSection();
+      } else if (currentExtraSection === 'physical') {
+        showProfileSetupSection();
+      } else if (currentExtraSection === 'profileSetup') {
+        submitQuiz();
+      }
+    }
 
     function handleYes() {
       if (currentExtraSection === 'keeperSeeker') {

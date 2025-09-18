@@ -238,6 +238,7 @@ class MongoService:
                 'religion': None,
                 'religion_importance': 'skip',
                 'religion_public': False,
+                'religion_filter': [],
                 'physical_public': False,
                 'physical_importance': 'not_important',
                 'physical_preferences': [],
@@ -402,6 +403,8 @@ class MongoService:
                         update_data['religion_importance'] = importance_map.get(ans.get('index'), 'skip')
                     elif ans['section'] == 'religion':
                         update_data['religion'] = ans.get('value')
+                    elif ans['section'] == 'religion_filter':
+                        update_data['religion_filter'] = ans.get('toggles', [])
                     elif ans['section'] == 'physical_preferences':
                         importance_map = {
                             0: 'very_important',
@@ -535,6 +538,8 @@ class MongoService:
             # Get user preferences
             religion_importance = current_user.get('religion_importance', 'skip')
             user_religion = current_user.get('religion')
+            religion_filter = current_user.get('religion_filter', [])
+            show_only_same_religion = any(t['value'] for t in religion_filter if t['label'] == 'Show only same religion matches')
             physical_importance = current_user.get('physical_importance', 'not_important')
             physical_preferences = current_user.get('physical_preferences', [])
             user_ks = user_scores.get('keeper_seeker_type')
@@ -564,6 +569,8 @@ class MongoService:
                     other_religion = other_user_data.get('religion')
                     is_same_religion = other_religion == user_religion
                     if religion_importance == 'high' and not is_same_religion:
+                        continue
+                    if show_only_same_religion and not is_same_religion:
                         continue
                     elif is_same_religion:
                         if religion_importance == 'medium':
@@ -627,6 +634,8 @@ class MongoService:
             # Get user preferences
             religion_importance = current_user.get('religion_importance', 'skip')
             user_religion = current_user.get('religion')
+            religion_filter = current_user.get('religion_filter', [])
+            show_only_same_religion = any(t['value'] for t in religion_filter if t['label'] == 'Show only same religion matches')
             physical_importance = current_user.get('physical_importance', 'not_important')
             physical_preferences = current_user.get('physical_preferences', [])
             user_ks = user_scores.get('keeper_seeker_type')
@@ -656,6 +665,8 @@ class MongoService:
                     other_religion = other_user_data.get('religion')
                     is_same_religion = other_religion == user_religion
                     if religion_importance == 'high' and not is_same_religion:
+                        continue
+                    if show_only_same_religion and not is_same_religion:
                         continue
                     elif is_same_religion:
                         if religion_importance == 'medium':
@@ -1842,6 +1853,7 @@ def user_profile(user_id):
             'interests': user.get('interests', []),
             'distance': 'N/A',
             'rating': '4.5',
+            'dominant_type': dominant_type,
             'match_percentage': match_percentage,
             'liked': mongo_service.has_liked_user(session['user_id'], user_id),
             'passed': mongo_service.has_passed_user(session['user_id'], user_id),
@@ -2284,4 +2296,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True)
+    app.run(host='0.0.0.0', port=5050, debug=True) 
