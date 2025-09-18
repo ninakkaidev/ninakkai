@@ -238,7 +238,6 @@ class MongoService:
                 'religion': None,
                 'religion_importance': 'skip',
                 'religion_public': False,
-                'religion_filter': [],
                 'physical_public': False,
                 'physical_importance': 'not_important',
                 'physical_preferences': [],
@@ -403,8 +402,6 @@ class MongoService:
                         update_data['religion_importance'] = importance_map.get(ans.get('index'), 'skip')
                     elif ans['section'] == 'religion':
                         update_data['religion'] = ans.get('value')
-                    elif ans['section'] == 'religion_filter':
-                        update_data['religion_filter'] = ans.get('toggles', [])
                     elif ans['section'] == 'physical_preferences':
                         importance_map = {
                             0: 'very_important',
@@ -416,19 +413,10 @@ class MongoService:
                         update_data['physical_preferences'] = ans.get('responses', [])
                     elif ans['section'] == 'physical_traits_own':
                         update_data['physical_traits'] = ans.get('responses', [])
+                    elif ans['section'] == 'profile_setup':
+                        update_data['profile_data'] = ans.get('responses', [])
                     elif ans['section'] == 'filter_settings':
                         update_data['filter_settings'] = ans.get('toggles', [])
-                    elif ans['section'] == 'profile_setup':
-                        responses = ans.get('responses', [])
-                        # Filter profile data
-                        profile_keys = ['Education / Work', 'Interests (select all that apply)', 'One-line self-summary (optional)']
-                        update_data['profile_data'] = [r for r in responses if r['label'] in profile_keys]
-                        # Handle filters
-                        for r in responses:
-                            if r['label'] == 'Religion Match Filters' and 'toggles' in r:
-                                update_data['religion_filter'] = r['toggles']
-                            elif r['label'] == 'Physical Match Filters' and 'toggles' in r:
-                                update_data['filter_settings'] = r['toggles']
 
             if update_data:
                 self.update_user(user_id, update_data)
@@ -544,16 +532,16 @@ class MongoService:
             user_scores = user_quiz['scores']
             dominant_type = user_scores['dominant_type']
             
-            # Get user preferences
+            # Get user preferences - consolidated filters
             religion_importance = current_user.get('religion_importance', 'skip')
             user_religion = current_user.get('religion')
-            religion_filter = current_user.get('religion_filter', [])
-            show_only_same_religion = any(t['value'] for t in religion_filter if t['label'] == 'Show only same religion matches')
+            filter_settings = current_user.get('filter_settings', [])
+            show_only_same_religion = any(t['value'] for t in filter_settings if t['label'] == 'Show only same religion matches')
+            show_only_preferred_physical = any(t['value'] for t in filter_settings if t['label'] == 'Show only preferred physical traits')
+            emotional_strict = any(t['value'] for t in filter_settings if t['label'] == 'Show only high emotional compatibility matches')
             physical_importance = current_user.get('physical_importance', 'not_important')
             physical_preferences = current_user.get('physical_preferences', [])
             user_ks = user_scores.get('keeper_seeker_type')
-            filter_settings = current_user.get('filter_settings', [])
-            show_only_preferred_physical = any(t['value'] for t in filter_settings if t['label'] == 'Show only preferred physical traits')
             
             all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
             matches = []
@@ -601,6 +589,10 @@ class MongoService:
                     # Apply filter if set
                     if show_only_preferred_physical and physical_match_score < 1.0:
                         continue
+                
+                # Step 5: Emotional strict filter
+                if emotional_strict and match_percentage < 80:
+                    continue
                 
                 match_percentage = min(match_percentage, 100)
                 
@@ -640,16 +632,16 @@ class MongoService:
             user_scores = user_quiz['scores']
             dominant_type = user_scores['dominant_type']
             
-            # Get user preferences
+            # Get user preferences - consolidated filters
             religion_importance = current_user.get('religion_importance', 'skip')
             user_religion = current_user.get('religion')
-            religion_filter = current_user.get('religion_filter', [])
-            show_only_same_religion = any(t['value'] for t in religion_filter if t['label'] == 'Show only same religion matches')
+            filter_settings = current_user.get('filter_settings', [])
+            show_only_same_religion = any(t['value'] for t in filter_settings if t['label'] == 'Show only same religion matches')
+            show_only_preferred_physical = any(t['value'] for t in filter_settings if t['label'] == 'Show only preferred physical traits')
+            emotional_strict = any(t['value'] for t in filter_settings if t['label'] == 'Show only high emotional compatibility matches')
             physical_importance = current_user.get('physical_importance', 'not_important')
             physical_preferences = current_user.get('physical_preferences', [])
             user_ks = user_scores.get('keeper_seeker_type')
-            filter_settings = current_user.get('filter_settings', [])
-            show_only_preferred_physical = any(t['value'] for t in filter_settings if t['label'] == 'Show only preferred physical traits')
             
             all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
             matches = []
@@ -697,6 +689,10 @@ class MongoService:
                     # Apply filter if set
                     if show_only_preferred_physical and physical_match_score < 1.0:
                         continue
+                
+                # Step 5: Emotional strict filter
+                if emotional_strict and match_percentage < 80:
+                    continue
                 
                 match_percentage = min(match_percentage, 100)
                 
