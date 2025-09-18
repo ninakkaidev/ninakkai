@@ -1009,6 +1009,7 @@
         section: "filter_settings",
         toggles: [
           { label: "Show only preferred physical traits", value: false },
+          { label: "Show only same religion matches", value: false },
           { label: "Show all emotionally compatible matches", value: true }
         ]
       }
@@ -1036,22 +1037,6 @@
             label: "One-line self-summary (optional)",
             type: "text",
             optional: true
-          },
-          {
-            label: "Religion Match Filters",
-            type: "toggle",
-            toggles: [
-              { label: "Show only same religion matches", value: false },
-              { label: "Show all emotionally compatible matches", value: true }
-            ]
-          },
-          {
-            label: "Physical Match Filters",
-            type: "toggle",
-            toggles: [
-              { label: "Show only preferred physical traits", value: false },
-              { label: "Show all emotionally compatible matches", value: true }
-            ]
           }
         ],
         submitText: "Start Matching"
@@ -1098,6 +1083,7 @@
     let nextDynamicQuestion = null;
     const mandatoryQuestionCount = mandatoryQuestions.length;
     const keeperSeekerQuestionCount = keeperSeekerQuestions.length;
+    const religionQuestionCount = religionQuestions.length; // Now fixed to 1 base + dynamic
     const physicalQuestionCount = physicalQuestions.length;
     const profileSetupQuestionCount = profileSetupQuestions.length;
 
@@ -1138,17 +1124,17 @@
           currentSection = 'religion';
           currentSectionStart = mandatoryQuestionCount + keeperSeekerQuestionCount;
         }
-        if (currentQuestion >= mandatoryQuestionCount + keeperSeekerQuestionCount + 1) {  // Approximate for religion
+        if (currentQuestion >= mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount) {  // Updated for religion count
           isPhysicalSection = true;
           questions = [...questions, ...physicalQuestions];
           currentSection = 'physical';
-          currentSectionStart = mandatoryQuestionCount + keeperSeekerQuestionCount + 1;
+          currentSectionStart = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount;
         }
-        if (currentQuestion >= mandatoryQuestionCount + keeperSeekerQuestionCount + 1 + physicalQuestionCount) {
+        if (currentQuestion >= mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount) {
           isProfileSetupSection = true;
           questions = [...questions, ...profileSetupQuestions];
           currentSection = 'profileSetup';
-          currentSectionStart = mandatoryQuestionCount + keeperSeekerQuestionCount + 1 + physicalQuestionCount;
+          currentSectionStart = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount;
         }
         
         sessionStorage.removeItem('quiz_answers');
@@ -1265,7 +1251,7 @@
         sectionLen = keeperSeekerQuestionCount;
         progress = ((currentQuestion - currentSectionStart + 1) / sectionLen) * 100;
       } else if (currentSection === 'religion') {
-        sectionLen = 3;  // Approximate for variable length
+        sectionLen = religionQuestionCount;  // Updated
         progress = Math.min(((currentQuestion - currentSectionStart + 1) / sectionLen) * 100, 100);
       } else if (currentSection === 'physical') {
         sectionLen = physicalQuestionCount;
@@ -1441,22 +1427,6 @@
               chipContainer.appendChild(chip);
             });
             formGroup.appendChild(chipContainer);
-          } else if (inputData.type === 'toggle') {
-            const toggleContainer = document.createElement('div');
-            toggleContainer.className = 'toggle-container';
-            toggleContainer.dataset.groupLabel = inputData.label;
-            inputData.toggles.forEach(toggle => {
-              const toggleLabel = document.createElement('label');
-              toggleLabel.className = 'toggle-label';
-              const inputEl = document.createElement('input');
-              inputEl.type = 'checkbox';
-              inputEl.checked = toggle.value;
-              inputEl.dataset.sublabel = toggle.label;
-              toggleLabel.appendChild(inputEl);
-              toggleLabel.appendChild(document.createTextNode(` ${toggle.label}`));
-              toggleContainer.appendChild(toggleLabel);
-            });
-            formGroup.appendChild(toggleContainer);
           }
           answersElement.appendChild(formGroup);
         });
@@ -1468,8 +1438,7 @@
           const inputs = answersElement.querySelectorAll('.form-control, .chip.selected');
           inputs.forEach(input => {
             if (input.classList && input.classList.contains('chip')) {
-              const chipLabel = input.parentElement.parentElement.querySelector('label').textContent;
-              responses.push({ label: chipLabel, value: input.dataset.value });
+              responses.push({ label: input.parentElement.previousSibling.textContent, value: input.dataset.value });
             } else {
               const labelEl = input.previousElementSibling;
               if (labelEl && labelEl.tagName === 'LABEL') {
@@ -1477,19 +1446,6 @@
               }
             }
           });
-          // Add for toggles
-          const toggleGroups = answersElement.querySelectorAll('.toggle-container');
-          for (let group of toggleGroups) {
-            const groupLabel = group.dataset.groupLabel;
-            const toggles = [];
-            group.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-              const sublabel = checkbox.dataset.sublabel;
-              toggles.push({ label: sublabel, value: checkbox.checked });
-            });
-            if (toggles.length > 0) {
-              responses.push({ label: groupLabel, toggles: toggles });
-            }
-          }
           selectAnswer({ responses, section: questionData.section });
           submitButton.classList.add('animate__animated', 'animate__pulse');
           setTimeout(() => {
@@ -1799,9 +1755,8 @@
           } else if (currentExtraSection === 'physical') {
             if (isReligionSection) {
               currentSection = 'religion';
-              currentQuestion = questions.length - physicalQuestionCount - 1;  // Approximate
-              currentSectionStart = questions.length - physicalQuestionCount - religionQuestions.length;  // Approximate
-              // Slice to before physical
+              currentQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount - 1;  // Updated
+              currentSectionStart = mandatoryQuestionCount + keeperSeekerQuestionCount;
               selectedAnswers = selectedAnswers.slice(0, selectedAnswers.length - physicalQuestionCount);
             } else if (isKeeperSeekerSection) {
               currentSection = 'keeperSeeker';
@@ -1815,20 +1770,30 @@
           } else if (currentExtraSection === 'profileSetup') {
             if (isPhysicalSection) {
               currentSection = 'physical';
-              currentQuestion = questions.length - profileSetupQuestionCount - 1;
-              currentSectionStart = questions.length - profileSetupQuestionCount - physicalQuestionCount;
+              currentQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount - 1;  // Updated
+              currentSectionStart = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount;
               selectedAnswers = selectedAnswers.slice(0, selectedAnswers.length - profileSetupQuestionCount);
             } else if (isReligionSection) {
               currentSection = 'religion';
-              // Similar approximation
-            } // ... chain back
-            // For simplicity, slice to before profile
-            selectedAnswers = selectedAnswers.slice(0, selectedAnswers.length - profileSetupQuestionCount);
+              currentQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount - 1;
+              selectedAnswers = selectedAnswers.slice(0, selectedAnswers.length - physicalQuestionCount - profileSetupQuestionCount);
+            } else if (isKeeperSeekerSection) {
+              currentSection = 'keeperSeeker';
+              currentQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount - 1;
+              selectedAnswers = selectedAnswers.slice(0, mandatoryQuestionCount + keeperSeekerQuestionCount);
+            } else {
+              currentSection = 'mandatory';
+              currentQuestion = mandatoryQuestionCount - 1;
+              selectedAnswers = selectedAnswers.slice(0, mandatoryQuestionCount);
+            }
           }
+          updateSectionInfo();  // Ensure update after setting currentSection
+        } else {
+          // Within section back - update section info if needed (usually not)
+          updateSectionInfo();
         }
 
         // Update the UI
-        updateSectionInfo();
         displayQuestion();
         
         // Show back button if not on first question
