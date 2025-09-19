@@ -961,7 +961,6 @@
               ]
             };
           }
-          // If "Not Important", return null to skip to next section without adding own traits
           return null;
         }
       },
@@ -1097,6 +1096,8 @@
     let isReligionSection = false;
     let isPhysicalSection = false;
     let isProfileSetupSection = false;
+    let hasReligionAnswered = false;
+    let hasPhysicalAnswered = false;
     let currentExtraSection = '';
     let currentSectionStart = 0;
     let rankedItems = [];
@@ -1170,6 +1171,13 @@
         let physicalCount = selectedAnswers.filter(a => a.section && a.section.startsWith('physical_')).length;
         let profileCount = selectedAnswers.filter(a => a.section && (a.section === 'profile_setup' || a.section === 'filter_settings')).length;
 
+        // Compute hasAnswered flags
+        const relAnswers = selectedAnswers.filter(a => a.section === 'religion');
+        hasReligionAnswered = religionCount > 1 || (religionCount === 1 && relAnswers[0].index !== 3);
+
+        const physAnswers = selectedAnswers.filter(a => a.section && a.section.startsWith('physical_'));
+        hasPhysicalAnswered = physicalCount > 1 || (physicalCount === 1 && physAnswers[0].index !== 2);
+
         // Reset
         questions = [...mandatoryQuestions];
         currentSection = 'mandatory';
@@ -1195,18 +1203,18 @@
         rebuildQuestions();
 
         // Handle dynamic questions for religion
-        const relAnswers = selectedAnswers.filter(a => a.section === 'religion');
-        if (relAnswers.length > 0) {
-          const impIndex = relAnswers[0].index;
-          if (impIndex !== 3 && relAnswers.length === 1) {
+        const relAnswersFiltered = selectedAnswers.filter(a => a.section === 'religion');
+        if (relAnswersFiltered.length > 0) {
+          const impIndex = relAnswersFiltered[0].index;
+          if (impIndex !== 3 && relAnswersFiltered.length === 1) {
             questions.push(religionSelect);
           }
         }
 
         // Handle dynamic for physical
-        const physAnswers = selectedAnswers.filter(a => a.section && a.section.startsWith('physical_'));
-        if (physAnswers.length > 0) {
-          const prefIndex = physAnswers[0].index;
+        const physAnswersFiltered = selectedAnswers.filter(a => a.section && a.section.startsWith('physical_'));
+        if (physAnswersFiltered.length > 0) {
+          const prefIndex = physAnswersFiltered[0].index;
           if (prefIndex !== 2) {  // very or somewhat
             const traitsPrefQ = {
               id: 'physical_traits_preferred',
@@ -1220,7 +1228,7 @@
                 { label: "Preferred body type", type: "select", options: ["Slim", "Average", "Fit", "No Preference"] }
               ]
             };
-            if (physAnswers.length === 1 || (physAnswers.length > 1 && physAnswers[1].section !== 'physical_traits_preferred')) {
+            if (physAnswersFiltered.length === 1 || (physAnswersFiltered.length > 1 && physAnswersFiltered[1].section !== 'physical_traits_preferred')) {
               // Insert before own_traits
               const ownIndex = questions.findIndex(q => q.id === 'physical_traits_own');
               if (ownIndex !== -1) {
@@ -1560,17 +1568,14 @@
         answersElement.appendChild(submitButton);
       } else if (questionData.isToggleInput) {
         console.log('Displaying toggle input question');
+        let filteredToggles = questionData.toggles.filter(toggle => {
+          if (toggle.label.includes('same religion') && !hasReligionAnswered) return false;
+          if (toggle.label.includes('preferred physical') && !hasPhysicalAnswered) return false;
+          return true;
+        });
         const toggleContainer = document.createElement('div');
         toggleContainer.className = 'toggle-container';
-        // Conditionally show toggles based on whether sections were answered
-        let visibleToggles = questionData.toggles;
-        if (!isReligionSection) {
-          visibleToggles = visibleToggles.filter(t => t.label !== "Show only same religion matches");
-        }
-        if (!isPhysicalSection) {
-          visibleToggles = visibleToggles.filter(t => t.label !== "Show only preferred physical traits");
-        }
-        visibleToggles.forEach(toggle => {
+        filteredToggles.forEach(toggle => {
           const label = document.createElement('label');
           label.className = 'toggle-label';
           const input = document.createElement('input');
@@ -1653,6 +1658,17 @@
       // For keeper/seeker questions, include the keeperSeeker information
       if (questionData.keeperSeeker && data.index !== undefined) {
         data.keeperSeeker = questionData.keeperSeeker[data.index];
+      }
+
+      // Set hasAnswered flags based on current question
+      if (questionData.id === 'religion_importance') {
+        hasReligionAnswered = data.index !== 3;
+      } else if (questionData.id === 'religion') {
+        hasReligionAnswered = true;
+      } else if (questionData.id === 'physical_preferences') {
+        hasPhysicalAnswered = data.index !== 2;
+      } else if (questionData.section && questionData.section.startsWith('physical_') && questionData.id !== 'physical_preferences') {
+        hasPhysicalAnswered = true;
       }
       
       selectedAnswers.push({ 
@@ -1825,92 +1841,95 @@
     }
 
     function goToPreviousQuestion() {
-      if (optionalSection.style.display === 'block') {
-        // Back from optional prompt - go to last of previous section
-        optionalSection.style.display = 'none';
-        questionBox.style.display = 'flex';
-        let prevQuestion, prevSection, prevStart;
-        switch (currentExtraSection) {
-          case 'keeperSeeker':
-            prevQuestion = mandatoryQuestionCount - 1;
-            prevSection = 'mandatory';
-            prevStart = 0;
-            break;
-          case 'religion':
-            if (isKeeperSeekerSection) {
-              prevQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount - 1;
-              prevSection = 'keeperSeeker';
-              prevStart = mandatoryQuestionCount;
-            } else {
-              prevQuestion = mandatoryQuestionCount - 1;
-              prevSection = 'mandatory';
-              prevStart = 0;
-            }
-            break;
-          case 'physical':
-            if (isReligionSection) {
-              prevQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount - 1;
-              prevSection = 'religion';
-              prevStart = mandatoryQuestionCount + keeperSeekerQuestionCount;
-            } else if (isKeeperSeekerSection) {
-              prevQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount - 1;
-              prevSection = 'keeperSeeker';
-              prevStart = mandatoryQuestionCount;
-            } else {
-              prevQuestion = mandatoryQuestionCount - 1;
-              prevSection = 'mandatory';
-              prevStart = 0;
-            }
-            break;
-          case 'profileSetup':
-            if (isPhysicalSection) {
-              prevQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount - 1;
-              prevSection = 'physical';
-              prevStart = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount;
-            } else if (isReligionSection) {
-              prevQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount - 1;
-              prevSection = 'religion';
-              prevStart = mandatoryQuestionCount + keeperSeekerQuestionCount;
-            } else if (isKeeperSeekerSection) {
-              prevQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount - 1;
-              prevSection = 'keeperSeeker';
-              prevStart = mandatoryQuestionCount;
-            } else {
-              prevQuestion = mandatoryQuestionCount - 1;
-              prevSection = 'mandatory';
-              prevStart = 0;
-            }
-            break;
-        }
-        currentQuestion = prevQuestion;
-        currentSection = prevSection;
-        currentSectionStart = prevStart;
-        selectedAnswers = selectedAnswers.slice(0, currentQuestion + 1);
-        updateSectionInfo();
-        displayQuestion();
-        return; // Exit early after handling optional back
-      }
-
-      if (currentQuestion > 0) {
-        // Normal back - check if crossing section boundary
+      if (currentQuestion > 0 || optionalSection.style.display === 'block') {
+        const oldCurrentQuestion = currentQuestion;
         const oldSection = currentSection;
-        selectedAnswers.pop();
-        currentQuestion--;
-        const secInfo = determineCurrentSection(currentQuestion);
-        currentSection = secInfo.section;
-        currentSectionStart = secInfo.start;
-        if (currentSection !== oldSection) {
-          // Crossed section boundary backward - reset old section flag and rebuild
-          if (oldSection === 'keeperSeeker') {
-            isKeeperSeekerSection = false;
-          } else if (oldSection === 'religion') {
-            isReligionSection = false;
-          } else if (oldSection === 'physical') {
-            isPhysicalSection = false;
-          } else if (oldSection === 'profileSetup') {
-            isProfileSetupSection = false;
+        if (optionalSection.style.display === 'block') {
+          // Back from optional prompt - go to last of previous section
+          optionalSection.style.display = 'none';
+          questionBox.style.display = 'flex';
+          let prevQuestion, prevSection, prevStart;
+          switch (currentExtraSection) {
+            case 'keeperSeeker':
+              prevQuestion = mandatoryQuestionCount - 1;
+              prevSection = 'mandatory';
+              prevStart = 0;
+              break;
+            case 'religion':
+              if (isKeeperSeekerSection) {
+                prevQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount - 1;
+                prevSection = 'keeperSeeker';
+                prevStart = mandatoryQuestionCount;
+              } else {
+                prevQuestion = mandatoryQuestionCount - 1;
+                prevSection = 'mandatory';
+                prevStart = 0;
+              }
+              break;
+            case 'physical':
+              if (isReligionSection) {
+                prevQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount - 1;
+                prevSection = 'religion';
+                prevStart = mandatoryQuestionCount + keeperSeekerQuestionCount;
+              } else if (isKeeperSeekerSection) {
+                prevQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount - 1;
+                prevSection = 'keeperSeeker';
+                prevStart = mandatoryQuestionCount;
+              } else {
+                prevQuestion = mandatoryQuestionCount - 1;
+                prevSection = 'mandatory';
+                prevStart = 0;
+              }
+              break;
+            case 'profileSetup':
+              if (isPhysicalSection) {
+                prevQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount + physicalQuestionCount - 1;
+                prevSection = 'physical';
+                prevStart = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount;
+              } else if (isReligionSection) {
+                prevQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount + religionQuestionCount - 1;
+                prevSection = 'religion';
+                prevStart = mandatoryQuestionCount + keeperSeekerQuestionCount;
+              } else if (isKeeperSeekerSection) {
+                prevQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount - 1;
+                prevSection = 'keeperSeeker';
+                prevStart = mandatoryQuestionCount;
+              } else {
+                prevQuestion = mandatoryQuestionCount - 1;
+                prevSection = 'mandatory';
+                prevStart = 0;
+              }
+              break;
           }
-          rebuildQuestions();
+          currentQuestion = prevQuestion;
+          currentSection = prevSection;
+          currentSectionStart = prevStart;
+          selectedAnswers = selectedAnswers.slice(0, currentQuestion + 1);
+        } else {
+          // Normal back
+          selectedAnswers.pop();
+          currentQuestion--;
+          const secInfo = determineCurrentSection(currentQuestion);
+          currentSection = secInfo.section;
+          currentSectionStart = secInfo.start;
+          if (currentSection !== oldSection) {
+            // Crossed section boundary backward - reset old section flag and rebuild
+            if (oldSection === 'keeperSeeker') {
+              isKeeperSeekerSection = false;
+            } else if (oldSection === 'religion') {
+              isReligionSection = false;
+            } else if (oldSection === 'physical') {
+              isPhysicalSection = false;
+            } else if (oldSection === 'profileSetup') {
+              isProfileSetupSection = false;
+            }
+            rebuildQuestions();
+            selectedAnswers = selectedAnswers.slice(0, currentQuestion + 1);
+          }
+        }
+        // Ensure currentQuestion does not exceed questions.length after potential rebuild
+        if (currentQuestion >= questions.length) {
+          currentQuestion = Math.max(0, questions.length - 1);
           selectedAnswers = selectedAnswers.slice(0, currentQuestion + 1);
         }
         // Update section info based on new currentQuestion
