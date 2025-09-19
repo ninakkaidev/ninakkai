@@ -497,8 +497,8 @@
             </div>
             {% endif %}
 
+            {% if profile.religion_importance != 'skip' and profile.religion_importance != 'not_important' %}
             <!-- Religion Importance -->
-            {% if profile.religion_importance not in ['skip', 'not_important', 'low'] %}
             <div class="mt-6 religion-importance-section">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-semibold">Religion Importance in Matching</h3>
@@ -519,8 +519,8 @@
             </div>
             {% endif %}
 
-            <!-- Physical Importance -->
             {% if profile.physical_importance != 'not_important' %}
+            <!-- Physical Importance -->
             <div class="mt-6 physical-importance-section">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-semibold">Physical Preference Importance in Matching</h3>
