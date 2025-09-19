@@ -497,7 +497,6 @@
             </div>
             {% endif %}
 
-            {% if profile.religion_importance != 'skip' and profile.religion_importance != 'not_important' %}
             <!-- Religion Importance -->
             <div class="mt-6 religion-importance-section">
                 <div class="flex justify-between items-center mb-2">
@@ -517,9 +516,7 @@
                     <button id="saveReligionImportanceBtn" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600">Save</button>
                 </div>
             </div>
-            {% endif %}
 
-            {% if profile.physical_importance != 'not_important' %}
             <!-- Physical Importance -->
             <div class="mt-6 physical-importance-section">
                 <div class="flex justify-between items-center mb-2">
@@ -539,7 +536,6 @@
                     <button id="savePhysicalImportanceBtn" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600">Save</button>
                 </div>
             </div>
-            {% endif %}
 
             <!-- Education/Work -->
             {% if profile.education_work != 'N/A' %}
