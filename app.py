@@ -1203,7 +1203,7 @@ def send_verification_email(email: str, verification_token: str) -> Dict[str, An
 
         {verification_url}
 
-        If you did not sign up for this account, please ignore this email.
+        If you did not sign up, please ignore this email.
 
         Best regards,
         The Ninakkai Team
@@ -1946,6 +1946,7 @@ def api_conversations():
         matched_user_ids = mongo_service.get_matched_users(current_user_id)
         unread_count = chat_service.get_unread_count(current_user_id)
         conversations = []
+        
         for match_id in matched_user_ids:
             user = mongo_service.get_user_by_id(match_id)
             if user:

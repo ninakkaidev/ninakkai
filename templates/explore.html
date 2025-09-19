@@ -582,6 +582,25 @@
                 </div>
             </div>
         </div>
+
+        <!-- Discovery Section with new styling -->
+        <div id="discovery-section" class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Discover People</h2>
+            </div>
+            <div id="discovery-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <!-- Skeleton loaders for initial loading -->
+                <div class="discovery-profile">
+                    <div class="skeleton w-full h-72 rounded-xl"></div>
+                </div>
+                <div class="discovery-profile">
+                    <div class="skeleton w-full h-72 rounded-xl"></div>
+                </div>
+                <div class="discovery-profile">
+                    <div class="skeleton w-full h-72 rounded-xl"></div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <!-- Bottom Navigation -->
@@ -608,6 +627,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const loading = document.getElementById('loading');
             const matchesSection = document.getElementById('matches-section');
+            const discoverySection = document.getElementById('discovery-section');
             const errorMessage = document.getElementById('error-message');
             const errorText = document.getElementById('error-text');
             const mainHeader = document.getElementById('mainHeader');
@@ -863,12 +883,14 @@
                 
                 showLoading();
                 matchesSection.classList.add('opacity-50');
+                discoverySection.classList.add('opacity-50');
 
                 try {
                     const response = await fetch(`/search-matches?q=${encodeURIComponent(query)}`);
                     const result = await response.json();
                     if (result.success) {
                         updateMatches(result.matches);
+                        updateDiscovery(result.matches);
                         attachLikeButtonListeners();
                         attachProfileClickListeners();
                     } else {
@@ -879,6 +901,7 @@
                 } finally {
                     hideLoading();
                     matchesSection.classList.remove('opacity-50');
+                    discoverySection.classList.remove('opacity-50');
                 }
             });
 
@@ -930,6 +953,57 @@
                 }
             }
 
+            // Update discovery dynamically with progressive loading
+            function updateDiscovery(matches) {
+                const discoveryGrid = document.getElementById('discovery-grid');
+                discoveryGrid.innerHTML = '';
+                const unseen = matches.filter(m => !m.liked && !m.passed);
+                let displayMatches = unseen;
+                if (unseen.length === 0 && matches.length > 0) {
+                    displayMatches = matches;
+                    showNotification('No new suggestions found. Showing previous ones.');
+                }
+                displayMatches.sort((a, b) => b.match_percentage - a.match_percentage);
+                displayMatches.forEach((match, index) => {
+                    setTimeout(() => {
+                        const card = document.createElement('div');
+                        card.className = 'discovery-profile discovery-card';
+                        card.dataset.userId = match.id;
+                        let likeButtonHTML;
+                        if (match.passed) {
+                            likeButtonHTML = `<button class="bg-gray-500 text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center" disabled>Passed</button>`;
+                        } else {
+                            likeButtonHTML = `<button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center transition" 
+                                            data-user-id="${match.id}" 
+                                            data-liked="${match.liked}">
+                                        <i class="fas ${match.liked ? 'fa-check' : 'fa-heart text-xs'}"></i>
+                                    </button>`;
+                        }
+                        card.innerHTML = `
+                            <img src="${match.image}" alt="Profile" class="discovery-image">
+                            <div class="discovery-rating text-gray-800 dark:text-gray-100">
+                                <i class="fas fa-star text-yellow-500 text-xs mr-1"></i>
+                                <span class="text-xs font-medium">${match.rating}</span>
+                            </div>
+                            <div class="discovery-content">
+                                <div class="flex justify-between items-end">
+                                    <div>
+                                        <h3 class="text-gray-100 font-bold text-sm md:text-base">${match.full_name}, ${match.age || 'N/A'}</h3>
+                                    </div>
+                                    ${likeButtonHTML}
+                                </div>
+                            </div>
+                        `;
+                        discoveryGrid.appendChild(card);
+                        attachLikeButtonListeners();
+                        attachProfileClickListeners();
+                    }, index * 200);  // 200ms delay between each card
+                });
+                if (!displayMatches.length) {
+                    discoveryGrid.innerHTML = '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">No people to discover. Try completing your quiz!</p>';
+                }
+            }
+            
             // Function to load matches with caching
             async function loadMatches(forceRefresh = false) {
                 if (isLoading) return;
@@ -959,6 +1033,7 @@
                     }
                 }
                 updateMatches(data);
+                updateDiscovery(data);
                 isLoading = false;
                 hideLoading();
             }
@@ -1088,7 +1163,6 @@
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Personality Types</h3>
                                     <p class="text-gray-700 dark:text-gray-300">Dominant: ${profile.user.personality.dominant_type} (${profile.user.personality.dominant_percentage}%)</p>
-                                    <p class="text-gray-700 dark:text-gray-300">Secondary: ${profile.user.personality.secondary_type || 'None'} (${profile.user.personality.secondary_percentage || '0'}%)</p>
                                 </div>
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Personality Details</h3>
@@ -1099,14 +1173,6 @@
                                         ${profile.user.personality_info.strengths && profile.user.personality_info.strengths.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Strengths:</strong> ${profile.user.personality_info.strengths.join(', ')}</p>` : ''}
                                         ${profile.user.personality_info.compatibility && profile.user.personality_info.compatibility.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Compatibility:</strong> ${profile.user.personality_info.compatibility.join(', ')}</p>` : ''}
                                     ` : '<p class="text-gray-700 dark:text-gray-300">No personality information available</p>'}
-                                    ${profile.user.secondary_personality_info ? `
-                                        <p class="text-gray-700 dark:text-gray-300"><strong>Secondary Personality</strong></p>
-                                        ${profile.user.secondary_personality_info.title ? `<p class="text-gray-700 dark:text-gray-300"><strong>${profile.user.secondary_personality_info.title}</strong></p>` : ''}
-                                        ${profile.user.secondary_personality_info.description && profile.user.secondary_personality_info.description !== 'Description not available.' ? `<p class="text-gray-700 dark:text-gray-300">${profile.user.secondary_personality_info.description}</p>` : ''}
-                                        ${profile.user.secondary_personality_info.tagline ? `<p class="text-gray-700 dark:text-gray-300"><em>${profile.user.secondary_personality_info.tagline}</em></p>` : ''}
-                                        ${profile.user.secondary_personality_info.strengths && profile.user.secondary_personality_info.strengths.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Strengths:</strong> ${profile.user.secondary_personality_info.strengths.join(', ')}</p>` : ''}
-                                        ${profile.user.secondary_personality_info.compatibility && profile.user.secondary_personality_info.compatibility.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Compatibility:</strong> ${profile.user.secondary_personality_info.compatibility.join(', ')}</p>` : ''}
-                                    ` : ''}
                                 </div>
                                 ${profile.user.interests && profile.user.interests.length > 0 ? `
                                 <div class="mb-6">
