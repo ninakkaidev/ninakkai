@@ -410,9 +410,9 @@ class MongoService:
                 if 'section' in ans:
                     if ans['section'] == 'religion_importance':
                         importance_map = {
-                            0: 'high',
-                            1: 'medium',
-                            2: 'low',
+                            0: 'very_important',
+                            1: 'somewhat_important',
+                            2: 'not_important',
                             3: 'skip'
                         }
                         update_data['religion_importance'] = importance_map.get(ans.get('index'), 'skip')
@@ -581,14 +581,14 @@ class MongoService:
                 if religion_importance != 'skip' and user_religion:
                     other_religion = other_user_data.get('religion')
                     is_same_religion = other_religion == user_religion
-                    if religion_importance == 'high' and not is_same_religion:
+                    if religion_importance == 'very_important' and not is_same_religion:
                         continue
                     if show_only_same_religion and not is_same_religion:
                         continue
                     elif is_same_religion:
-                        if religion_importance == 'medium':
+                        if religion_importance == 'somewhat_important':
                             match_percentage += 10
-                        elif religion_importance == 'low':
+                        elif religion_importance == 'not_important':
                             match_percentage += 5
                 
                 # Step 4: Physical preferences
@@ -681,14 +681,14 @@ class MongoService:
                 if religion_importance != 'skip' and user_religion:
                     other_religion = other_user_data.get('religion')
                     is_same_religion = other_religion == user_religion
-                    if religion_importance == 'high' and not is_same_religion:
+                    if religion_importance == 'very_important' and not is_same_religion:
                         continue
                     if show_only_same_religion and not is_same_religion:
                         continue
                     elif is_same_religion:
-                        if religion_importance == 'medium':
+                        if religion_importance == 'somewhat_important':
                             match_percentage += 10
-                        elif religion_importance == 'low':
+                        elif religion_importance == 'not_important':
                             match_percentage += 5
                 
                 # Step 4: Physical preferences
