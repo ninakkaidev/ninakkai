@@ -400,6 +400,11 @@
         .dark .secondary-personality {
             color: #aaaaaa !important;
         }
+
+        /* Dark mode for circles (fallback if script fails) */
+        .dark .circle {
+            animation-duration: 18s; /* Slightly slower in dark mode for calmer effect */
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -841,30 +846,38 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Create background circles
+            // Background circles colors
+            const lightColors = ['rgba(236, 72, 153, 0.1)', 'rgba(236, 72, 153, 0.08)', 'rgba(236, 72, 153, 0.06)'];
+            const darkColors = ['rgba(236, 72, 153, 0.3)', 'rgba(236, 72, 153, 0.25)', 'rgba(236, 72, 153, 0.2)'];
             const bgCircles = document.getElementById('bgCircles');
-            const colors = ['rgba(236, 72, 153, 0.1)', 'rgba(236, 72, 153, 0.08)', 'rgba(236, 72, 153, 0.06)'];
-            
-            for (let i = 0; i < 15; i++) {
-                const circle = document.createElement('div');
-                circle.className = 'circle';
-                
-                const size = Math.random() * 150 + 50;
-                circle.style.width = `${size}px`;
-                circle.style.height = `${size}px`;
-                
-                circle.style.left = `${Math.random() * 100}%`;
-                circle.style.top = `${Math.random() * 100}%`;
-                
-                circle.style.background = colors[Math.floor(Math.random() * colors.length)];
-                
-                const duration = Math.random() * 20 + 10;
-                const delay = Math.random() * 5;
-                circle.style.animationDuration = `${duration}s`;
-                circle.style.animationDelay = `${delay}s`;
-                
-                bgCircles.appendChild(circle);
+
+            function updateBackgroundCircles() {
+                bgCircles.innerHTML = '';
+                const colors = document.documentElement.classList.contains('dark') ? darkColors : lightColors;
+                for (let i = 0; i < 15; i++) {
+                    const circle = document.createElement('div');
+                    circle.className = 'circle';
+                    
+                    const size = Math.random() * 150 + 50;
+                    circle.style.width = `${size}px`;
+                    circle.style.height = `${size}px`;
+                    
+                    circle.style.left = `${Math.random() * 100}%`;
+                    circle.style.top = `${Math.random() * 100}%`;
+                    
+                    circle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    const duration = Math.random() * 20 + 10;
+                    const delay = Math.random() * 5;
+                    circle.style.animationDuration = `${duration}s`;
+                    circle.style.animationDelay = `${delay}s`;
+                    
+                    bgCircles.appendChild(circle);
+                }
             }
+
+            // Initial call
+            updateBackgroundCircles();
             
             // Tab functionality
             const tabButtons = document.querySelectorAll('.tab-btn');
@@ -1182,12 +1195,23 @@
                 }
             }
 
-            document.querySelectorAll('.toggle-container input[type="checkbox"]').forEach(toggle => {
+            // Notification toggles with localStorage persistence
+            const notificationToggles = {
+                newMatchesToggle: 'newMatchesNotify',
+                messagesToggle: 'messagesNotify',
+                profileLikesToggle: 'profileLikesNotify'
+            };
+
+            Object.entries(notificationToggles).forEach(([id, key]) => {
+                const toggle = document.getElementById(id);
+                const saved = localStorage.getItem(key);
+                toggle.checked = saved !== null ? saved === 'true' : true;
                 updateToggleStatus(toggle);
                 toggle.addEventListener('change', function() {
+                    localStorage.setItem(key, this.checked);
                     const settingName = this.closest('.flex').querySelector('span').textContent;
-                    updateToggleStatus(this);
                     showNotification(`${settingName} ${this.checked ? 'enabled' : 'disabled'}`);
+                    updateToggleStatus(this);
                 });
             });
 
@@ -1215,6 +1239,7 @@
                     showNotification('Dark mode disabled');
                 }
                 updateToggleStatus(this);
+                updateBackgroundCircles(); // Update circles on mode change
             });
             
             // Change Password functionality
