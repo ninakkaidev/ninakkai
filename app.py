@@ -255,7 +255,7 @@ class MongoService:
                 'religion_importance': 'skip',
                 'religion_public': False,
                 'physical_public': False,
-                'physical_importance': 'unset',
+                'physical_importance': 'skip',
                 'physical_preferences': [],
                 'physical_traits': [],
                 'filter_settings': [],
@@ -402,7 +402,7 @@ class MongoService:
                 'scores': scores,
                 'completed_at': datetime.now(timezone.utc)
             }
-            quiz_result = self.quiz_results.insert_one(quiz_result)
+            quiz_result_id = self.quiz_results.insert_one(quiz_result)
 
             # Parse optional from answers and update user
             update_data = {}
@@ -410,9 +410,9 @@ class MongoService:
                 if 'section' in ans:
                     if ans['section'] == 'religion_importance':
                         importance_map = {
-                            0: 'not_important',
+                            0: 'very_important',
                             1: 'somewhat_important',
-                            2: 'very_important',
+                            2: 'not_important',
                             3: 'skip'
                         }
                         update_data['religion_importance'] = importance_map.get(ans.get('index'), 'skip')
@@ -424,7 +424,7 @@ class MongoService:
                             1: 'somewhat_important',
                             2: 'not_important'
                         }
-                        update_data['physical_importance'] = importance_map.get(ans.get('index'), 'not_important')
+                        update_data['physical_importance'] = importance_map.get(ans.get('index'), 'skip')
                     elif ans['section'] == 'physical_traits_preferred':
                         update_data['physical_preferences'] = ans.get('responses', [])
                     elif ans['section'] == 'physical_traits_own':
@@ -443,7 +443,7 @@ class MongoService:
             )
             return {
                 'success': True,
-                'result_id': str(quiz_result.inserted_id),
+                'result_id': str(quiz_result_id.inserted_id),
                 'scores': scores
             }
         except Exception as e:
@@ -555,7 +555,7 @@ class MongoService:
             show_only_same_religion = any(t['value'] for t in filter_settings if t['label'] == 'Show only same religion matches')
             show_only_preferred_physical = any(t['value'] for t in filter_settings if t['label'] == 'Show only preferred physical traits')
             emotional_strict = any(t['value'] for t in filter_settings if t['label'] == 'Show only high emotional compatibility matches')
-            physical_importance = current_user.get('physical_importance', 'unset')
+            physical_importance = current_user.get('physical_importance', 'skip')
             physical_preferences = current_user.get('physical_preferences', [])
             user_ks = user_scores.get('keeper_seeker_type')
             
@@ -592,7 +592,7 @@ class MongoService:
                             match_percentage += 5
                 
                 # Step 4: Physical preferences
-                if physical_importance != 'unset' and physical_preferences:
+                if physical_importance != 'skip' and physical_preferences:
                     other_physical = other_user_data.get('physical_traits', [])
                     physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
                     
@@ -655,7 +655,7 @@ class MongoService:
             show_only_same_religion = any(t['value'] for t in filter_settings if t['label'] == 'Show only same religion matches')
             show_only_preferred_physical = any(t['value'] for t in filter_settings if t['label'] == 'Show only preferred physical traits')
             emotional_strict = any(t['value'] for t in filter_settings if t['label'] == 'Show only high emotional compatibility matches')
-            physical_importance = current_user.get('physical_importance', 'unset')
+            physical_importance = current_user.get('physical_importance', 'skip')
             physical_preferences = current_user.get('physical_preferences', [])
             user_ks = user_scores.get('keeper_seeker_type')
             
@@ -692,7 +692,7 @@ class MongoService:
                             match_percentage += 5
                 
                 # Step 4: Physical preferences
-                if physical_importance != 'unset' and physical_preferences:
+                if physical_importance != 'skip' and physical_preferences:
                     other_physical = other_user_data.get('physical_traits', [])
                     physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
                     
@@ -1505,7 +1505,7 @@ def verify_email_endpoint():
         user = mongo_service.get_user_by_id(result['user_id'])
         target = 'age_verification' if not user.get('age_verified', False) else 'questions'
         resp = make_response(redirect(url_for(target)))
-        resp.set_cookie('email_verified', '1', max_age=60, secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
+        resp.set_cookie('email_verified', '1', max_age=60, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
         return resp
     except Exception as e:
         logger.error(f"Verification error: {str(e)}")
@@ -2105,7 +2105,7 @@ def profile():
             'religion_importance': user.get('religion_importance', 'skip'),
             'religion_public': user.get('religion_public', False),  # Added for toggle
             'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])},
-            'physical_importance': user.get('physical_importance', 'unset'),
+            'physical_importance': user.get('physical_importance', 'skip'),
             'physical_public': user.get('physical_public', False),  # Added for toggle
             'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
             'summary': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), 'N/A')
