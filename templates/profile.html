@@ -524,7 +524,7 @@
             </div>
             {% endif %}
 
-            {% if profile.physical_importance != 'not_important' %}
+            {% if profile.physical_importance != 'unset' %}
             <!-- Physical Importance -->
             <div class="mt-6 physical-importance-section">
                 <div class="flex justify-between items-center mb-2">
@@ -533,7 +533,7 @@
                         <i class="fas fa-pencil-alt text-sm"></i>
                     </button>
                 </div>
-                <p id="physicalImportanceView" class="view-field text-gray-700">{{ profile.physical_importance | replace('_', ' ') | title if profile.physical_importance != 'not_important' else 'Not Important' }}</p>
+                <p id="physicalImportanceView" class="view-field text-gray-700">{{ profile.physical_importance | replace('_', ' ') | title }}</p>
                 <select id="physicalImportanceEdit" class="edit-field w-full border rounded px-3 py-2">
                     <option value="very_important" {% if profile.physical_importance == 'very_important' %}selected{% endif %}>Very Important</option>
                     <option value="somewhat_important" {% if profile.physical_importance == 'somewhat_important' %}selected{% endif %}>Somewhat Important</option>
