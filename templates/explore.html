@@ -623,6 +623,27 @@
         </div>
     </nav>
 
+    {% if show_feedback_prompt %}
+    <div id="feedbackModal" class="popup text-gray-800 dark:text-gray-100">
+        <h3 class="text-lg font-bold mb-4">We'd love your feedback!</h3>
+        <textarea id="feedbackText" class="w-full p-2 border rounded mb-4 dark:bg-gray-800 dark:border-gray-600" placeholder="Suggestions and feedback..."></textarea>
+        <div class="flex justify-end space-x-2">
+            <button id="submitFeedback" class="px-4 py-2 bg-pink-500 text-white rounded">Submit</button>
+            <button id="dontShowFeedback" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded">Don't show again</button>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if show_retake_prompt %}
+    <div id="retakeModal" class="popup text-gray-800 dark:text-gray-100">
+        <h3 class="text-lg font-bold mb-4">Your answers shape the matches. Want to revisit and update?</h3>
+        <div class="flex justify-end space-x-2">
+            <button id="retakeYes" class="px-4 py-2 bg-pink-500 text-white rounded">Yes</button>
+            <button id="retakeNo" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded">No</button>
+        </div>
+    </div>
+    {% endif %}
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const loading = document.getElementById('loading');
@@ -1394,6 +1415,38 @@
             if (refreshMatchesBtn) {
                 refreshMatchesBtn.addEventListener('click', () => {
                     loadMatches(true);
+                });
+            }
+
+            // Feedback modal handling
+            const feedbackModal = document.getElementById('feedbackModal');
+            if (feedbackModal) {
+                feedbackModal.style.display = 'block';
+                document.getElementById('submitFeedback').addEventListener('click', async () => {
+                    const text = document.getElementById('feedbackText').value;
+                    await fetch('/submit_feedback', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({feedback: text})
+                    });
+                    feedbackModal.remove();
+                });
+                document.getElementById('dontShowFeedback').addEventListener('click', async () => {
+                    await fetch('/dismiss_feedback', {method: 'POST'});
+                    feedbackModal.remove();
+                });
+            }
+
+            // Retake modal handling
+            const retakeModal = document.getElementById('retakeModal');
+            if (retakeModal) {
+                retakeModal.style.display = 'block';
+                document.getElementById('retakeYes').addEventListener('click', () => {
+                    window.location.href = '/questions?retake=true';
+                });
+                document.getElementById('retakeNo').addEventListener('click', async () => {
+                    await fetch('/dismiss_retake', {method: 'POST'});
+                    retakeModal.remove();
                 });
             }
         });

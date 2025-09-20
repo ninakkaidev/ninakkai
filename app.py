@@ -260,6 +260,10 @@ class MongoService:
                 'physical_traits': [],
                 'filter_settings': [],
                 'profile_data': [],
+                'feedback_prompt_dismissed': False,
+                'retake_prompt_dismissed': False,
+                'feedback': None,
+                'feedback_date': None,
             }
             result = self.users.insert_one(user_data)
             return {
@@ -392,6 +396,19 @@ class MongoService:
         except Exception as e:
             logger.error(f"Update password error: {str(e)}")
             return {'success': False, 'error': str(e)}
+
+    def get_user_prompt_status(self, user_id: str) -> Dict[str, bool]:
+        user = self.get_user_by_id(user_id)
+        if not user:
+            return {'show_feedback_prompt': False, 'show_retake_prompt': False}
+        now = datetime.now(timezone.utc)
+        created_at = user['created_at']
+        if created_at.tzinfo is None:
+            created_at = pytz.UTC.localize(created_at)
+        days_since = (now - created_at).days
+        show_feedback = days_since >= 2 and not user.get('feedback_prompt_dismissed', False)
+        show_retake = days_since >= 14 and not user.get('retake_prompt_dismissed', False)
+        return {'show_feedback_prompt': show_feedback, 'show_retake_prompt': show_retake}
 
     def save_quiz_results(self, user_id: str, quiz_data: Dict[str, Any]) -> Dict[str, Any]:
         try:
@@ -570,7 +587,7 @@ class MongoService:
                 if not other_user_data or other_user_data['gender'] == current_user['gender']:
                     continue
                 
-                # Step 1: Readiness filter
+                # Step 1: readiness filter
                 other_ks = other_scores.get('keeper_seeker_type')
                 if user_ks and other_ks and user_ks != other_ks:
                     continue  # No mismatch allowed
@@ -670,7 +687,7 @@ class MongoService:
                 if not other_user_data or other_user_data['gender'] == current_user['gender']:
                     continue
                 
-                # Step 1: Readiness filter
+                # Step 1: readiness filter
                 other_ks = other_scores.get('keeper_seeker_type')
                 if user_ks and other_ks and user_ks != other_ks:
                     continue  # No mismatch allowed
@@ -1713,6 +1730,33 @@ def report_user_endpoint():
     result = mongo_service.report_user(session['user_id'], reported_user_id, reason)
     return jsonify(result)
 
+@app.route('/submit_feedback', methods=['POST'])
+def submit_feedback():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    feedback = data.get('feedback')
+    update_data = {'feedback_prompt_dismissed': True}
+    if feedback:
+        update_data['feedback'] = feedback
+        update_data['feedback_date'] = datetime.now(timezone.utc)
+    mongo_service.update_user(session['user_id'], update_data)
+    return jsonify({'success': True})
+
+@app.route('/dismiss_feedback', methods=['POST'])
+def dismiss_feedback():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    mongo_service.update_user(session['user_id'], {'feedback_prompt_dismissed': True})
+    return jsonify({'success': True})
+
+@app.route('/dismiss_retake', methods=['POST'])
+def dismiss_retake():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    mongo_service.update_user(session['user_id'], {'retake_prompt_dismissed': True})
+    return jsonify({'success': True})
+
 @app.route('/explore')
 def explore():
     logger.debug(f"Session in explore: {session}")
@@ -1746,8 +1790,10 @@ def explore():
             'match_percentage': 50
         }
         
+        prompt_status = mongo_service.get_user_prompt_status(session['user_id'])
+        
         # Render with empty data, load asynchronously
-        resp = make_response(render_template('explore.html', profile=profile, matches=[], discovery=[], error=None))
+        resp = make_response(render_template('explore.html', profile=profile, matches=[], discovery=[], error=None, **prompt_status))
         resp.headers['Cache-Control'] = 'public, max-age=300'  # Cache the page for 5 mins
         return resp
     except Exception as e:
