@@ -410,19 +410,20 @@ class MongoService:
                 if 'section' in ans:
                     if ans['section'] == 'religion_importance':
                         importance_map = {
-                            0: 'very_important',
+                            0: 'not_important',
                             1: 'somewhat_important',
-                            2: 'not_important',
+                            2: 'very_important',
                             3: 'skip'
                         }
                         update_data['religion_importance'] = importance_map.get(ans.get('index'), 'skip')
                     elif ans['section'] == 'religion':
                         update_data['religion'] = ans.get('value')
-                    elif ans['section'] == 'physical_preferences':
+                    elif ans['section'] == 'physical_importance':
                         importance_map = {
                             0: 'very_important',
                             1: 'somewhat_important',
-                            2: 'not_important'
+                            2: 'not_important',
+                            3: 'skip'
                         }
                         update_data['physical_importance'] = importance_map.get(ans.get('index'), 'skip')
                     elif ans['section'] == 'physical_traits_preferred':
@@ -2318,4 +2319,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True)
+    app.run(host='0.0.0.0', port=5050, debug=True) 
