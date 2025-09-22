@@ -401,7 +401,6 @@
             color: #aaaaaa !important;
         }
 
-        /* Dark mode for circles (fallback if script fails) */
         .dark .circle {
             animation-duration: 18s; /* Slightly slower in dark mode for calmer effect */
         }
@@ -502,6 +501,24 @@
             </div>
             {% endif %}
 
+            {% if profile.religion %}
+            <!-- Religion -->
+            <div class="mt-6">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-semibold">My Religion</h3>
+                    <div class="toggle-container">
+                        <span class="mr-2 text-sm text-gray-600">Visibility:</span>
+                        <span class="toggle-status mr-2 text-sm {% if profile.religion_public %}text-pink-500{% else %}text-gray-500{% endif %}">{% if profile.religion_public %}Public{% else %}Private{% endif %}</span>
+                        <input type="checkbox" id="religionPublicToggle" class="sr-only peer" {% if profile.religion_public %}checked{% endif %}>
+                        <label for="religionPublicToggle" class="toggle-label">
+                            <span class="toggle-knob"></span>
+                        </label>
+                    </div>
+                </div>
+                <p class="text-gray-700">{{ profile.religion }}</p>
+            </div>
+            {% endif %}
+
             {% if profile.religion_importance in ['very_important', 'somewhat_important'] %}
             <!-- Religion Importance -->
             <div class="mt-6 religion-importance-section">
@@ -520,6 +537,30 @@
                 <div id="religionImportanceEditButtons" class="edit-field flex justify-end space-x-2 mt-4">
                     <button id="cancelReligionImportanceBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</button>
                     <button id="saveReligionImportanceBtn" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600">Save</button>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if profile.physical_traits %}
+            <!-- Physical Traits -->
+            <div class="mt-6">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-semibold">My Physical Traits</h3>
+                    <div class="toggle-container">
+                        <span class="mr-2 text-sm text-gray-600">Visibility:</span>
+                        <span class="toggle-status mr-2 text-sm {% if profile.physical_public %}text-pink-500{% else %}text-gray-500{% endif %}">{% if profile.physical_public %}Public{% else %}Private{% endif %}</span>
+                        <input type="checkbox" id="physicalPublicToggle" class="sr-only peer" {% if profile.physical_public %}checked{% endif %}>
+                        <label for="physicalPublicToggle" class="toggle-label">
+                            <span class="toggle-knob"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    {% for label, value in profile.physical_traits.items() %}
+                    <div class="bg-gray-50 p-2 rounded dark:bg-gray-700">
+                        <span class="font-medium dark:text-gray-300">{{ label }}</span>: <span class="dark:text-gray-400">{{ value }}</span>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
             {% endif %}
@@ -1191,11 +1232,18 @@
             
             // Updated Toggle switches functionality
             function updateToggleStatus(toggle) {
-                const status = toggle.parentElement.querySelector('.toggle-status');
+                const container = toggle.closest('.toggle-container');
+                const status = container ? container.querySelector('.toggle-status') : null;
                 if (status) {
-                    status.textContent = toggle.checked ? 'On' : 'Off';
-                    status.classList.toggle('text-pink-500', toggle.checked);
-                    status.classList.toggle('text-gray-500', !toggle.checked);
+                    if (toggle.id.includes('Public')) {
+                        status.textContent = toggle.checked ? 'Public' : 'Private';
+                        status.classList.toggle('text-pink-500', toggle.checked);
+                        status.classList.toggle('text-gray-500', !toggle.checked);
+                    } else {
+                        status.textContent = toggle.checked ? 'On' : 'Off';
+                        status.classList.toggle('text-pink-500', toggle.checked);
+                        status.classList.toggle('text-gray-500', !toggle.checked);
+                    }
                 }
             }
 
@@ -1218,6 +1266,68 @@
                     updateToggleStatus(this);
                 });
             });
+
+            // Religion Public Toggle
+            const religionPublicToggle = document.getElementById('religionPublicToggle');
+            if (religionPublicToggle) {
+                updateToggleStatus(religionPublicToggle);
+                religionPublicToggle.addEventListener('change', async function() {
+                    const data = { religion_public: this.checked };
+                    try {
+                        const response = await fetch('/update_profile', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data),
+                            credentials: 'include'
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            showNotification(`Religion visibility set to ${this.checked ? 'Public' : 'Private'}`);
+                            updateToggleStatus(this);
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            showNotification('Failed to update visibility');
+                            this.checked = !this.checked;
+                            updateToggleStatus(this);
+                        }
+                    } catch (error) {
+                        showNotification('Error updating visibility');
+                        this.checked = !this.checked;
+                        updateToggleStatus(this);
+                    }
+                });
+            }
+
+            // Physical Public Toggle
+            const physicalPublicToggle = document.getElementById('physicalPublicToggle');
+            if (physicalPublicToggle) {
+                updateToggleStatus(physicalPublicToggle);
+                physicalPublicToggle.addEventListener('change', async function() {
+                    const data = { physical_public: this.checked };
+                    try {
+                        const response = await fetch('/update_profile', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data),
+                            credentials: 'include'
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            showNotification(`Physical traits visibility set to ${this.checked ? 'Public' : 'Private'}`);
+                            updateToggleStatus(this);
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            showNotification('Failed to update visibility');
+                            this.checked = !this.checked;
+                            updateToggleStatus(this);
+                        }
+                    } catch (error) {
+                        showNotification('Error updating visibility');
+                        this.checked = !this.checked;
+                        updateToggleStatus(this);
+                    }
+                });
+            }
 
             // Dark mode toggle
             const darkModeToggle = document.getElementById('darkModeToggle');
