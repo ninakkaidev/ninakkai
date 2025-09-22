@@ -1279,9 +1279,9 @@ def log_response(response):
 @app.before_request
 def log_session_info():
     logger.debug(f"Before request - Route: {request.path}, Session: {session}, Cookies: {request.cookies}, Secret Key: {app.secret_key[:4]}...")
-    for key, value in session.items():
-        if isinstance(value, datetime) and value.tzinfo is None:
-            session[key] = pytz.UTC.localize(value)
+    for key in list(session.keys()):
+        if isinstance(session[key], datetime) and session[key].tzinfo is None:
+            session[key] = pytz.UTC.localize(session[key])
             session.modified = True
 
 @app.route('/', endpoint='home')
@@ -2365,4 +2365,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True) 
+    app.run(host='0.0.0.0', port=5050, debug=True)  

@@ -148,29 +148,118 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Popup Animation */
+        /* Enhanced Popup Animation with extraordinary effects */
         .popup {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.2);
-            animation: popupAnim 1s ease;
+            background: linear-gradient(135deg, #fff1eb, #ace0f9); /* Attractive gradient */
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2), 0 0 20px rgba(236, 72, 153, 0.5); /* Glow effect */
+            animation: enhancedPopupAnim 1.2s ease-out forwards;
             z-index: 1002;
+            max-width: 400px;
+            width: 90%;
+            overflow: hidden;
+            border: 2px solid #ec4899; /* Pink border */
         }
 
         html.dark .popup {
-            background: #000000;
+            background: linear-gradient(135deg, #1f2937, #4b5563); /* Dark gradient */
+            color: #f3f4f6;
+            box-shadow: 0 10px 30px rgba(255,255,255,0.1), 0 0 20px rgba(236, 72, 153, 0.3);
+            border: 2px solid #ec4899;
+        }
+
+        @keyframes enhancedPopupAnim {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5) rotate(-10deg);
+                opacity: 0;
+                filter: blur(5px);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2) rotate(5deg);
+                opacity: 1;
+                filter: blur(0);
+            }
+            75% {
+                transform: translate(-50%, -50%) scale(0.9) rotate(-3deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        .popup::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.2), transparent);
+            animation: glowPulse 2s infinite ease-in-out;
+            z-index: -1;
+        }
+
+        @keyframes glowPulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        .popup h3 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            text-align: center;
+            color: #ec4899; /* Pink color */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .popup textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ec4899;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            resize: none;
+            height: 100px;
+            background: rgba(255,255,255,0.8);
+        }
+
+        html.dark .popup textarea {
+            background: rgba(31,41,55,0.8);
+            border-color: #ec4899;
             color: #f3f4f6;
         }
 
-        @keyframes popupAnim {
-            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(1); }
+        .popup .flex button {
+            padding: 0.5rem 1rem;
+            border-radius: 9999px; /* Rounded buttons */
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .popup .flex button:hover {
+            transform: scale(1.05);
+        }
+
+        .popup .flex button:first-child {
+            background: linear-gradient(135deg, #ec4899, #a855f7); /* Gradient button */
+            color: white;
+        }
+
+        .popup .flex button:last-child {
+            background: linear-gradient(135deg, #d1d5db, #9ca3af);
+            color: #1f2937;
+        }
+
+        html.dark .popup .flex button:last-child {
+            background: linear-gradient(135deg, #4b5563, #374151);
+            color: #f3f4f6;
         }
 
         /* Image styling for consistent appearance */
@@ -625,21 +714,33 @@
 
     {% if show_feedback_prompt %}
     <div id="feedbackModal" class="popup text-gray-800 dark:text-gray-100">
-        <h3 class="text-lg font-bold mb-4">We'd love your feedback!</h3>
-        <textarea id="feedbackText" class="w-full p-2 border rounded mb-4 dark:bg-gray-800 dark:border-gray-600" placeholder="Suggestions and feedback..."></textarea>
+        <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
+            <i class="fas fa-heart text-pink-500 mr-2 animate-pulse"></i> We'd love your feedback!
+        </h3>
+        <textarea id="feedbackText" class="w-full p-2 border rounded mb-4 dark:bg-gray-800 dark:border-gray-600 focus:ring-2 focus:ring-pink-500 transition-all" placeholder="Suggestions and feedback..."></textarea>
         <div class="flex justify-end space-x-2">
-            <button id="submitFeedback" class="px-4 py-2 bg-pink-500 text-white rounded">Submit</button>
-            <button id="dontShowFeedback" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded">Don't show again</button>
+            <button id="submitFeedback" class="px-4 py-2 bg-pink-500 text-white rounded flex items-center">
+                <i class="fas fa-paper-plane mr-2"></i> Submit
+            </button>
+            <button id="dontShowFeedback" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded flex items-center">
+                <i class="fas fa-times mr-2"></i> Don't show again
+            </button>
         </div>
     </div>
     {% endif %}
 
     {% if show_retake_prompt %}
     <div id="retakeModal" class="popup text-gray-800 dark:text-gray-100">
-        <h3 class="text-lg font-bold mb-4">Your answers shape the matches. Want to revisit and update?</h3>
+        <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
+            <i class="fas fa-sync-alt text-blue-500 mr-2 animate-spin"></i> Your answers shape the matches. Want to revisit and update?
+        </h3>
         <div class="flex justify-end space-x-2">
-            <button id="retakeYes" class="px-4 py-2 bg-pink-500 text-white rounded">Yes</button>
-            <button id="retakeNo" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded">No</button>
+            <button id="retakeYes" class="px-4 py-2 bg-pink-500 text-white rounded flex items-center">
+                <i class="fas fa-check mr-2"></i> Yes
+            </button>
+            <button id="retakeNo" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded flex items-center">
+                <i class="fas fa-times mr-2"></i> No
+            </button>
         </div>
     </div>
     {% endif %}
