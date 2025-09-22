@@ -406,8 +406,8 @@ class MongoService:
         if created_at.tzinfo is None:
             created_at = pytz.UTC.localize(created_at)
         days_since = (now - created_at).days
-        show_feedback = days_since >= 2 and not user.get('feedback_prompt_dismissed', False)
-        show_retake = days_since >= 14 and not user.get('retake_prompt_dismissed', False)
+        show_feedback = days_since >= 14 and not user.get('feedback_prompt_dismissed', False)
+        show_retake = days_since >= 14 and user.get('feedback_prompt_dismissed', False) and not user.get('retake_prompt_dismissed', False)
         return {'show_feedback_prompt': show_feedback, 'show_retake_prompt': show_retake}
 
     def save_quiz_results(self, user_id: str, quiz_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -1364,7 +1364,7 @@ def auth():
                                 verification_sent = True
                                 error = 'Please verify your email before logging in'
                             else:
-                                error = result.get('error', 'Login failed. Please try again.')
+                                error = result.get('error', 'Login failed')
                         else:
                             mongo_service.reset_rate_limit(rate_key)
                             session.permanent = True
@@ -1616,7 +1616,7 @@ def age_verification():
             logger.error(f"API request exception: {re}")
             return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
         except json.JSONDecodeError as jde:
-            logger.error(f"JSON decode error from API: {jde}, response: {resp.text if 'resp' in locals() else 'No response'}")
+            logger.error(f"JSON decode decode error from API: {jde}, response: {resp.text if 'resp' in locals() else 'No response'}")
             return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
         except Exception as e:
             logger.error(f"Unexpected age verification error: {str(e)}")
@@ -2365,4 +2365,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True)  
+    app.run(host='0.0.0.0', port=5050, debug=True)
