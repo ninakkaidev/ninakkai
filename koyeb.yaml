@@ -1,18 +1,1 @@
-name: flask-app
-services:
-  - name: web
-    type: web
-    ports:
-      - port: 8080
-        protocol: http
-    routes:
-      - path: /
-    build:
-      run: pip install -r requirements.txt
-    env:
-      - key: FLASK_APP
-        value: app.py   # change this to your main file
-      - key: FLASK_ENV
-        value: production
-    run:
-      command: python app.py
+
