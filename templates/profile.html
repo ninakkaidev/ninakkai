@@ -511,12 +511,11 @@
                         <i class="fas fa-pencil-alt text-sm"></i>
                     </button>
                 </div>
-                <p id="religionImportanceView" class="view-field text-gray-700">{{ profile.religion_importance | replace('_', ' ') | title }}</p>
+                <p id="religionImportanceView" class="view-field text-gray-700">{% if profile.religion_importance == 'skip' %}Not Important{% else %}{{ profile.religion_importance | replace('_', ' ') | title }}{% endif %}</p>
                 <select id="religionImportanceEdit" class="edit-field w-full border rounded px-3 py-2">
-                    <option value="not_important" {% if profile.religion_importance == 'not_important' %}selected{% endif %}>Not Important</option>
+                    <option value="not_important" {% if profile.religion_importance == 'not_important' or profile.religion_importance == 'skip' %}selected{% endif %}>Not Important</option>
                     <option value="somewhat_important" {% if profile.religion_importance == 'somewhat_important' %}selected{% endif %}>Somewhat Important</option>
                     <option value="very_important" {% if profile.religion_importance == 'very_important' %}selected{% endif %}>Very Important</option>
-                    <option value="skip" {% if profile.religion_importance == 'skip' %}selected{% endif %}>Skip</option>
                 </select>
                 <div id="religionImportanceEditButtons" class="edit-field flex justify-end space-x-2 mt-4">
                     <button id="cancelReligionImportanceBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</button>
@@ -534,12 +533,11 @@
                         <i class="fas fa-pencil-alt text-sm"></i>
                     </button>
                 </div>
-                <p id="physicalImportanceView" class="view-field text-gray-700">{{ profile.physical_importance | replace('_', ' ') | title }}</p>
+                <p id="physicalImportanceView" class="view-field text-gray-700">{% if profile.physical_importance == 'skip' %}Not Important{% else %}{{ profile.physical_importance | replace('_', ' ') | title }}{% endif %}</p>
                 <select id="physicalImportanceEdit" class="edit-field w-full border rounded px-3 py-2">
                     <option value="very_important" {% if profile.physical_importance == 'very_important' %}selected{% endif %}>Very Important</option>
                     <option value="somewhat_important" {% if profile.physical_importance == 'somewhat_important' %}selected{% endif %}>Somewhat Important</option>
-                    <option value="not_important" {% if profile.physical_importance == 'not_important' %}selected{% endif %}>Not Important</option>
-                    <option value="skip" {% if profile.physical_importance == 'skip' %}selected{% endif %}>Skip</option>
+                    <option value="not_important" {% if profile.physical_importance == 'not_important' or profile.physical_importance == 'skip' %}selected{% endif %}>Not Important</option>
                 </select>
                 <div id="physicalImportanceEditButtons" class="edit-field flex justify-end space-x-2 mt-4">
                     <button id="cancelPhysicalImportanceBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</button>
