@@ -923,7 +923,7 @@
       ],
       isSelectWithOther: true,
       section: "religion",
-      nextQuestion: () => null  // No more filter here
+      nextQuestion: () => null  # No more filter here
     };
 
     const religionQuestions = [religionImportance];
@@ -1602,9 +1602,9 @@
         answersElement.appendChild(submitButton);
       } else if (questionData.isToggleInput) {
         console.log('Displaying toggle input question');
-        let filteredToggles = questionData.toggles.filter(toggle => {
-          if (toggle.label.includes('same religion') && !hasReligionAnswered) return false;
-          if (toggle.label.includes('preferred physical') && !hasPhysicalAnswered) return false;
+        let filteredToggles = questionData.toggles.filter(t => {
+          if (t.label.includes('same religion') && !hasReligionAnswered) return false;
+          if (t.label.includes('preferred physical') && !hasPhysicalAnswered) return false;
           return true;
         });
         const toggleContainer = document.createElement('div');
@@ -1722,7 +1722,7 @@
         rankItem.appendChild(rankNumber);
         rankedItems.push({ index, rank: currentRank });
         currentRank++;
-        console.log(`Ranked item ${index} as rank ${currentRank - 1}, rankedItems:`, rankedItems);
+        console.log(`Ranked item item ${index} as rank ${currentRank - 1}, rankedItems:`, rankedItems);
         if (currentRank > questions[currentQuestion].answers.length) {
           answersElement.querySelector('.rank-submit').disabled = false;
         }
