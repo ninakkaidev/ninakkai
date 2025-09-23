@@ -13,8 +13,6 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Ninakkai: Personality-Based Dating App">
   <meta name="twitter:description" content="Connect with like-minded singles through personality insights. Download Ninakkai for authentic dating experiences.">
-  <link rel="preload" as="image" href="{{ url_for('static', filename='images/photo-playful-man-gives-piggyback-ride-girlfriend.webp') }}">
-  <link rel="preload" as="image" href="/static/images/ninakkayi-logo.webp">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -213,7 +211,6 @@
       object-fit: cover;
       object-position: top center;
       z-index: -2;
-      transform: translate3d(0, 0, 0);
     }
 
     .hero h1, .hero span {
@@ -574,14 +571,6 @@
     }
 
     @media (max-width: 768px) {
-      :root {
-        --transition: 0s;
-      }
-
-      body {
-        scroll-behavior: auto;
-      }
-
       nav {
         display: none;
       }
@@ -843,9 +832,6 @@
     <section class="about-section" id="about-section">
       <h2 class="about-title">About Ninakkai</h2>
       <div class="about-container">
-        <div class="about-image">
-          <img src="{{ url_for('static', filename='images/white-background-placeholder.webp') }}" alt="About Ninakkai" loading="eager">
-        </div>
         <div class="about-content">
           <div class="about-text">
             <p>In today's dating world, finding a genuine connection has become harder than ever. Most apps focus on swipes, appearances, or casual interactions, leaving people frustrated and unsure if anyone is truly real. That's the problem we wanted to solve.</p>
@@ -925,39 +911,17 @@
   </div>
 
   <script>
-    // Updated Loader functionality - Hide only after both images are loaded
+    // Loader functionality - Reduced time from 1500ms to 1000ms
     window.addEventListener('load', function() {
-      // Programmatically preload both images in parallel
-      const heroImage = new Image();
-      heroImage.src = "{{ url_for('static', filename='images/photo-playful-man-gives-piggyback-ride-girlfriend.webp') }}";
-      
-      const logoImage = new Image();
-      logoImage.src = "/static/images/ninakkayi-logo.webp";
-      
-      let loadedCount = 0;
-      
-      function checkLoaded() {
-        loadedCount++;
-        if (loadedCount === 2) {
-          hideLoader();
-        }
-      }
-      
-      heroImage.onload = checkLoaded;
-      logoImage.onload = checkLoaded;
-      
-      // Fallback timeout (max 5 seconds) in case images fail to load
-      setTimeout(hideLoader, 5000);
-    });
-
-    function hideLoader() {
-      document.getElementById('loader').style.opacity = '0';
-      document.getElementById('content').classList.add('loaded');
-      
       setTimeout(function() {
-        document.getElementById('loader').style.display = 'none';
-      }, 500);
-    }
+        document.getElementById('loader').style.opacity = '0';
+        document.getElementById('content').classList.add('loaded');
+        
+        setTimeout(function() {
+          document.getElementById('loader').style.display = 'none';
+        }, 500);
+      }, 1000); // Show loader for 1 second (reduced from 1.5 seconds)
+    });
 
     window.addEventListener('scroll', function () {
       document.getElementById('header').classList.toggle('sticky', window.scrollY > 10);
