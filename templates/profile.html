@@ -516,6 +516,7 @@
                     <option value="not_important" {% if profile.religion_importance == 'not_important' %}selected{% endif %}>Not Important</option>
                     <option value="somewhat_important" {% if profile.religion_importance == 'somewhat_important' %}selected{% endif %}>Somewhat Important</option>
                     <option value="very_important" {% if profile.religion_importance == 'very_important' %}selected{% endif %}>Very Important</option>
+                    <option value="skip" {% if profile.religion_importance == 'skip' %}selected{% endif %}>Skip</option>
                 </select>
                 <div id="religionImportanceEditButtons" class="edit-field flex justify-end space-x-2 mt-4">
                     <button id="cancelReligionImportanceBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</button>
@@ -538,6 +539,7 @@
                     <option value="very_important" {% if profile.physical_importance == 'very_important' %}selected{% endif %}>Very Important</option>
                     <option value="somewhat_important" {% if profile.physical_importance == 'somewhat_important' %}selected{% endif %}>Somewhat Important</option>
                     <option value="not_important" {% if profile.physical_importance == 'not_important' %}selected{% endif %}>Not Important</option>
+                    <option value="skip" {% if profile.physical_importance == 'skip' %}selected{% endif %}>Skip</option>
                 </select>
                 <div id="physicalImportanceEditButtons" class="edit-field flex justify-end space-x-2 mt-4">
                     <button id="cancelPhysicalImportanceBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</button>
