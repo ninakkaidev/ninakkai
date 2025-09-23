@@ -839,6 +839,12 @@
         const forgotSubmitBtn = document.getElementById('forgotSubmitBtn');
         const forgotEmailInput = document.getElementById('forgotEmail');
 
+        // Auto-remove existing error messages after 2 seconds
+        const existingErrors = document.querySelectorAll('.error-message');
+        existingErrors.forEach(error => {
+            setTimeout(() => error.remove(), 2000);
+        });
+
         // Show/hide loading spinner
         function showLoading() {
             loading.style.display = 'flex';
@@ -856,7 +862,7 @@
             const existingError = document.querySelector('.error-message');
             if (existingError) existingError.remove();
             document.querySelector('.container').insertBefore(errorDiv, formContainer || forgotSection);
-            setTimeout(() => errorDiv.remove(), 5000);
+            setTimeout(() => errorDiv.remove(), 2000);
         }
 
         // Toggle between login and signup forms
