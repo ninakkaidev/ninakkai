@@ -502,8 +502,8 @@
             </div>
             {% endif %}
 
-            {% if profile.religion_importance != 'skip' %}
-            <!-- Religion Importance -->
+            <!-- Religion Importance - Fixed conditional logic -->
+            {% if profile.religion_importance and profile.religion_importance != 'skip' %}
             <div class="mt-6 religion-importance-section">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-semibold">Religion Importance in Matching</h3>
@@ -524,8 +524,8 @@
             </div>
             {% endif %}
 
-            {% if profile.physical_importance != 'skip' %}
-            <!-- Physical Importance -->
+            <!-- Physical Importance - Fixed conditional logic -->
+            {% if profile.physical_importance and profile.physical_importance != 'skip' %}
             <div class="mt-6 physical-importance-section">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-semibold">Physical Preference Importance in Matching</h3>
@@ -950,11 +950,11 @@
             
             // Separate edit for Religion Importance
             const religionImportanceSection = document.querySelector('.religion-importance-section');
-            const editReligionImportanceBtn = document.getElementById('editReligionImportanceBtn');
-            const cancelReligionImportanceBtn = document.getElementById('cancelReligionImportanceBtn');
-            const saveReligionImportanceBtn = document.getElementById('saveReligionImportanceBtn');
-            
-            if (editReligionImportanceBtn && religionImportanceSection && cancelReligionImportanceBtn && saveReligionImportanceBtn) {
+            if (religionImportanceSection) {
+                const editReligionImportanceBtn = document.getElementById('editReligionImportanceBtn');
+                const cancelReligionImportanceBtn = document.getElementById('cancelReligionImportanceBtn');
+                const saveReligionImportanceBtn = document.getElementById('saveReligionImportanceBtn');
+                
                 editReligionImportanceBtn.addEventListener('click', () => {
                     religionImportanceSection.classList.add('edit-mode');
                 });
@@ -992,11 +992,11 @@
 
             // Separate edit for Physical Importance
             const physicalImportanceSection = document.querySelector('.physical-importance-section');
-            const editPhysicalImportanceBtn = document.getElementById('editPhysicalImportanceBtn');
-            const cancelPhysicalImportanceBtn = document.getElementById('cancelPhysicalImportanceBtn');
-            const savePhysicalImportanceBtn = document.getElementById('savePhysicalImportanceBtn');
-            
-            if (editPhysicalImportanceBtn && physicalImportanceSection && cancelPhysicalImportanceBtn && savePhysicalImportanceBtn) {
+            if (physicalImportanceSection) {
+                const editPhysicalImportanceBtn = document.getElementById('editPhysicalImportanceBtn');
+                const cancelPhysicalImportanceBtn = document.getElementById('cancelPhysicalImportanceBtn');
+                const savePhysicalImportanceBtn = document.getElementById('savePhysicalImportanceBtn');
+                
                 editPhysicalImportanceBtn.addEventListener('click', () => {
                     physicalImportanceSection.classList.add('edit-mode');
                 });
@@ -1121,7 +1121,7 @@
                         setTimeout(() => location.reload(), 1000);
                     } else {
                         showNotification('Failed to delete photo');
-                    }
+                        }
                 } catch (error) {
                     showNotification('Error deleting photo');
                 }
