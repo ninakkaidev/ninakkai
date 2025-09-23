@@ -922,17 +922,39 @@
   </div>
 
   <script>
-    // Loader functionality - Reduced time from 1500ms to 1000ms
+    // Updated Loader functionality - Hide only after both images are loaded
     window.addEventListener('load', function() {
-      setTimeout(function() {
-        document.getElementById('loader').style.opacity = '0';
-        document.getElementById('content').classList.add('loaded');
-        
-        setTimeout(function() {
-          document.getElementById('loader').style.display = 'none';
-        }, 500);
-      }, 1000); // Show loader for 1 second (reduced from 1.5 seconds)
+      // Programmatically preload both images in parallel
+      const heroImage = new Image();
+      heroImage.src = "{{ url_for('static', filename='images/photo-playful-man-gives-piggyback-ride-girlfriend.webp') }}";
+      
+      const logoImage = new Image();
+      logoImage.src = "/static/images/ninakkayi-logo.webp";
+      
+      let loadedCount = 0;
+      
+      function checkLoaded() {
+        loadedCount++;
+        if (loadedCount === 2) {
+          hideLoader();
+        }
+      }
+      
+      heroImage.onload = checkLoaded;
+      logoImage.onload = checkLoaded;
+      
+      // Fallback timeout (max 5 seconds) in case images fail to load
+      setTimeout(hideLoader, 5000);
     });
+
+    function hideLoader() {
+      document.getElementById('loader').style.opacity = '0';
+      document.getElementById('content').classList.add('loaded');
+      
+      setTimeout(function() {
+        document.getElementById('loader').style.display = 'none';
+      }, 500);
+    }
 
     window.addEventListener('scroll', function () {
       document.getElementById('header').classList.toggle('sticky', window.scrollY > 10);
