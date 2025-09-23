@@ -180,6 +180,7 @@
     .hero {
       position: relative;
       height: 100vh;
+      height: 100dvh;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -606,6 +607,28 @@
       
       .loader-text {
         font-size: 2.5rem;
+      }
+
+      header.sticky {
+        backdrop-filter: none;
+        background: rgba(0,0,0,0.9);
+      }
+
+      .mobile-nav {
+        backdrop-filter: none;
+        background: rgba(0,0,0,0.9);
+      }
+
+      .hero h1, .hero span {
+        animation: none;
+      }
+
+      .animated-gradient {
+        animation: none;
+      }
+
+      .loader-text {
+        animation: none;
       }
     }
 
