@@ -13,6 +13,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Ninakkai: Personality-Based Dating App">
   <meta name="twitter:description" content="Connect with like-minded singles through personality insights. Download Ninakkai for authentic dating experiences.">
+  <link rel="preload" as="image" href="{{ url_for('static', filename='images/photo-playful-man-gives-piggyback-ride-girlfriend.webp') }}">
+  <link rel="preload" as="image" href="/static/images/ninakkayi-logo.webp">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -211,6 +213,7 @@
       object-fit: cover;
       object-position: top center;
       z-index: -2;
+      transform: translate3d(0, 0, 0);
     }
 
     .hero h1, .hero span {
@@ -571,6 +574,14 @@
     }
 
     @media (max-width: 768px) {
+      :root {
+        --transition: 0s;
+      }
+
+      body {
+        scroll-behavior: auto;
+      }
+
       nav {
         display: none;
       }
