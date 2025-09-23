@@ -503,7 +503,7 @@
             {% endif %}
 
             <!-- Religion Importance - Fixed conditional logic -->
-            {% if profile.religion_importance and profile.religion_importance != 'skip' %}
+            {% if profile.religion != 'N/A' %}
             <div class="mt-6 religion-importance-section">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-semibold">Religion Importance in Matching</h3>
@@ -525,7 +525,7 @@
             {% endif %}
 
             <!-- Physical Importance - Fixed conditional logic -->
-            {% if profile.physical_importance and profile.physical_importance != 'skip' %}
+            {% if profile.physical_traits %}
             <div class="mt-6 physical-importance-section">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-semibold">Physical Preference Importance in Matching</h3>
