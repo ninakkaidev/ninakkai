@@ -427,9 +427,9 @@ class MongoService:
                 if 'section' in ans:
                     if ans['section'] == 'religion_importance':
                         importance_map = {
-                            0: 'very_important',  # FIXED: High -> very_important
-                            1: 'somewhat_important',  # Medium -> somewhat
-                            2: 'not_important',  # Low -> not_important
+                            0: 'not_important',
+                            1: 'somewhat_important',
+                            2: 'very_important',
                             3: 'skip'
                         }
                         update_data['religion_importance'] = importance_map.get(ans.get('index'), 'skip')
