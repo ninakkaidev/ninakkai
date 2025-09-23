@@ -502,7 +502,7 @@
             </div>
             {% endif %}
 
-            {% if profile.religion_importance in ['very_important', 'somewhat_important'] %}
+            {% if profile.religion_importance in ['very_important', 'somewhat_important', 'not_important'] %}
             <!-- Religion Importance -->
             <div class="mt-6 religion-importance-section">
                 <div class="flex justify-between items-center mb-2">
@@ -524,7 +524,7 @@
             </div>
             {% endif %}
 
-            {% if profile.physical_importance in ['very_important', 'somewhat_important'] %}
+            {% if profile.physical_importance in ['very_important', 'somewhat_important', 'not_important'] %}
             <!-- Physical Importance -->
             <div class="mt-6 physical-importance-section">
                 <div class="flex justify-between items-center mb-2">
