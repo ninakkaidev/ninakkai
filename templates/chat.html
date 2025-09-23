@@ -537,7 +537,7 @@
             <p>${sanitizeHTML(msg.message)}</p>
             <span class="message-time">${formattedTime}</span>
             <div class="message-actions">
-              <button title="Reply" class="reply-btn" data-message-id="${msg.id}"><i class="fas fa-reply"></i></button>
+              ${!isSent ? `<button title="Reply" class="reply-btn" data-message-id="${msg.id}"><i class="fas fa-reply"></i></button>` : ''}
               ${isSent ? `<button title="Delete" class="delete-btn" data-message-id="${msg.id}"><i class="fas fa-trash"></i></button>` : ''}
             </div>
           </div>`;
@@ -824,9 +824,7 @@
       function startConvPolling() {
         if (convPollInterval) clearInterval(convPollInterval);
         convPollInterval = setInterval(() => {
-          if (!currentChatUserId) {  // Only poll when in conversations list
-            loadConversations();
-          }
+          loadConversations();
         }, 10000);  // Every 10 seconds
       }
 

@@ -1647,7 +1647,7 @@ def update_gender():
         return jsonify({'success': False, 'error': 'Failed to update gender'}), 500
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
-def reset_password_endpoint(token):
+def reset_password_endpoint():
     if request.method == 'GET':
         user = mongo_service.get_user_by_reset_token(token)
         if not user:
@@ -2365,4 +2365,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True) 
+    app.run(host='0.0.0.0', port=5050, debug=True)s
