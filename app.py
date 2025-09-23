@@ -1018,7 +1018,7 @@ class MongoService:
 
     def add_notification(self, user_id: str, message: str, type: str = 'general', related_id: str = None) -> Dict[str, Any]:
         try:
-            notif_data = {
+            notif = {
                 'user_id': user_id,
                 'message': message,
                 'type': type,
@@ -1026,7 +1026,7 @@ class MongoService:
                 'read': False,
                 'timestamp': datetime.now(timezone.utc)
             }
-            result = self.notifications.insert_one(notif_data)
+            result = self.notifications.insert_one(notif)
             return {'success': True, 'notif_id': str(result.inserted_id)}
         except Exception as e:
             logger.error(f"Add notification error: {str(e)}")
@@ -1647,7 +1647,7 @@ def update_gender():
         return jsonify({'success': False, 'error': 'Failed to update gender'}), 500
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
-def reset_password_endpoint():
+def reset_password_endpoint(token):
     if request.method == 'GET':
         user = mongo_service.get_user_by_reset_token(token)
         if not user:
