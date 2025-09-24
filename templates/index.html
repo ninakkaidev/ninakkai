@@ -224,15 +224,14 @@
       z-index: -1;
     }
 
-    .hero-bg {
+    .hero-image {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: url("/static/images/photo-playful-man-gives-piggyback-ride-girlfriend.webp") no-repeat;
-      background-size: cover;
-      background-position: top center;
+      object-fit: cover;
+      object-position: top center;
       z-index: -2;
       /* Force image to stay in memory and prevent reload */
       will-change: transform;
@@ -262,14 +261,14 @@
     }
 
     @media (max-width: 720px) {
-      .hero-bg {
-        background-position: 70% center;
+      .hero-image {
+        object-position: 70% center;
       }
     }
 
     @media (max-width: 480px) {
-      .hero-bg {
-        background-position: 70% center;
+      .hero-image {
+        object-position: 70% center;
       }
       
       /* Optimize header for mobile */
@@ -682,8 +681,10 @@
         -webkit-overflow-scrolling: touch;
       }
       
-      header {
-        transition: all 0.2s ease;
+      .hero-image {
+        /* Force image to stay in memory on mobile */
+        -webkit-transform: translate3d(0,0,0);
+        transform: translate3d(0,0,0);
       }
     }
 
@@ -875,7 +876,14 @@
     </div>
 
     <div class="hero">
-      <div class="hero-bg"></div>
+      <!-- Preloaded hero image with caching optimizations -->
+      <img 
+        src="/static/images/photo-playful-man-gives-piggyback-ride-girlfriend.webp" 
+        alt="Hero background" 
+        class="hero-image" 
+        loading="eager"
+        id="heroImage"
+      >
       <h1>Find Your Matches</h1>
       <p class="hero-description">
         Ninakkai is where authenticity meets compatibility. Our platform filters out the noise and focuses on what truly matters — emotional connection and genuine intentions. Through unique questions designed to uncover your real personality, we match you with people who truly resonate with you. Dating made real, simple, and meaningful.
@@ -1062,6 +1070,56 @@
     
     // Image caching optimization for mobile
     document.addEventListener('DOMContentLoaded', function() {
+      // Preload the hero image
+      const heroImage = document.getElementById('heroImage');
+      if (heroImage) {
+        // Force image to stay in cache by preventing reload
+        heroImage.setAttribute('fetchpriority', 'high');
+        
+        // If image is already loaded, keep it in memory
+        if (heroImage.complete) {
+          console.log('Hero image already loaded');
+          // Create a persistent reference to prevent garbage collection
+          window.heroImageRef = heroImage.cloneNode(true);
+        } else {
+          heroImage.addEventListener('load', function() {
+            console.log('Hero image loaded successfully');
+            // Create a persistent reference to prevent garbage collection
+            window.heroImageRef = heroImage.cloneNode(true);
+          });
+          
+          heroImage.addEventListener('error', function() {
+            console.log('Error loading hero image');
+          });
+        }
+      }
+      
+      // Optimized Intersection Observer for mobile
+      const observerOptions = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1
+      };
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && heroImage) {
+            // When hero section is visible, ensure image is in memory
+            if (!heroImage.complete) {
+              // If image isn't loaded, force load it
+              const src = heroImage.src;
+              heroImage.src = '';
+              heroImage.src = src;
+            }
+          }
+        });
+      }, observerOptions);
+      
+      const heroSection = document.querySelector('.hero');
+      if (heroSection) {
+        observer.observe(heroSection);
+      }
+      
       // Mobile-specific optimizations
       if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
         // Disable animations that might cause performance issues
@@ -1070,7 +1128,7 @@
         // Force GPU rendering for smoother experience
         const style = document.createElement('style');
         style.textContent = `
-          .hero-bg {
+          .hero-image {
             -webkit-transform: translate3d(0,0,0);
             transform: translate3d(0,0,0);
           }
