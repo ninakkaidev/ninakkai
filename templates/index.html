@@ -5,17 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ninakkai: Personality-Based Dating App for Meaningful Connections</title>
   <meta name="description" content="Discover compatible matches with Ninakkai, the dating app that uses personality quizzes to connect nurturers, protectors, dreamers, and more. Find love based on emotional compatibility, shared values, and real connections. Join free today!">
-  <meta name="keywords" content="dating app, personality matching, compatibility quiz, meaningful relationships, online dating, find love, soulmate app, emotional connection">
-  <meta name="robots" content="index, follow">
-  <meta property="og:title" content="Ninakkai: Find Your Perfect Match Through Personality">
-  <meta property="og:description" content="Ninakkai helps you find deep, lasting relationships by matching based on your unique personality type. Take our quiz and meet compatible singles today!">
-  <meta property="og:type" content="website">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Ninakkai: Personality-Based Dating App">
-  <meta name="twitter:description" content="Connect with like-minded singles through personality insights. Download Ninakkai for authentic dating experiences.">
-  
-  <!-- Cache control for images -->
-  <meta http-equiv="Cache-Control" content="max-age=31536000, public">
   
   <!-- Preload critical resources -->
   <link rel="preload" href="/static/images/photo-playful-man-gives-piggyback-ride-girlfriend.webp" as="image">
@@ -38,18 +27,25 @@
     }
 
     html {
-      /* Enable smooth scrolling for the whole page */
       scroll-behavior: smooth;
     }
 
     body {
       font-family: 'Segoe UI', sans-serif;
       background-color: #fdfdfd;
-      /* Prevent horizontal scroll */
       overflow-x: hidden;
-      /* Improve text rendering on mobile */
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeSpeed;
+    }
+
+    /* Android Chrome specific fixes */
+    @media screen and (-webkit-min-device-pixel-ratio:0) and (max-width: 1024px) {
+      body {
+        -webkit-backface-visibility: hidden;
+        -webkit-perspective: 1000;
+        -webkit-transform: translate3d(0,0,0);
+        transform: translate3d(0,0,0);
+      }
     }
 
     /* Loader Styles */
@@ -124,9 +120,11 @@
       background: transparent;
       z-index: 999;
       transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      /* Force GPU acceleration for smoother animations */
+      /* Android Chrome specific GPU acceleration */
+      -webkit-transform: translateZ(0);
       transform: translateZ(0);
-      will-change: transform, background-color;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
 
     header.sticky {
@@ -173,10 +171,6 @@
       z-index: 1000;
     }
 
-    #about.popup {
-      width: 400px;
-    }
-
     .popup.active {
       display: block;
       animation: fadeIn 0.3s ease-in-out;
@@ -209,8 +203,10 @@
       padding: 0 20px;
       color: white;
       overflow: hidden;
-      /* Prevent any scrolling issues */
+      /* Android Chrome specific isolation */
       isolation: isolate;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
     }
 
     .hero::before {
@@ -233,18 +229,25 @@
       object-fit: cover;
       object-position: top center;
       z-index: -2;
-      /* Force image to stay in memory and prevent reload */
-      will-change: transform;
-      transform: translateZ(0);
+      /* Android Chrome specific image optimizations */
       -webkit-transform: translateZ(0);
-      /* Prevent image from being unloaded */
-      content-visibility: auto;
-      contain: layout style paint;
-      /* Optimize for mobile */
+      transform: translateZ(0);
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
       image-rendering: -webkit-optimize-contrast;
-      image-rendering: crisp-edges;
+      /* Force image to stay in memory on Android Chrome */
+      content-visibility: auto;
+      contain: layout style paint;
+      will-change: transform;
+    }
+
+    /* Android Chrome specific image persistence */
+    @media screen and (-webkit-min-device-pixel-ratio:0) and (max-width: 1024px) {
+      .hero-image {
+        -webkit-perspective: 1000;
+        -webkit-transform-style: preserve-3d;
+        transform-style: preserve-3d;
+      }
     }
 
     .hero h1, .hero span {
@@ -258,27 +261,6 @@
     @keyframes animatedText {
       0% { background-position: 0% 50%; }
       100% { background-position: 100% 50%; }
-    }
-
-    @media (max-width: 720px) {
-      .hero-image {
-        object-position: 70% center;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .hero-image {
-        object-position: 70% center;
-      }
-      
-      /* Optimize header for mobile */
-      header {
-        padding: 12px 15px;
-      }
-      
-      header.sticky {
-        padding: 8px 15px;
-      }
     }
 
     .hero h1 {
@@ -314,7 +296,7 @@
       transform: scale(1.05);
     }
 
-    /* Updated About Section - More compact */
+    /* About Section */
     .about-section {
       padding: 60px 20px;
       background-color: #fff;
@@ -327,25 +309,6 @@
       flex-wrap: wrap;
       gap: 30px;
       align-items: center;
-    }
-
-    .about-image {
-      flex: 1;
-      min-width: 300px;
-      border-radius: 15px;
-      overflow: hidden;
-      box-shadow: var(--shadow);
-    }
-
-    .about-image img {
-      width: 100%;
-      height: auto;
-      display: block;
-      transition: transform 0.5s ease;
-    }
-
-    .about-image:hover img {
-      transform: scale(1.03);
     }
 
     .about-content {
@@ -573,32 +536,6 @@
       color: var(--primary);
     }
 
-    footer .newsletter {
-      margin: 20px 0;
-    }
-
-    footer .newsletter input {
-      padding: 10px;
-      border: none;
-      border-radius: 20px 0 0 20px;
-      width: 200px;
-      outline: none;
-    }
-
-    footer .newsletter button {
-      padding: 10px 20px;
-      border: none;
-      background: var(--primary);
-      color: white;
-      border-radius: 0 20px 20px 0;
-      cursor: pointer;
-      transition: var(--transition);
-    }
-
-    footer .newsletter button:hover {
-      background: #e0435f;
-    }
-
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
@@ -637,10 +574,6 @@
         text-align: left;
       }
 
-      #about.popup {
-        width: 300px;
-      }
-
       .about-title {
         font-size: 1.8rem;
       }
@@ -675,16 +608,17 @@
         animation: none;
       }
       
-      /* Mobile-specific optimizations */
-      .hero {
-        /* Prevent any potential mobile scrolling issues */
-        -webkit-overflow-scrolling: touch;
-      }
-      
-      .hero-image {
-        /* Force image to stay in memory on mobile */
-        -webkit-transform: translate3d(0,0,0);
-        transform: translate3d(0,0,0);
+      /* Android Chrome mobile specific optimizations */
+      @media screen and (-webkit-min-device-pixel-ratio:0) {
+        .hero {
+          -webkit-overflow-scrolling: touch;
+          overflow-scrolling: touch;
+        }
+        
+        .hero-image {
+          -webkit-transform: translate3d(0,0,0) scale(1.001);
+          transform: translate3d(0,0,0) scale(1.001);
+        }
       }
     }
 
@@ -701,118 +635,6 @@
       0% { background-position: 0% 50%; }
       100% { background-position: 100% 50%; }
     }
-    /* How It Works Section */
-.how-it-works {
-  padding: 80px 20px;
-  background: #fafafa;
-}
-
-.section-title {
-  text-align: center;
-  font-size: 2.5rem;
-  color: #333;
-  margin-bottom: 50px;
-}
-
-.how-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 50px;
-  max-width: 1200px;
-  margin: 0 auto;
-  flex-wrap: wrap;
-}
-
-.how-content {
-  flex: 1;
-  min-width: 300px;
-}
-
-.how-content h3 {
-  font-size: 2rem;
-  margin-bottom: 20px;
-  color: var(--primary);
-}
-
-.how-content p {
-  font-size: 1.1rem;
-  color: #555;
-  line-height: 1.8;
-  margin-bottom: 25px;
-}
-
-.how-features {
-  list-style: none;
-}
-
-.how-features li {
-  margin-bottom: 15px;
-  font-size: 1rem;
-  color: #444;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.how-features i {
-  color: var(--primary);
-  font-size: 1.2rem;
-}
-
-/* Mobile Mockup */
-.how-mobile {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-}
-
-.mobile-frame {
-  width: 300px;
-  height: 600px;
-  border: 12px solid #000;
-  border-radius: 30px;
-  overflow: hidden;
-  box-shadow: var(--shadow);
-  background: #000;
-  position: relative;
-}
-
-.mobile-frame::before {
-  content: "";
-  position: absolute;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 6px;
-  background: #333;
-  border-radius: 10px;
-}
-
-.mobile-frame video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Responsive */
-@media (max-width: 900px) {
-  .how-container {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .how-content {
-    order: 2;
-  }
-
-  .how-mobile {
-    order: 1;
-    margin-bottom: 30px;
-  }
-}
-
   </style>
 </head>
 <body>
@@ -876,13 +698,14 @@
     </div>
 
     <div class="hero">
-      <!-- Preloaded hero image with caching optimizations -->
+      <!-- Preloaded hero image with Android Chrome specific optimizations -->
       <img 
         src="/static/images/photo-playful-man-gives-piggyback-ride-girlfriend.webp" 
         alt="Hero background" 
         class="hero-image" 
         loading="eager"
         id="heroImage"
+        onload="handleImageLoad(this)"
       >
       <h1>Find Your Matches</h1>
       <p class="hero-description">
@@ -891,7 +714,7 @@
       <button class="btn-hero" onclick="location.href='/auth'">Get Started</button>
     </div>
 
-    <!-- Updated About Section - More compact -->
+    <!-- About Section -->
     <section class="about-section" id="about-section">
       <h2 class="about-title">About Ninakkai</h2>
       <div class="about-container">
@@ -974,7 +797,12 @@
   </div>
 
   <script>
-    // Loader functionality - Reduced time from 1500ms to 1000ms
+    // Android Chrome detection
+    const isAndroidChrome = () => {
+      return /Android.*Chrome\//.test(navigator.userAgent);
+    };
+
+    // Loader functionality
     window.addEventListener('load', function() {
       setTimeout(function() {
         document.getElementById('loader').style.opacity = '0';
@@ -983,19 +811,19 @@
         setTimeout(function() {
           document.getElementById('loader').style.display = 'none';
         }, 500);
-      }, 1000); // Show loader for 1 second (reduced from 1.5 seconds)
+      }, 1000);
     });
 
-    // Optimized scroll handler for mobile
+    // Android Chrome specific scroll optimization
     let ticking = false;
     let lastScrollY = 0;
+    let scrollTimeout;
     
     function updateHeader() {
       const header = document.getElementById('header');
       const scrollY = window.scrollY;
       
-      // Add a small threshold to prevent flickering on mobile
-      if (Math.abs(scrollY - lastScrollY) > 5) {
+      if (Math.abs(scrollY - lastScrollY) > 2) {
         header.classList.toggle('sticky', scrollY > 10);
         lastScrollY = scrollY;
       }
@@ -1005,29 +833,135 @@
     
     function onScroll() {
       if (!ticking) {
-        requestAnimationFrame(updateHeader);
+        if (isAndroidChrome()) {
+          // Use setTimeout for Android Chrome to prevent jank
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(updateHeader, 10);
+        } else {
+          requestAnimationFrame(updateHeader);
+        }
         ticking = true;
       }
     }
     
-    // Use passive scroll listener for better performance
     window.addEventListener('scroll', onScroll, { passive: true });
 
+    // Android Chrome image persistence technique
+    function handleImageLoad(img) {
+      console.log('Hero image loaded successfully');
+      
+      if (isAndroidChrome()) {
+        // Android Chrome specific image persistence
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        ctx.drawImage(img, 0, 0);
+        
+        // Store reference to prevent garbage collection
+        window.androidChromeImageCache = {
+          canvas: canvas,
+          src: img.src
+        };
+        
+        // Force GPU layer for the image
+        img.style.transform = 'translate3d(0,0,0) scale(1)';
+        img.style.webkitTransform = 'translate3d(0,0,0) scale(1)';
+      }
+    }
+
+    // Preload and cache image for Android Chrome
+    document.addEventListener('DOMContentLoaded', function() {
+      const heroImage = document.getElementById('heroImage');
+      
+      if (heroImage && isAndroidChrome()) {
+        // Android Chrome specific optimizations
+        heroImage.setAttribute('fetchpriority', 'high');
+        heroImage.setAttribute('decoding', 'sync');
+        
+        // Preload image in a way that Android Chrome will cache it
+        const preloadLink = document.createElement('link');
+        preloadLink.rel = 'preload';
+        preloadLink.as = 'image';
+        preloadLink.href = heroImage.src;
+        document.head.appendChild(preloadLink);
+        
+        // Create a hidden image to keep it in memory
+        const hiddenImage = new Image();
+        hiddenImage.src = heroImage.src;
+        hiddenImage.style.display = 'none';
+        document.body.appendChild(hiddenImage);
+        window.hiddenImageRef = hiddenImage;
+        
+        // Force image to stay in memory
+        const keepAlive = setInterval(() => {
+          if (hiddenImage.complete) {
+            clearInterval(keepAlive);
+          }
+        }, 100);
+        
+        // Set up intersection observer for Android Chrome
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting && heroImage) {
+              // When hero section becomes visible, ensure image is displayed
+              if (!heroImage.complete) {
+                heroImage.src = heroImage.src; // Force reload if needed
+              }
+              
+              // Force repaint for Android Chrome
+              heroImage.style.opacity = '0.99';
+              setTimeout(() => {
+                heroImage.style.opacity = '1';
+              }, 10);
+            }
+          });
+        }, { threshold: 0.1 });
+        
+        const heroSection = document.querySelector('.hero');
+        if (heroSection) {
+          observer.observe(heroSection);
+        }
+      } else if (heroImage) {
+        // Standard optimizations for other browsers
+        heroImage.setAttribute('fetchpriority', 'high');
+        
+        if (heroImage.complete) {
+          handleImageLoad(heroImage);
+        }
+      }
+    });
+
+    // Android Chrome specific touch event handling
+    if (isAndroidChrome()) {
+      document.addEventListener('touchstart', function() {
+        // Force a repaint to prevent image flickering
+        const heroImage = document.getElementById('heroImage');
+        if (heroImage) {
+          heroImage.style.webkitTransform = 'translateZ(0)';
+        }
+      }, { passive: true });
+      
+      // Prevent image unloading during scroll
+      window.addEventListener('beforeunload', function() {
+        // This is a hack to try to keep images in memory
+        return null;
+      });
+    }
+
+    // Rest of the functions remain the same
     function showPopup(event, id) {
       closeAllPopups();
       const popup = document.getElementById(id);
       popup.classList.add('active');
       
-      // Get the parent popup-container
       const container = popup.parentElement;
       
-      // Add mouseleave event to close popup when cursor leaves the container
       container.addEventListener('mouseleave', function handler() {
         closeAllPopups();
         container.removeEventListener('mouseleave', handler);
       });
 
-      // Add click event to close popup when clicking outside
       document.addEventListener('click', function handler(e) {
         if (!popup.contains(e.target) && !container.contains(e.target)) {
           closeAllPopups();
@@ -1067,86 +1001,6 @@
       document.getElementById('overlay').classList.remove('active');
       closeMobileMenu();
     }
-    
-    // Image caching optimization for mobile
-    document.addEventListener('DOMContentLoaded', function() {
-      // Preload the hero image
-      const heroImage = document.getElementById('heroImage');
-      if (heroImage) {
-        // Force image to stay in cache by preventing reload
-        heroImage.setAttribute('fetchpriority', 'high');
-        
-        // If image is already loaded, keep it in memory
-        if (heroImage.complete) {
-          console.log('Hero image already loaded');
-          // Create a persistent reference to prevent garbage collection
-          window.heroImageRef = heroImage.cloneNode(true);
-        } else {
-          heroImage.addEventListener('load', function() {
-            console.log('Hero image loaded successfully');
-            // Create a persistent reference to prevent garbage collection
-            window.heroImageRef = heroImage.cloneNode(true);
-          });
-          
-          heroImage.addEventListener('error', function() {
-            console.log('Error loading hero image');
-          });
-        }
-      }
-      
-      // Optimized Intersection Observer for mobile
-      const observerOptions = {
-        root: null,
-        rootMargin: '0px',
-        threshold: 0.1
-      };
-      
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting && heroImage) {
-            // When hero section is visible, ensure image is in memory
-            if (!heroImage.complete) {
-              // If image isn't loaded, force load it
-              const src = heroImage.src;
-              heroImage.src = '';
-              heroImage.src = src;
-            }
-          }
-        });
-      }, observerOptions);
-      
-      const heroSection = document.querySelector('.hero');
-      if (heroSection) {
-        observer.observe(heroSection);
-      }
-      
-      // Mobile-specific optimizations
-      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        // Disable animations that might cause performance issues
-        document.body.classList.add('mobile-device');
-        
-        // Force GPU rendering for smoother experience
-        const style = document.createElement('style');
-        style.textContent = `
-          .hero-image {
-            -webkit-transform: translate3d(0,0,0);
-            transform: translate3d(0,0,0);
-          }
-          header {
-            -webkit-transform: translate3d(0,0,0);
-            transform: translate3d(0,0,0);
-          }
-        `;
-        document.head.appendChild(style);
-      }
-    });
-    
-    // Prevent default touch actions that might interfere with scrolling
-    document.addEventListener('touchstart', function(e) {
-      if (e.target.tagName === 'IMG') {
-        e.preventDefault();
-      }
-    }, { passive: false });
   </script>
 </body>
 </html>
