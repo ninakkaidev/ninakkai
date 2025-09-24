@@ -1616,6 +1616,9 @@
           input.type = 'checkbox';
           input.checked = toggle.value;
           input.dataset.label = toggle.label;
+          if (toggle.label === "Show all emotionally compatible matches, even if different in religion or looks") {
+            input.disabled = true;
+          }
           label.appendChild(input);
           label.appendChild(document.createTextNode(toggle.label));
           toggleContainer.appendChild(label);
