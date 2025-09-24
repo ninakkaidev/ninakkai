@@ -1278,14 +1278,33 @@
                                         <i class="fas ${profile.user.liked ? 'fa-check' : 'fa-heart'} mr-2"></i> ${profile.user.liked ? 'Liked' : 'Like'}
                                     </button>`;
                         }
+
+                        // Compatibility badge with color cues
+                        const match_percentage = profile.user.match_percentage;
+                        let colorClass = '';
+                        let colorEmoji = '';
+                        if (match_percentage >= 85) {
+                            colorClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                            colorEmoji = '🟢';
+                        } else if (match_percentage >= 75) {
+                            colorClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                            colorEmoji = '🟡';
+                        } else if (match_percentage >= 65) {
+                            colorClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+                            colorEmoji = '🔵';
+                        } else {
+                            colorClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+                            colorEmoji = '🔴';
+                        }
+
                         profileViewer.innerHTML = `
                             <div class="relative">
                                 <img src="${profile.user.image}" alt="${profile.user.full_name}" class="profile-viewer-image">
                                 <button class="absolute top-4 left-4 bg-white dark:bg-gray-800 bg-opacity-80 rounded-full w-10 h-10 flex items-center justify-center close-profile">
                                     <i class="fas fa-arrow-left text-gray-800 dark:text-gray-100"></i>
                                 </button>
-                                <div class="absolute bottom-4 left-4 bg-white dark:bg-gray-800 bg-opacity-80 rounded-full px-3 py-1">
-                                    <span class="font-bold text-gray-800 dark:text-gray-100">${profile.user.match_percentage}% Match</span>
+                                <div class="absolute bottom-4 left-4 ${colorClass} rounded-full px-3 py-1">
+                                    <span class="font-bold text-gray-800 dark:text-gray-100">${colorEmoji} 💞 ${match_percentage}% Compatible</span>
                                 </div>
                             </div>
                             <div class="p-6 flex-1">
@@ -1295,6 +1314,13 @@
                                     </div>
                                     ${topLikeButtonHTML}
                                 </div>
+                                ${tagline ? `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Why this match?</h3>
+                                    <p class="text-gray-700 dark:text-gray-300 font-bold">${tagline}</p>
+                                    <p class="text-gray-700 dark:text-gray-300">${narration}</p>
+                                </div>
+                                ` : ''}
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">About</h3>
                                     <p class="text-gray-700 dark:text-gray-300">${profile.user.bio}</p>
@@ -1313,13 +1339,6 @@
                                         ${profile.user.personality_info.compatibility && profile.user.personality_info.compatibility.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Compatibility:</strong> ${profile.user.personality_info.compatibility.join(', ')}</p>` : ''}
                                     ` : '<p class="text-gray-700 dark:text-gray-300">No personality information available</p>'}
                                 </div>
-                                ${tagline ? `
-                                <div class="mb-6">
-                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Why this match?</h3>
-                                    <p class="text-gray-700 dark:text-gray-300 font-bold">${tagline}</p>
-                                    <p class="text-gray-700 dark:text-gray-300">${narration}</p>
-                                </div>
-                                ` : ''}
                                 ${profile.user.interests && profile.user.interests.length > 0 ? `
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Interests</h3>
