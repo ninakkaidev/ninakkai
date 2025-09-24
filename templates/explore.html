@@ -1304,7 +1304,7 @@
                                     <i class="fas fa-arrow-left text-gray-800 dark:text-gray-100"></i>
                                 </button>
                                 <div class="absolute bottom-4 left-4 ${colorClass} rounded-full px-3 py-1">
-                                    <span class="font-bold text-gray-800 dark:text-gray-100">${colorEmoji} 💞 ${match_percentage}% Compatible</span>
+                                    <span class="font-bold text-black dark:text-white">${colorEmoji} 💞 ${match_percentage}% Compatible</span>
                                 </div>
                             </div>
                             <div class="p-6 flex-1">
@@ -1333,8 +1333,8 @@
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Personality Details</h3>
                                     ${profile.user.personality_info ? `
                                         ${profile.user.personality_info.title ? `<p class="text-gray-700 dark:text-gray-300"><strong>${profile.user.personality_info.title}</strong></p>` : ''}
-                                        ${profile.user.personality_info.description && profile.user.personality_info.description !== 'Description not available.' ? `<p class="text-gray-700 dark:text-gray-300">${profile.user.personality_info.description}</p>` : ''}
-                                        ${profile.user.personality_info.tagline ? `<p class="text-gray-700 dark:text-gray-300"><em>${profile.user.personality_info.tagline}</em></p>` : ''}
+                                        ${profile.user.personality_info.description && profile.user.personality_info.description !== 'Description not available.' ? `<p class="text-gray-700 dark:text-gray-300">${toThirdPerson(profile.user.personality_info.description)}</p>` : ''}
+                                        ${profile.user.personality_info.tagline ? `<p class="text-gray-700 dark:text-gray-300"><em>${toThirdPerson(profile.user.personality_info.tagline)}</em></p>` : ''}
                                         ${profile.user.personality_info.strengths && profile.user.personality_info.strengths.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Strengths:</strong> ${profile.user.personality_info.strengths.join(', ')}</p>` : ''}
                                         ${profile.user.personality_info.compatibility && profile.user.personality_info.compatibility.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Compatibility:</strong> ${profile.user.personality_info.compatibility.join(', ')}</p>` : ''}
                                     ` : '<p class="text-gray-700 dark:text-gray-300">No personality information available</p>'}
@@ -1668,6 +1668,18 @@
                     .replace(/\bTEMP_THEY_CAP\b/g, 'They')
                     .replace(/\btemp_they\b/g, 'they')
                     .replace(/\bTEMP_THEIR_CAP\b/g, 'Their');
+            }
+
+            function toThirdPerson(text) {
+                return text
+                    .replace(/\bYou\b/g, 'They')
+                    .replace(/\byou\b/g, 'they')
+                    .replace(/\bYour\b/g, 'Their')
+                    .replace(/\byour\b/g, 'their')
+                    .replace(/\bYours\b/g, 'Theirs')
+                    .replace(/\byours\b/g, 'theirs')
+                    .replace(/\bYourself\b/g, 'Themselves')
+                    .replace(/\byourself\b/g, 'themselves');
             }
         });
     </script>
