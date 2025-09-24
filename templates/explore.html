@@ -1332,7 +1332,7 @@
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Personality Details</h3>
                                     ${profile.user.personality_info ? `
-                                        ${profile.user.personality_info.title ? `<p class="text-gray-700 dark:text-gray-300"><strong>${profile.user.personality_info.title}</strong></p>` : ''}
+                                        ${profile.user.personality_info.title ? `<p class="text-gray-700 dark:text-gray-300"><strong>${toThirdPerson(profile.user.personality_info.title)}</strong></p>` : ''}
                                         ${profile.user.personality_info.description && profile.user.personality_info.description !== 'Description not available.' ? `<p class="text-gray-700 dark:text-gray-300">${toThirdPerson(profile.user.personality_info.description)}</p>` : ''}
                                         ${profile.user.personality_info.tagline ? `<p class="text-gray-700 dark:text-gray-300"><em>${toThirdPerson(profile.user.personality_info.tagline)}</em></p>` : ''}
                                         ${profile.user.personality_info.strengths && profile.user.personality_info.strengths.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Strengths:</strong> ${profile.user.personality_info.strengths.join(', ')}</p>` : ''}
@@ -1679,7 +1679,9 @@
                     .replace(/\bYours\b/g, 'Theirs')
                     .replace(/\byours\b/g, 'theirs')
                     .replace(/\bYourself\b/g, 'Themselves')
-                    .replace(/\byourself\b/g, 'themselves');
+                    .replace(/\byourself\b/g, 'themselves')
+                    .replace(/\bYou're\b/g, 'They\'re')
+                    .replace(/\byou're\b/g, 'they\'re');
             }
         });
     </script>
