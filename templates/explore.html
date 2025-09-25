@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>നിനക്കായി-ForYou | Explore</title>
+    <title>Ninakkayi-ForYou | Matches</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -701,8 +701,8 @@
                     <span class="text-xs mt-1">Chat</span>
                 </a>
                 <a href="{{ url_for('explore') }}" class="text-pink-500 flex flex-col items-center">
-                    <i class="fas fa-compass text-xl"></i>
-                    <span class="text-xs mt-1">Explore</span>
+                    <i class="fas fa-heart text-xl"></i>
+                    <span class="text-xs mt-1">Matches</span>
                 </a>
                 <a href="{{ url_for('profile') }}" class="text-gray-500 dark:text-gray-300 hover:text-pink-500 flex flex-col items-center">
                     <i class="fas fa-user text-xl"></i>
@@ -1209,18 +1209,6 @@
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Self Summary</h3>
                                     <p class="text-gray-700 dark:text-gray-300">${profile.user.summary}</p>
-                                </div>
-                            `;
-                        }
-                        if (profile.user.profile_interests && profile.user.profile_interests.length > 0) {
-                            additionalSections += `
-                                <div class="mb-6">
-                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Additional Interests</h3>
-                                    <div class="flex flex-wrap gap-2">
-                                        ${profile.user.profile_interests.map(interest => `
-                                            <span class="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100 px-3 py-1 rounded-full text-sm">${interest}</span>
-                                        `).join('')}
-                                    </div>
                                 </div>
                             `;
                         }
