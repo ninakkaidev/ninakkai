@@ -28,7 +28,7 @@ import time
 def configure_cloudinary():
     try:
         cloudinary.config(
-            cloud_name='dibbkr9vs',
+            cloud_name='ninakkai',
             api_key='869559855343136',
             api_secret='FfJnI44v31rzfPvp7-K9lnI5BDM',
             secure=True
@@ -144,7 +144,7 @@ PERSONALITIES = {
         'title': '“You are a Romantic.”',
         'description': 'You lead with your heart, express love freely, and long for emotional electricity. You don’t just fall in love — you dive in.',
         'tagline': '“Loving loudly. Feeling deeply.”',
-        'strengths': ['Heart-led', 'Expressive', 'Passionate'],
+        'strengths': ['Heart-led', 'Expressive', 'Expressive'],
         'compatibility': get_top_compatibles('💘 Romantic'),  # Dynamic: ['👂 Listener', '🌿 Nurturer']
         'color': '#E91E63'  # Pink
     },
@@ -640,7 +640,6 @@ class MongoService:
                     'bio': other_user_data.get('bio', 'No bio available'),
                     'interests': other_user_data.get('interests', []),
                     'distance': 'N/A',
-                    'rating': '4.5',
                     'dominant_type': other_scores['dominant_type'],
                     'match_percentage': match_percentage,
                     'keeper_seeker': other_scores.get('keeper_seeker_type', 'Unknown'),
@@ -740,7 +739,6 @@ class MongoService:
                     'bio': other_user_data.get('bio', 'No bio available'),
                     'interests': other_user_data.get('interests', []),
                     'distance': 'N/A',
-                    'rating': '4.5',
                     'dominant_type': other_scores['dominant_type'],
                     'match_percentage': match_percentage,
                     'keeper_seeker': other_scores.get('keeper_seeker_type', 'Unknown'),
@@ -916,7 +914,6 @@ class MongoService:
                         'bio': user_data.get('bio', 'No bio available'),
                         'interests': user_data.get('interests', []),
                         'distance': 'N/A',
-                        'rating': '4.5',
                         'dominant_type': other_user['scores']['dominant_type'],
                         'match_percentage': match_percentage,
                         'liked': self.has_liked_user(user_id, str(user_data['_id'])),
@@ -1785,7 +1782,6 @@ def explore():
             'bio': user.get('bio', 'No bio available'),
             'interests': user.get('interests', []),
             'distance': 'N/A',
-            'rating': '4.5',
             'dominant_type': quiz_result['scores']['dominant_type'],
             'match_percentage': 50
         }
@@ -1920,7 +1916,6 @@ def user_profile(user_id):
             'bio': user.get('bio', 'No bio available'),
             'interests': user.get('interests', []),
             'distance': 'N/A',
-            'rating': '4.5',
             'dominant_type': dominant_type,
             'match_percentage': match_percentage,
             'liked': mongo_service.has_liked_user(session['user_id'], user_id),

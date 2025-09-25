@@ -1030,7 +1030,7 @@
         toggles: [
           { label: "Show only same religion matches", value: false },
           { label: "Show only preferred physical traits", value: false },
-          { label: "Show all emotionally compatible matches, even if different in religion or looks", value: true }
+          { label: "Show all emotionally compatible matches", value: true }
         ],
         submitText: "Start Matching"
       }
@@ -1616,7 +1616,7 @@
           input.type = 'checkbox';
           input.checked = toggle.value;
           input.dataset.label = toggle.label;
-          if (toggle.label === "Show all emotionally compatible matches, even if different in religion or looks") {
+          if (toggle.label === "Show all emotionally compatible matches") {
             input.disabled = true;
           }
           label.appendChild(input);
