@@ -28,7 +28,7 @@ import time
 def configure_cloudinary():
     try:
         cloudinary.config(
-            cloud_name='ninakkai',
+            cloud_name='dibbkr9vs',
             api_key='869559855343136',
             api_secret='FfJnI44v31rzfPvp7-K9lnI5BDM',
             secure=True
