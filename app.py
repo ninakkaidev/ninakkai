@@ -2177,7 +2177,11 @@ def questions():
     if quiz_completed:
         return redirect(url_for('explore'))
     logger.debug(f"Rendering questions.html for user {session['user_id']}")
-    return render_template('questions.html')
+    resp = make_response(render_template('questions.html'))
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
 
 @app.route('/submit-quiz', methods=['POST'])
 def submit_quiz():
