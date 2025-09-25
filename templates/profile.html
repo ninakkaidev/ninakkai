@@ -622,7 +622,7 @@
                         {% for user in pending_likers %}
                         <div class="connection-item">
                             <div class="bg-gray-50 rounded-lg p-3 text-center connection-card" data-user-id="{{ user.id }}">
-                                <div class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-2">
+                                <div class="w-16 h-16 rounded-full rounded-full overflow-hidden mx-auto mb-2">
                                     <img src="{{ user.image }}" alt="{{ user.full_name }}" class="w-full h-full object-cover">
                                 </div>
                                 <h3 class="font-medium">{{ user.full_name }}</h3>
@@ -825,18 +825,18 @@
     </div>
 
     <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg z-10 dark:bg-gray-800">
+    <nav class="bottom-nav fixed bottom-0 left-0 right-0 bg-white shadow-lg z-10 dark:bg-gray-800">
         <div class="container mx-auto px-4">
             <div class="flex justify-around py-3">
-                <a href="/chat" class="text-gray-500 hover:text-pink-500 flex flex-col items-center dark:text-gray-400">
+                <a href="/chat" class="text-gray-500 hover:text-pink-500 dark:text-gray-400 dark:hover:text-pink-400 flex flex-col items-center">
                     <i class="fas fa-comments text-xl"></i>
                     <span class="text-xs mt-1">Chat</span>
                 </a>
-                <a href="/explore" class="text-gray-500 hover:text-pink-500 flex flex-col items-center dark:text-gray-400">
+                <a href="/explore" class="text-gray-500 hover:text-pink-500 dark:text-gray-400 dark:hover:text-pink-400 flex flex-col items-center">
                     <i class="fas fa-heart text-xl"></i>
                     <span class="text-xs mt-1">Matches</span>
                 </a>
-                <a href="/profile" class="text-pink-500 flex flex-col items-center dark:text-pink-400">
+                <a href="/profile" class="text-pink-500 dark:text-pink-400 flex flex-col items-center">
                     <i class="fas fa-user text-xl"></i>
                     <span class="text-xs mt-1">Profile</span>
                 </a>
@@ -1662,6 +1662,19 @@
                     });
                 });
             }
+
+            // Navigation press effect
+            const navLinks = document.querySelectorAll('.bottom-nav a');
+            navLinks.forEach(link => {
+                link.addEventListener('pointerdown', function() {
+                    navLinks.forEach(l => {
+                        l.classList.remove('text-pink-500', 'dark:text-pink-400');
+                        l.classList.add('text-gray-500', 'dark:text-gray-400');
+                    });
+                    this.classList.remove('text-gray-500', 'dark:text-gray-400');
+                    this.classList.add('text-pink-500', 'dark:text-pink-400');
+                });
+            });
         });
     </script>
 </body>

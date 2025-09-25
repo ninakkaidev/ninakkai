@@ -696,15 +696,15 @@
     <nav class="bottom-nav fixed bottom-0 left-0 right-0 z-10">
         <div class="container mx-auto px-4">
             <div class="flex justify-around py-3">
-                <a href="{{ url_for('chat') }}" class="text-gray-500 dark:text-gray-300 hover:text-pink-500 flex flex-col items-center">
+                <a href="{{ url_for('chat') }}" class="text-gray-500 dark:text-gray-400 hover:text-pink-500 dark:hover:text-pink-400 flex flex-col items-center">
                     <i class="fas fa-comments text-xl"></i>
                     <span class="text-xs mt-1">Chat</span>
                 </a>
-                <a href="{{ url_for('explore') }}" class="text-pink-500 flex flex-col items-center">
+                <a href="{{ url_for('explore') }}" class="text-pink-500 dark:text-pink-400 flex flex-col items-center">
                     <i class="fas fa-heart text-xl"></i>
                     <span class="text-xs mt-1">Matches</span>
                 </a>
-                <a href="{{ url_for('profile') }}" class="text-gray-500 dark:text-gray-300 hover:text-pink-500 flex flex-col items-center">
+                <a href="{{ url_for('profile') }}" class="text-gray-500 dark:text-gray-400 hover:text-pink-500 dark:hover:text-pink-400 flex flex-col items-center">
                     <i class="fas fa-user text-xl"></i>
                     <span class="text-xs mt-1">Profile</span>
                 </a>
@@ -1659,6 +1659,19 @@
                     .replace(/\bYou're\b/g, 'They\'re')
                     .replace(/\byou're\b/g, 'they\'re');
             }
+
+            // Navigation press effect
+            const navLinks = document.querySelectorAll('.bottom-nav a');
+            navLinks.forEach(link => {
+                link.addEventListener('pointerdown', function() {
+                    navLinks.forEach(l => {
+                        l.classList.remove('text-pink-500', 'dark:text-pink-400');
+                        l.classList.add('text-gray-500', 'dark:text-gray-400');
+                    });
+                    this.classList.remove('text-gray-500', 'dark:text-gray-400');
+                    this.classList.add('text-pink-500', 'dark:text-pink-400');
+                });
+            });
         });
     </script>
 </body>
