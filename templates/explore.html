@@ -1043,16 +1043,6 @@
                         const card = document.createElement('div');
                         card.className = 'bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative discovery-card';
                         card.dataset.userId = match.id;
-                        let likeButtonHTML;
-                        if (match.passed) {
-                            likeButtonHTML = `<button class="bg-gray-500 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center" disabled>Passed</button>`;
-                        } else {
-                            likeButtonHTML = `<button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition" 
-                                            data-user-id="${match.id}" 
-                                            data-liked="${match.liked}">
-                                        <i class="fas ${match.liked ? 'fa-check' : 'fa-heart'}"></i>
-                                    </button>`;
-                        }
                         card.innerHTML = `
                             <div class="match-percentage text-gray-800 dark:text-gray-100">${match.match_percentage}%</div>
                             <img src="${match.image}" alt="${match.full_name}" class="profile-image">
@@ -1061,7 +1051,6 @@
                                     <div>
                                         <h3 class="text-gray-100 font-bold">${match.full_name}, ${match.age || 'N/A'}</h3>
                                     </div>
-                                    ${likeButtonHTML}
                                 </div>
                             </div>
                         `;
@@ -1091,16 +1080,6 @@
                         const card = document.createElement('div');
                         card.className = 'discovery-profile discovery-card';
                         card.dataset.userId = match.id;
-                        let likeButtonHTML;
-                        if (match.passed) {
-                            likeButtonHTML = `<button class="bg-gray-500 text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center" disabled>Passed</button>`;
-                        } else {
-                            likeButtonHTML = `<button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center transition" 
-                                            data-user-id="${match.id}" 
-                                            data-liked="${match.liked}">
-                                        <i class="fas ${match.liked ? 'fa-check' : 'fa-heart text-xs'}"></i>
-                                    </button>`;
-                        }
                         card.innerHTML = `
                             <img src="${match.image}" alt="Profile" class="discovery-image">
                             <div class="discovery-rating text-gray-800 dark:text-gray-100">
@@ -1112,7 +1091,6 @@
                                     <div>
                                         <h3 class="text-gray-100 font-bold text-sm md:text-base">${match.full_name}, ${match.age || 'N/A'}</h3>
                                     </div>
-                                    ${likeButtonHTML}
                                 </div>
                             </div>
                         `;
@@ -1367,11 +1345,13 @@
                         `;
                         
                         document.body.appendChild(profileViewer);
+                        window.history.pushState({profileOpen: true}, '');
                         
                         profileViewer.querySelector('.close-profile').addEventListener('click', () => {
                             profileViewer.remove();
                             mainHeader.style.display = 'flex';
                             document.body.style.overflow = '';
+                            history.back();
                         });
 
                         // Attach report button listener
@@ -1390,6 +1370,16 @@
                         document.body.style.overflow = '';
                     });
             }
+
+            // Handle back button to close profile
+            window.addEventListener('popstate', function(event) {
+                const profileViewer = document.querySelector('.profile-viewer');
+                if (profileViewer) {
+                    profileViewer.remove();
+                    mainHeader.style.display = 'flex';
+                    document.body.style.overflow = '';
+                }
+            });
 
             function attachProfileViewerListeners(profileViewer, userId) {
                 profileViewer.querySelectorAll('.like-button').forEach(btn => {
@@ -1468,6 +1458,7 @@
                                         profileViewer.remove();
                                         mainHeader.style.display = 'flex';
                                         document.body.style.overflow = '';
+                                        history.back();
                                         
                                         // Remove the card from the main view
                                         const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
@@ -1519,6 +1510,7 @@
                                 profileViewer.remove();
                                 mainHeader.style.display = 'flex';
                                 document.body.style.overflow = '';
+                                history.back();
                                 
                                 // Remove the card from the main view
                                 const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
