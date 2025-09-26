@@ -225,6 +225,23 @@
       transform: translateY(-2px);
     }
 
+    .btn-skip {
+      background: linear-gradient(135deg, #ff5275 0%, #ff9e7d 100%);
+      color: white;
+      border: none;
+      padding: 10px 30px;
+      font-size: 1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 0 10px;
+    }
+
+    .btn-skip:hover {
+      background: linear-gradient(135deg, #ff9e7d 0%, #ff5275 100%);
+      transform: translateY(-2px);
+    }
+
     .rank-container {
       display: flex;
       flex-direction: column;
@@ -578,6 +595,12 @@
         margin: 5px;
       }
       
+      .btn-skip {
+        padding: 8px 20px;
+        font-size: 0.9rem;
+        margin: 5px;
+      }
+      
       .rank-item {
         padding: 8px 10px;
         font-size: 0.9rem;
@@ -690,7 +713,7 @@
       <p id="optional-p">Want to refine your matches with deeper questions?</p>
       <div>
         <button class="btn-optional" id="btn-yes">Continue</button>
-        <!-- Skip button removed for relationship readiness section -->
+        <button class="btn-skip" id="btn-skip" style="display: none;">Skip</button>
       </div>
     </div>
   </div>
@@ -729,6 +752,7 @@
     const optionalP = document.getElementById('optional-p');
     const btnStart = document.getElementById('btn-start');
     const btnYes = document.getElementById('btn-yes');
+    const btnSkip = document.getElementById('btn-skip');
     const sectionTitle = document.getElementById('section-title');
     const sectionDescription = document.getElementById('section-description');
     const rankInstructions = document.getElementById('rank-instructions');
@@ -1281,6 +1305,7 @@
       window.location.href = '{{ url_for("explore") }}';
     });
     btnYes.addEventListener('click', handleYes);
+    btnSkip.addEventListener('click', handleSkip);
 
     function handleYes() {
       if (currentExtraSection === 'keeperSeeker') {
@@ -1292,6 +1317,20 @@
       } else if (currentExtraSection === 'profileSetup') {
         continueProfileSetupQuestions();
       }
+    }
+
+    function handleSkip() {
+      if (currentExtraSection === 'profileSetup') {
+        skipProfileSetup();
+      }
+    }
+
+    function skipProfileSetup() {
+      console.log('Skipping profile setup section');
+      // Skip the profile setup section and move to quiz submission
+      isProfileSetupSection = false;
+      rebuildQuestions();
+      submitQuiz();
     }
 
     function startQuiz() {
@@ -1771,6 +1810,7 @@
       questionBox.style.display = 'none';
       optionalSection.style.display = 'block';
       // Remove skip button for relationship readiness section
+      btnSkip.style.display = 'none';
       updateSectionInfo();
       optionalP.textContent = 'Want to answer questions about your relationship readiness?';
       optionalSection.classList.add('animate__animated', 'animate__fadeIn');
@@ -1789,6 +1829,8 @@
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'none';
       optionalSection.style.display = 'block';
+      // Remove skip button for religion section
+      btnSkip.style.display = 'none';
       updateSectionInfo();
       optionalP.textContent = 'Want to specify your religion and faith preferences?';
       optionalSection.classList.add('animate__animated', 'animate__fadeIn');
@@ -1807,6 +1849,8 @@
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'none';
       optionalSection.style.display = 'block';
+      // Remove skip button for physical section
+      btnSkip.style.display = 'none';
       updateSectionInfo();
       optionalP.textContent = 'Want to specify your physical preferences in a partner?';
       optionalSection.classList.add('animate__animated', 'animate__fadeIn');
@@ -1825,9 +1869,10 @@
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'none';
       optionalSection.style.display = 'block';
+      // Show skip button for profile setup section
+      btnSkip.style.display = 'inline-block';
       updateSectionInfo();
       optionalP.textContent = "Let's set up your profile to help others get to know you better and improve your matching experience.";
-      // Hide No button to make it mandatory
       optionalSection.classList.add('animate__animated', 'animate__fadeIn');
       setTimeout(() => {
         optionalSection.classList.remove('animate__animated', 'animate__fadeIn');
