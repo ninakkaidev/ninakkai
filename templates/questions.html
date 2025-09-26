@@ -1288,9 +1288,7 @@
     });
 
     function goToNextSectionAfterSkip() {
-      if (currentExtraSection === 'keeperSeeker') {
-        showReligionSection();
-      } else if (currentExtraSection === 'religion') {
+      if (currentExtraSection === 'religion') {
         showPhysicalSection();
       } else if (currentExtraSection === 'physical') {
         showProfileSetupSection();
@@ -1299,9 +1297,7 @@
     }
 
     function handleYes() {
-      if (currentExtraSection === 'keeperSeeker') {
-        continueKeeperSeekerQuestions();
-      } else if (currentExtraSection === 'religion') {
+      if (currentExtraSection === 'religion') {
         continueReligionQuestions();
       } else if (currentExtraSection === 'physical') {
         continuePhysicalQuestions();
@@ -1336,7 +1332,7 @@
     function showNextSectionPrompt() {
       switch (currentSection) {
         case 'mandatory':
-          showKeeperSeekerSection();
+          continueKeeperSeekerQuestions();
           break;
         case 'keeperSeeker':
           showReligionSection();
@@ -1458,6 +1454,12 @@
         console.log('Displaying select with other option');
         const select = document.createElement('select');
         select.className = 'form-control';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Select your religion/faith';
+        placeholder.selected = true;
+        placeholder.disabled = true;
+        select.appendChild(placeholder);
         questionData.answers.forEach(ans => {
           const opt = document.createElement('option');
           opt.value = ans;
@@ -1517,6 +1519,12 @@
           if (inputData.type === 'select') {
             const select = document.createElement('select');
             select.className = 'form-control';
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = 'Select ' + inputData.label.toLowerCase().replace('preferred ', '').replace('your ', '');
+            placeholder.selected = true;
+            placeholder.disabled = true;
+            select.appendChild(placeholder);
             inputData.options.forEach(option => {
               const optionElement = document.createElement('option');
               optionElement.value = option;
@@ -1747,24 +1755,6 @@
       displayQuestion();
     }
 
-    function showKeeperSeekerSection() {
-      console.log('Showing keeper/seeker section');
-      currentExtraSection = 'keeperSeeker';
-      currentSection = 'keeperSeeker';
-      qaContainer.style.display = 'flex';
-      questionBox.style.display = 'none';
-      optionalSection.style.display = 'block';
-      updateSectionInfo();
-      optionalP.textContent = 'Want to help us understand your relationship readiness?';
-      optionalSection.classList.add('animate__animated', 'animate__fadeIn');
-      setTimeout(() => {
-        optionalSection.classList.remove('animate__animated', 'animate__fadeIn');
-      }, 1000);
-      
-      // Show back button
-      backButton.style.display = 'flex';
-    }
-
     function showReligionSection() {
       console.log('Showing religion section');
       currentExtraSection = 'religion';
@@ -1772,6 +1762,7 @@
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'none';
       optionalSection.style.display = 'block';
+      btnNo.style.display = 'inline-block';
       updateSectionInfo();
       optionalP.textContent = 'Want to specify your religion and faith preferences?';
       optionalSection.classList.add('animate__animated', 'animate__fadeIn');
@@ -1790,6 +1781,7 @@
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'none';
       optionalSection.style.display = 'block';
+      btnNo.style.display = 'inline-block';
       updateSectionInfo();
       optionalP.textContent = 'Want to specify your physical preferences in a partner?';
       optionalSection.classList.add('animate__animated', 'animate__fadeIn');
@@ -1887,11 +1879,6 @@
           questionBox.style.display = 'flex';
           let prevQuestion, prevSection, prevStart;
           switch (currentExtraSection) {
-            case 'keeperSeeker':
-              prevQuestion = mandatoryQuestionCount - 1;
-              prevSection = 'mandatory';
-              prevStart = 0;
-              break;
             case 'religion':
               if (isKeeperSeekerSection) {
                 prevQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount - 1;
