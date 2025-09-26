@@ -467,7 +467,7 @@ class MongoService:
         except Exception as e:
             return {'success': False, 'error': str(e)}
 
-    def _calculate_scores(self, answers: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _calculate_scores(self, answers: List[Dict]) -> Dict[str, Any]:
         type_counts = {}
         mandatory_answers = [a for a in answers if 'question_id' in a and a['question_id'].startswith('req')]
         for answer in mandatory_answers:
@@ -823,19 +823,19 @@ class MongoService:
             current_user = self.get_user_by_id(user_id)
             if current_user['gender'] == 'male':
                 rate_key = f"daily_likes_{user_id}"
-                if not self.check_rate_limit(rate_key, 5, timedelta(days=1)):
+                if not self.check_rate_limit(rate_key, 3, timedelta(days=1)):
                     return {'success': False, 'error': 'Daily like limit exceeded'}
-            like_data = {
+            like = {
                 'user_id': user_id,
                 'matched_user_id': matched_user_id,
                 'timestamp': datetime.now(timezone.utc)
             }
-            result = self.likes.insert_one(like_data)
+            result = self.likes.insert_one(like)
             if current_user['gender'] == 'male':
                 self.inc_rate_limit(rate_key)
                 limit_doc = self.db['rate_limits'].find_one({'key': rate_key})
                 attempts = limit_doc['attempts']
-                likes_remaining = 5 - attempts
+                likes_remaining = 3 - attempts
             else:
                 likes_remaining = None
             liker = self.get_user_by_id(user_id)
@@ -944,11 +944,10 @@ class MongoService:
 
     def get_pending_likers(self, user_id: str) -> List[Dict[str, Any]]:
         try:
-            likers = self.likes.find({'matched_user_id': user_id, 'user_id': {'$ne': user_id}})
-            liker_ids = [str(l['user_id']) for l in likers]
+            likers = [str(l['user_id']) for l in self.likes.find({'matched_user_id': user_id})]
             my_likes = [str(l['matched_user_id']) for l in self.likes.find({'user_id': user_id})]
             passed = [str(p['passed_user_id']) for p in self.passes.find({'user_id': user_id})]
-            pending_ids = [pid for pid in liker_ids if pid not in my_likes and pid not in passed]
+            pending_ids = [pid for pid in likers if pid not in my_likes and pid not in passed]
             pending_users = []
             for pid in pending_ids:
                 user = self.get_user_by_id(pid)
@@ -1644,7 +1643,7 @@ def update_gender():
         return jsonify({'success': False, 'error': 'Failed to update gender'}), 500
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
-def reset_password_endpoint(token):
+def reset_password_endpoint():
     if request.method == 'GET':
         user = mongo_service.get_user_by_reset_token(token)
         if not user:
