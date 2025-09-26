@@ -1208,33 +1208,23 @@
                                 </div>
                             `;
                         }
-                        let topLikeButtonHTML;
-                        if (profile.user.passed) {
-                            topLikeButtonHTML = `<button class="bg-gray-500 text-white rounded-full w-12 h-12 flex items-center justify-center" disabled>Passed</button>`;
-                        } else {
-                            topLikeButtonHTML = `<button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full w-12 h-12 flex items-center justify-center transition" 
-                                            data-user-id="${userId}" 
-                                            data-liked="${profile.user.liked}">
-                                        <i class="fas ${profile.user.liked ? 'fa-check' : 'fa-heart'} text-xl"></i>
-                                    </button>`;
-                        }
                         let passButtonHTML;
                         if (profile.user.passed) {
-                            passButtonHTML = `<button class="bg-gray-500 text-white rounded-full px-6 py-3 flex-1 mr-2 transition" disabled>
+                            passButtonHTML = `<button class="animate-pulse bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-400 text-white rounded-full px-6 py-4 flex-1 mr-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" disabled>
                                 <i class="fas fa-times mr-2"></i> Passed
                             </button>`;
                         } else {
-                            passButtonHTML = `<button class="bg-green-200 dark:bg-green-700 text-gray-800 dark:text-gray-100 rounded-full px-6 py-3 flex-1 mr-2 hover:bg-green-300 dark:hover:bg-green-600 transition pass-button" data-user-id="${userId}">
+                            passButtonHTML = `<button class="animate-pulse bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-400 text-white rounded-full px-6 py-4 flex-1 mr-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out pass-button" data-user-id="${userId}">
                                 <i class="fas fa-times mr-2"></i> Pass
                             </button>`;
                         }
                         let bottomLikeHTML;
                         if (profile.user.passed) {
-                            bottomLikeHTML = `<button class="bg-gray-500 text-white rounded-full px-6 py-3 flex-1 ml-2 transition" disabled>
+                            bottomLikeHTML = `<button class="animate-pulse bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400 text-white rounded-full px-6 py-4 flex-1 ml-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" disabled>
                                 <i class="fas fa-heart mr-2"></i> Like
                             </button>`;
                         } else {
-                            bottomLikeHTML = `<button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full px-6 py-3 flex-1 ml-2 transition" 
+                            bottomLikeHTML = `<button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400'} animate-pulse text-white rounded-full px-6 py-4 flex-1 ml-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" 
                                             data-user-id="${userId}" 
                                             data-liked="${profile.user.liked}">
                                         <i class="fas ${profile.user.liked ? 'fa-check' : 'fa-heart'} mr-2"></i> ${profile.user.liked ? 'Liked' : 'Like'}
@@ -1296,11 +1286,9 @@
                                     <div>
                                         <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">${profile.user.full_name}, ${profile.user.age || 'N/A'}</h2>
                                     </div>
-                                    ${topLikeButtonHTML}
                                 </div>
                                 ${tagline ? `
                                 <div class="mb-6">
-                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Why this match?</h3>
                                     <p class="text-gray-700 dark:text-gray-300 font-bold">${tagline}</p>
                                     <p class="text-gray-700 dark:text-gray-300">${narration}</p>
                                 </div>
@@ -1311,7 +1299,6 @@
                                     <p class="text-gray-700 dark:text-gray-300">${profile.user.dominant_type}</p>
                                 </div>
                                 <div class="mb-6">
-                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Personality Details</h3>
                                     ${profile.user.personality_info ? `
                                         ${profile.user.personality_info.title ? `<p class="text-gray-700 dark:text-gray-300"><strong>${toThirdPerson(profile.user.personality_info.title)}</strong></p>` : ''}
                                         ${profile.user.personality_info.description && profile.user.personality_info.description !== 'Description not available.' ? `<p class="text-gray-700 dark:text-gray-300">${toThirdPerson(profile.user.personality_info.description)}</p>` : ''}
@@ -1332,7 +1319,7 @@
                                 ${photosSection}
                                 <div class="flex justify-between mt-8">
                                     ${passButtonHTML}
-                                    <button class="bg-red-500 text-white rounded-full px-6 py-3 flex-1 ml-2 transition report-button" data-user-id="${userId}">
+                                    <button class="animate-pulse bg-gradient-to-r from-red-400 to-red-600 hover:from-red-600 hover:to-red-400 text-white rounded-full px-6 py-4 flex-1 mx-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out report-button" data-user-id="${userId}">
                                         <i class="fas fa-flag mr-2"></i> Report
                                     </button>
                                     ${bottomLikeHTML}
