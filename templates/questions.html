@@ -1288,7 +1288,9 @@
     });
 
     function goToNextSectionAfterSkip() {
-      if (currentExtraSection === 'religion') {
+      if (currentExtraSection === 'keeperSeeker') {
+        showReligionSection();
+      } else if (currentExtraSection === 'religion') {
         showPhysicalSection();
       } else if (currentExtraSection === 'physical') {
         showProfileSetupSection();
@@ -1297,7 +1299,9 @@
     }
 
     function handleYes() {
-      if (currentExtraSection === 'religion') {
+      if (currentExtraSection === 'keeperSeeker') {
+        continueKeeperSeekerQuestions();
+      } else if (currentExtraSection === 'religion') {
         continueReligionQuestions();
       } else if (currentExtraSection === 'physical') {
         continuePhysicalQuestions();
@@ -1332,7 +1336,7 @@
     function showNextSectionPrompt() {
       switch (currentSection) {
         case 'mandatory':
-          continueKeeperSeekerQuestions();
+          showKeeperSeekerSection();
           break;
         case 'keeperSeeker':
           showReligionSection();
@@ -1398,7 +1402,7 @@
       if (questionData.isRankQuestion) {
         console.log('Displaying ranking question');
         rankInstructions.style.display = 'block';
-        rankInstructions.textContent = 'Click to select and rank items in order of importance (1 is highest).';
+        rankInstructions.textContent = 'Click to select and rank items in order of importance (1 is highest). Click again to unselect.';
         rankedItems = [];
         currentRank = 1;
         questionData.answers.forEach((answer, index) => {
@@ -1725,7 +1729,27 @@
     }
 
     function selectRankItem(rankItem, index) {
-      if (!rankItem.classList.contains('selected')) {
+      const submitBtn = answersElement.querySelector('.rank-submit');
+      if (rankItem.classList.contains('selected')) {
+        // Unselect
+        rankItem.classList.remove('selected');
+        const rankNumber = rankItem.querySelector('.rank-number');
+        if (rankNumber) rankNumber.remove();
+        // Remove from rankedItems
+        rankedItems = rankedItems.filter(item => item.index !== index);
+        // Reassign consecutive ranks to remaining items
+        rankedItems.sort((a, b) => a.rank - b.rank);
+        for (let i = 0; i < rankedItems.length; i++) {
+          rankedItems[i].rank = i + 1;
+          const itemEl = answersElement.querySelector(`.rank-item[data-index="${rankedItems[i].index}"]`);
+          const rn = itemEl.querySelector('.rank-number');
+          if (rn) rn.textContent = i + 1;
+        }
+        currentRank = rankedItems.length + 1;
+        // Disable submit if not all ranked
+        submitBtn.disabled = rankedItems.length < questions[currentQuestion].answers.length;
+      } else {
+        // Select
         rankItem.classList.add('selected', 'animate__animated', 'animate__bounceIn');
         const rankNumber = document.createElement('span');
         rankNumber.className = 'rank-number';
@@ -1735,7 +1759,7 @@
         currentRank++;
         console.log(`Ranked item ${index} as rank ${currentRank - 1}, rankedItems:`, rankedItems);
         if (currentRank > questions[currentQuestion].answers.length) {
-          answersElement.querySelector('.rank-submit').disabled = false;
+          submitBtn.disabled = false;
         }
         setTimeout(() => {
           rankItem.classList.remove('animate__animated', 'animate__bounceIn');
@@ -1753,6 +1777,25 @@
       selectedAnswers.push({ question: currentQuestion, question_id: questions[currentQuestion].id, ranking: rankedItems });
       currentQuestion++;
       displayQuestion();
+    }
+
+    function showKeeperSeekerSection() {
+      console.log('Showing keeper/seeker section');
+      currentExtraSection = 'keeperSeeker';
+      currentSection = 'keeperSeeker';
+      qaContainer.style.display = 'flex';
+      questionBox.style.display = 'none';
+      optionalSection.style.display = 'block';
+      btnNo.style.display = 'inline-block';
+      updateSectionInfo();
+      optionalP.textContent = 'Want to answer questions about your relationship readiness?';
+      optionalSection.classList.add('animate__animated', 'animate__fadeIn');
+      setTimeout(() => {
+        optionalSection.classList.remove('animate__animated', 'animate__fadeIn');
+      }, 1000);
+      
+      // Show back button
+      backButton.style.display = 'flex';
     }
 
     function showReligionSection() {
@@ -1879,6 +1922,11 @@
           questionBox.style.display = 'flex';
           let prevQuestion, prevSection, prevStart;
           switch (currentExtraSection) {
+            case 'keeperSeeker':
+              prevQuestion = mandatoryQuestionCount - 1;
+              prevSection = 'mandatory';
+              prevStart = 0;
+              break;
             case 'religion':
               if (isKeeperSeekerSection) {
                 prevQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount - 1;
