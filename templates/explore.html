@@ -598,6 +598,18 @@
             --tw-gradient-to: #831843 var(--tw-gradient-to-position);
             --tw-gradient-stops: var(--tw-gradient-from), #111827 var(--tw-gradient-via-position), var(--tw-gradient-to);
         }
+
+        /* Animation for burst effects */
+        @keyframes burstAnim {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(1.5);
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100" data-current-type="{{ profile.dominant_type }}">
@@ -840,8 +852,9 @@
                 });
 
                 document.getElementById('cancel-report').addEventListener('click', () => modal.remove());
-                document.getElementById('submit-report').addEventListener('click', async () => {
+                document.getElementById('submit-report').addEventListener('click', async (e) => {
                     if (selectedReason) {
+                        const button = e.currentTarget;
                         showLoading();
                         try {
                             const response = await fetch('/report-user', {
@@ -852,8 +865,9 @@
                             const result = await response.json();
                             hideLoading();
                             if (result.success) {
+                                createReportBurst(button);
                                 showNotification('Report submitted successfully');
-                                modal.remove();
+                                setTimeout(() => modal.remove(), 1000);
                             } else {
                                 showError(result.error || 'Failed to submit report');
                             }
@@ -910,6 +924,7 @@
                                     delete likedUsers[userId];
                                 } else {
                                     likedUsers[userId] = true;
+                                    createHeartBurst(this);
                                 }
                                 localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
                                 
@@ -1404,6 +1419,7 @@
                                     delete likedUsers[userId];
                                 } else {
                                     likedUsers[userId] = true;
+                                    createHeartBurst(this);
                                 }
                                 localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
                                 
@@ -1496,6 +1512,7 @@
                             hideLoading();
                             
                             if (result.success) {
+                                createPassBurst(this);
                                 showNotification('Passed');
                                 // Update cache
                                 const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
@@ -1687,6 +1704,88 @@
                     this.classList.add('text-pink-500', 'dark:text-pink-400');
                 });
             });
+
+            // Burst animation functions
+            function createHeartBurst(target) {
+                const rect = target.getBoundingClientRect();
+                const burst = document.createElement('div');
+                burst.style.position = 'fixed';
+                burst.style.left = `${rect.left + rect.width / 2}px`;
+                burst.style.top = `${rect.top + rect.height / 2}px`;
+                burst.style.pointerEvents = 'none';
+                burst.style.zIndex = '1002';
+                for (let i = 0; i < 8; i++) {
+                    const heart = document.createElement('i');
+                    heart.className = 'fas fa-heart text-pink-500';
+                    heart.style.position = 'absolute';
+                    heart.style.fontSize = `${Math.random() * 1 + 1}rem`;
+                    heart.style.left = '0';
+                    heart.style.top = '0';
+                    heart.style.transform = 'translate(-50%, -50%)';
+                    heart.style.animation = `burstAnim ${Math.random() * 0.5 + 0.5}s ease-out`;
+                    const angle = Math.random() * 2 * Math.PI;
+                    const distance = Math.random() * 50 + 30;
+                    heart.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+                    heart.style.setProperty('--dy', `${Math.sin(angle) * distance - 50}px`); // upward bias
+                    burst.appendChild(heart);
+                }
+                document.body.appendChild(burst);
+                setTimeout(() => burst.remove(), 1000);
+            }
+
+            function createPassBurst(target) {
+                const rect = target.getBoundingClientRect();
+                const burst = document.createElement('div');
+                burst.style.position = 'fixed';
+                burst.style.left = `${rect.left + rect.width / 2}px`;
+                burst.style.top = `${rect.top + rect.height / 2}px`;
+                burst.style.pointerEvents = 'none';
+                burst.style.zIndex = '1002';
+                for (let i = 0; i < 5; i++) {
+                    const cross = document.createElement('i');
+                    cross.className = 'fas fa-times text-red-500';
+                    cross.style.position = 'absolute';
+                    cross.style.fontSize = `${Math.random() * 1 + 1}rem`;
+                    cross.style.left = '0';
+                    cross.style.top = '0';
+                    cross.style.transform = 'translate(-50%, -50%)';
+                    cross.style.animation = `burstAnim ${Math.random() * 0.5 + 0.5}s ease-out`;
+                    const angle = Math.random() * 2 * Math.PI;
+                    const distance = Math.random() * 50 + 30;
+                    cross.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+                    cross.style.setProperty('--dy', `${Math.sin(angle) * distance}px`); // random direction
+                    burst.appendChild(cross);
+                }
+                document.body.appendChild(burst);
+                setTimeout(() => burst.remove(), 1000);
+            }
+
+            function createReportBurst(target) {
+                const rect = target.getBoundingClientRect();
+                const burst = document.createElement('div');
+                burst.style.position = 'fixed';
+                burst.style.left = `${rect.left + rect.width / 2}px`;
+                burst.style.top = `${rect.top + rect.height / 2}px`;
+                burst.style.pointerEvents = 'none';
+                burst.style.zIndex = '1002';
+                for (let i = 0; i < 5; i++) {
+                    const flag = document.createElement('i');
+                    flag.className = 'fas fa-flag text-orange-500';
+                    flag.style.position = 'absolute';
+                    flag.style.fontSize = `${Math.random() * 1 + 1}rem`;
+                    flag.style.left = '0';
+                    flag.style.top = '0';
+                    flag.style.transform = 'translate(-50%, -50%)';
+                    flag.style.animation = `burstAnim ${Math.random() * 0.5 + 0.5}s ease-out`;
+                    const angle = Math.random() * 2 * Math.PI;
+                    const distance = Math.random() * 50 + 30;
+                    flag.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+                    flag.style.setProperty('--dy', `${Math.sin(angle) * distance - 30}px`);
+                    burst.appendChild(flag);
+                }
+                document.body.appendChild(burst);
+                setTimeout(() => burst.remove(), 1000);
+            }
         });
     </script>
 </body>
