@@ -1042,6 +1042,13 @@ class MongoService:
             logger.error(f"Get notifications error: {str(e)}")
             return []
 
+    def get_unread_notification_count(self, user_id: str) -> int:
+        try:
+            return self.notifications.count_documents({'user_id': user_id, 'read': False})
+        except Exception as e:
+            logger.error(f"Get unread notification count error: {str(e)}")
+            return 0
+
     def mark_notification_read(self, notif_id: str, user_id: str) -> Dict[str, Any]:
         try:
             result = self.notifications.update_one(
@@ -1713,6 +1720,20 @@ def clear_notifications():
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     result = mongo_service.clear_notifications(session['user_id'])
     return jsonify(result)
+
+@app.route('/api/notifications', methods=['GET'])
+def api_notifications():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    notifications = mongo_service.get_notifications(session['user_id'])
+    return jsonify({'success': True, 'notifications': notifications})
+
+@app.route('/api/notification_count', methods=['GET'])
+def api_notification_count():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    count = mongo_service.get_unread_notification_count(session['user_id'])
+    return jsonify({'success': True, 'count': count})
 
 @app.route('/report-user', methods=['POST'])
 def report_user_endpoint():

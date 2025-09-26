@@ -610,6 +610,50 @@
                 transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(1.5);
             }
         }
+
+        /* Notification modal styling */
+        #notificationModal .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        html.dark #notificationModal .modal-content {
+            background: #1f2937;
+            color: #f3f4f6;
+        }
+
+        #notificationList .notification-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #notificationList .notification-item.unread {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+
+        html.dark #notificationList .notification-item {
+            border-color: #374151;
+        }
+
+        html.dark #notificationList .notification-item.unread {
+            background-color: #374151;
+        }
+
+        #notificationList .notification-item:hover {
+            background-color: #e5e5e5;
+        }
+
+        html.dark #notificationList .notification-item:hover {
+            background-color: #4b5563;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100" data-current-type="{{ profile.dominant_type }}">
@@ -631,6 +675,10 @@
             <div class="flex items-center space-x-4">
                 <button id="searchToggle" class="text-transparent bg-gradient-to-r from-blue-500 to-pink-500 bg-clip-text hover:from-pink-500 hover:to-blue-500">
                     <i class="fas fa-search text-xl"></i>
+                </button>
+                <button id="notificationToggle" class="relative text-transparent bg-gradient-to-r from-blue-500 to-pink-500 bg-clip-text hover:from-pink-500 hover:to-blue-500">
+                    <i class="fas fa-bell text-xl"></i>
+                    <span id="notificationCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem]" style="display: none;">0</span>
                 </button>
                 <div id="searchBox" class="hidden md:block search-box-transition">
                     <input type="text" id="searchInput" placeholder="Search by name or interests..." class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-full px-4 py-1 focus:outline-none focus:ring-2 focus:ring-pink-500" />
@@ -723,6 +771,22 @@
             </div>
         </div>
     </nav>
+
+    <!-- Notification Modal -->
+    <div id="notificationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="modal-content bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Notifications</h2>
+                <button id="closeNotificationModal" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="notificationList" class="space-y-4 max-h-96 overflow-y-auto"></div>
+            <div class="flex justify-end mt-4">
+                <button id="clearNotifications" class="text-pink-500 hover:text-pink-600">Clear All</button>
+            </div>
+        </div>
+    </div>
 
     {% if show_feedback_prompt %}
     <div id="feedbackModal" class="popup text-gray-800 dark:text-gray-100">
@@ -1392,6 +1456,9 @@
                     profileViewer.remove();
                     mainHeader.style.display = 'flex';
                     document.body.style.overflow = '';
+                } else if (document.getElementById('notificationModal').classList.contains('hidden') === false) {
+                    document.getElementById('notificationModal').classList.add('hidden');
+                    document.body.style.overflow = '';
                 }
             });
 
@@ -1786,6 +1853,99 @@
                 document.body.appendChild(burst);
                 setTimeout(() => burst.remove(), 1000);
             }
+
+            // Notification functions
+            function updateNotificationCount() {
+                fetch('/api/notification_count')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            const countSpan = document.getElementById('notificationCount');
+                            const count = data.count;
+                            countSpan.textContent = count;
+                            countSpan.style.display = count > 0 ? 'inline-block' : 'none';
+                        }
+                    })
+                    .catch(error => console.error('Error fetching notification count:', error));
+            }
+
+            function renderNotifications(notifs) {
+                const list = document.getElementById('notificationList');
+                list.innerHTML = '';
+                if (notifs.length === 0) {
+                    list.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400">No notifications</p>';
+                    return;
+                }
+                notifs.forEach(n => {
+                    const div = document.createElement('div');
+                    div.className = 'notification-item p-2 border-b border-gray-200 dark:border-gray-700 cursor-pointer ' + (n.read ? '' : 'unread bg-gray-100 dark:bg-gray-700');
+                    div.innerHTML = `
+                        <p class="text-gray-800 dark:text-gray-100">${n.message}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">${n.timestamp}</p>
+                    `;
+                    if (!n.read) {
+                        div.addEventListener('click', () => {
+                            fetch('/mark_notification_read', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({notif_id: n.id})
+                            }).then(res => res.json())
+                              .then(result => {
+                                  if (result.success) {
+                                      div.classList.remove('unread', 'bg-gray-100', 'dark:bg-gray-700');
+                                      updateNotificationCount();
+                                  }
+                              });
+                        });
+                    }
+                    list.appendChild(div);
+                });
+            }
+
+            // Notification modal toggle
+            const notificationToggle = document.getElementById('notificationToggle');
+            const notificationModal = document.getElementById('notificationModal');
+            const closeNotificationModal = document.getElementById('closeNotificationModal');
+            const clearNotificationsBtn = document.getElementById('clearNotifications');
+
+            notificationToggle.addEventListener('click', () => {
+                notificationModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                fetch('/api/notifications')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            renderNotifications(data.notifications);
+                            updateNotificationCount();
+                        }
+                    })
+                    .catch(error => console.error('Error fetching notifications:', error));
+                history.pushState({notificationOpen: true}, '');
+            });
+
+            closeNotificationModal.addEventListener('click', () => {
+                notificationModal.classList.add('hidden');
+                document.body.style.overflow = '';
+                history.back();
+            });
+
+            clearNotificationsBtn.addEventListener('click', () => {
+                fetch('/clear_notifications', {method: 'POST'})
+                    .then(res => res.json())
+                    .then(result => {
+                        if (result.success) {
+                            renderNotifications([]);
+                            updateNotificationCount();
+                        }
+                    })
+                    .catch(error => console.error('Error clearing notifications:', error));
+            });
+
+            // Initial notification count update
+            updateNotificationCount();
+
+            // Initial likes update
+            updateLikeButtons();
         });
     </script>
 </body>
