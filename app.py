@@ -264,6 +264,7 @@ class MongoService:
                 'retake_prompt_dismissed': False,
                 'feedback': None,
                 'feedback_date': None,
+                'like_prompt_shown': False,
             }
             result = self.users.insert_one(user_data)
             return {
@@ -1774,6 +1775,13 @@ def dismiss_retake():
     mongo_service.update_user(session['user_id'], {'retake_prompt_dismissed': True})
     return jsonify({'success': True})
 
+@app.route('/dismiss_like_prompt', methods=['POST'])
+def dismiss_like_prompt():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    mongo_service.update_user(session['user_id'], {'like_prompt_shown': True})
+    return jsonify({'success': True})
+
 @app.route('/explore')
 def explore():
     logger.debug(f"Session in explore: {session}")
@@ -1803,7 +1811,9 @@ def explore():
             'interests': user.get('interests', []),
             'distance': 'N/A',
             'dominant_type': quiz_result['scores']['dominant_type'],
-            'match_percentage': 50
+            'match_percentage': 50,
+            'gender': user['gender'],
+            'show_like_prompt': user['gender'] == 'male' and not user.get('like_prompt_shown', False)
         }
         
         prompt_status = mongo_service.get_user_prompt_status(session['user_id'])
@@ -2269,7 +2279,7 @@ def upload_profile_picture():
     if 'user_id' not in session:
         logger.warning("Unauthorized access to upload_profile_picture")
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    file = request.files.get('file')
+    file = request.files.get('image')
     if not file:
         logger.warning("No file provided in upload_profile_picture")
         return jsonify({'success': False, 'error': 'No file provided'}), 400

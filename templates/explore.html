@@ -821,6 +821,19 @@
     </div>
     {% endif %}
 
+    <!-- Like Prompt Modal for Male Users (First Like Attempt) -->
+    <div id="likePromptModal" class="popup text-gray-800 dark:text-gray-100" style="display: none;">
+        <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
+            <i class="fas fa-heart text-pink-500 mr-2 animate-pulse"></i> Every Like Matters
+        </h3>
+        <p class="mb-4 text-center">On Ninakkai, every like carries meaning. That’s why you receive 3 chances each day to send a genuine like — not endless swipes, but mindful choices. Take your time, notice the details, and let your likes truly connect.</p>
+        <div class="flex justify-center">
+            <button id="continueLike" class="px-4 py-2 bg-pink-500 text-white rounded flex items-center">
+                <i class="fas fa-check mr-2"></i> Got it
+            </button>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const loading = document.getElementById('loading');
@@ -830,9 +843,12 @@
             const errorText = document.getElementById('error-text');
             const mainHeader = document.getElementById('mainHeader');
             const refreshMatchesBtn = document.getElementById('refresh-matches');
+            const likePromptModal = document.getElementById('likePromptModal');
+            const continueLikeBtn = document.getElementById('continueLike');
             
             // State for loading
             let isLoading = false;
+            let pendingLikeButton = null;
             
             // Cache key
             const CACHE_KEY = 'ninakkai_matches';
@@ -847,6 +863,10 @@
             
             // Store liked users in localStorage to persist across page refreshes
             let likedUsers = JSON.parse(localStorage.getItem('likedUsers') || '{}');
+
+            // User gender and show like prompt from template
+            const userGender = '{{ profile.gender }}';
+            const showLikePrompt = {{ profile.show_like_prompt | tojson }};
 
             function showLoading() {
                 loading.style.display = 'flex';
@@ -973,93 +993,126 @@
                         const endpoint = isLiked ? '/unlike-user' : '/like-user';
                         const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
                         
-                        showLoading();
-                        try {
-                            const response = await fetch(endpoint, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ matched_user_id: userId })
-                            });
-                            const result = await response.json();
-                            hideLoading();
-                            
-                            if (result.success) {
-                                if (isLiked) {
-                                    delete likedUsers[userId];
-                                } else {
-                                    likedUsers[userId] = true;
-                                    createHeartBurst(this);
-                                }
-                                localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
-                                
-                                // Update UI
-                                if (isLiked) {
-                                    this.classList.remove('liked-button');
-                                    this.classList.add('bg-pink-500', 'hover:bg-pink-600');
-                                    this.innerHTML = '<i class="fas fa-heart"></i>';
-                                    this.dataset.liked = 'false';
-                                } else {
-                                    this.classList.add('liked-button');
-                                    this.classList.remove('bg-pink-500', 'hover:bg-pink-600');
-                                    this.innerHTML = '<i class="fas fa-check"></i>';
-                                    this.dataset.liked = 'true';
-                                }
-                                
-                                showNotification(actionMessage);
-                                
-                                if (!isLiked && result.is_match) {
-                                    showMatchPopup();
-                                    showNotification("It's a match! You can now chat.");
-                                }
-
-                                // Handle like limits for males
-                                if (!isLiked && result.likes_remaining !== undefined) {
-                                    if (result.likes_remaining === 2) {
-                                        showNotification('Only 2 likes left for today!');
-                                    } else if (result.likes_remaining === 1) {
-                                        showNotification('Only 1 like left for today!');
-                                    }
-                                }
-                                
-                                // Update cache
-                                const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
-                                if (cached) {
-                                    const match = cached.data.find(m => m.id === userId);
-                                    if (match) {
-                                        match.liked = !isLiked;
-                                    }
-                                    localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
-                                }
-
-                                // For like, remove card; for unlike, keep it
-                                if (!isLiked) {
-                                    // No need to filter cache since we updated the flag
-                                    setTimeout(() => {
-                                        const card = this.closest('.discovery-card');
-                                        if (card) {
-                                            card.style.opacity = '0';
-                                            card.style.transition = 'opacity 0.5s ease';
-                                            setTimeout(() => card.remove(), 500);
-                                        }
-                                    }, 150);
-                                } else {
-                                    // For unlike, optionally refresh to add back, but skipping for simplicity
-                                }
+                        if (isLiked) {
+                            // Proceed with unlike
+                            proceedLikeOrUnlike(this, endpoint, actionMessage, isLiked, userId);
+                        } else {
+                            // Check for like prompt
+                            if (userGender === 'male' && showLikePrompt) {
+                                pendingLikeButton = this;
+                                likePromptModal.style.display = 'block';
                             } else {
-                                if (result.error === 'Daily like limit exceeded') {
-                                    showNotification('Your daily like limit has been exceeded!');
-                                } else {
-                                    showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
-                                }
+                                proceedLikeOrUnlike(this, endpoint, actionMessage, isLiked, userId);
                             }
-                        } catch (error) {
-                            hideLoading();
-                            showError(`Network error while ${isLiked ? 'unliking' : 'liking'} user`);
                         }
                     });
                     button.setAttribute('data-like-attached', 'true');
                 });
             }
+
+            async function proceedLikeOrUnlike(button, endpoint, actionMessage, isLiked, userId) {
+                showLoading();
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ matched_user_id: userId })
+                    });
+                    const result = await response.json();
+                    hideLoading();
+                    
+                    if (result.success) {
+                        if (isLiked) {
+                            delete likedUsers[userId];
+                        } else {
+                            likedUsers[userId] = true;
+                            createHeartBurst(button);
+                        }
+                        localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
+                        
+                        // Update UI
+                        if (isLiked) {
+                            button.classList.remove('liked-button');
+                            button.classList.add('bg-pink-500', 'hover:bg-pink-600');
+                            button.innerHTML = '<i class="fas fa-heart"></i>';
+                            button.dataset.liked = 'false';
+                        } else {
+                            button.classList.add('liked-button');
+                            button.classList.remove('bg-pink-500', 'hover:bg-pink-600');
+                            button.innerHTML = '<i class="fas fa-check"></i>';
+                            button.dataset.liked = 'true';
+                        }
+                        
+                        showNotification(actionMessage);
+                        
+                        if (!isLiked && result.is_match) {
+                            showMatchPopup();
+                            showNotification("It's a match! You can now chat.");
+                        }
+
+                        // Handle like limits for males
+                        if (!isLiked && result.likes_remaining !== undefined) {
+                            if (result.likes_remaining === 2) {
+                                showNotification('Only 2 likes left for today!');
+                            } else if (result.likes_remaining === 1) {
+                                showNotification('Only 1 like left for today!');
+                            }
+                        }
+                        
+                        // Update cache
+                        const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                        if (cached) {
+                            const match = cached.data.find(m => m.id === userId);
+                            if (match) {
+                                match.liked = !isLiked;
+                            }
+                            localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                        }
+
+                        // For like, remove card; for unlike, keep it
+                        if (!isLiked) {
+                            // No need to filter cache since we updated the flag
+                            setTimeout(() => {
+                                const card = button.closest('.discovery-card');
+                                if (card) {
+                                    card.style.opacity = '0';
+                                    card.style.transition = 'opacity 0.5s ease';
+                                    setTimeout(() => card.remove(), 500);
+                                }
+                            }, 150);
+                        } else {
+                            // For unlike, optionally refresh to add back, but skipping for simplicity
+                        }
+                    } else {
+                        if (result.error === 'Daily like limit exceeded') {
+                            showNotification('Your daily like limit has been exceeded!');
+                        } else {
+                            showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
+                        }
+                    }
+                } catch (error) {
+                    hideLoading();
+                    showError(`Network error while ${isLiked ? 'unliking' : 'liking'} user`);
+                }
+            }
+
+            // Like prompt continue button
+            continueLikeBtn.addEventListener('click', async () => {
+                likePromptModal.style.display = 'none';
+                // Dismiss prompt on server
+                await fetch('/dismiss_like_prompt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                // Proceed with pending like
+                if (pendingLikeButton) {
+                    const isLiked = pendingLikeButton.dataset.liked === 'true';
+                    const endpoint = isLiked ? '/unlike-user' : '/like-user';
+                    const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
+                    proceedLikeOrUnlike(pendingLikeButton, endpoint, actionMessage, isLiked, pendingLikeButton.dataset.userId);
+                    pendingLikeButton = null;
+                }
+            });
 
             // Header scroll effect
             window.addEventListener('scroll', () => {
