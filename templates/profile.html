@@ -512,7 +512,7 @@
                 transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(1.5);
             }
         }
-
+        
         /* Enhanced Popup Animation with extraordinary effects */
         .popup {
             position: fixed;
@@ -687,6 +687,20 @@
             .profile-viewer-image {
                 height: 400px;
             }
+        }
+
+        /* Attractive buttons with animation */
+        .accept-btn,
+        .decline-btn {
+            transition: all 0.3s ease;
+        }
+
+        .accept-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .decline-btn:hover {
+            transform: scale(1.05);
         }
     </style>
 </head>
@@ -897,7 +911,6 @@
                 </button>
             </div>
             
-            <!-- Tab Contents -->
             <div class="p-4">
                 <!-- Connections Tab -->
                 <div id="connections" class="tab-content active">
@@ -912,10 +925,10 @@
                                 <p class="text-gray-500 text-sm">{{ user.occupation }}</p>
                             </div>
                             <div class="action-buttons">
-                                <button class="accept-btn bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600" data-user-id="{{ user.id }}">
+                                <button class="accept-btn bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-400 text-white px-4 py-2 rounded shadow-lg hover:scale-105 transition-all duration-300" data-user-id="{{ user.id }}">
                                     <i class="fas fa-check"></i> Accept
                                 </button>
-                                <button class="decline-btn bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" data-user-id="{{ user.id }}">
+                                <button class="decline-btn bg-gradient-to-r from-red-400 to-red-600 hover:from-red-600 hover:to-red-400 text-white px-4 py-2 rounded shadow-lg hover:scale-105 transition-all duration-300" data-user-id="{{ user.id }}">
                                     <i class="fas fa-times"></i> Decline
                                 </button>
                             </div>
@@ -1279,7 +1292,7 @@
                 const file = e.target.files[0];
                 if (file) {
                     const formData = new FormData();
-                    formData.append('file', file);
+                    formData.append('image', file);  // Changed from 'file' to 'image' to match server
                     try {
                         const response = await fetch('/upload_profile_picture', {
                             method: 'POST',
@@ -1299,6 +1312,14 @@
                     }
                 }
             });
+            
+            // Update Personality Button
+            const updatePersonalityBtn = document.getElementById('updatePersonalityBtn');
+            if (updatePersonalityBtn) {
+                updatePersonalityBtn.addEventListener('click', () => {
+                    window.location.href = '/questions?retake=true';
+                });
+            }
             
             // Photo upload
             const photoUpload = document.getElementById('photoUpload');
@@ -1539,78 +1560,6 @@
                 }
             });
             
-            // Log Out functionality
-            const logoutBtn = document.getElementById('logoutBtn');
-            logoutBtn.addEventListener('click', () => {
-                const confirmation = createConfirmationDialog(
-                    'Log Out',
-                    'Are you sure you want to log out?',
-                    'Log Out',
-                    'Cancel'
-                );
-                
-                confirmation.querySelector('.confirm-btn').addEventListener('click', async () => {
-                    try {
-                        const response = await fetch('/logout', {
-                            method: 'GET',
-                            credentials: 'include'
-                        });
-                        const result = await response.json();
-                        if (result.success) {
-                            showNotification('Logged out successfully');
-                            window.location.href = '/';
-                        } else {
-                            showNotification('Failed to log out');
-                        }
-                    } catch (error) {
-                        showNotification('Error logging out');
-                    }
-                    confirmation.remove();
-                    settingsModal.classList.add('hidden');
-                });
-                
-                confirmation.querySelector('.cancel-btn').addEventListener('click', () => {
-                    confirmation.remove();
-                });
-            });
-            
-            // Delete Account functionality
-            const deleteAccountBtn = document.getElementById('deleteAccountBtn');
-            deleteAccountBtn.addEventListener('click', () => {
-                const confirmation = createConfirmationDialog(
-                    'Delete Account',
-                    'This will permanently delete your account and all data. This action cannot be undone.',
-                    'Delete',
-                    'Cancel',
-                    'bg-red-500 hover:bg-red-600'
-                );
-                
-                confirmation.querySelector('.confirm-btn').addEventListener('click', async () => {
-                    try {
-                        const response = await fetch('/delete_account', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            credentials: 'include'
-                        });
-                        const result = await response.json();
-                        if (result.success) {
-                            showNotification('Account deleted successfully');
-                            window.location.href = '/';
-                        } else {
-                            showNotification(result.error || 'Failed to delete account');
-                        }
-                    } catch (error) {
-                        showNotification('Error deleting account');
-                    }
-                    confirmation.remove();
-                    settingsModal.classList.add('hidden');
-                });
-                
-                confirmation.querySelector('.cancel-btn').addEventListener('click', () => {
-                    confirmation.remove();
-                });
-            });
-            
             // Helper function to create confirmation dialogs
             function createConfirmationDialog(title, message, confirmText, cancelText, confirmBgClass = 'bg-pink-500 hover:bg-pink-600') {
                 const dialog = document.createElement('div');
@@ -1697,7 +1646,7 @@
                             let useReverse = currentIndex > viewedIndex;
                             let firstType = useReverse ? viewedType : currentType;
                             let secondType = useReverse ? currentType : viewedType;
-                            const info = MATCH_NARRATIONS[firstType] ? MATCH_NARRATIONS[firstType][secondType] : null;
+                            let info = MATCH_NARRATIONS[firstType] ? MATCH_NARRATIONS[firstType][secondType] : null;
                             if (info) {
                                 narration = useReverse ? reversePerspective(info.narration) : info.narration;
                                 tagline = info.tagline;
