@@ -751,31 +751,21 @@
               document.getElementById('chat-partner-name').textContent = user.full_name || 'Unknown';
             }
 
-            const chatArea = document.querySelector('.chat-area');
-            const welcomeScreen = document.querySelector('.welcome-screen');
-            const conversationsCol = document.querySelector('.conversations-col');
-
-            chatArea.style.display = 'flex';
-            if (window.innerWidth <= 992) {
-              conversationsCol.classList.add('hidden');
-              chatArea.classList.add('active');
-              document.body.classList.add('chat-mode');
-              welcomeScreen.style.display = 'none';
-            } else {
-              welcomeScreen.style.display = 'none';
-              chatArea.style.display = 'flex';
-              conversationsCol.classList.remove('hidden');
-            }
-
-            navigationHistory.push('chat');
-
+            enterChatMode();
+            document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
             const conv = document.querySelector(`.conversation[data-user-id="${currentChatUserId}"]`);
             if (conv) {
+              conv.classList.add('active');
               const unread = conv.querySelector('.unread-dot');
               if (unread) unread.remove();
             }
 
             startPolling();
+
+            const newSearch = `?user=${userId}`;
+            if (window.location.search !== newSearch) {
+              history.pushState({view: 'chat', userId: userId}, '', `${window.location.pathname}${newSearch}`);
+            }
           } else alert('Failed to load messages. Please try again.');
         } catch {
           alert('Error loading messages. Please check your connection.');
@@ -867,6 +857,30 @@
         smartScrollToBottom(false);
       }
 
+      function enterChatMode() {
+        chatArea.style.display = 'flex';
+        welcomeScreen.style.display = 'none';
+        if (window.innerWidth <= 992) {
+          conversationsCol.classList.add('hidden');
+          chatArea.classList.add('active');
+          document.body.classList.add('chat-mode');
+        } else {
+          conversationsCol.classList.remove('hidden');
+        }
+      }
+
+      function exitChatMode() {
+        if (window.innerWidth <= 992) {
+          chatArea.classList.remove('active');
+          chatArea.style.display = 'none';
+          conversationsCol.classList.remove('hidden');
+          document.body.classList.remove('chat-mode');
+        } else {
+          chatArea.style.display = 'none';
+          welcomeScreen.style.display = 'flex';
+        }
+      }
+
       function handleResize() {
         if (window.innerWidth <= 992) {
           chatBackBtn.style.display = 'block';
@@ -915,7 +929,6 @@
           document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
           this.classList.add('active');
           await loadMessages(this.dataset.userId);
-          navigationHistory.push('chat');
         });
       });
 
@@ -927,19 +940,7 @@
 
       // Back buttons
       chatBackBtn.addEventListener('click', () => {
-        currentChatUserId = null;
-        if (pollInterval) clearInterval(pollInterval);
-        if (window.innerWidth <= 992) {
-          chatArea.classList.remove('active');
-          chatArea.style.display = 'none';
-          conversationsCol.classList.remove('hidden');
-          document.body.classList.remove('chat-mode');
-        } else {
-          chatArea.style.display = 'none';
-          welcomeScreen.style.display = 'flex';
-          document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
-        }
-        navigationHistory.pop();
+        history.back();
       });
 
       conversationsBackBtn.addEventListener('click', () => {
@@ -972,7 +973,6 @@
                 document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
                 convDiv.classList.add('active');
                 await loadMessages(match.id);
-                navigationHistory.push('chat');
               });
               list.appendChild(convDiv);
             });
@@ -1010,7 +1010,6 @@
                 document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
                 convDiv.classList.add('active');
                 await loadMessages(conv.id);
-                navigationHistory.push('chat');
               });
               list.appendChild(convDiv);
             });
@@ -1028,6 +1027,31 @@
       }
       loadConversations();
       startConvPolling();
+
+      // History management
+      window.addEventListener('popstate', (event) => {
+        const state = event.state;
+        if (state && state.view === 'conversations') {
+          exitChatMode();
+          if (pollInterval) clearInterval(pollInterval);
+          currentChatUserId = null;
+          document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
+          hideTypingIndicator();
+        } else if (state && state.view === 'chat') {
+          if (currentChatUserId !== state.userId) {
+            loadMessages(state.userId);
+          }
+        }
+      });
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const initialUserId = urlParams.get('user');
+      if (initialUserId) {
+        history.replaceState({view: 'chat', userId: initialUserId}, '');
+        loadMessages(initialUserId);
+      } else {
+        history.replaceState({view: 'conversations'}, '');
+      }
     });
   </script>
 </body>
