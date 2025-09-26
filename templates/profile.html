@@ -405,6 +405,289 @@
         .dark .circle {
             animation-duration: 18s; /* Slightly slower in dark mode for calmer effect */
         }
+
+        /* Profile viewer styling */
+        .profile-viewer {
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 100;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            animation: profileOpen 0.4s ease-out forwards;
+        }
+
+        html.dark .profile-viewer {
+            background: #000000;
+        }
+
+        @keyframes profileOpen {
+            0% {
+                opacity: 0;
+                transform: translateY(20%) scale(0.95);
+            }
+            50% {
+                opacity: 1;
+                transform: translateY(-5%) scale(1.02);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Image styling for consistent appearance */
+        .profile-viewer-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            object-position: center center;
+        }
+
+        /* Report modal styling */
+        .report-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1003;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .report-modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        html.dark .report-modal-content {
+            background: #000000;
+            color: #f3f4f6;
+        }
+
+        .report-option {
+            display: block;
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .report-option:hover {
+            background-color: #f0f0f0;
+        }
+
+        html.dark .report-option {
+            border-color: #374151;
+        }
+
+        html.dark .report-option:hover {
+            background-color: #374151;
+        }
+
+        .report-option.selected {
+            background-color: #ec4899;
+            color: white;
+        }
+
+        /* Animation for burst effects */
+        @keyframes burstAnim {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(1.5);
+            }
+        }
+
+        /* Enhanced Popup Animation with extraordinary effects */
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #fff1eb, #ace0f9); /* Attractive gradient */
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2), 0 0 20px rgba(236, 72, 153, 0.5); /* Glow effect */
+            animation: enhancedPopupAnim 1.2s ease-out forwards;
+            z-index: 1002;
+            max-width: 400px;
+            width: 90%;
+            overflow: hidden;
+            border: 2px solid #ec4899; /* Pink border */
+        }
+
+        html.dark .popup {
+            background: linear-gradient(135deg, #1f2937, #4b5563); /* Dark gradient */
+            color: #f3f4f6;
+            box-shadow: 0 10px 30px rgba(255,255,255,0.1), 0 0 20px rgba(236, 72, 153, 0.3);
+            border: 2px solid #ec4899;
+        }
+
+        @keyframes enhancedPopupAnim {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5) rotate(-10deg);
+                opacity: 0;
+                filter: blur(5px);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2) rotate(5deg);
+                opacity: 1;
+                filter: blur(0);
+            }
+            75% {
+                transform: translate(-50%, -50%) scale(0.9) rotate(-3deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        .popup::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.2), transparent);
+            animation: glowPulse 2s infinite ease-in-out;
+            z-index: -1;
+        }
+
+        @keyframes glowPulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        .popup h3 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            text-align: center;
+            color: #ec4899; /* Pink color */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .popup textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ec4899;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            resize: none;
+            height: 100px;
+            background: rgba(255,255,255,0.8);
+        }
+
+        html.dark .popup textarea {
+            background: rgba(31,41,55,0.8);
+            border-color: #ec4899;
+            color: #f3f4f6;
+        }
+
+        .popup .flex button {
+            padding: 0.5rem 1rem;
+            border-radius: 9999px; /* Rounded buttons */
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .popup .flex button:hover {
+            transform: scale(1.05);
+        }
+
+        .popup .flex button:first-child {
+            background: linear-gradient(135deg, #ec4899, #a855f7); /* Gradient button */
+            color: white;
+        }
+
+        .popup .flex button:last-child {
+            background: linear-gradient(135deg, #d1d5db, #9ca3af);
+            color: #1f2937;
+        }
+
+        html.dark .popup .flex button:last-child {
+            background: linear-gradient(135deg, #4b5563, #374151);
+            color: #f3f4f6;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .profile-image {
+                height: 400px;
+            }
+            
+            .discovery-image {
+                height: 350px;
+                width: 105%;
+                margin-left: -2.5%;
+            }
+            
+            .profile-viewer-image {
+                height: 300px;
+            }
+            
+            #searchBox {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                padding: 0.5rem 1rem;
+                background-color: rgba(255, 255, 255, 0.95);
+            }
+            
+            html.dark #searchBox {
+                background-color: rgba(17, 24, 39, 0.95);
+            }
+
+            #searchBox input {
+                width: 100%;
+            }
+        }
+
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .profile-image {
+                height: 280px;
+            }
+            
+            .discovery-image {
+                height: 350px;
+            }
+            
+            .profile-viewer-image {
+                height: 350px;
+            }
+        }
+
+        @media (min-width: 1025px) {
+            .profile-image {
+                height: 500px;
+            }
+            
+            .discovery-image {
+                height: 400px;
+            }
+            
+            .profile-viewer-image {
+                height: 400px;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -622,7 +905,7 @@
                         {% for user in pending_likers %}
                         <div class="connection-item">
                             <div class="bg-gray-50 rounded-lg p-3 text-center connection-card" data-user-id="{{ user.id }}">
-                                <div class="w-16 h-16 rounded-full rounded-full overflow-hidden mx-auto mb-2">
+                                <div class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-2">
                                     <img src="{{ user.image }}" alt="{{ user.full_name }}" class="w-full h-full object-cover">
                                 </div>
                                 <h3 class="font-medium">{{ user.full_name }}</h3>
@@ -777,50 +1060,6 @@
                 <input type="password" id="confirmNewPassword" placeholder="Confirm New Password" class="w-full border rounded px-3 py-2 mb-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 <button type="submit" class="w-full bg-pink-500 text-white py-2 rounded-lg hover:bg-pink-600">Save</button>
             </form>
-        </div>
-    </div>
-
-    <!-- User Profile View Modal -->
-    <div id="userProfileModal" class="fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center hidden">
-        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 overflow-y-auto max-h-[80vh] dark:bg-gray-800">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold dark:text-white">User Profile</h3>
-                <button id="closeUserProfile" class="text-gray-500 hover:text-gray-700 dark:text-gray-300">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="text-center mb-4">
-                <div class="w-24 h-24 rounded-full overflow-hidden mx-auto mb-2">
-                    <img id="modalUserImage" src="" alt="User Profile" class="w-full h-full object-cover">
-                </div>
-                <h2 id="modalUserName" class="text-xl font-bold dark:text-white"></h2>
-                <p id="modalUserAge" class="text-gray-500 dark:text-gray-400"></p>
-                <p id="modalUserOccupation" class="text-gray-500 dark:text-gray-400"></p>
-            </div>
-            <div class="mb-4">
-                <h4 class="font-semibold mb-2 dark:text-white">About</h4>
-                <p id="modalUserBio" class="text-gray-700 dark:text-gray-300"></p>
-            </div>
-            <div class="mb-4">
-                <h4 class="font-semibold mb-2 dark:text-white">Interests</h4>
-                <div id="modalUserInterests" class="flex flex-wrap gap-2"></div>
-            </div>
-            <div class="mb-4">
-                <h4 class="font-semibold mb-2 dark:text-white">Photos</h4>
-                <div id="modalUserPhotos" class="flex overflow-x-auto gap-2 pb-2"></div>
-            </div>
-            <div class="mb-4">
-                <h4 class="font-semibold mb-2 dark:text-white">Personality</h4>
-                <p id="modalUserPersonality" class="text-gray-700 dark:text-gray-300"></p>
-            </div>
-            <div class="flex justify-center space-x-4">
-                <button id="modalAcceptBtn" class="accept-btn text-green-500 hover:text-green-600">
-                    <i class="fas fa-check"></i> Accept
-                </button>
-                <button id="modalDeclineBtn" class="decline-btn text-red-500 hover:text-red-600">
-                    <i class="fas fa-times"></i> Decline
-                </button>
-            </div>
         </div>
     </div>
 
@@ -1433,235 +1672,669 @@
                 document.getElementById('loading').style.display = 'none';
             }
 
-            // User Profile Modal functionality
-            const userProfileModal = document.getElementById('userProfileModal');
-            const closeUserProfile = document.getElementById('closeUserProfile');
-            let currentUserId = null;
+            // Profile viewer functionality
+            function openProfileViewer(userId) {
+                showLoading();
+                document.body.style.overflow = 'hidden';
+                
+                fetch(`/user-profile/${userId}`)
+                    .then(response => response.json())
+                    .then(profile => {
+                        hideLoading();
+                        if (!profile.success) {
+                            showNotification(profile.error || 'Failed to load profile');
+                            document.body.style.overflow = '';
+                            return;
+                        }
+                        
+                        const currentType = document.body.dataset.currentType;
+                        const viewedType = profile.user.dominant_type;
+                        let tagline = '';
+                        let narration = '';
+                        if (currentType && viewedType) {
+                            const currentIndex = TYPE_ORDER[currentType] || 0;
+                            const viewedIndex = TYPE_ORDER[viewedType] || 0;
+                            let useReverse = currentIndex > viewedIndex;
+                            let firstType = useReverse ? viewedType : currentType;
+                            let secondType = useReverse ? currentType : viewedType;
+                            const info = MATCH_NARRATIONS[firstType] ? MATCH_NARRATIONS[firstType][secondType] : null;
+                            if (info) {
+                                narration = useReverse ? reversePerspective(info.narration) : info.narration;
+                                tagline = info.tagline;
+                            }
+                        }
 
-            closeUserProfile.addEventListener('click', () => {
-                userProfileModal.classList.add('hidden');
-                document.body.style.overflow = '';
+                        const profileViewer = document.createElement('div');
+                        profileViewer.className = 'profile-viewer bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100';
+                        let additionalSections = '';
+                        if (profile.user.religion && profile.user.religion !== 'Private' && profile.user.religion !== 'Not specified') {
+                            additionalSections += `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Religion</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.religion}</p>
+                                </div>
+                            `;
+                        }
+                        if (profile.user.physical_traits && typeof profile.user.physical_traits === 'object' && !Array.isArray(profile.user.physical_traits) && Object.keys(profile.user.physical_traits).length > 0) {
+                            additionalSections += `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Physical Traits</h3>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${Object.entries(profile.user.physical_traits).map(([key, value]) => `
+                                            <span class="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100 px-3 py-1 rounded-full text-sm">${key}: ${value}</span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        if (profile.user.education_work && profile.user.education_work !== 'N/A') {
+                            additionalSections += `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Education/Work</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.education_work}</p>
+                                </div>
+                            `;
+                        }
+                        if (profile.user.summary && profile.user.summary !== 'N/A') {
+                            additionalSections += `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Self Summary</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.summary}</p>
+                                </div>
+                            `;
+                        }
+                        let passButtonHTML;
+                        if (profile.user.passed) {
+                            passButtonHTML = `<button class="animate-pulse bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-400 text-white rounded-full px-6 py-4 flex-1 mr-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" disabled>
+                                <i class="fas fa-times mr-2"></i> Passed
+                            </button>`;
+                        } else {
+                            passButtonHTML = `<button class="animate-pulse bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-400 text-white rounded-full px-6 py-4 flex-1 mr-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out pass-button" data-user-id="${userId}">
+                                <i class="fas fa-times mr-2"></i> Pass
+                            </button>`;
+                        }
+                        let bottomLikeHTML;
+                        if (profile.user.passed) {
+                            bottomLikeHTML = `<button class="animate-pulse bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400 text-white rounded-full px-6 py-4 flex-1 ml-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" disabled>
+                                <i class="fas fa-heart mr-2"></i> Accept
+                            </button>`;
+                        } else {
+                            bottomLikeHTML = `<button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400'} animate-pulse text-white rounded-full px-6 py-4 flex-1 ml-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" 
+                                            data-user-id="${userId}" 
+                                            data-liked="${profile.user.liked}">
+                                        <i class="fas ${profile.user.liked ? 'fa-check' : 'fa-heart'} mr-2"></i> ${profile.user.liked ? 'Accepted' : 'Accept'}
+                                    </button>`;
+                        }
+
+                        // Compatibility badge with color cues
+                        const match_percentage = profile.user.match_percentage;
+                        let colorClass = '';
+                        let colorEmoji = '';
+                        if (match_percentage >= 85) {
+                            colorClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                            colorEmoji = '🟢';
+                        } else if (match_percentage >= 75) {
+                            colorClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                            colorEmoji = '🟡';
+                        } else if (match_percentage >= 65) {
+                            colorClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+                            colorEmoji = '🔵';
+                        } else {
+                            colorClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+                            colorEmoji = '🔴';
+                        }
+
+                        let aboutSection = '';
+                        if (profile.user.bio && profile.user.bio !== 'No bio available' && profile.user.bio !== 'N/A') {
+                            aboutSection = `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">About</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.bio}</p>
+                                </div>
+                            `;
+                        }
+
+                        let photosSection = '';
+                        if (profile.user.photos && profile.user.photos.length > 0) {
+                            photosSection = `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Photos</h3>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        ${profile.user.photos.map(photo => `<img src="${photo}" alt="User photo" class="photo-img rounded-lg object-cover h-40 w-full cursor-pointer" oncontextmenu="return false;">`).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        profileViewer.innerHTML = `
+                            <div class="relative">
+                                <img src="${profile.user.image}" alt="${profile.user.full_name}" class="profile-viewer-image">
+                                <button class="absolute top-4 left-4 bg-white dark:bg-gray-800 bg-opacity-80 rounded-full w-10 h-10 flex items-center justify-center close-profile">
+                                    <i class="fas fa-arrow-left text-gray-800 dark:text-gray-100"></i>
+                                </button>
+                                <div class="absolute bottom-4 left-4 ${colorClass} rounded-full px-3 py-1">
+                                    <span class="font-bold text-black dark:text-white">${colorEmoji} 💞 ${match_percentage}% Compatible</span>
+                                </div>
+                            </div>
+                            <div class="p-6 flex-1">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">${profile.user.full_name}, ${profile.user.age || 'N/A'}</h2>
+                                    </div>
+                                </div>
+                                ${tagline ? `
+                                <div class="mb-6">
+                                    <p class="text-gray-700 dark:text-gray-300 font-bold">${tagline}</p>
+                                    <p class="text-gray-700 dark:text-gray-300">${narration}</p>
+                                </div>
+                                ` : ''}
+                                ${aboutSection}
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Personality Type</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.dominant_type}</p>
+                                </div>
+                                <div class="mb-6">
+                                    ${profile.user.personality_info ? `
+                                        ${profile.user.personality_info.title ? `<p class="text-gray-700 dark:text-gray-300"><strong>${toThirdPerson(profile.user.personality_info.title)}</strong></p>` : ''}
+                                        ${profile.user.personality_info.description && profile.user.personality_info.description !== 'Description not available.' ? `<p class="text-gray-700 dark:text-gray-300">${toThirdPerson(profile.user.personality_info.description)}</p>` : ''}
+                                        ${profile.user.personality_info.tagline ? `<p class="text-gray-700 dark:text-gray-300"><em>${toThirdPerson(profile.user.personality_info.tagline)}</em></p>` : ''}
+                                        ${profile.user.personality_info.strengths && profile.user.personality_info.strengths.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Strengths:</strong> ${profile.user.personality_info.strengths.join(', ')}</p>` : ''}
+                                        ${profile.user.personality_info.compatibility && profile.user.personality_info.compatibility.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Compatibility:</strong> ${profile.user.personality_info.compatibility.join(', ')}</p>` : ''}
+                                    ` : '<p class="text-gray-700 dark:text-gray-300">No personality information available</p>'}
+                                </div>
+                                ${profile.user.interests && profile.user.interests.length > 0 ? `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Interests</h3>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${profile.user.interests.map(interest => `<span class="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100 px-3 py-1 rounded-full text-sm">${interest}</span>`).join('')}
+                                    </div>
+                                </div>
+                                ` : ''}
+                                ${additionalSections}
+                                ${photosSection}
+                                <div class="flex justify-between mt-8">
+                                    ${passButtonHTML}
+                                    <button class="animate-pulse bg-gradient-to-r from-red-400 to-red-600 hover:from-red-600 hover:to-red-400 text-white rounded-full px-6 py-4 flex-1 mx-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out report-button" data-user-id="${userId}">
+                                        <i class="fas fa-flag mr-2"></i> Report
+                                    </button>
+                                    ${bottomLikeHTML}
+                                </div>
+                            </div>
+                            <div id="photoModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center" onclick="this.classList.add('hidden')">
+                                <img id="fullPhoto" src="" class="max-h-[90vh] max-w-[90vw] object-contain" oncontextmenu="return false;">
+                                <button class="absolute top-4 right-4 text-white text-3xl" onclick="document.getElementById('photoModal').classList.add('hidden')">&times;</button>
+                            </div>
+                        `;
+                        
+                        document.body.appendChild(profileViewer);
+                        window.history.pushState({profileOpen: true}, '');
+                        
+                        profileViewer.querySelector('.close-profile').addEventListener('click', () => {
+                            profileViewer.remove();
+                            document.body.style.overflow = '';
+                            history.back();
+                        });
+
+                        // Attach report button listener
+                        profileViewer.querySelector('.report-button').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const userId = e.currentTarget.dataset.userId;
+                            showReportModal(userId);
+                        });
+                        
+                        // Attach event listeners to buttons in profile viewer
+                        attachProfileViewerListeners(profileViewer, userId);
+
+                        // Attach photo click listeners
+                        profileViewer.querySelectorAll('.photo-img').forEach(img => {
+                            img.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                const modal = profileViewer.querySelector('#photoModal');
+                                const fullPhoto = profileViewer.querySelector('#fullPhoto');
+                                fullPhoto.src = img.src;
+                                modal.classList.remove('hidden');
+                            });
+                            img.addEventListener('contextmenu', e => e.preventDefault());
+                        });
+                    })
+                    .catch(error => {
+                        hideLoading();
+                        showNotification('Network error while loading profile');
+                        document.body.style.overflow = '';
+                    });
+            }
+
+            // Attach profile click listeners for connections
+            document.querySelectorAll('.connection-card').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    const userId = this.dataset.userId;
+                    openProfileViewer(userId);
+                });
             });
 
-            userProfileModal.addEventListener('click', (e) => {
-                if (e.target === userProfileModal) {
-                    userProfileModal.classList.add('hidden');
+            // Handle back button to close profile
+            window.addEventListener('popstate', function(event) {
+                const profileViewer = document.querySelector('.profile-viewer');
+                if (profileViewer) {
+                    profileViewer.remove();
                     document.body.style.overflow = '';
                 }
             });
 
-            // Connection card click handler
-            document.querySelectorAll('.connection-card').forEach(card => {
-                card.addEventListener('click', async (e) => {
-                    currentUserId = card.dataset.userId;
-                    showLoading();
-                    try {
-                        const response = await fetch(`/user-profile/${currentUserId}`, {
-                            credentials: 'include'
-                        });
-                        const result = await response.json();
-                        hideLoading();
-                        if (result.success) {
-                            const user = result.user;
-
-                            document.getElementById('modalUserImage').src = user.image;
-                            document.getElementById('modalUserName').textContent = user.full_name;
-                            document.getElementById('modalUserAge').textContent = user.age ? `${user.age} years old` : '';
-                            document.getElementById('modalUserOccupation').textContent = user.occupation;
-                            document.getElementById('modalUserBio').textContent = user.bio || 'No bio available';
+            function attachProfileViewerListeners(profileViewer, userId) {
+                profileViewer.querySelectorAll('.like-button').forEach(btn => {
+                    btn.addEventListener('click', async function(e) {
+                        e.stopPropagation();
+                        
+                        const isLiked = this.dataset.liked === 'true';
+                        const endpoint = isLiked ? '/unlike-user' : '/like-user';
+                        const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
+                        
+                        showLoading();
+                        try {
+                            const response = await fetch(endpoint, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ matched_user_id: userId }),
+                                credentials: 'include'
+                            });
+                            const result = await response.json();
+                            hideLoading();
                             
-                            const interestsContainer = document.getElementById('modalUserInterests');
-                            interestsContainer.innerHTML = '';
-                            user.interests.forEach(interest => {
-                                const span = document.createElement('span');
-                                span.className = 'bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full dark:bg-gray-700 dark:text-gray-300';
-                                span.textContent = interest;
-                                interestsContainer.appendChild(span);
-                            });
+                            if (result.success) {
+                                if (isLiked) {
+                                    delete likedUsers[userId];
+                                } else {
+                                    likedUsers[userId] = true;
+                                    createHeartBurst(this);
+                                }
+                                localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
+                                
+                                // Update all like buttons for this user, including this one
+                                profileViewer.querySelectorAll('.like-button').forEach(b => {
+                                    if (isLiked) {
+                                        b.classList.remove('liked-button');
+                                        b.classList.add('bg-pink-500', 'hover:bg-pink-600');
+                                        b.innerHTML = '<i class="fas fa-heart mr-2"></i> Accept'; // Changed to Accept
+                                        b.dataset.liked = 'false';
+                                    } else {
+                                        b.classList.add('liked-button');
+                                        b.classList.remove('bg-pink-500', 'hover:bg-pink-600');
+                                        b.innerHTML = '<i class="fas fa-check mr-2"></i> Accepted';
+                                        b.dataset.liked = 'true';
+                                    }
+                                });
+                                
+                                // Update main page buttons as well
+                                updateLikeButtons();
+                                
+                                showNotification(actionMessage);
+                                
+                                if (!isLiked && result.is_match) {
+                                    showMatchPopup();
+                                    showNotification("It's a match! You can now chat.");
+                                }
 
-                            const photosContainer = document.getElementById('modalUserPhotos');
-                            photosContainer.innerHTML = '';
-                            user.photos.forEach(photo => {
-                                const img = document.createElement('img');
-                                img.src = photo;
-                                img.className = 'w-24 h-24 object-cover rounded-lg';
-                                photosContainer.appendChild(img);
-                            });
+                                // Handle like limits for males
+                                if (!isLiked && result.likes_remaining !== undefined) {
+                                    if (result.likes_remaining === 2) {
+                                        showNotification('Only 2 likes left for today!');
+                                    } else if (result.likes_remaining === 1) {
+                                        showNotification('Only 1 like left for today!');
+                                    }
+                                }
+                                
+                                // Update main cache
+                                const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                                if (cached) {
+                                    const match = cached.data.find(m => m.id === userId);
+                                    if (match) {
+                                        match.liked = !isLiked;
+                                    }
+                                    localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                                }
 
-                            const personalityPara = document.getElementById('modalUserPersonality');
-                            personalityPara.innerHTML = user.personality_info;
-                            if (user.secondary_personality_info) {
-                                personalityPara.innerHTML += '<br>' + user.secondary_personality_info;
+                                // For like, close viewer and remove card; for unlike, keep viewer open
+                                if (!isLiked) {
+                                    setTimeout(() => {
+                                        profileViewer.remove();
+                                        document.body.style.overflow = '';
+                                        history.back();
+                                        
+                                        // Remove the card from the main view
+                                        const card = document.querySelector(`.connection-card[data-user-id="${userId}"]`);
+                                        if (card) {
+                                            card.closest('.connection-item').style.opacity = '0';
+                                            card.closest('.connection-item').style.transition = 'opacity 0.5s ease';
+                                            setTimeout(() => card.closest('.connection-item').remove(), 500);
+                                        }
+                                    }, 1500);
+                                }
+                            } else {
+                                if (result.error === 'Daily like limit exceeded') {
+                                    showNotification('Your daily like limit has been exceeded!');
+                                } else {
+                                    showNotification(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
+                                }
                             }
-
-                            document.getElementById('modalAcceptBtn').dataset.userId = currentUserId;
-                            document.getElementById('modalDeclineBtn').dataset.userId = currentUserId;
-
-                            userProfileModal.classList.remove('hidden');
-                            document.body.style.overflow = 'hidden';
-                        } else {
-                            showNotification('Failed to load user profile');
+                        } catch (error) {
+                            hideLoading();
+                            showNotification(`Network error while ${isLiked ? 'unliking' : 'liking'} user`);
                         }
-                    } catch (error) {
-                        hideLoading();
-                        showNotification('Error loading user profile');
-                    }
+                    });
                 });
-            });
-
-            // Modal accept/decline buttons
-            document.getElementById('modalAcceptBtn').addEventListener('click', async function(e) {
-                e.stopPropagation();
-                const userId = this.dataset.userId;
-                showLoading();
-                try {
-                    const response = await fetch('/like-user', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ matched_user_id: userId }),
-                        credentials: 'include'
-                    });
-                    const result = await response.json();
-                    hideLoading();
-                    if (result.success) {
-                        document.querySelector(`.connection-item:has([data-user-id="${userId}"])`).remove();
-                        userProfileModal.classList.add('hidden');
-                        document.body.style.overflow = '';
-                        showNotification('Accepted!');
-                        if (result.is_match) {
-                            const popup = document.createElement('div');
-                            popup.className = 'popup';
-                            popup.textContent = 'Connection Successful!';
-                            document.body.appendChild(popup);
-                            setTimeout(() => {
-                                popup.remove();
-                            }, 2000);
-                            showNotification("It's a match! You can now chat.");
-                        }
-                    } else {
-                        showNotification(result.error || 'Failed to accept');
-                    }
-                } catch (error) {
-                    hideLoading();
-                    showNotification('Network error');
-                }
-            });
-
-            document.getElementById('modalDeclineBtn').addEventListener('click', async function(e) {
-                e.stopPropagation();
-                const userId = this.dataset.userId;
-                showLoading();
-                try {
-                    const response = await fetch('/pass-user', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ passed_user_id: userId }),
-                        credentials: 'include'
-                    });
-                    const result = await response.json();
-                    hideLoading();
-                    if (result.success) {
-                        document.querySelector(`.connection-item:has([data-user-id="${userId}"])`).remove();
-                        userProfileModal.classList.add('hidden');
-                        document.body.style.overflow = '';
-                        showNotification('Declined');
-                    } else {
-                        showNotification(result.error || 'Failed to decline');
-                    }
-                } catch (error) {
-                    hideLoading();
-                    showNotification('Network error');
-                }
-            });
-
-            // Original accept/decline buttons (now outside connection card)
-            document.querySelectorAll('.accept-btn:not(#modalAcceptBtn)').forEach(button => {
-                button.addEventListener('click', async function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const userId = this.dataset.userId;
-                    showLoading();
-                    try {
-                        const response = await fetch('/like-user', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ matched_user_id: userId }),
-                            credentials: 'include'
-                        });
-                        const result = await response.json();
-                        hideLoading();
-                        if (result.success) {
-                            this.closest('.connection-item').remove();
-                            showNotification('Accepted!');
-                            if (result.is_match) {
-                                const popup = document.createElement('div');
-                                popup.className = 'popup';
-                                popup.textContent = 'Connection Successful!';
-                                document.body.appendChild(popup);
-                                setTimeout(() => {
-                                    popup.remove();
-                                }, 2000);
-                                showNotification("It's a match! You can now chat.");
+                
+                const passButton = profileViewer.querySelector('.pass-button');
+                if (passButton) {
+                    passButton.addEventListener('click', async function() {
+                        showLoading();
+                        try {
+                            const response = await fetch('/pass-user', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ passed_user_id: userId }),
+                                credentials: 'include'
+                            });
+                            const result = await response.json();
+                            hideLoading();
+                            
+                            if (result.success) {
+                                createPassBurst(this);
+                                showNotification('Passed');
+                                // Update cache
+                                const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                                if (cached) {
+                                    const match = cached.data.find(m => m.id === userId);
+                                    if (match) {
+                                        match.passed = true;
+                                    }
+                                    localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                                }
+                                profileViewer.remove();
+                                document.body.style.overflow = '';
+                                history.back();
+                                
+                                // Remove the card from the main view
+                                const card = document.querySelector(`.connection-card[data-user-id="${userId}"]`);
+                                if (card) {
+                                    card.closest('.connection-item').style.opacity = '0';
+                                    card.closest('.connection-item').style.transition = 'opacity 0.5s ease';
+                                    setTimeout(() => card.closest('.connection-item').remove(), 500);
+                                }
+                            } else {
+                                showNotification(result.error || 'Failed to pass user');
                             }
-                        } else {
-                            showNotification(result.error || 'Failed to accept');
+                        } catch (error) {
+                            hideLoading();
+                            showNotification('Network error while passing user');
                         }
-                    } catch (error) {
-                        hideLoading();
-                        showNotification('Network error');
-                    }
-                });
-            });
-
-            document.querySelectorAll('.decline-btn:not(#modalDeclineBtn)').forEach(button => {
-                button.addEventListener('click', async function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const userId = this.dataset.userId;
-                    showLoading();
-                    try {
-                        const response = await fetch('/pass-user', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ passed_user_id: userId }),
-                            credentials: 'include'
-                        });
-                        const result = await response.json();
-                        hideLoading();
-                        if (result.success) {
-                            this.closest('.connection-item').remove();
-                            showNotification('Declined');
-                        } else {
-                            showNotification(result.error || 'Failed to decline');
-                        }
-                    } catch (error) {
-                        hideLoading();
-                        showNotification('Network error');
-                    }
-                });
-            });
-
-            // Update Personality button with confirmation
-            const updatePersonalityBtn = document.getElementById('updatePersonalityBtn');
-            if (updatePersonalityBtn) {
-                updatePersonalityBtn.addEventListener('click', () => {
-                    const confirmation = createConfirmationDialog(
-                        'Update Personality',
-                        'Updating your personality will reset your current results. Are you sure you want to continue?',
-                        'Continue',
-                        'Cancel'
-                    );
-                    
-                    confirmation.querySelector('.confirm-btn').addEventListener('click', () => {
-                        window.location.href = '/questions?retake=true';
-                        confirmation.remove();
-                    }); 
-                    
-                    confirmation.querySelector('.cancel-btn').addEventListener('click', () => {
-                        confirmation.remove();
                     });
+                }
+            }
+
+            // Match narrations data
+            const MATCH_NARRATIONS = {
+                '🌿 Nurturer': {
+                    '👂 Listener': {tagline: '💞 Heard and held.', narration: 'You love to care, and they love to listen. This match feels like two souls curled up in the same safe space. Simple, soft, and deeply natural.'},
+                    '🛡️ Protector': {tagline: '🛡️ Wrapped in safety.', narration: 'Their steady strength protects your gentle heart, while your kindness warms their world. Together, it feels like home.'},
+                    '🌙 Dreamer': {tagline: '🌙 Roots & wings.', narration: 'You bring comfort, they bring wonder. One keeps things steady, the other sparks magic — a sweet balance that makes life feel bigger.'},
+                    '💘 Romantic': {tagline: '🔥 Soft fire.', narration: 'Their passion meets your tenderness. You hold their heart with care, while they remind you how exciting love can be.'},
+                    '🌟 Idealist': {tagline: '🌟 Gentle purpose.', narration: 'You care for the small moments, they dream of the big picture. Together, you make love both meaningful and kind.'},
+                    '🌿 Nurturer': {tagline: '🌸 Endless comfort.', narration: 'Two hearts that love to give. Affection flows easily — the only challenge is remembering to also receive.'},
+                },
+                '🛡️ Protector': {
+                    '👂 Listener': {tagline: '💞 Strength in calm.', narration: 'Their strength meets your attentive heart. Together, safety feels warm and steady, like a quiet embrace.'},
+                    '🛡️ Protector': {tagline: '🛡 Two pillars.', narration: 'Both loyal and steady. Safety is never in doubt, and together you create a rock-solid bond.'},
+                    '🌙 Dreamer': {tagline: '🌙 Anchor & wings.', narration: 'You give stability, they bring imagination. Together, life feels safe yet full of wonder.'},
+                    '💘 Romantic': {tagline: '🔥 Safe passion.', narration: 'Their love ignites, your care protects. Together, it’s passion wrapped in warmth.'},
+                    '🌟 Idealist': {tagline: '🌟 Guarding the dream.', narration: 'Your loyalty supports their ideals. Together, hope and security grow hand in hand.'},
+                    '🌿 Nurturer': {tagline: '🛡 Wrapped in safety.', narration: 'Their steady strength protects your gentle heart, while your kindness warms their world. Together, it feels like home.'},
+                },
+                '💘 Romantic': {
+                    '👂 Listener': {tagline: '💞 Heartfelt bond.', narration: 'You express, they listen. Together, your hearts feel deeply seen and understood.'},
+                    '🛡️ Protector': {tagline: '🛡 Safe passion.', narration: 'You bring fire, they bring safety. Together, love feels thrilling yet secure.'},
+                    '🌙 Dreamer': {tagline: '🌙 Romantic vision.', narration: 'Passion meets imagination. Together, you create a world full of color and wonder.'},
+                    '🌟 Idealist': {tagline: '🌟 Love with purpose.', narration: 'Affection meets ideals. Together, romance feels meaningful and kind.'},
+                    '🌿 Nurturer': {tagline: '🔥 Soft fire.', narration: 'Their passion meets your tenderness. You hold their heart with care, while they remind you how exciting love can be.'},
+                    '💘 Romantic': {tagline: '💘 True hearts.', narration: 'Two souls that crave closeness. Love here is vibrant, deep, and entirely natural.'},
+                },
+                '👂 Listener': {
+                    '👂 Listener': {tagline: '💞 Two hearts listening.', narration: 'Both attentive and patient. Together, you create a quiet, comforting bond full of understanding.'},
+                    '🛡️ Protector': {tagline: '🛡 Strength in calm.', narration: 'Your attentive heart meets their loyal strength. Together, life feels steady and safe.'},
+                    '🌙 Dreamer': {tagline: '🌙 Heard dreams.', narration: 'They dream, you listen. Their imagination feels valued, and your care feels received.'},
+                    '💘 Romantic': {tagline: '🔥 Heartfelt bond.', narration: 'They feel deeply, you understand them fully. Together, love feels tender and genuine.'},
+                    '🌟 Idealist': {tagline: '🌟 Cause and care.', narration: 'Their vision meets your attention. Together, ideals feel nurtured and real.'},
+                    '🌿 Nurturer': {tagline: '💞 Heard and held.', narration: 'You love to care, and they love to listen. This match feels like two souls curled up in the same safe space.'},
+                },
+                '🌙 Dreamer': {
+                    '🌙 Dreamer': {tagline: '🌙 Double vision.', narration: 'Two imaginations flying. Life feels colorful, exciting, and full of possibilities.'},
+                    '🌿 Nurturer': {tagline: '🌙 Roots & wings.', narration: 'You bring comfort, they bring wonder. One keeps things steady, the other sparks magic — a sweet balance that makes life feel bigger.'},
+                    '🛡️ Protector': {tagline: '🛡 Anchor & wings.', narration: 'Stability meets imagination. Together, life feels secure and inspired.'},
+                    '💘 Romantic': {tagline: '🔥 Romantic vision.', narration: 'Passion and creativity intertwine. Love feels magical and heartfelt.'},
+                    '🌟 Idealist': {tagline: '🌟 Dream + purpose.', narration: 'Your vision and their ideals lift each other. Together, purpose feels alive.'},
+                    '👂 Listener': {tagline: '💞 Heard dreams.', narration: 'You listen, they imagine. Together, hearts feel seen, safe, and inspired.'},
+                },
+                '🌟 Idealist': {
+                    '🌟 Idealist': {tagline: '🌟 Shared purpose.', narration: 'Two believers, united by vision. Together, you shine brighter, naturally and warmly.'},
+                    '🌿 Nurturer': {tagline: '🌟 Gentle purpose.', narration: 'You care for the small moments, they dream of the big picture. Together, you make love both meaningful and kind.'},
+                    '🛡️ Protector': {tagline: '🛡 Guarding the dream.', narration: 'Loyalty meets vision. Together, your hearts feel safe and inspired.'},
+                    '💘 Romantic': {tagline: '🔥 Love with purpose.', narration: 'Passion meets ideals. Together, love feels heartfelt and deeply alive.'},
+                    '👂 Listener': {tagline: '💞 Cause and care.', narration: 'Their vision meets your attentive heart. Together, purpose feels nurtured and tender.'},
+                    '🌙 Dreamer': {tagline: '🌙 Dream + purpose.', narration: 'You dream, they inspire. Together, life feels meaningful, gentle, and full of hope.'},
+                }
+            };
+
+            const TYPE_ORDER = {
+                '🛡️ Protector': 1,
+                '🌿 Nurturer': 2,
+                '💘 Romantic': 3,
+                '👂 Listener': 4,
+                '🌙 Dreamer': 5,
+                '🌟 Idealist': 6
+            };
+
+            function reversePerspective(text) {
+                return text
+                    .replace(/\bYou\b/g, 'TEMP_THEY_CAP')
+                    .replace(/\byou\b/g, 'temp_they')
+                    .replace(/\bYour\b/g, 'TEMP_THEIR_CAP')
+                    .replace(/\byour\b/g, 'their')
+                    .replace(/\bThey\b/g, 'You')
+                    .replace(/\bthey\b/g, 'you')
+                    .replace(/\bTheir\b/g, 'Your')
+                    .replace(/\btheir\b/g, 'your')
+                    .replace(/\bTEMP_THEY_CAP\b/g, 'They')
+                    .replace(/\btemp_they\b/g, 'they')
+                    .replace(/\bTEMP_THEIR_CAP\b/g, 'Their');
+            }
+
+            function toThirdPerson(text) {
+                return text
+                    .replace(/\bYou\b/g, 'They')
+                    .replace(/\byou\b/g, 'they')
+                    .replace(/\bYour\b/g, 'Their')
+                    .replace(/\byour\b/g, 'their')
+                    .replace(/\bYours\b/g, 'Theirs')
+                    .replace(/\byours\b/g, 'theirs')
+                    .replace(/\bYourself\b/g, 'Themselves')
+                    .replace(/\byourself\b/g, 'themselves')
+                    .replace(/\bYou're\b/g, 'They\'re')
+                    .replace(/\byou're\b/g, 'they\'re');
+            }
+
+            function showMatchPopup() {
+                const popup = document.createElement('div');
+                popup.className = 'popup text-gray-800 dark:text-gray-100';
+                popup.textContent = 'Connection Successful!';
+                document.body.appendChild(popup);
+                setTimeout(() => {
+                    popup.remove();
+                }, 2000);
+            }
+
+            function createHeartBurst(target) {
+                const rect = target.getBoundingClientRect();
+                const burst = document.createElement('div');
+                burst.style.position = 'fixed';
+                burst.style.left = `${rect.left + rect.width / 2}px`;
+                burst.style.top = `${rect.top + rect.height / 2}px`;
+                burst.style.pointerEvents = 'none';
+                burst.style.zIndex = '1002';
+                for (let i = 0; i < 8; i++) {
+                    const heart = document.createElement('i');
+                    heart.className = 'fas fa-heart text-pink-500';
+                    heart.style.position = 'absolute';
+                    heart.style.fontSize = `${Math.random() * 1 + 1}rem`;
+                    heart.style.left = '0';
+                    heart.style.top = '0';
+                    heart.style.transform = 'translate(-50%, -50%)';
+                    heart.style.animation = `burstAnim ${Math.random() * 0.5 + 0.5}s ease-out`;
+                    const angle = Math.random() * 2 * Math.PI;
+                    const distance = Math.random() * 50 + 30;
+                    heart.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+                    heart.style.setProperty('--dy', `${Math.sin(angle) * distance - 50}px`); // upward bias
+                    burst.appendChild(heart);
+                }
+                document.body.appendChild(burst);
+                setTimeout(() => burst.remove(), 1000);
+            }
+
+            function createPassBurst(target) {
+                const rect = target.getBoundingClientRect();
+                const burst = document.createElement('div');
+                burst.style.position = 'fixed';
+                burst.style.left = `${rect.left + rect.width / 2}px`;
+                burst.style.top = `${rect.top + rect.height / 2}px`;
+                burst.style.pointerEvents = 'none';
+                burst.style.zIndex = '1002';
+                for (let i = 0; i < 5; i++) {
+                    const cross = document.createElement('i');
+                    cross.className = 'fas fa-times text-red-500';
+                    cross.style.position = 'absolute';
+                    cross.style.fontSize = `${Math.random() * 1 + 1}rem`;
+                    cross.style.left = '0';
+                    cross.style.top = '0';
+                    cross.style.transform = 'translate(-50%, -50%)';
+                    cross.style.animation = `burstAnim ${Math.random() * 0.5 + 0.5}s ease-out`;
+                    const angle = Math.random() * 2 * Math.PI;
+                    const distance = Math.random() * 50 + 30;
+                    cross.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+                    cross.style.setProperty('--dy', `${Math.sin(angle) * distance}px`); // random direction
+                    burst.appendChild(cross);
+                }
+                document.body.appendChild(burst);
+                setTimeout(() => burst.remove(), 1000);
+            }
+
+            function showReportModal(userId) {
+                const modal = document.createElement('div');
+                modal.className = 'report-modal';
+                modal.innerHTML = `
+                    <div class="report-modal-content">
+                        <h3 class="text-lg font-bold mb-4">Why are you reporting this user?</h3>
+                        <div id="report-options">
+                            <label class="report-option" data-reason="inappropriate">Inappropriate content</label>
+                            <label class="report-option" data-reason="spam">Spam or fake profile</label>
+                            <label class="report-option" data-reason="harassment">Harassment or bullying</label>
+                            <label class="report-option" data-reason="other">Other</label>
+                        </div>
+                        <div class="flex justify-end mt-4 space-x-2">
+                            <button id="cancel-report" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
+                            <button id="submit-report" class="px-4 py-2 bg-red-500 text-white rounded" disabled>Submit Report</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                let selectedReason = null;
+                document.querySelectorAll('.report-option').forEach(option => {
+                    option.addEventListener('click', () => {
+                        document.querySelectorAll('.report-option').forEach(opt => opt.classList.remove('selected'));
+                        option.classList.add('selected');
+                        selectedReason = option.dataset.reason;
+                        document.getElementById('submit-report').disabled = false;
+                    });
+                });
+
+                document.getElementById('cancel-report').addEventListener('click', () => modal.remove());
+                document.getElementById('submit-report').addEventListener('click', async (e) => {
+                    if (selectedReason) {
+                        const button = e.currentTarget;
+                        showLoading();
+                        try {
+                            const response = await fetch('/report-user', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ reported_user_id: userId, reason: selectedReason }),
+                                credentials: 'include'
+                            });
+                            const result = await response.json();
+                            hideLoading();
+                            if (result.success) {
+                                createReportBurst(button);
+                                showNotification('Report submitted successfully');
+                                setTimeout(() => modal.remove(), 1000);
+                            } else {
+                                showNotification(result.error || 'Failed to submit report');
+                            }
+                        } catch (error) {
+                            hideLoading();
+                            showNotification('Network error while submitting report');
+                        }
+                    }
                 });
             }
+
+            function createReportBurst(target) {
+                const rect = target.getBoundingClientRect();
+                const burst = document.createElement('div');
+                burst.style.position = 'fixed';
+                burst.style.left = `${rect.left + rect.width / 2}px`;
+                burst.style.top = `${rect.top + rect.height / 2}px`;
+                burst.style.pointerEvents = 'none';
+                burst.style.zIndex = '1002';
+                for (let i = 0; i < 5; i++) {
+                    const flag = document.createElement('i');
+                    flag.className = 'fas fa-flag text-orange-500';
+                    flag.style.position = 'absolute';
+                    flag.style.fontSize = `${Math.random() * 1 + 1}rem`;
+                    flag.style.left = '0';
+                    flag.style.top = '0';
+                    flag.style.transform = 'translate(-50%, -50%)';
+                    flag.style.animation = `burstAnim ${Math.random() * 0.5 + 0.5}s ease-out`;
+                    const angle = Math.random() * 2 * Math.PI;
+                    const distance = Math.random() * 50 + 30;
+                    flag.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+                    flag.style.setProperty('--dy', `${Math.sin(angle) * distance - 30}px`);
+                    burst.appendChild(flag);
+                }
+                document.body.appendChild(burst);
+                setTimeout(() => burst.remove(), 1000);
+            }
+
+            // Store liked users in localStorage to persist across page refreshes
+            let likedUsers = JSON.parse(localStorage.getItem('likedUsers') || '{}');
+
+            // Update like buttons based on stored liked status
+            function updateLikeButtons() {
+                document.querySelectorAll('.like-button').forEach(button => {
+                    const userId = button.dataset.userId;
+                    if (likedUsers[userId]) {
+                        button.classList.add('liked-button');
+                        button.classList.remove('bg-pink-500', 'hover:bg-pink-600');
+                        button.innerHTML = '<i class="fas fa-check"></i>';
+                        button.dataset.liked = 'true';
+                    } else {
+                        button.classList.remove('liked-button');
+                        button.classList.add('bg-pink-500', 'hover:bg-pink-600');
+                        button.innerHTML = '<i class="fas fa-heart"></i>';
+                        button.dataset.liked = 'false';
+                    }
+                });
+            }
+
+            // Initial likes update
+            updateLikeButtons();
 
             // Navigation press effect
             const navLinks = document.querySelectorAll('.bottom-nav a');
