@@ -1263,7 +1263,19 @@
                   { label: "Preferred skin tone", type: "select", options: ["Light", "Medium", "Deep", "No Preference"] },
                   { label: "Preferred height range (cm)", type: "range", min: 140, max: 200, step: 5 },
                   { label: "Preferred body type", type: "select", options: ["Slim", "Average", "Fit", "No Preference"] }
-                ]
+                ],
+                nextQuestion: () => ({
+                  id: 'physical_traits_own',
+                  question: "What are your physical traits?",
+                  answers: [],
+                  isCustomInput: true,
+                  section: "physical_traits_own",
+                  inputs: [
+                    { label: "Your height (cm)", type: "number", min: 140, max: 200 },
+                    { label: "Your skin tone", type: "select", options: ["Light", "Medium", "Deep"] },
+                    { label: "Your body type", type: "select", options: ["Slim", "Average", "Fit"] }
+                  ]
+                })
               };
               questions.splice(insertPos, 0, traitsPrefQ);
               insertPos++;
@@ -1398,6 +1410,19 @@
 
       const questionData = questions[currentQuestion];
       console.log(`Displaying question ${currentQuestion + 1}: ${questionData.question}`);
+
+      // Clean up dynamic follow-up questions if this is a branching question
+      if (questionData.nextQuestion) {
+        let nextIndex = currentQuestion + 1;
+        while (questions[nextIndex] && 
+               (questions[nextIndex].id === 'religion' || 
+                questions[nextIndex].id === 'physical_traits_preferred' || 
+                questions[nextIndex].id === 'physical_traits_own')) {
+          questions.splice(nextIndex, 1);
+          // Do not increment nextIndex as splice shifts the array
+        }
+      }
+
       questionElement.textContent = questionData.question;
 
       // Update progress based on current section
@@ -1473,7 +1498,7 @@
               if (questionData.nextQuestion) {
                 const next = questionData.nextQuestion();
                 if (next) {
-                  questions.splice(currentQuestion, 0, next);
+                  questions.splice(currentQuestion + 1, 0, next);  // Insert after current
                 }
               }
               displayQuestion();
@@ -1531,7 +1556,7 @@
               if (questionData.nextQuestion) {
                 const next = questionData.nextQuestion();
                 if (next) {
-                  questions.splice(currentQuestion, 0, next);
+                  questions.splice(currentQuestion + 1, 0, next);  // Insert after current
                 }
               }
               displayQuestion();
@@ -1634,7 +1659,7 @@
             if (questionData.nextQuestion) {
               const next = questionData.nextQuestion();
               if (next) {
-                questions.splice(currentQuestion, 0, next);
+                questions.splice(currentQuestion + 1, 0, next);  // Insert after current
               }
             }
             displayQuestion();
@@ -1701,7 +1726,7 @@
               if (questionData.nextQuestion) {
                 const next = questionData.nextQuestion(index);
                 if (next) {
-                  questions.splice(currentQuestion, 0, next);
+                  questions.splice(currentQuestion + 1, 0, next);  // Insert after current
                 }
               }
               displayQuestion();
@@ -1875,8 +1900,8 @@
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'none';
       optionalSection.style.display = 'block';
-      // Show skip button for profile setup section
-      btnSkip.style.display = 'inline-block';
+      // Hide skip button for profile setup section
+      btnSkip.style.display = 'none';
       updateSectionInfo();
       optionalP.textContent = "Let's set up your profile to help others get to know you better and improve your matching experience.";
       optionalSection.classList.add('animate__animated', 'animate__fadeIn');
