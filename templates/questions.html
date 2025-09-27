@@ -1322,6 +1322,8 @@
     function handleSkip() {
       if (currentExtraSection === 'profileSetup') {
         skipProfileSetup();
+      } else if (currentExtraSection === 'keeperSeeker') {
+        skipKeeperSeeker();
       }
     }
 
@@ -1331,6 +1333,15 @@
       isProfileSetupSection = false;
       rebuildQuestions();
       submitQuiz();
+    }
+
+    function skipKeeperSeeker() {
+      console.log('Skipping keeper/seeker section');
+      isKeeperSeekerSection = false;
+      rebuildQuestions();
+      optionalSection.style.display = 'none';
+      questionBox.style.display = 'none';
+      showReligionSection();
     }
 
     function startQuiz() {
@@ -1809,8 +1820,8 @@
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'none';
       optionalSection.style.display = 'block';
-      // Remove skip button for relationship readiness section
-      btnSkip.style.display = 'none';
+      // Show skip button for relationship readiness section
+      btnSkip.style.display = 'inline-block';
       updateSectionInfo();
       optionalP.textContent = 'Want to answer questions about your relationship readiness?';
       optionalSection.classList.add('animate__animated', 'animate__fadeIn');
