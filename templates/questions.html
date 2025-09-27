@@ -1096,7 +1096,15 @@
         questions = questions.concat(physicalQuestions);
       }
       if (isProfileSetupSection) {
-        questions = questions.concat(profileSetupQuestions);
+        const profileSetup = {...profileSetupQuestions[0]};
+        let profileQs = [profileSetup];
+        if (hasReligionAnswered || hasPhysicalAnswered) {
+          profileQs.push(profileSetupQuestions[1]);
+          profileSetup.submitText = "Continue to Filters";
+        } else {
+          profileSetup.submitText = "Start Matching";
+        }
+        questions = questions.concat(profileQs);
       }
     }
 
@@ -1444,7 +1452,7 @@
         sectionLen = prefAns ? (prefAns.index === 2 ? 1 : 3) : 3;
         progress = Math.min((((currentQuestion - secInfo.start) + 1) / sectionLen) * 100, 100);
       } else if (secInfo.section === 'profileSetup') {
-        sectionLen = profileSetupQuestionCount;
+        sectionLen = questions.slice(secInfo.start).length;
         progress = (((currentQuestion - secInfo.start) + 1) / sectionLen) * 100;
       }
       progressBar.style.width = `${Math.min(progress, 100)}%`;
