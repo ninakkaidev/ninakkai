@@ -2363,7 +2363,7 @@
                         });
                         if (response.ok) {
                             showNotification('Logged out successfully');
-                            window.location.href = '/login'; // Redirect to login page
+                            window.location.href = '/auth'; // Redirect to login page
                         } else {
                             showNotification('Failed to log out');
                         }
@@ -2395,7 +2395,7 @@
                         const result = await response.json();
                         if (result.success) {
                             showNotification('Account deleted successfully');
-                            window.location.href = '/login'; // Redirect to login page
+                            window.location.href = '/auth'; // Redirect to login page
                         } else {
                             showNotification(result.error || 'Failed to delete account');
                         }

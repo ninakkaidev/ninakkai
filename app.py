@@ -2267,7 +2267,7 @@ def personality_results():
     })
     return jsonify({'success': True, 'personality_info': personality_info})
 
-@app.route('/logout', methods=['GET'])
+@app.route('/logout', methods=['POST'])
 def logout():
     logger.debug(f"Session in logout: {session}")
     session.clear()
