@@ -777,10 +777,12 @@
                                 <i class="fas fa-pencil-alt text-sm"></i>
                             </button>
                         </h2>
+                        {% if profile.location %}
                         <div class="text-gray-600 mb-2">
                             <span id="locationView" class="view-field">{{ profile.location }}</span>
                             <input id="locationEdit" type="text" value="{{ profile.location }}" class="edit-field w-full border rounded px-2 py-1">
                         </div>
+                        {% endif %}
                         <div class="flex justify-center md:justify-start space-x-2">
                             {% for interest in profile.interests %}
                             <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">{{ interest }}</span>
@@ -791,11 +793,13 @@
             </div>
             
             <!-- Bio -->
+            {% if profile.bio %}
             <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4 -->
                 <h3 class="font-semibold mb-2">About Me</h3>
                 <p id="bioView" class="view-field text-gray-700">{{ profile.bio }}</p>
                 <textarea id="bioEdit" class="edit-field w-full border rounded px-3 py-2 h-24">{{ profile.bio }}</textarea>
             </div>
+            {% endif %}
 
             <!-- Personality Description - Enhanced for attractiveness -->
             <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4 -->
@@ -814,7 +818,7 @@
             </div>
 
             <!-- Relationship Style (Keeper/Seeker) -->
-            {% if profile.keeper_seeker != 'N/A' %}
+            {% if profile.keeper_seeker %}
             <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
                 <h3 class="font-semibold mb-2"><i class="fas fa-heart text-pink-500 mr-2"></i>Relationship Style</h3>
                 <p class="text-gray-700">{{ profile.keeper_seeker }}</p>
@@ -822,7 +826,7 @@
             {% endif %}
 
             <!-- Religion Importance - Fixed conditional logic -->
-            {% if profile.religion != 'N/A' %}
+            {% if profile.religion %}
             <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease religion-importance-section"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-semibold"><i class="fas fa-pray text-pink-500 mr-2"></i>Religion Importance in Matching</h3>
@@ -866,7 +870,7 @@
             {% endif %}
 
             <!-- Education/Work -->
-            {% if profile.education_work != 'N/A' %}
+            {% if profile.education_work %}
             <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
                 <h3 class="font-semibold mb-2"><i class="fas fa-graduation-cap text-pink-500 mr-2"></i>Education/Work</h3>
                 <p class="text-gray-700">{{ profile.education_work }}</p>
@@ -886,7 +890,7 @@
             {% endif %}
 
             <!-- Self-Summary -->
-            {% if profile.summary != 'N/A' %}
+            {% if profile.summary %}
             <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
                 <h3 class="font-semibold mb-2"><i class="fas fa-info-circle text-pink-500 mr-2"></i>Self-Summary</h3>
                 <p class="text-gray-700">{{ profile.summary }}</p>
