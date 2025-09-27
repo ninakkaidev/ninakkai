@@ -1342,21 +1342,21 @@
                         }
                         let passButtonHTML;
                         if (profile.user.passed) {
-                            passButtonHTML = `<button class="animate-pulse bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-400 text-white rounded-full px-6 py-4 flex-1 mr-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" disabled>
+                            passButtonHTML = `<button class="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-400 text-white rounded-full px-6 py-4 flex-1 mr-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" disabled>
                                 <i class="fas fa-times mr-2"></i> Passed
                             </button>`;
                         } else {
-                            passButtonHTML = `<button class="animate-pulse bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-400 text-white rounded-full px-6 py-4 flex-1 mr-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out pass-button" data-user-id="${userId}">
+                            passButtonHTML = `<button class="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-400 text-white rounded-full px-6 py-4 flex-1 mr-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out pass-button" data-user-id="${userId}">
                                 <i class="fas fa-times mr-2"></i> Pass
                             </button>`;
                         }
                         let bottomLikeHTML;
                         if (profile.user.passed) {
-                            bottomLikeHTML = `<button class="animate-pulse bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400 text-white rounded-full px-6 py-4 flex-1 ml-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" disabled>
+                            bottomLikeHTML = `<button class="bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400 text-white rounded-full px-6 py-4 flex-1 ml-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" disabled>
                                 <i class="fas fa-heart mr-2"></i> Like
                             </button>`;
                         } else {
-                            bottomLikeHTML = `<button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400'} animate-pulse text-white rounded-full px-6 py-4 flex-1 ml-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" 
+                            bottomLikeHTML = `<button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400'} text-white rounded-full px-6 py-4 flex-1 ml-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" 
                                             data-user-id="${userId}" 
                                             data-liked="${profile.user.liked}">
                                         <i class="fas ${profile.user.liked ? 'fa-check' : 'fa-heart'} mr-2"></i> ${profile.user.liked ? 'Liked' : 'Like'}
@@ -1451,7 +1451,7 @@
                                 ${photosSection}
                                 <div class="flex justify-between mt-8">
                                     ${passButtonHTML}
-                                    <button class="animate-pulse bg-gradient-to-r from-red-400 to-red-600 hover:from-red-600 hover:to-red-400 text-white rounded-full px-6 py-4 flex-1 mx-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out report-button" data-user-id="${userId}">
+                                    <button class="bg-gradient-to-r from-red-400 to-red-600 hover:from-red-600 hover:to-red-400 text-white rounded-full px-6 py-4 flex-1 mx-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out report-button" data-user-id="${userId}">
                                         <i class="fas fa-flag mr-2"></i> Report
                                     </button>
                                     ${bottomLikeHTML}
