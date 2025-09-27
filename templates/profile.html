@@ -312,7 +312,7 @@
             margin-top: 0.5rem;
             display: flex;
             justify-content: center;
-            gap: 1rem;
+            gap: 0.5rem;
         }
 
         /* Loading State */
@@ -914,7 +914,7 @@
             <div class="p-4">
                 <!-- Connections Tab -->
                 <div id="connections" class="tab-content active">
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {% for user in pending_likers %}
                         <div class="connection-item">
                             <div class="bg-gray-50 rounded-lg p-3 text-center connection-card" data-user-id="{{ user.id }}">
@@ -925,10 +925,10 @@
                                 <p class="text-gray-500 text-sm">{{ user.occupation }}</p>
                             </div>
                             <div class="action-buttons">
-                                <button class="accept-btn bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-400 text-white px-4 py-2 rounded shadow-lg hover:scale-105 transition-all duration-300" data-user-id="{{ user.id }}">
+                                <button class="accept-btn bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-400 text-white px-3 py-1 rounded shadow-md hover:scale-105 transition-all duration-300 text-sm" data-user-id="{{ user.id }}">
                                     <i class="fas fa-check"></i> Accept
                                 </button>
-                                <button class="decline-btn bg-gradient-to-r from-red-400 to-red-600 hover:from-red-600 hover:to-red-400 text-white px-4 py-2 rounded shadow-lg hover:scale-105 transition-all duration-300" data-user-id="{{ user.id }}">
+                                <button class="decline-btn bg-gradient-to-r from-red-400 to-red-600 hover:from-red-600 hover:to-red-400 text-white px-3 py-1 rounded shadow-md hover:scale-105 transition-all duration-300 text-sm" data-user-id="{{ user.id }}">
                                     <i class="fas fa-times"></i> Decline
                                 </button>
                             </div>
