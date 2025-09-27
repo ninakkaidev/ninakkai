@@ -983,7 +983,7 @@
             {
               label: "Preferred body type",
               type: "select",
-              options: ["Slim", "Average", "Fit", "No Preference"]
+              options: ["Slim", "Fit", "Broad", "No Preference"]
             }
           ],
           nextQuestion: () => ({
@@ -1007,7 +1007,7 @@
               {
                 label: "Your body type",
                 type: "select",
-                options: ["Slim", "Average", "Fit"]
+                options: ["Slim", "Fit", "Broad"]
               }
             ]
           })
@@ -1270,7 +1270,7 @@
                 inputs: [
                   { label: "Preferred skin tone", type: "select", options: ["Light", "Medium", "Deep", "No Preference"] },
                   { label: "Preferred height range (cm)", type: "range", min: 140, max: 200, step: 5 },
-                  { label: "Preferred body type", type: "select", options: ["Slim", "Average", "Fit", "No Preference"] }
+                  { label: "Preferred body type", type: "select", options: ["Slim", "Fit", "Broad", "No Preference"] }
                 ],
                 nextQuestion: () => ({
                   id: 'physical_traits_own',
@@ -1281,7 +1281,7 @@
                   inputs: [
                     { label: "Your height (cm)", type: "number", min: 140, max: 200 },
                     { label: "Your skin tone", type: "select", options: ["Light", "Medium", "Deep"] },
-                    { label: "Your body type", type: "select", options: ["Slim", "Average", "Fit"] }
+                    { label: "Your body type", type: "select", options: ["Slim", "Fit", "Broad"] }
                   ]
                 })
               };
@@ -1298,7 +1298,7 @@
                 inputs: [
                   { label: "Your height (cm)", type: "number", min: 140, max: 200 },
                   { label: "Your skin tone", type: "select", options: ["Light", "Medium", "Deep"] },
-                  { label: "Your body type", type: "select", options: ["Slim", "Average", "Fit"] }
+                  { label: "Your body type", type: "select", options: ["Slim", "Fit", "Broad"] }
                 ]
               };
               questions.splice(insertPos, 0, ownQ);
