@@ -2342,6 +2342,69 @@
                     this.classList.add('text-pink-500', 'dark:text-pink-400');
                 });
             });
+            
+            // Logout functionality
+            const logoutBtn = document.getElementById('logoutBtn');
+            logoutBtn.addEventListener('click', () => {
+                const dialog = createConfirmationDialog(
+                    'Log Out',
+                    'Are you sure you want to log out?',
+                    'Log Out',
+                    'Cancel',
+                    'bg-red-500 hover:bg-red-600'
+                );
+                
+                dialog.querySelector('.cancel-btn').addEventListener('click', () => dialog.remove());
+                dialog.querySelector('.confirm-btn').addEventListener('click', async () => {
+                    try {
+                        const response = await fetch('/logout', {
+                            method: 'POST',
+                            credentials: 'include'
+                        });
+                        if (response.ok) {
+                            showNotification('Logged out successfully');
+                            window.location.href = '/login'; // Redirect to login page
+                        } else {
+                            showNotification('Failed to log out');
+                        }
+                    } catch (error) {
+                        showNotification('Error logging out');
+                    }
+                    dialog.remove();
+                });
+            });
+            
+            // Delete account functionality
+            const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+            deleteAccountBtn.addEventListener('click', () => {
+                const dialog = createConfirmationDialog(
+                    'Delete Account',
+                    'Are you sure you want to delete your account? This action cannot be undone.',
+                    'Delete',
+                    'Cancel',
+                    'bg-red-500 hover:bg-red-600'
+                );
+                
+                dialog.querySelector('.cancel-btn').addEventListener('click', () => dialog.remove());
+                dialog.querySelector('.confirm-btn').addEventListener('click', async () => {
+                    try {
+                        const response = await fetch('/delete_account', {
+                            method: 'POST',
+                            credentials: 'include'
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            showNotification('Account deleted successfully');
+                            window.location.href = '/login'; // Redirect to login page
+                        } else {
+                            showNotification(result.error || 'Failed to delete account');
+                        }
+                    } catch (error) {
+                        showNotification('Error deleting account');
+                    }
+                    dialog.remove();
+                });
+            });
         });
     </script>
 </body>
