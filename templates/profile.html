@@ -33,6 +33,7 @@
         .photo-slider {
             scrollbar-width: none; /* Firefox */
             -ms-overflow-style: none; /* IE and Edge */
+            scroll-behavior: smooth; /* Smoother scrolling */
         }
         
         .photo-slider::-webkit-scrollbar {
@@ -355,7 +356,7 @@
         }
 
         /* Override gradients in dark mode */
-        .dark .bg-gradient-to-r.from-indigo-100.via-white.to-pink-100 {
+        .dark .bg-gradient-to-r.from-indigo-50.via-white.to-pink-50 {
             background-image: linear-gradient(to right, var(--tw-gradient-stops)) !important;
             --tw-gradient-from: #312e81 var(--tw-gradient-from-position);
             --tw-gradient-to: #831843 var(--tw-gradient-to-position);
@@ -381,24 +382,35 @@
             box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.5) !important;
         }
 
-        /* Personality Styles */
+        /* Personality Styles - Minimized font sizes */
         .primary-personality {
-            font-size: 1.1em;
+            font-size: 1em;
             font-weight: bold;
             color: #000; /* Darker color for highlight */
+            line-height: 1.4;
         }
 
         .secondary-personality {
-            font-size: 0.9em;
+            font-size: 0.8em;
             color: #666; /* Lighter color for less highlight */
+            line-height: 1.4;
         }
 
         .dark .primary-personality {
-            color: #ffffff !important;
+            color: #f3f4f6 !important;
         }
 
         .dark .secondary-personality {
-            color: #aaaaaa !important;
+            color: #d1d5db !important;
+        }
+
+        /* Personality Card for attractiveness */
+        .personality-card {
+            transition: all 0.3s ease;
+        }
+
+        .personality-card:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         /* Dark mode for circles (fallback if script fails) */
@@ -702,6 +714,16 @@
         .decline-btn:hover {
             transform: scale(1.05);
         }
+
+        /* Tab button enhancements */
+        .tab-btn:hover {
+            transition: all 0.2s ease;
+            transform: scale(1.05);
+        }
+
+        .tab-btn.border-pink-500 {
+            font-weight: bold;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -728,14 +750,14 @@
     </header>
 
     <!-- Main Content -->
-    <main class="container mx-auto px-4 py-4">
+    <main class="container mx-auto px-4 py-2"> <!-- Reduced py-4 to py-2 for compactness -->
         <!-- Profile Header -->
-        <div class="bg-gradient-to-r from-indigo-100 via-white to-pink-100 rounded-xl shadow-md p-6 mb-6 relative">
+        <div class="bg-gradient-to-r from-indigo-50 via-white to-pink-50 rounded-xl shadow-md p-6 mb-6 relative"> <!-- Softer gradient -->
             <div class="flex flex-col md:flex-row items-center md:items-start">
                 <!-- Profile Picture -->
                 <div class="relative mb-4 md:mb-0 md:mr-6">
                     <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-pink-200 relative">
-                        <img id="profileImage" src="{{ profile.image }}" alt="Profile" class="w-full h-full object-cover">
+                        <img id="profileImage" src="{{ profile.image }}" alt="Profile" class="w-full h-full object-cover rounded-full"> <!-- Added rounded-full for softer image -->
                         <label class="profile-pic-upload">
                             <i class="fas fa-camera text-sm"></i>
                             <input type="file" id="profileUpload" accept="image/*" class="hidden">
@@ -775,19 +797,19 @@
                 <textarea id="bioEdit" class="edit-field w-full border rounded px-3 py-2 h-24">{{ profile.bio }}</textarea>
             </div>
 
-            <!-- Personality Description -->
-            <div class="mt-6">
+            <!-- Personality Description - Enhanced for attractiveness -->
+            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Added card styling -->
                 <div class="flex justify-between items-center">
-                    <h3 class="font-semibold mb-2">My Personality</h3>
+                    <h3 class="font-semibold mb-2"><i class="fas fa-user-circle text-pink-500 mr-2"></i>My Personality</h3> <!-- Added icon -->
                     <button id="updatePersonalityBtn" class="text-pink-500 hover:text-pink-600">
                         <i class="fas fa-pencil-alt text-sm"></i> Update
                     </button>
                 </div>
                 {% if profile.personality_info %}
-                <p class="text-gray-700">{{ profile.personality_info | safe }}</p>
+                <div class="mt-2 mb-4">{{ profile.personality_info | safe }}</div> <!-- Wrapped for better spacing -->
                 {% else %}
-                <p class="text-gray-700">Complete the quiz to discover your personality!</p>
-                <a href="/questions" class="text-pink-500 font-medium">Take Quiz</a>
+                <p class="text-gray-700 mt-2 mb-2">Complete the quiz to discover your personality!</p> <!-- Added spacing -->
+                <a href="/questions" class="bg-pink-100 text-pink-500 px-3 py-1 rounded-full font-medium hover:bg-pink-200 transition-all 0.3s ease">Take Quiz</a> <!-- Button-like styling -->
                 {% endif %}
             </div>
 
@@ -879,7 +901,7 @@
         </div>
         
         <!-- Photo Gallery -->
-        <div class="bg-gradient-to-r from-indigo-100 via-white to-pink-100 rounded-xl shadow-md p-6 mb-6 relative">
+        <div class="bg-gradient-to-r from-indigo-50 via-white to-pink-50 rounded-xl shadow-md p-6 mb-6 relative hover:shadow-md transition-all 0.3s ease"> <!-- Softer gradient and hover -->
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold">My Photos</h2>
                 <label for="photoUpload" class="text-pink-500 text-sm font-medium flex items-center cursor-pointer">
@@ -901,7 +923,7 @@
         </div>
         
         <!-- Tabs -->
-        <div class="bg-gradient-to-r from-indigo-100 via-white to-pink-100 rounded-xl shadow-md p-6 mb-6 relative">
+        <div class="bg-gradient-to-r from-indigo-50 via-white to-pink-50 rounded-xl shadow-md p-6 mb-6 relative"> <!-- Softer gradient -->
             <div class="flex border-b">
                 <button class="tab-btn flex-1 py-3 font-medium text-center border-b-2 border-pink-500 text-pink-500" data-tab="connections">
                     Connections ({{ pending_likers|length }})
@@ -1158,7 +1180,7 @@
             const editProfileBtn = document.getElementById('editProfileBtn');
             const cancelEditBtn = document.getElementById('cancelEditBtn');
             const saveProfileBtn = document.getElementById('saveProfileBtn');
-            const profileSection = document.querySelector('.bg-gradient-to-r.from-indigo-100.via-white.to-pink-100.rounded-xl.shadow-md.p-6.mb-6.relative');
+            const profileSection = document.querySelector('.bg-gradient-to-r.from-indigo-50.via-white.to-pink-50.rounded-xl.shadow-md.p-6.mb-6.relative');
             
             editProfileBtn.addEventListener('click', () => {
                 profileSection.classList.add('edit-mode');
