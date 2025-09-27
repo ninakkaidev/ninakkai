@@ -791,14 +791,14 @@
             </div>
             
             <!-- Bio -->
-            <div class="mt-6">
+            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4 -->
                 <h3 class="font-semibold mb-2">About Me</h3>
                 <p id="bioView" class="view-field text-gray-700">{{ profile.bio }}</p>
                 <textarea id="bioEdit" class="edit-field w-full border rounded px-3 py-2 h-24">{{ profile.bio }}</textarea>
             </div>
 
             <!-- Personality Description - Enhanced for attractiveness -->
-            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Added card styling -->
+            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4 -->
                 <div class="flex justify-between items-center">
                     <h3 class="font-semibold mb-2"><i class="fas fa-user-circle text-pink-500 mr-2"></i>My Personality</h3> <!-- Added icon -->
                     <button id="updatePersonalityBtn" class="text-pink-500 hover:text-pink-600">
@@ -815,17 +815,17 @@
 
             <!-- Relationship Style (Keeper/Seeker) -->
             {% if profile.keeper_seeker != 'N/A' %}
-            <div class="mt-6">
-                <h3 class="font-semibold mb-2">Relationship Style</h3>
+            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
+                <h3 class="font-semibold mb-2"><i class="fas fa-heart text-pink-500 mr-2"></i>Relationship Style</h3>
                 <p class="text-gray-700">{{ profile.keeper_seeker }}</p>
             </div>
             {% endif %}
 
             <!-- Religion Importance - Fixed conditional logic -->
             {% if profile.religion != 'N/A' %}
-            <div class="mt-6 religion-importance-section">
+            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease religion-importance-section"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
                 <div class="flex justify-between items-center mb-2">
-                    <h3 class="font-semibold">Religion Importance in Matching</h3>
+                    <h3 class="font-semibold"><i class="fas fa-pray text-pink-500 mr-2"></i>Religion Importance in Matching</h3>
                     <button id="editReligionImportanceBtn" class="ml-2 text-pink-500 hover:text-pink-600 dark:text-pink-400 dark:hover:text-pink-300">
                         <i class="fas fa-pencil-alt text-sm"></i>
                     </button>
@@ -845,9 +845,9 @@
 
             <!-- Physical Importance - Fixed conditional logic -->
             {% if profile.physical_traits %}
-            <div class="mt-6 physical-importance-section">
+            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease physical-importance-section"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
                 <div class="flex justify-between items-center mb-2">
-                    <h3 class="font-semibold">Physical Preference Importance in Matching</h3>
+                    <h3 class="font-semibold"><i class="fas fa-dumbbell text-pink-500 mr-2"></i>Physical Preference Importance in Matching</h3>
                     <button id="editPhysicalImportanceBtn" class="ml-2 text-pink-500 hover:text-pink-600 dark:text-pink-400 dark:hover:text-pink-300">
                         <i class="fas fa-pencil-alt text-sm"></i>
                     </button>
@@ -867,16 +867,16 @@
 
             <!-- Education/Work -->
             {% if profile.education_work != 'N/A' %}
-            <div class="mt-6">
-                <h3 class="font-semibold mb-2">Education/Work</h3>
+            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
+                <h3 class="font-semibold mb-2"><i class="fas fa-graduation-cap text-pink-500 mr-2"></i>Education/Work</h3>
                 <p class="text-gray-700">{{ profile.education_work }}</p>
             </div>
             {% endif %}
 
             <!-- Profile Interests -->
             {% if profile.profile_interests %}
-            <div class="mt-6">
-                <h3 class="font-semibold mb-2">Interests</h3>
+            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
+                <h3 class="font-semibold mb-2"><i class="fas fa-tags text-pink-500 mr-2"></i>Interests</h3>
                 <div class="flex flex-wrap gap-2">
                     {% for interest in profile.profile_interests %}
                     <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">{{ interest }}</span>
@@ -887,8 +887,8 @@
 
             <!-- Self-Summary -->
             {% if profile.summary != 'N/A' %}
-            <div class="mt-6">
-                <h3 class="font-semibold mb-2">Self-Summary</h3>
+            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
+                <h3 class="font-semibold mb-2"><i class="fas fa-info-circle text-pink-500 mr-2"></i>Self-Summary</h3>
                 <p class="text-gray-700">{{ profile.summary }}</p>
             </div>
             {% endif %}
@@ -1339,7 +1339,9 @@
             const updatePersonalityBtn = document.getElementById('updatePersonalityBtn');
             if (updatePersonalityBtn) {
                 updatePersonalityBtn.addEventListener('click', () => {
-                    window.location.href = '/questions?retake=true';
+                    if (confirm("Are you sure you want to update your personality? This may require retaking the quiz.")) {
+                        window.location.href = '/questions?retake=true';
+                    }
                 });
             }
             
