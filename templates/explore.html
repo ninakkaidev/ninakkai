@@ -865,7 +865,7 @@
             let likedUsers = JSON.parse(localStorage.getItem('likedUsers') || '{}');
 
             // User gender and show like prompt from template
-            const userGender = '{{ profile.gender }}';
+            const userGender = '{{ profile.gender }}'.toLowerCase();
             const showLikePrompt = {{ profile.show_like_prompt | tojson }};
 
             function showLoading() {
