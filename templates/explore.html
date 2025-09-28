@@ -1562,96 +1562,17 @@
                         const endpoint = isLiked ? '/unlike-user' : '/like-user';
                         const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
                         
-                        showLoading();
-                        try {
-                            const response = await fetch(endpoint, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ matched_user_id: userId })
-                            });
-                            const result = await response.json();
-                            hideLoading();
-                            
-                            if (result.success) {
-                                if (isLiked) {
-                                    delete likedUsers[userId];
-                                } else {
-                                    likedUsers[userId] = true;
-                                    createHeartBurst(this);
-                                }
-                                localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
-                                
-                                // Update all like buttons for this user, including this one
-                                profileViewer.querySelectorAll('.like-button').forEach(b => {
-                                    if (isLiked) {
-                                        b.classList.remove('liked-button');
-                                        b.classList.add('bg-pink-500', 'hover:bg-pink-600');
-                                        b.innerHTML = '<i class="fas fa-heart mr-2"></i> Like'; // For bottom button
-                                        b.dataset.liked = 'false';
-                                    } else {
-                                        b.classList.add('liked-button');
-                                        b.classList.remove('bg-pink-500', 'hover:bg-pink-600');
-                                        b.innerHTML = '<i class="fas fa-check mr-2"></i> Liked';
-                                        b.dataset.liked = 'true';
-                                    }
-                                });
-                                
-                                // Update main page buttons as well
-                                updateLikeButtons();
-                                
-                                showNotification(actionMessage);
-                                
-                                if (!isLiked && result.is_match) {
-                                    showMatchPopup();
-                                    showNotification("It's a match! You can now chat.");
-                                }
-
-                                // Handle like limits for males
-                                if (!isLiked && result.likes_remaining !== undefined) {
-                                    if (result.likes_remaining === 2) {
-                                        showNotification('Only 2 likes left for today!');
-                                    } else if (result.likes_remaining === 1) {
-                                        showNotification('Only 1 like left for today!');
-                                    }
-                                }
-                                
-                                // Update main cache
-                                const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
-                                if (cached) {
-                                    const match = cached.data.find(m => m.id === userId);
-                                    if (match) {
-                                        match.liked = !isLiked;
-                                    }
-                                    localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
-                                }
-
-                                // For like, close viewer and remove card; for unlike, keep viewer open
-                                if (!isLiked) {
-                                    setTimeout(() => {
-                                        profileViewer.remove();
-                                        mainHeader.style.display = 'flex';
-                                        document.body.style.overflow = '';
-                                        history.back();
-                                        
-                                        // Remove the card from the main view
-                                        const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
-                                        if (card) {
-                                            card.style.opacity = '0';
-                                            card.style.transition = 'opacity 0.5s ease';
-                                            setTimeout(() => card.remove(), 500);
-                                        }
-                                    }, 1500);
-                                }
+                        if (isLiked) {
+                            // Proceed with unlike
+                            proceedLikeOrUnlike(this, endpoint, actionMessage, isLiked, userId, profileViewer);
+                        } else {
+                            // Check for like prompt
+                            if (userGender === 'male' && showLikePrompt) {
+                                pendingLikeButton = this;
+                                likePromptModal.style.display = 'block';
                             } else {
-                                if (result.error === 'Daily like limit exceeded') {
-                                    showNotification('Your daily like limit has been exceeded!');
-                                } else {
-                                    showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
-                                }
+                                proceedLikeOrUnlike(this, endpoint, actionMessage, isLiked, userId, profileViewer);
                             }
-                        } catch (error) {
-                            hideLoading();
-                            showError(`Network error while ${isLiked ? 'unliking' : 'liking'} user`);
                         }
                     });
                 });
@@ -1704,6 +1625,105 @@
                 }
             }
             
+            // Modified proceedLikeOrUnlike to accept profileViewer for updating buttons
+            async function proceedLikeOrUnlike(button, endpoint, actionMessage, isLiked, userId, profileViewer = null) {
+                showLoading();
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ matched_user_id: userId })
+                    });
+                    const result = await response.json();
+                    hideLoading();
+                    
+                    if (result.success) {
+                        if (isLiked) {
+                            delete likedUsers[userId];
+                        } else {
+                            likedUsers[userId] = true;
+                            createHeartBurst(button);
+                        }
+                        localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
+                        
+                        // Update all like buttons for this user, including in profile viewer
+                        if (profileViewer) {
+                            profileViewer.querySelectorAll('.like-button').forEach(b => {
+                                if (isLiked) {
+                                    b.classList.remove('liked-button');
+                                    b.classList.add('bg-gradient-to-r', 'from-pink-400', 'to-pink-600', 'hover:from-pink-600', 'hover:to-pink-400');
+                                    b.innerHTML = '<i class="fas fa-heart mr-2"></i> Like';
+                                    b.dataset.liked = 'false';
+                                } else {
+                                    b.classList.add('liked-button');
+                                    b.classList.remove('bg-gradient-to-r', 'from-pink-400', 'to-pink-600', 'hover:from-pink-600', 'hover:to-pink-400');
+                                    b.innerHTML = '<i class="fas fa-check mr-2"></i> Liked';
+                                    b.dataset.liked = 'true';
+                                }
+                            });
+                        }
+                        
+                        // Update main page buttons as well
+                        updateLikeButtons();
+                        
+                        showNotification(actionMessage);
+                        
+                        if (!isLiked && result.is_match) {
+                            showMatchPopup();
+                            showNotification("It's a match! You can now chat.");
+                        }
+
+                        // Handle like limits for males
+                        if (!isLiked && result.likes_remaining !== undefined) {
+                            if (result.likes_remaining === 2) {
+                                showNotification('Only 2 likes left for today!');
+                            } else if (result.likes_remaining === 1) {
+                                showNotification('Only 1 like left for today!');
+                            }
+                        }
+                        
+                        // Update cache
+                        const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                        if (cached) {
+                            const match = cached.data.find(m => m.id === userId);
+                            if (match) {
+                                match.liked = !isLiked;
+                            }
+                            localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                        }
+
+                        // For like, close viewer and remove card; for unlike, keep viewer open
+                        if (!isLiked) {
+                            setTimeout(() => {
+                                if (profileViewer) {
+                                    profileViewer.remove();
+                                    mainHeader.style.display = 'flex';
+                                    document.body.style.overflow = '';
+                                    history.back();
+                                }
+                                
+                                // Remove the card from the main view
+                                const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
+                                if (card) {
+                                    card.style.opacity = '0';
+                                    card.style.transition = 'opacity 0.5s ease';
+                                    setTimeout(() => card.remove(), 500);
+                                }
+                            }, 1500);
+                        }
+                    } else {
+                        if (result.error === 'Daily like limit exceeded') {
+                            showNotification('Your daily like limit has been exceeded!');
+                        } else {
+                            showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
+                        }
+                    }
+                } catch (error) {
+                    hideLoading();
+                    showError(`Network error while ${isLiked ? 'unliking' : 'liking'} user`);
+                }
+            }
+
             // Function to attach profile click listeners
             function attachProfileClickListeners() {
                 document.querySelectorAll('.discovery-card:not([data-click-attached])').forEach(card => {
