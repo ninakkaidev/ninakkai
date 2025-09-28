@@ -791,7 +791,7 @@
     {% if show_feedback_prompt %}
     <div id="feedbackModal" class="popup text-gray-800 dark:text-gray-100">
         <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
-            <i class="fas fa-heart text-pink-500 mr-2 animate-pulse"></i> Ninakkai grows with your feelings. Share one honest thought — big or small — and we’ll use it to make your experience even more real
+            <i class="fas fa-heart text-pink-500 mr-2 animate-pulse"></i> Ninakkai grows with your feelings. Share one honest thought — big or small — and we'll use it to make your experience even more real
         </h3>
         <textarea id="feedbackText" class="w-full p-2 border rounded mb-4 dark:bg-gray-800 dark:border-gray-600 focus:ring-2 focus:ring-pink-500 transition-all" placeholder="Suggestions and feedback..."></textarea>
         <div class="flex justify-end space-x-2">
@@ -826,7 +826,7 @@
         <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
             <i class="fas fa-heart text-pink-500 mr-2 animate-pulse"></i> Every Like Matters
         </h3>
-        <p class="mb-4 text-center">On Ninakkai, every like carries meaning. That’s why you receive 3 chances each day to send a genuine like — not endless swipes, but mindful choices. Take your time, notice the details, and let your likes truly connect.</p>
+        <p class="mb-4 text-center">On Ninakkai, every like carries meaning. That's why you receive 3 chances each day to send a genuine like — not endless swipes, but mindful choices. Take your time, notice the details, and let your likes truly connect.</p>
         <div class="flex justify-center">
             <button id="continueLike" class="px-4 py-2 bg-pink-500 text-white rounded flex items-center">
                 <i class="fas fa-check mr-2"></i> Got it
@@ -864,9 +864,9 @@
             // Store liked users in localStorage to persist across page refreshes
             let likedUsers = JSON.parse(localStorage.getItem('likedUsers') || '{}');
 
-            // User gender and show like prompt from template
-            const userGender = '{{ profile.gender }}'.toLowerCase();
-            const showLikePrompt = {{ profile.show_like_prompt | tojson }};
+            // User gender and show like prompt from template - FIXED VARIABLES
+            const userGender = '{{ profile.gender|default("") }}';
+            const showLikePrompt = {{ profile.show_like_prompt|default(true)|tojson }};
 
             function showLoading() {
                 loading.style.display = 'flex';
@@ -1019,7 +1019,7 @@
                 });
             }
 
-            // Like button functionality with toggle
+            // Like button functionality with toggle - FIXED LOGIC
             function attachLikeButtonListeners() {
                 document.querySelectorAll('.like-button:not([data-like-attached])').forEach(button => {
                     button.addEventListener('click', async function(e) {
@@ -1028,19 +1028,21 @@
                         
                         const userId = this.dataset.userId;
                         const isLiked = this.dataset.liked === 'true';
-                        const endpoint = isLiked ? '/unlike-user' : '/like-user';
-                        const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
+                        
+                        console.log('Like button clicked:', { userId, isLiked, userGender, showLikePrompt });
                         
                         if (isLiked) {
                             // Proceed with unlike
-                            proceedLikeOrUnlike(this, endpoint, actionMessage, isLiked, userId);
+                            proceedLikeOrUnlike(this, '/unlike-user', 'Unliked', isLiked, userId);
                         } else {
-                            // Check for like prompt
+                            // Check for like prompt - FIXED CONDITION
                             if (userGender === 'male' && showLikePrompt) {
+                                console.log('Showing like prompt for male user');
                                 pendingLikeButton = this;
                                 likePromptModal.style.display = 'block';
                             } else {
-                                proceedLikeOrUnlike(this, endpoint, actionMessage, isLiked, userId);
+                                console.log('Proceeding directly with like');
+                                proceedLikeOrUnlike(this, '/like-user', 'Liked! We\'ll let them know', isLiked, userId);
                             }
                         }
                     });
@@ -1138,16 +1140,20 @@
             continueLikeBtn.addEventListener('click', async () => {
                 likePromptModal.style.display = 'none';
                 // Dismiss prompt on server
-                await fetch('/dismiss_like_prompt', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
+                try {
+                    await fetch('/dismiss_like_prompt', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                } catch (error) {
+                    console.error('Error dismissing like prompt:', error);
+                }
+                
                 // Proceed with pending like
                 if (pendingLikeButton) {
-                    const isLiked = pendingLikeButton.dataset.liked === 'true';
-                    const endpoint = isLiked ? '/unlike-user' : '/like-user';
-                    const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
-                    proceedLikeOrUnlike(pendingLikeButton, endpoint, actionMessage, isLiked, pendingLikeButton.dataset.userId);
+                    const userId = pendingLikeButton.dataset.userId;
+                    console.log('Proceeding with pending like for user:', userId);
+                    proceedLikeOrUnlike(pendingLikeButton, '/like-user', 'Liked! We\'ll let them know', false, userId);
                     pendingLikeButton = null;
                 }
             });
@@ -1562,6 +1568,13 @@
                         const endpoint = isLiked ? '/unlike-user' : '/like-user';
                         const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
                         
+                        // Check for like prompt in profile viewer too
+                        if (!isLiked && userGender === 'male' && showLikePrompt) {
+                            pendingLikeButton = this;
+                            likePromptModal.style.display = 'block';
+                            return;
+                        }
+                        
                         showLoading();
                         try {
                             const response = await fetch(endpoint, {
@@ -1774,7 +1787,7 @@
                     '👂 Listener': {tagline: '💞 Strength in calm.', narration: 'Their strength meets your attentive heart. Together, safety feels warm and steady, like a quiet embrace.'},
                     '🛡️ Protector': {tagline: '🛡 Two pillars.', narration: 'Both loyal and steady. Safety is never in doubt, and together you create a rock-solid bond.'},
                     '🌙 Dreamer': {tagline: '🌙 Anchor & wings.', narration: 'You give stability, they bring imagination. Together, life feels safe yet full of wonder.'},
-                    '💘 Romantic': {tagline: '🔥 Safe passion.', narration: 'Their love ignites, your care protects. Together, it’s passion wrapped in warmth.'},
+                    '💘 Romantic': {tagline: '🔥 Safe passion.', narration: 'Their love ignites, your care protects. Together, it's passion wrapped in warmth.'},
                     '🌟 Idealist': {tagline: '🌟 Guarding the dream.', narration: 'Your loyalty supports their ideals. Together, hope and security grow hand in hand.'},
                     '🌿 Nurturer': {tagline: '🛡 Wrapped in safety.', narration: 'Their steady strength protects your gentle heart, while your kindness warms their world. Together, it feels like home.'},
                 },
@@ -2037,6 +2050,10 @@
 
             // Initial likes update
             updateLikeButtons();
+            
+            // Debug logging
+            console.log('User gender:', userGender);
+            console.log('Show like prompt:', showLikePrompt);
         });
     </script>
 </body>
