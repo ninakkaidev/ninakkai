@@ -951,7 +951,45 @@
                             if (result.success) {
                                 createReportBurst(button);
                                 showNotification('Report submitted successfully');
+
+                                // Also pass the user to remove from view persistently
+                                fetch('/pass-user', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ passed_user_id: userId })
+                                }).then(res => res.json())
+                                .then(passResult => {
+                                    if (passResult.success) {
+                                        // Update cache
+                                        const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                                        if (cached) {
+                                            const match = cached.data.find(m => m.id === userId);
+                                            if (match) {
+                                                match.passed = true;
+                                            }
+                                            localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                                        }
+                                    }
+                                }).catch(err => console.error('Pass after report failed:', err));
+
                                 setTimeout(() => modal.remove(), 1000);
+
+                                // Remove viewer and card
+                                setTimeout(() => {
+                                    const profileViewer = document.querySelector('.profile-viewer');
+                                    if (profileViewer) {
+                                        profileViewer.remove();
+                                        mainHeader.style.display = 'flex';
+                                        document.body.style.overflow = '';
+                                        history.back();
+                                    }
+                                    const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
+                                    if (card) {
+                                        card.style.opacity = '0';
+                                        card.style.transition = 'opacity 0.5s ease';
+                                        setTimeout(() => card.remove(), 500);
+                                    }
+                                }, 1100);
                             } else {
                                 showError(result.error || 'Failed to submit report');
                             }
