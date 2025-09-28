@@ -866,7 +866,7 @@
 
             // User gender and show like prompt from template
             const userGender = '{{ profile.gender }}';
-            let showLikePrompt = {{ profile.show_like_prompt | tojson }};
+            const showLikePrompt = {{ profile.show_like_prompt | tojson }};
 
             function showLoading() {
                 loading.style.display = 'flex';
@@ -1104,7 +1104,6 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
-                showLikePrompt = false;
                 // Proceed with pending like
                 if (pendingLikeButton) {
                     const isLiked = pendingLikeButton.dataset.liked === 'true';
