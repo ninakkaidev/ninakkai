@@ -1778,15 +1778,9 @@ def dismiss_retake():
 @app.route('/dismiss_like_prompt', methods=['POST'])
 def dismiss_like_prompt():
     if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Not logged in'})
-    
-    user_id = session['user_id']
-    result = mongo_service.update_user(user_id, {'show_like_prompt': False})
-    
-    if result.get('success'):
-        return jsonify({'success': True})
-    else:
-        return jsonify({'success': False, 'error': 'Failed to update prompt setting'})
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    mongo_service.update_user(session['user_id'], {'like_prompt_shown': True})
+    return jsonify({'success': True})
 
 @app.route('/explore')
 def explore():
@@ -1803,9 +1797,6 @@ def explore():
         
         if not user.get('age_verified', False):
             return redirect(url_for('age_verification'))
-        
-        if 'show_like_prompt' not in profile:
-            profile['show_like_prompt'] = True
         
         quiz_result = mongo_service.get_quiz_results(session['user_id'])
         if not quiz_result:
