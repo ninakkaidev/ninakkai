@@ -799,19 +799,18 @@ class MongoService:
 
     def is_matched(self, user1: str, user2: str) -> bool:
         try:
-            like1 = self.likes.find_one({'user_id': user1, 'matched_user_id': user2})
-            like2 = self.likes.find_one({'user_id': user2, 'matched_user_id': user1})
-            return bool(like1 and like2)
+            like1 = [str(l['matched_user_id']) for l in self.likes.find({'user_id': user1})]
+            like2 = [str(l['matched_user_id']) for l in self.likes.find({'user_id': user2})]
+            return user2 in like1 and user1 in like2
         except Exception as e:
             logger.error(f"Is matched error: {str(e)}")
             return False
 
     def get_matched_users(self, user_id: str) -> List[str]:
         try:
-            likers = [str(l['user_id']) for l in self.likes.find({'matched_user_id': user_id})]
-            my_likes = self.likes.find({'user_id': user_id, 'matched_user_id': {'$in': likers}})
-            matches = [str(l['matched_user_id']) for l in my_likes]
-            return matches
+            likers = [l['user_id'] for l in self.likes.find({'matched_user_id': user_id})]
+            my_likes = [l['matched_user_id'] for l in self.likes.find({'user_id': user_id, 'matched_user_id': {'$in': likers}})]
+            return [str(m) for m in my_likes]
         except Exception as e:
             logger.error(f"Get matched users error: {str(e)}")
             return []
