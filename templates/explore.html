@@ -865,8 +865,7 @@
             let likedUsers = JSON.parse(localStorage.getItem('likedUsers') || '{}');
 
             // User gender and show like prompt from template
-            const userGender = '{{ profile.gender }}'.toLowerCase();
-            const showLikePrompt = {{ profile.show_like_prompt | tojson }};
+            const userGender = '{{ profile.gender }}';
 
             function showLoading() {
                 loading.style.display = 'flex';
@@ -1036,7 +1035,7 @@
                             proceedLikeOrUnlike(this, endpoint, actionMessage, isLiked, userId);
                         } else {
                             // Check for like prompt
-                            if (userGender === 'male' && showLikePrompt) {
+                            if (userGender === 'male' && localStorage.getItem('likePromptShown') !== 'true') {
                                 pendingLikeButton = this;
                                 likePromptModal.style.display = 'block';
                             } else {
@@ -1137,11 +1136,8 @@
             // Like prompt continue button
             continueLikeBtn.addEventListener('click', async () => {
                 likePromptModal.style.display = 'none';
-                // Dismiss prompt on server
-                await fetch('/dismiss_like_prompt', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
+                // Persist in localStorage instead of server
+                localStorage.setItem('likePromptShown', 'true');
                 // Proceed with pending like
                 if (pendingLikeButton) {
                     const isLiked = pendingLikeButton.dataset.liked === 'true';
