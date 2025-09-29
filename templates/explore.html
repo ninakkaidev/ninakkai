@@ -1070,12 +1070,12 @@
                         if (!isLiked) {
                             // No need to filter cache since we updated the flag
                             setTimeout(() => {
-                                const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
-                                if (card) {
+                                const cards = document.querySelectorAll(`.discovery-card[data-user-id="${userId}"]`);
+                                cards.forEach(card => {
                                     card.style.opacity = '0';
                                     card.style.transition = 'opacity 0.5s ease';
                                     setTimeout(() => card.remove(), 500);
-                                }
+                                });
                             }, 150);
                         } else {
                             // For unlike, optionally refresh to add back, but skipping for simplicity
@@ -1743,19 +1743,6 @@
                     .replace(/\bYou're\b/g, 'They\'re')
                     .replace(/\byou're\b/g, 'they\'re');
             }
-
-            // Navigation press effect
-            const navLinks = document.querySelectorAll('.bottom-nav a');
-            navLinks.forEach(link => {
-                link.addEventListener('pointerdown', function() {
-                    navLinks.forEach(l => {
-                        l.classList.remove('text-pink-500', 'dark:text-pink-400');
-                        l.classList.add('text-gray-500', 'dark:text-gray-400');
-                    });
-                    this.classList.remove('text-gray-500', 'dark:text-gray-400');
-                    this.classList.add('text-pink-500', 'dark:text-pink-400');
-                });
-            });
 
             // Burst animation functions
             function createHeartBurst(target) {
