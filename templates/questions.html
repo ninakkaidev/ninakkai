@@ -1329,9 +1329,7 @@
     btnSkip.addEventListener('click', handleSkip);
 
     function handleYes() {
-      if (currentExtraSection === 'keeperSeeker') {
-        continueKeeperSeekerQuestions();
-      } else if (currentExtraSection === 'religion') {
+      if (currentExtraSection === 'religion') {
         continueReligionQuestions();
       } else if (currentExtraSection === 'physical') {
         continuePhysicalQuestions();
@@ -1386,7 +1384,7 @@
     function showNextSectionPrompt() {
       switch (currentSection) {
         case 'mandatory':
-          showKeeperSeekerSection();
+          continueKeeperSeekerQuestions();
           break;
         case 'keeperSeeker':
           showReligionSection();
@@ -1842,26 +1840,6 @@
       displayQuestion();
     }
 
-    function showKeeperSeekerSection() {
-      console.log('Showing keeper/seeker section');
-      currentExtraSection = 'keeperSeeker';
-      currentSection = 'keeperSeeker';
-      qaContainer.style.display = 'flex';
-      questionBox.style.display = 'none';
-      optionalSection.style.display = 'block';
-      // Remove skip button for relationship readiness section
-      btnSkip.style.display = 'none';
-      updateSectionInfo();
-      optionalP.textContent = 'Want to answer questions about your relationship readiness?';
-      optionalSection.classList.add('animate__animated', 'animate__fadeIn');
-      setTimeout(() => {
-        optionalSection.classList.remove('animate__animated', 'animate__fadeIn');
-      }, 1000);
-      
-      // Show back button
-      backButton.style.display = 'flex';
-    }
-
     function showReligionSection() {
       console.log('Showing religion section');
       currentExtraSection = 'religion';
@@ -1988,11 +1966,6 @@
           questionBox.style.display = 'flex';
           let prevQuestion, prevSection, prevStart;
           switch (currentExtraSection) {
-            case 'keeperSeeker':
-              prevQuestion = mandatoryQuestionCount - 1;
-              prevSection = 'mandatory';
-              prevStart = 0;
-              break;
             case 'religion':
               if (isKeeperSeekerSection) {
                 prevQuestion = mandatoryQuestionCount + keeperSeekerQuestionCount - 1;
