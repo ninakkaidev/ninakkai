@@ -678,7 +678,7 @@
                 </button>
                 <button id="notificationToggle" class="relative text-transparent bg-gradient-to-r from-blue-500 to-pink-500 bg-clip-text hover:from-pink-500 hover:to-blue-500">
                     <i class="fas fa-bell text-xl"></i>
-                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem]" id="notificationCount" style="display: none;">0</span>
+                    <span id="notificationCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem]" style="display: none;">0</span>
                 </button>
                 <div id="searchBox" class="hidden md:block search-box-transition">
                     <input type="text" id="searchInput" placeholder="Search by name or interests..." class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-full px-4 py-1 focus:outline-none focus:ring-2 focus:ring-pink-500" />
@@ -1147,7 +1147,6 @@
                         updateMatches(result.matches);
                         updateDiscovery(result.matches);
                         attachLikeButtonListeners();
-                        attachPassButtonListeners();
                         attachProfileClickListeners();
                     } else {
                         showError(result.error || 'Failed to search matches');
@@ -1185,16 +1184,11 @@
                                     <div>
                                         <h3 class="text-gray-100 font-bold">${match.full_name}, ${match.age || 'N/A'}</h3>
                                     </div>
-                                    <div class="flex space-x-2">
-                                        <button class="pass-button bg-red-500 hover:bg-red-600 text-white rounded-full px-3 py-1 text-sm" data-user-id="${match.id}" ${match.passed ? 'disabled' : ''}>${match.passed ? 'Passed' : 'Pass'}</button>
-                                        <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500 hover:bg-pink-600'} text-white rounded-full px-3 py-1 text-sm" data-user-id="${match.id}" data-liked="${match.liked}">${match.liked ? 'Liked' : 'Like'}</button>
-                                    </div>
                                 </div>
                             </div>
                         `;
                         matchesGrid.appendChild(card);
                         attachLikeButtonListeners();
-                        attachPassButtonListeners();
                         attachProfileClickListeners();
                     }, index * 200);  // 200ms delay between each card
                 });
@@ -1221,26 +1215,16 @@
                         card.dataset.userId = match.id;
                         card.innerHTML = `
                             <img src="${match.image}" alt="Profile" class="discovery-image">
-                            <div class="discovery-content text-white">
+                            <div class="discovery-content">
                                 <div class="flex justify-between items-end">
                                     <div>
-                                        <h3 class="font-bold text-lg">${match.full_name}, ${match.age || 'N/A'}</h3>
-                                        <p class="text-sm opacity-90">${match.occupation}</p>
-                                    </div>
-                                    <div class="flex space-x-3">
-                                        <button class="pass-button bg-red-500/80 hover:bg-red-600 text-white rounded-full p-3" data-user-id="${match.id}" ${match.passed ? 'disabled' : ''}>
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                        <button class="like-button ${match.liked ? 'liked-button' : 'bg-pink-500/80 hover:bg-pink-600'} text-white rounded-full p-3" data-user-id="${match.id}" data-liked="${match.liked}">
-                                            <i class="fas fa-heart"></i>
-                                        </button>
+                                        <h3 class="text-gray-100 font-bold text-sm md:text-base">${match.full_name}, ${match.age || 'N/A'}</h3>
                                     </div>
                                 </div>
                             </div>
                         `;
                         discoveryGrid.appendChild(card);
                         attachLikeButtonListeners();
-                        attachPassButtonListeners();
                         attachProfileClickListeners();
                     }, index * 200);  // 200ms delay between each card
                 });
@@ -2016,59 +2000,6 @@
 
             // Initial likes update
             updateLikeButtons();
-
-            // Pass button functionality
-            function attachPassButtonListeners() {
-                document.querySelectorAll('.pass-button:not([data-pass-attached])').forEach(button => {
-                    button.addEventListener('click', async function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        
-                        const userId = this.dataset.userId;
-                        
-                        showLoading();
-                        try {
-                            const response = await fetch('/pass-user', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ passed_user_id: userId })
-                            });
-                            const result = await response.json();
-                            hideLoading();
-                            
-                            if (result.success) {
-                                createPassBurst(this);
-                                showNotification('Passed');
-                                // Update cache
-                                const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
-                                if (cached) {
-                                    const match = cached.data.find(m => m.id === userId);
-                                    if (match) {
-                                        match.passed = true;
-                                    }
-                                    localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
-                                }
-                                // Remove card
-                                const card = button.closest('.discovery-card');
-                                if (card) {
-                                    card.style.opacity = '0';
-                                    card.style.transition = 'opacity 0.5s ease';
-                                    setTimeout(() => card.remove(), 500);
-                                }
-                                // Disable button
-                                button.disabled = true;
-                                button.textContent = 'Passed';
-                            } else {
-                                showError(result.error || 'Failed to pass user');
-                            }
-                        } catch (error) {
-                            hideLoading();
-                            showError('Network error while passing user');
-                        }
-                    });
-                    button.setAttribute('data-pass-attached', 'true');
-                });
-            }
         });
     </script>
 </body>
