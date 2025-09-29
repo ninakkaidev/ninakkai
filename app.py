@@ -265,6 +265,7 @@ class MongoService:
                 'profile_data': [],
                 'feedback_prompt_dismissed': False,
                 'retake_prompt_dismissed': False,
+                'like_prompt_dismissed': False,  # Added for persistent prompt dismissal
                 'feedback': None,
                 'feedback_date': None,
             }
@@ -1213,7 +1214,7 @@ def send_verification_email(email: str, verification_token: str) -> Dict[str, An
         smtp_server = 'smtp.gmail.com'
         smtp_port = '587'
         smtp_user = 'ninakkaiforyou@gmail.com'
-        smtp_password = os.environ.get('SMTP_PASSWORD', 'porz cqqt bumr wdgj')
+        smtp_password = os.environ.get('SMTP_PASSWORD', 'porz cqqt bumr bumr wdgj')
         verification_url = f"https://www.ninakkai.com/verify-email?token={verification_token}"
         msg = MIMEMultipart()
         msg['From'] = smtp_user
@@ -1247,7 +1248,7 @@ def send_reset_email(email: str, reset_token: str) -> Dict[str, Any]:
         smtp_server = 'smtp.gmail.com'
         smtp_port = 587
         smtp_user = 'ninakkaiforyou@gmail.com'
-        smtp_password = os.environ.get('SMTP_PASSWORD', 'porz cqqt bumr wdgj')
+        smtp_password = os.environ.get('SMTP_PASSWORD', 'porz cqqt bumr bumr wdgj')
         reset_url = f"https://www.ninakkai.com/reset-password/{reset_token}"
         msg = MIMEMultipart()
         msg['From'] = smtp_user
@@ -1776,6 +1777,13 @@ def dismiss_retake():
     mongo_service.update_user(session['user_id'], {'retake_prompt_dismissed': True})
     return jsonify({'success': True})
 
+@app.route('/dismiss_like_prompt', methods=['POST'])
+def dismiss_like_prompt():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    result = mongo_service.update_user(session['user_id'], {'like_prompt_dismissed': True})
+    return jsonify(result)
+
 @app.route('/explore')
 def explore():
     logger.debug(f"Session in explore: {session}")
@@ -1797,7 +1805,7 @@ def explore():
             return redirect(url_for('questions', error='Please complete the quiz to access the explore page'))
         
         profile = {
-            'id': user['id'],
+            'id': str(user['_id']),
             'full_name': user['full_name'],
             'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
             'occupation': user.get('occupation', 'N/A'),
@@ -1807,7 +1815,7 @@ def explore():
             'dominant_type': quiz_result['scores']['dominant_type'],
             'match_percentage': 50,
             'gender': user['gender'],
-            'show_like_prompt': user['gender'] == 'male' and not mongo_service.has_liked_any(session['user_id'])
+            'show_like_prompt': user['gender'] == 'male' and not mongo_service.has_liked_any(session['user_id']) and not user.get('like_prompt_dismissed', False)
         }
         
         prompt_status = mongo_service.get_user_prompt_status(session['user_id'])
