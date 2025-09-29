@@ -788,10 +788,23 @@
         </div>
     </div>
 
+    <!-- Like Prompt Modal for Male Users (First Like Attempt) -->
+    <div id="likePromptModal" class="popup text-gray-800 dark:text-gray-100" style="display: none;">
+        <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
+            <i class="fas fa-heart text-pink-500 mr-2 animate-pulse"></i> Every Like Matters
+        </h3>
+        <p class="mb-4 text-center">On Ninakkai, every like carries meaning. That's why you receive 3 chances each day to send a genuine like — not endless swipes, but mindful choices. Take your time, notice the details, and let your likes truly connect.</p>
+        <div class="flex justify-center">
+            <button id="continueLike" class="px-4 py-2 bg-pink-500 text-white rounded flex items-center">
+                <i class="fas fa-check mr-2"></i> Got it
+            </button>
+        </div>
+    </div>
+
     {% if show_feedback_prompt %}
     <div id="feedbackModal" class="popup text-gray-800 dark:text-gray-100">
         <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
-            <i class="fas fa-heart text-pink-500 mr-2 animate-pulse"></i> Ninakkai grows with your feelings. Share one honest thought — big or small — and we’ll use it to make your experience even more real
+            <i class="fas fa-heart text-pink-500 mr-2 animate-pulse"></i> Ninakkai grows with your feelings. Share one honest thought — big or small — and we'll use it to make your experience even more real
         </h3>
         <textarea id="feedbackText" class="w-full p-2 border rounded mb-4 dark:bg-gray-800 dark:border-gray-600 focus:ring-2 focus:ring-pink-500 transition-all" placeholder="Suggestions and feedback..."></textarea>
         <div class="flex justify-end space-x-2">
@@ -821,19 +834,6 @@
     </div>
     {% endif %}
 
-    <!-- Like Prompt Modal for Male Users (First Like Attempt) -->
-    <div id="likePromptModal" class="popup text-gray-800 dark:text-gray-100" style="display: none;">
-        <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
-            <i class="fas fa-heart text-pink-500 mr-2 animate-pulse"></i> Every Like Matters
-        </h3>
-        <p class="mb-4 text-center">On Ninakkai, every like carries meaning. That’s why you receive 3 chances each day to send a genuine like — not endless swipes, but mindful choices. Take your time, notice the details, and let your likes truly connect.</p>
-        <div class="flex justify-center">
-            <button id="continueLike" class="px-4 py-2 bg-pink-500 text-white rounded flex items-center">
-                <i class="fas fa-check mr-2"></i> Got it
-            </button>
-        </div>
-    </div>
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const loading = document.getElementById('loading');
@@ -849,6 +849,7 @@
             // State for loading
             let isLoading = false;
             let pendingLikeButton = null;
+            let pendingLikeUserId = null;
             
             // Cache key
             const CACHE_KEY = 'ninakkai_matches';
@@ -990,19 +991,18 @@
                         
                         const userId = this.dataset.userId;
                         const isLiked = this.dataset.liked === 'true';
-                        const endpoint = isLiked ? '/unlike-user' : '/like-user';
-                        const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
                         
                         if (isLiked) {
                             // Proceed with unlike
-                            proceedLikeOrUnlike(this, endpoint, actionMessage, isLiked, userId);
+                            proceedLikeOrUnlike(this, '/unlike-user', 'Unliked', isLiked, userId);
                         } else {
                             // Check for like prompt
                             if (userGender === 'male' && showLikePrompt) {
                                 pendingLikeButton = this;
+                                pendingLikeUserId = userId;
                                 likePromptModal.style.display = 'block';
                             } else {
-                                proceedLikeOrUnlike(this, endpoint, actionMessage, isLiked, userId);
+                                proceedLikeOrUnlike(this, '/like-user', 'Liked! We\'ll let them know', isLiked, userId);
                             }
                         }
                     });
@@ -1106,12 +1106,10 @@
                 });
                 showLikePrompt = false;
                 // Proceed with pending like
-                if (pendingLikeButton) {
-                    const isLiked = pendingLikeButton.dataset.liked === 'true';
-                    const endpoint = isLiked ? '/unlike-user' : '/like-user';
-                    const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
-                    proceedLikeOrUnlike(pendingLikeButton, endpoint, actionMessage, isLiked, pendingLikeButton.dataset.userId);
+                if (pendingLikeButton && pendingLikeUserId) {
+                    proceedLikeOrUnlike(pendingLikeButton, '/like-user', 'Liked! We\'ll let them know', false, pendingLikeUserId);
                     pendingLikeButton = null;
+                    pendingLikeUserId = null;
                 }
             });
 
@@ -1522,99 +1520,19 @@
                         e.stopPropagation();
                         
                         const isLiked = this.dataset.liked === 'true';
-                        const endpoint = isLiked ? '/unlike-user' : '/like-user';
-                        const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
                         
-                        showLoading();
-                        try {
-                            const response = await fetch(endpoint, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ matched_user_id: userId })
-                            });
-                            const result = await response.json();
-                            hideLoading();
-                            
-                            if (result.success) {
-                                if (isLiked) {
-                                    delete likedUsers[userId];
-                                } else {
-                                    likedUsers[userId] = true;
-                                    createHeartBurst(this);
-                                }
-                                localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
-                                
-                                // Update all like buttons for this user, including this one
-                                profileViewer.querySelectorAll('.like-button').forEach(b => {
-                                    if (isLiked) {
-                                        b.classList.remove('liked-button');
-                                        b.classList.add('bg-pink-500', 'hover:bg-pink-600');
-                                        b.innerHTML = '<i class="fas fa-heart mr-2"></i> Like'; // For bottom button
-                                        b.dataset.liked = 'false';
-                                    } else {
-                                        b.classList.add('liked-button');
-                                        b.classList.remove('bg-pink-500', 'hover:bg-pink-600');
-                                        b.innerHTML = '<i class="fas fa-check mr-2"></i> Liked';
-                                        b.dataset.liked = 'true';
-                                    }
-                                });
-                                
-                                // Update main page buttons as well
-                                updateLikeButtons();
-                                
-                                showNotification(actionMessage);
-                                
-                                if (!isLiked && result.is_match) {
-                                    showMatchPopup();
-                                    showNotification("It's a match! You can now chat.");
-                                }
-
-                                // Handle like limits for males
-                                if (!isLiked && result.likes_remaining !== undefined) {
-                                    if (result.likes_remaining === 2) {
-                                        showNotification('Only 2 likes left for today!');
-                                    } else if (result.likes_remaining === 1) {
-                                        showNotification('Only 1 like left for today!');
-                                    }
-                                }
-                                
-                                // Update main cache
-                                const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
-                                if (cached) {
-                                    const match = cached.data.find(m => m.id === userId);
-                                    if (match) {
-                                        match.liked = !isLiked;
-                                    }
-                                    localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
-                                }
-
-                                // For like, close viewer and remove card; for unlike, keep viewer open
-                                if (!isLiked) {
-                                    setTimeout(() => {
-                                        profileViewer.remove();
-                                        mainHeader.style.display = 'flex';
-                                        document.body.style.overflow = '';
-                                        history.back();
-                                        
-                                        // Remove the card from the main view
-                                        const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
-                                        if (card) {
-                                            card.style.opacity = '0';
-                                            card.style.transition = 'opacity 0.5s ease';
-                                            setTimeout(() => card.remove(), 500);
-                                        }
-                                    }, 1500);
-                                }
+                        if (isLiked) {
+                            // Proceed with unlike
+                            proceedProfileViewerLikeOrUnlike(this, '/unlike-user', 'Unliked', isLiked, userId, profileViewer);
+                        } else {
+                            // Check for like prompt
+                            if (userGender === 'male' && showLikePrompt) {
+                                pendingLikeButton = this;
+                                pendingLikeUserId = userId;
+                                likePromptModal.style.display = 'block';
                             } else {
-                                if (result.error === 'Daily like limit exceeded') {
-                                    showNotification('Your daily like limit has been exceeded!');
-                                } else {
-                                    showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
-                                }
+                                proceedProfileViewerLikeOrUnlike(this, '/like-user', 'Liked! We\'ll let them know', isLiked, userId, profileViewer);
                             }
-                        } catch (error) {
-                            hideLoading();
-                            showError(`Network error while ${isLiked ? 'unliking' : 'liking'} user`);
                         }
                     });
                 });
@@ -1664,6 +1582,100 @@
                             showError('Network error while passing user');
                         }
                     });
+                }
+            }
+
+            async function proceedProfileViewerLikeOrUnlike(button, endpoint, actionMessage, isLiked, userId, profileViewer) {
+                showLoading();
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ matched_user_id: userId })
+                    });
+                    const result = await response.json();
+                    hideLoading();
+                    
+                    if (result.success) {
+                        if (isLiked) {
+                            delete likedUsers[userId];
+                        } else {
+                            likedUsers[userId] = true;
+                            createHeartBurst(button);
+                        }
+                        localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
+                        
+                        // Update all like buttons for this user, including this one
+                        profileViewer.querySelectorAll('.like-button').forEach(b => {
+                            if (isLiked) {
+                                b.classList.remove('liked-button');
+                                b.classList.add('bg-pink-500', 'hover:bg-pink-600');
+                                b.innerHTML = '<i class="fas fa-heart mr-2"></i> Like'; // For bottom button
+                                b.dataset.liked = 'false';
+                            } else {
+                                b.classList.add('liked-button');
+                                b.classList.remove('bg-pink-500', 'hover:bg-pink-600');
+                                b.innerHTML = '<i class="fas fa-check mr-2"></i> Liked';
+                                b.dataset.liked = 'true';
+                            }
+                        });
+                        
+                        // Update main page buttons as well
+                        updateLikeButtons();
+                        
+                        showNotification(actionMessage);
+                        
+                        if (!isLiked && result.is_match) {
+                            showMatchPopup();
+                            showNotification("It's a match! You can now chat.");
+                        }
+
+                        // Handle like limits for males
+                        if (!isLiked && result.likes_remaining !== undefined) {
+                            if (result.likes_remaining === 2) {
+                                showNotification('Only 2 likes left for today!');
+                            } else if (result.likes_remaining === 1) {
+                                showNotification('Only 1 like left for today!');
+                            }
+                        }
+                        
+                        // Update main cache
+                        const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                        if (cached) {
+                            const match = cached.data.find(m => m.id === userId);
+                            if (match) {
+                                match.liked = !isLiked;
+                            }
+                            localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                        }
+
+                        // For like, close viewer and remove card; for unlike, keep viewer open
+                        if (!isLiked) {
+                            setTimeout(() => {
+                                profileViewer.remove();
+                                mainHeader.style.display = 'flex';
+                                document.body.style.overflow = '';
+                                history.back();
+                                
+                                // Remove the card from the main view
+                                const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
+                                if (card) {
+                                    card.style.opacity = '0';
+                                    card.style.transition = 'opacity 0.5s ease';
+                                    setTimeout(() => card.remove(), 500);
+                                }
+                            }, 1500);
+                        }
+                    } else {
+                        if (result.error === 'Daily like limit exceeded') {
+                            showNotification('Your daily like limit has been exceeded!');
+                        } else {
+                            showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
+                        }
+                    }
+                } catch (error) {
+                    hideLoading();
+                    showError(`Network error while ${isLiked ? 'unliking' : 'liking'} user`);
                 }
             }
             
@@ -1737,7 +1749,7 @@
                     '👂 Listener': {tagline: '💞 Strength in calm.', narration: 'Their strength meets your attentive heart. Together, safety feels warm and steady, like a quiet embrace.'},
                     '🛡️ Protector': {tagline: '🛡 Two pillars.', narration: 'Both loyal and steady. Safety is never in doubt, and together you create a rock-solid bond.'},
                     '🌙 Dreamer': {tagline: '🌙 Anchor & wings.', narration: 'You give stability, they bring imagination. Together, life feels safe yet full of wonder.'},
-                    '💘 Romantic': {tagline: '🔥 Safe passion.', narration: 'Their love ignites, your care protects. Together, it’s passion wrapped in warmth.'},
+                    '💘 Romantic': {tagline: '🔥 Safe passion.', narration: 'Their love ignites, your care protects. Together, it's passion wrapped in warmth.'},
                     '🌟 Idealist': {tagline: '🌟 Guarding the dream.', narration: 'Your loyalty supports their ideals. Together, hope and security grow hand in hand.'},
                     '🌿 Nurturer': {tagline: '🛡 Wrapped in safety.', narration: 'Their steady strength protects your gentle heart, while your kindness warms their world. Together, it feels like home.'},
                 },
