@@ -1070,11 +1070,12 @@
                         if (!isLiked) {
                             // No need to filter cache since we updated the flag
                             setTimeout(() => {
-                                document.querySelectorAll(`.discovery-card[data-user-id="${userId}"]`).forEach(card => {
+                                const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
+                                if (card) {
                                     card.style.opacity = '0';
                                     card.style.transition = 'opacity 0.5s ease';
                                     setTimeout(() => card.remove(), 500);
-                                });
+                                }
                             }, 150);
                         } else {
                             // For unlike, optionally refresh to add back, but skipping for simplicity
