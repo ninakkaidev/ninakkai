@@ -1805,7 +1805,7 @@ def explore():
             return redirect(url_for('questions', error='Please complete the quiz to access the explore page'))
         
         profile = {
-            'id': str(user['_id']),
+            'id': user['id'],
             'full_name': user['full_name'],
             'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
             'occupation': user.get('occupation', 'N/A'),
@@ -1826,7 +1826,7 @@ def explore():
         return resp
     except Exception as e:
         logger.error(f"Explore error: {str(e)}")
-        return render_template('explore.html', profile={}, matches=[], discovery=[], error='An error occurred while loading the explore page. Please try again.')
+        return render_template('explore.html', profile={'show_like_prompt': False, 'gender': '', 'dominant_type': ''}, matches=[], discovery=[], error='An error occurred while loading the explore page. Please try again.')
 
 @app.route('/api/matches', methods=['GET'])
 def api_matches():
