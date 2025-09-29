@@ -678,7 +678,7 @@
                 </button>
                 <button id="notificationToggle" class="relative text-transparent bg-gradient-to-r from-blue-500 to-pink-500 bg-clip-text hover:from-pink-500 hover:to-blue-500">
                     <i class="fas fa-bell text-xl"></i>
-                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem]" id="notificationCount" style="display: none;">0</span>
+                    <span id="notificationCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem]" style="display: none;">0</span>
                 </button>
                 <div id="searchBox" class="hidden md:block search-box-transition">
                     <input type="text" id="searchInput" placeholder="Search by name or interests..." class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-full px-4 py-1 focus:outline-none focus:ring-2 focus:ring-pink-500" />
@@ -994,8 +994,10 @@
                         const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
                         
                         if (isLiked) {
+                            // Proceed with unlike
                             proceedLikeOrUnlike(this, endpoint, actionMessage, isLiked, userId);
                         } else {
+                            // Check for like prompt
                             if (userGender === 'male' && showLikePrompt) {
                                 pendingLikeButton = this;
                                 likePromptModal.style.display = 'block';
@@ -1024,6 +1026,7 @@
                             delete likedUsers[userId];
                         } else {
                             likedUsers[userId] = true;
+                            createHeartBurst(button);
                         }
                         localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
                         
@@ -1070,12 +1073,12 @@
                         if (!isLiked) {
                             // No need to filter cache since we updated the flag
                             setTimeout(() => {
-                                const cards = document.querySelectorAll(`.discovery-card[data-user-id="${userId}"]`);
-                                cards.forEach(card => {
+                                const card = button.closest('.discovery-card');
+                                if (card) {
                                     card.style.opacity = '0';
                                     card.style.transition = 'opacity 0.5s ease';
                                     setTimeout(() => card.remove(), 500);
-                                });
+                                }
                             }, 150);
                         } else {
                             // For unlike, optionally refresh to add back, but skipping for simplicity
@@ -1528,25 +1531,11 @@
                             if (userGender === 'male' && showLikePrompt) {
                                 pendingLikeButton = this;
                                 likePromptModal.style.display = 'block';
+                                return;
                             } else {
                                 proceedLikeOrUnlike(this, endpoint, actionMessage, isLiked, userId);
                             }
                         }
-                        
-                        // Update all like buttons in viewer
-                        profileViewer.querySelectorAll('.like-button').forEach(b => {
-                            if (isLiked) {
-                                b.classList.remove('liked-button');
-                                b.classList.add('bg-pink-500', 'hover:bg-pink-600');
-                                b.innerHTML = '<i class="fas fa-heart mr-2"></i> Like';
-                                b.dataset.liked = 'false';
-                            } else {
-                                b.classList.add('liked-button');
-                                b.classList.remove('bg-pink-500', 'hover:bg-pink-600');
-                                b.innerHTML = '<i class="fas fa-check mr-2"></i> Liked';
-                                b.dataset.liked = 'true';
-                            }
-                        });
                     });
                 });
                 
@@ -1743,6 +1732,19 @@
                     .replace(/\bYou're\b/g, 'They\'re')
                     .replace(/\byou're\b/g, 'they\'re');
             }
+
+            // Navigation press effect
+            const navLinks = document.querySelectorAll('.bottom-nav a');
+            navLinks.forEach(link => {
+                link.addEventListener('pointerdown', function() {
+                    navLinks.forEach(l => {
+                        l.classList.remove('text-pink-500', 'dark:text-pink-400');
+                        l.classList.add('text-gray-500', 'dark:text-gray-400');
+                    });
+                    this.classList.remove('text-gray-500', 'dark:text-gray-400');
+                    this.classList.add('text-pink-500', 'dark:text-pink-400');
+                });
+            });
 
             // Burst animation functions
             function createHeartBurst(target) {
