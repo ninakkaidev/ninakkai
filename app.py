@@ -220,6 +220,9 @@ class MongoService:
             {'$set': {'attempts': 0, 'last_reset': datetime.now(timezone.utc)}}
         )
 
+    def has_liked_any(self, user_id: str) -> bool:
+        return self.likes.count_documents({'user_id': user_id}) > 0
+
     def create_user(self, email: str, password: str, full_name: str, age: int = None, gender: str = None, image: str = None, occupation: str = None, bio: str = None, interests: List[str] = None) -> Dict[str, Any]:
         try:
             if age is not None and age < 18:
@@ -264,7 +267,6 @@ class MongoService:
                 'retake_prompt_dismissed': False,
                 'feedback': None,
                 'feedback_date': None,
-                'like_prompt_shown': False,
             }
             result = self.users.insert_one(user_data)
             return {
@@ -1639,8 +1641,8 @@ def update_gender():
     # Update gender and set age_verified True
     update_data = {'gender': new_gender, 'age_verified': True}
     old_gender = user['gender']
-    old_default = 'https://i.ibb.co/tTg9CkS/653324ed-3b9c-48b1-b9b2-d1d8b16931ff.png' if old_gender == 'male' else 'https://i.ibb.co/KpKdK9xy/8e2b61f2-44cc-43cd-bc55-e5ebcaae9130.png'
-    new_default = 'https://i.ibb.co/tTg9CkS/653324ed-3b9c-48b1-b9b2-d1d8b16931ff.png' if new_gender == 'male' else 'https://i.ibb.co/KpKdK9xy/8e2b61f2-44cc-43cd-bc55-e5ebcaae9130.png'
+    old_default = 'https://ik.imagekit.io/vo0ffucpi/653324ed-3b9c-48b1-b9b2-d1d8b16931ff.jpg' if old_gender == 'male' else 'https://ik.imagekit.io/vo0ffucpi/8e2b61f2-44cc-43cd-bc55-e5ebcaae9130.jpg'
+    new_default = 'https://ik.imagekit.io/vo0ffucpi/653324ed-3b9c-48b1-b9b2-d1d8b16931ff.jpg' if new_gender == 'male' else 'https://ik.imagekit.io/vo0ffucpi/8e2b61f2-44cc-43cd-bc55-e5ebcaae9130.jpg'
     if user.get('image') == old_default:
         update_data['image'] = new_default
     update_result = mongo_service.update_user(session['user_id'], update_data)
@@ -1774,13 +1776,6 @@ def dismiss_retake():
     mongo_service.update_user(session['user_id'], {'retake_prompt_dismissed': True})
     return jsonify({'success': True})
 
-@app.route('/dismiss_like_prompt', methods=['POST'])
-def dismiss_like_prompt():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    mongo_service.update_user(session['user_id'], {'like_prompt_shown': True})
-    return jsonify({'success': True})
-
 @app.route('/explore')
 def explore():
     logger.debug(f"Session in explore: {session}")
@@ -1812,7 +1807,7 @@ def explore():
             'dominant_type': quiz_result['scores']['dominant_type'],
             'match_percentage': 50,
             'gender': user['gender'],
-            'show_like_prompt': user['gender'] == 'male' and not user.get('like_prompt_shown', False)
+            'show_like_prompt': user['gender'] == 'male' and not mongo_service.has_liked_any(session['user_id'])
         }
         
         prompt_status = mongo_service.get_user_prompt_status(session['user_id'])
