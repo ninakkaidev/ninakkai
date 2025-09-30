@@ -1653,7 +1653,7 @@ def update_gender():
         return jsonify({'success': False, 'error': 'Failed to update gender'}), 500
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
-def reset_password_endpoint(token):
+def reset_password_endpoint():
     if request.method == 'GET':
         user = mongo_service.get_user_by_reset_token(token)
         if not user:
@@ -1748,6 +1748,8 @@ def report_user_endpoint():
     if not reported_user_id or not reason:
         return jsonify({'success': False, 'error': 'Missing required fields'}), 400
     result = mongo_service.report_user(session['user_id'], reported_user_id, reason)
+    if result['success']:
+        mongo_service.pass_user(session['user_id'], reported_user_id)
     return jsonify(result)
 
 @app.route('/submit_feedback', methods=['POST'])

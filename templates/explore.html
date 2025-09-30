@@ -951,7 +951,32 @@
                             if (result.success) {
                                 createReportBurst(button);
                                 showNotification('Report submitted successfully');
-                                setTimeout(() => modal.remove(), 1000);
+                                setTimeout(() => {
+                                    modal.remove();
+                                    // Close viewer and remove card like pass
+                                    const viewer = document.querySelector('.profile-viewer');
+                                    if (viewer) {
+                                        viewer.remove();
+                                        mainHeader.style.display = 'flex';
+                                        document.body.style.overflow = '';
+                                        history.back();
+                                    }
+                                    const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
+                                    if (card) {
+                                        card.style.opacity = '0';
+                                        card.style.transition = 'opacity 0.5s ease';
+                                        setTimeout(() => card.remove(), 500);
+                                    }
+                                    // Update cache like pass
+                                    const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                                    if (cached) {
+                                        const match = cached.data.find(m => m.id === userId);
+                                        if (match) {
+                                            match.passed = true;
+                                        }
+                                        localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                                    }
+                                }, 1000);
                             } else {
                                 showError(result.error || 'Failed to submit report');
                             }
