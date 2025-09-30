@@ -2006,15 +2006,6 @@
                                     showMatchPopup();
                                     showNotification("It's a match! You can now chat.");
                                 }
-
-                                // Handle like limits for males
-                                if (!isLiked && result.likes_remaining !== undefined) {
-                                    if (result.likes_remaining === 2) {
-                                        showNotification('Only 2 likes left for today!');
-                                    } else if (result.likes_remaining === 1) {
-                                        showNotification('Only 1 like left for today!');
-                                    }
-                                }
                                 
                                 // For like, close viewer and remove card; for unlike, keep viewer open
                                 if (!isLiked) {
