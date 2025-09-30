@@ -894,6 +894,20 @@
                 }, 2000);
             }
 
+            function showPopup(message, duration = 3000) {
+                const popup = document.createElement('div');
+                popup.className = 'popup text-gray-800 dark:text-gray-100';
+                popup.innerHTML = `
+                    <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i> ${message}
+                    </h3>
+                `;
+                document.body.appendChild(popup);
+                setTimeout(() => {
+                    popup.remove();
+                }, duration);
+            }
+
             function showMatchPopup() {
                 const popup = document.createElement('div');
                 popup.className = 'popup text-gray-800 dark:text-gray-100';
@@ -1067,9 +1081,9 @@
                         // Handle like limits for males
                         if (!isLiked && result.likes_remaining !== undefined) {
                             if (result.likes_remaining === 2) {
-                                showNotification('Only 2 likes left for today!');
+                                showPopup('Only 2 likes left for today!');
                             } else if (result.likes_remaining === 1) {
-                                showNotification('Only 1 like left for today!');
+                                showPopup('Only 1 like left for today!');
                             }
                         }
                         
@@ -1099,7 +1113,7 @@
                         }
                     } else {
                         if (result.error === 'Daily like limit exceeded') {
-                            showNotification('Your daily like limit has been exceeded!');
+                            showPopup('Your daily like limit has been exceeded!');
                         } else {
                             showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
                         }
@@ -1590,9 +1604,9 @@
                                 // Handle like limits for males
                                 if (!isLiked && result.likes_remaining !== undefined) {
                                     if (result.likes_remaining === 2) {
-                                        showNotification('Only 2 likes left for today!');
+                                        showPopup('Only 2 likes left for today!');
                                     } else if (result.likes_remaining === 1) {
-                                        showNotification('Only 1 like left for today!');
+                                        showPopup('Only 1 like left for today!');
                                     }
                                 }
                                 
@@ -1625,7 +1639,7 @@
                                 }
                             } else {
                                 if (result.error === 'Daily like limit exceeded') {
-                                    showNotification('Your daily like limit has been exceeded!');
+                                    showPopup('Your daily like limit has been exceeded!');
                                 } else {
                                     showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
                                 }
