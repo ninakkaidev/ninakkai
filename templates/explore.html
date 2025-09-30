@@ -993,18 +993,7 @@
                         const endpoint = isLiked ? '/unlike-user' : '/like-user';
                         const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
                         
-                        if (isLiked) {
-                            // Proceed with unlike
-                            proceedLikeOrUnlike(this, endpoint, actionMessage, isLiked, userId);
-                        } else {
-                            // Check for like prompt
-                            if (userGender === 'male' && showLikePrompt) {
-                                pendingLikeButton = this;
-                                likePromptModal.style.display = 'block';
-                            } else {
-                                proceedLikeOrUnlike(this, endpoint, actionMessage, isLiked, userId);
-                            }
-                        }
+                        proceedLikeOrUnlike(this, endpoint, actionMessage, isLiked, userId);
                     });
                     button.setAttribute('data-like-attached', 'true');
                 });
@@ -1105,14 +1094,6 @@
                     headers: { 'Content-Type': 'application/json' }
                 });
                 showLikePrompt = false;
-                // Proceed with pending like
-                if (pendingLikeButton) {
-                    const isLiked = pendingLikeButton.dataset.liked === 'true';
-                    const endpoint = isLiked ? '/unlike-user' : '/like-user';
-                    const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
-                    proceedLikeOrUnlike(pendingLikeButton, endpoint, actionMessage, isLiked, pendingLikeButton.dataset.userId);
-                    pendingLikeButton = null;
-                }
             });
 
             // Header scroll effect
@@ -1495,6 +1476,18 @@
                             });
                             img.addEventListener('contextmenu', e => e.preventDefault());
                         });
+
+                        // Show like prompt if male and not dismissed
+                        if (userGender === 'male' && showLikePrompt) {
+                            const bottomSection = profileViewer.querySelector('.flex.justify-between.mt-8');
+                            const observer = new IntersectionObserver((entries) => {
+                                if (entries[0].isIntersecting) {
+                                    likePromptModal.style.display = 'block';
+                                    observer.disconnect();
+                                }
+                            }, { threshold: 0.5 });
+                            observer.observe(bottomSection);
+                        }
                     })
                     .catch(error => {
                         hideLoading();

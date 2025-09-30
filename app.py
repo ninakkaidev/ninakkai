@@ -1815,7 +1815,7 @@ def explore():
             'dominant_type': quiz_result['scores']['dominant_type'],
             'match_percentage': 50,
             'gender': user['gender'],
-            'show_like_prompt': user['gender'] == 'male' and not mongo_service.has_liked_any(session['user_id']) and not user.get('like_prompt_dismissed', False)
+            'show_like_prompt': user['gender'] == 'male' and not user.get('like_prompt_dismissed', False)
         }
         
         prompt_status = mongo_service.get_user_prompt_status(session['user_id'])
