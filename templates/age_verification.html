@@ -693,13 +693,14 @@
                 <div class="instructions">
                     <strong>Instructions:</strong>
                     <ul>
-                        <li>Position your face in the center of the frame. A green box will appear when your face is detected.</li>
+                        <li>Position your face in the center of the frame.</li>
+                        <li>Blink your eyes to verify it's a live face. A green box will appear around your face only after detecting a blink.</li>
                         <li>Ensure good lighting and remove glasses, hats, or anything covering your face.</li>
                         <li>Look directly at the camera and keep your expression neutral.</li>
-                        <li>The "Take Photo" button will enable only when a face is detected.</li>
+                        <li>The "Take Photo" button will enable only when a live face is detected.</li>
                     </ul>
                 </div>
-                <img src="https://i.ibb.co/209FLrxR/Chat-GPT-Image-Sep-14-2025-11-36-52-AM.png" alt="Example of a good photo" class="example-image">
+                <img src="https://i.ibb.co/209FLrx/Chat-GPT-Image-Sep-14-2025-11-36-52-AM.png" alt="Example of a good photo" class="example-image">
                 <p class="example-caption">Example of a good photo</p>
                 <button id="next-to-capture" class="submit-btn">Next</button>
             </div>
@@ -743,15 +744,30 @@
         let detectionInterval = null;
         let faceDetected = false;
         let stream = null; // To hold the media stream
+        let previousEAR = 0.3;
+        let hasBlinked = false;
+
+        // Helper functions for EAR calculation
+        function distance(p1, p2) {
+            return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+        }
+
+        function calculateEAR(eye) {
+            const vertical1 = distance(eye[1], eye[5]);
+            const vertical2 = distance(eye[2], eye[4]);
+            const horizontal = distance(eye[0], eye[3]);
+            return (vertical1 + vertical2) / (2.0 * horizontal);
+        }
 
         // Load face-api models on page load
         Promise.all([
             faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/gh/vladmandic/face-api/model/'),
+            faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/gh/vladmandic/face-api/model/')
         ]).then(() => {
-            console.log('Face detection models loaded successfully');
+            console.log('Face detection and landmark models loaded successfully');
         }).catch(err => {
-            console.error('Error loading face detection models:', err);
-            message.textContent = 'Error loading face detection models: ' + err;
+            console.error('Error loading models:', err);
+            message.textContent = 'Error loading models: ' + err;
         });
 
         // Function to start video stream
@@ -775,20 +791,40 @@
             detectionInterval = setInterval(async () => {
                 if (video.paused || video.ended) return;
                 try {
-                    const detections = await faceapi.detectAllFaces(video);
+                    const detections = await faceapi.detectAllFaces(video).withFaceLandmarks();
                     const ctx = overlay.getContext('2d');
                     ctx.clearRect(0, 0, overlay.width, overlay.height);
-                    faceDetected = detections.length > 0;
-                    capture.disabled = !faceDetected;
 
-                    if (faceDetected) {
-                        detections.forEach(detection => {
-                            const { x, y, width, height } = detection.box;
+                    if (detections.length > 0) {
+                        const detection = detections[0];
+                        const landmarks = detection.landmarks;
+                        const leftEye = landmarks.positions.slice(36, 42);
+                        const rightEye = landmarks.positions.slice(42, 48);
+                        const leftEAR = calculateEAR(leftEye);
+                        const rightEAR = calculateEAR(rightEye);
+                        const avgEAR = (leftEAR + rightEAR) / 2;
+
+                        if (previousEAR > 0.28 && avgEAR < 0.22) {
+                            hasBlinked = true;
+                        }
+                        previousEAR = avgEAR;
+
+                        if (hasBlinked) {
+                            const { x, y, width, height } = detection.detection.box;
                             ctx.strokeStyle = '#00FF00';
                             ctx.lineWidth = 2;
                             ctx.strokeRect(x, y, width, height);
-                        });
+                            faceDetected = true;
+                        } else {
+                            faceDetected = false;
+                        }
+                    } else {
+                        faceDetected = false;
+                        hasBlinked = false;
+                        previousEAR = 0.3;
                     }
+
+                    capture.disabled = !faceDetected;
                 } catch (err) {
                     console.error('Detection error:', err);
                 }
@@ -836,6 +872,8 @@
                 currentPreviewURL = null;
             }
             preview.src = '';
+            hasBlinked = false;
+            previousEAR = 0.3;
             startDetection(); // Restart detection
         });
 
