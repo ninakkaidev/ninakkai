@@ -115,7 +115,7 @@ PERSONALITIES = {
     '🛡️ Protector': {
         'dominant_type': '🛡️ Protector',
         'title': '“You are a Protector.”',
-        'description': 'You’re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — — and showing up when it matters.',
+        'description': 'You’re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — and showing up when it matters.',
         'tagline': '“Safe. Steady. Yours.”',
         'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
         'compatibility': get_top_compatibles('🛡️ Protector'),  # Dynamic: ['🌿 Nurturer', '👂 Listener']
@@ -255,9 +255,10 @@ class MongoService:
                 'verification_token': verification_token,
                 'created_at': datetime.now(timezone.utc),
                 'religion': None,
-                'religion_importance': None,
+                'religion_importance': 'skip',
+                'religion_public': False,
                 'physical_public': False,
-                'physical_importance': None,
+                'physical_importance': 'skip',
                 'physical_preferences': [],
                 'physical_traits': [],
                 'filter_settings': [],
@@ -430,21 +431,22 @@ class MongoService:
                 if 'section' in ans:
                     if ans['section'] == 'religion_importance':
                         importance_map = {
-                            0: 'high',
-                            1: 'medium',
-                            2: 'low',
+                            0: 'not_important',
+                            1: 'somewhat_important',
+                            2: 'very_important',
                             3: 'skip'
                         }
                         update_data['religion_importance'] = importance_map.get(ans.get('index'), 'skip')
                     elif ans['section'] == 'religion':
                         update_data['religion'] = ans.get('value')
-                    elif ans['section'] == 'physical_preferences':
+                    elif ans['section'] == 'physical_importance':
                         importance_map = {
-                            0: 'very',
-                            1: 'somewhat',
-                            2: 'not'
+                            0: 'very_important',
+                            1: 'somewhat_important',
+                            2: 'not_important',
+                            3: 'skip'
                         }
-                        update_data['physical_importance'] = importance_map.get(ans.get('index'))
+                        update_data['physical_importance'] = importance_map.get(ans.get('index'), 'skip')
                     elif ans['section'] == 'physical_traits_preferred':
                         update_data['physical_preferences'] = ans.get('responses', [])
                     elif ans['section'] == 'physical_traits_own':
@@ -569,13 +571,13 @@ class MongoService:
             dominant_type = user_scores['dominant_type']
             
             # Get user preferences - consolidated filters
-            religion_importance = current_user.get('religion_importance')
+            religion_importance = current_user.get('religion_importance', 'skip')
             user_religion = current_user.get('religion')
             filter_settings = current_user.get('filter_settings', [])
             show_only_same_religion = any(t['value'] for t in filter_settings if t['label'] == 'Show only same religion matches')
             show_only_preferred_physical = any(t['value'] for t in filter_settings if t['label'] == 'Show only preferred physical traits')
             emotional_strict = any(t['value'] for t in filter_settings if t['label'] == 'Show only high emotional compatibility matches')
-            physical_importance = current_user.get('physical_importance')
+            physical_importance = current_user.get('physical_importance', 'skip')
             physical_preferences = current_user.get('physical_preferences', [])
             user_ks = user_scores.get('keeper_seeker_type')
             
@@ -598,28 +600,28 @@ class MongoService:
                 match_percentage = self._calculate_match_percentage(user_scores, other_scores)
                 
                 # Step 3: Religion preferences
-                if religion_importance and religion_importance != 'skip' and user_religion:
+                if religion_importance != 'skip' and user_religion:
                     other_religion = other_user_data.get('religion')
                     is_same_religion = other_religion == user_religion
-                    if religion_importance == 'high' and not is_same_religion:
+                    if religion_importance == 'very_important' and not is_same_religion:
                         continue
                     if show_only_same_religion and not is_same_religion:
                         continue
                     elif is_same_religion:
-                        if religion_importance == 'medium':
+                        if religion_importance == 'somewhat_important':
                             match_percentage += 10
-                        elif religion_importance == 'low':
+                        elif religion_importance == 'not_important':
                             match_percentage += 5
                 
                 # Step 4: Physical preferences
-                if physical_importance and physical_importance != 'skip' and physical_preferences:
+                if physical_importance != 'skip' and physical_preferences:
                     other_physical = other_user_data.get('physical_traits', [])
                     physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
                     
-                    if physical_importance == 'very':
+                    if physical_importance == 'very_important':
                         if physical_match_score < 1.0:
                             continue
-                    elif physical_importance == 'somewhat':
+                    elif physical_importance == 'somewhat_important':
                         match_percentage += int(10 * physical_match_score)
                     
                     # Apply filter if set
@@ -668,13 +670,13 @@ class MongoService:
             dominant_type = user_scores['dominant_type']
             
             # Get user preferences - consolidated filters
-            religion_importance = current_user.get('religion_importance')
+            religion_importance = current_user.get('religion_importance', 'skip')
             user_religion = current_user.get('religion')
             filter_settings = current_user.get('filter_settings', [])
             show_only_same_religion = any(t['value'] for t in filter_settings if t['label'] == 'Show only same religion matches')
             show_only_preferred_physical = any(t['value'] for t in filter_settings if t['label'] == 'Show only preferred physical traits')
             emotional_strict = any(t['value'] for t in filter_settings if t['label'] == 'Show only high emotional compatibility matches')
-            physical_importance = current_user.get('physical_importance')
+            physical_importance = current_user.get('physical_importance', 'skip')
             physical_preferences = current_user.get('physical_preferences', [])
             user_ks = user_scores.get('keeper_seeker_type')
             
@@ -697,28 +699,28 @@ class MongoService:
                 match_percentage = self._calculate_match_percentage(user_scores, other_scores)
                 
                 # Step 3: Religion preferences
-                if religion_importance and religion_importance != 'skip' and user_religion:
+                if religion_importance != 'skip' and user_religion:
                     other_religion = other_user_data.get('religion')
                     is_same_religion = other_religion == user_religion
-                    if religion_importance == 'high' and not is_same_religion:
+                    if religion_importance == 'very_important' and not is_same_religion:
                         continue
                     if show_only_same_religion and not is_same_religion:
                         continue
                     elif is_same_religion:
-                        if religion_importance == 'medium':
+                        if religion_importance == 'somewhat_important':
                             match_percentage += 10
-                        elif religion_importance == 'low':
+                        elif religion_importance == 'not_important':
                             match_percentage += 5
                 
                 # Step 4: Physical preferences
-                if physical_importance and physical_importance != 'skip' and physical_preferences:
+                if physical_importance != 'skip' and physical_preferences:
                     other_physical = other_user_data.get('physical_traits', [])
                     physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
                     
-                    if physical_importance == 'very':
+                    if physical_importance == 'very_important':
                         if physical_match_score < 1.0:
                             continue
-                    elif physical_importance == 'somewhat':
+                    elif physical_importance == 'somewhat_important':
                         match_percentage += int(10 * physical_match_score)
                     
                     # Apply filter if set
@@ -1578,7 +1580,7 @@ def age_verification():
                     time.sleep(wait_time)
                     continue
                 else:
-                    logger.error(f"API response response: status {resp.status_code}, body: {resp.text}")
+                    logger.error(f"API response error: status {resp.status_code}, body: {resp.text}")
                     return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
             if retries == max_retries:
                 return jsonify({'success': False, 'error': 'Service unavailable after retries. Try again later.'}), 503
@@ -1620,7 +1622,7 @@ def age_verification():
             logger.error(f"API request exception: {re}")
             return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
         except json.JSONDecodeError as jde:
-            logger.error(f"JSON decode error from API: {jde}, response: {resp.text if 'resp' in locals() else 'No response'}")
+            logger.error(f"JSON decode decode error from API: {jde}, response: {resp.text if 'resp' in locals() else 'No response'}")
             return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
         except Exception as e:
             logger.error(f"Unexpected age verification error: {str(e)}")
@@ -2176,10 +2178,10 @@ def profile():
             'personality_info': personality_info,
             'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'N/A') if quiz_result else 'N/A',
             'religion': user.get('religion', 'N/A'),
-            'religion_importance': user.get('religion_importance'),
+            'religion_importance': user.get('religion_importance', 'skip'),
             'religion_public': user.get('religion_public', False),  # Added for toggle
             'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])},
-            'physical_importance': user.get('physical_importance'),
+            'physical_importance': user.get('physical_importance', 'skip'),
             'physical_public': user.get('physical_public', False),  # Added for toggle
             'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
             'summary': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), 'N/A')
@@ -2396,4 +2398,4 @@ def update_profile():
     return jsonify({'success': True}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, debug=True)0
+    app.run(host='0.0.0.0', port=5050, debug=True)
