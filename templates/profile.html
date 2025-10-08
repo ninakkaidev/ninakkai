@@ -834,7 +834,9 @@
                         <i class="fas fa-pencil-alt text-sm"></i>
                     </button>
                 </div>
-                <p id="religionImportanceView" class="view-field text-gray-700">{% if profile.religion_importance == 'skip' %}Not Important{% else %}{{ profile.religion_importance | replace('_', ' ') | title }}{% endif %}</p>
+                {% if profile.religion_importance != 'skip' %}
+                <p id="religionImportanceView" class="view-field text-gray-700">{{ profile.religion_importance | replace('_', ' ') | title }}</p>
+                {% endif %}
                 <select id="religionImportanceEdit" class="edit-field w-full border rounded px-3 py-2">
                     <option value="not_important" {% if profile.religion_importance == 'not_important' or profile.religion_importance == 'skip' %}selected{% endif %}>Not Important</option>
                     <option value="somewhat_important" {% if profile.religion_importance == 'somewhat_important' %}selected{% endif %}>Somewhat Important</option>
@@ -856,7 +858,9 @@
                         <i class="fas fa-pencil-alt text-sm"></i>
                     </button>
                 </div>
-                <p id="physicalImportanceView" class="view-field text-gray-700">{% if profile.physical_importance == 'skip' %}Not Important{% else %}{{ profile.physical_importance | replace('_', ' ') | title }}{% endif %}</p>
+                {% if profile.physical_importance != 'skip' %}
+                <p id="physicalImportanceView" class="view-field text-gray-700">{{ profile.physical_importance | replace('_', ' ') | title }}</p>
+                {% endif %}
                 <select id="physicalImportanceEdit" class="edit-field w-full border rounded px-3 py-2">
                     <option value="very_important" {% if profile.physical_importance == 'very_important' %}selected{% endif %}>Very Important</option>
                     <option value="somewhat_important" {% if profile.physical_importance == 'somewhat_important' %}selected{% endif %}>Somewhat Important</option>
