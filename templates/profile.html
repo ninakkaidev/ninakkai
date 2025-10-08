@@ -826,7 +826,7 @@
             {% endif %}
 
             <!-- Religion Importance - Fixed conditional logic -->
-            {% if profile.religion %}
+            {% if profile.religion_importance and profile.religion_importance != 'skip' %}
             <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease religion-importance-section"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-semibold"><i class="fas fa-pray text-pink-500 mr-2"></i>Religion Importance in Matching</h3>
@@ -834,11 +834,12 @@
                         <i class="fas fa-pencil-alt text-sm"></i>
                     </button>
                 </div>
-                <p id="religionImportanceView" class="view-field text-gray-700">{% if profile.religion_importance == 'skip' %}Not Important{% else %}{{ profile.religion_importance | replace('_', ' ') | title }}{% endif %}</p>
+                <p id="religionImportanceView" class="view-field text-gray-700">{{ profile.religion_importance | title }} Importance</p>
                 <select id="religionImportanceEdit" class="edit-field w-full border rounded px-3 py-2">
-                    <option value="not_important" {% if profile.religion_importance == 'not_important' or profile.religion_importance == 'skip' %}selected{% endif %}>Not Important</option>
-                    <option value="somewhat_important" {% if profile.religion_importance == 'somewhat_important' %}selected{% endif %}>Somewhat Important</option>
-                    <option value="very_important" {% if profile.religion_importance == 'very_important' %}selected{% endif %}>Very Important</option>
+                    <option value="low" {% if profile.religion_importance == 'low' %}selected{% endif %}>Low Importance</option>
+                    <option value="medium" {% if profile.religion_importance == 'medium' %}selected{% endif %}>Medium Importance</option>
+                    <option value="high" {% if profile.religion_importance == 'high' %}selected{% endif %}>High Importance</option>
+                    <option value="skip" {% if profile.religion_importance == 'skip' %}selected{% endif %}>Skip</option>
                 </select>
                 <div id="religionImportanceEditButtons" class="edit-field flex justify-end space-x-2 mt-4">
                     <button id="cancelReligionImportanceBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</button>
@@ -848,7 +849,7 @@
             {% endif %}
 
             <!-- Physical Importance - Fixed conditional logic -->
-            {% if profile.physical_traits %}
+            {% if profile.physical_importance and profile.physical_importance != 'skip' %}
             <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease physical-importance-section"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-semibold"><i class="fas fa-dumbbell text-pink-500 mr-2"></i>Physical Preference Importance in Matching</h3>
@@ -856,11 +857,12 @@
                         <i class="fas fa-pencil-alt text-sm"></i>
                     </button>
                 </div>
-                <p id="physicalImportanceView" class="view-field text-gray-700">{% if profile.physical_importance == 'skip' %}Not Important{% else %}{{ profile.physical_importance | replace('_', ' ') | title }}{% endif %}</p>
+                <p id="physicalImportanceView" class="view-field text-gray-700">{% if profile.physical_importance == 'not' %}Not Important{% elif profile.physical_importance == 'somewhat' %}Somewhat Important{% else %}Very Important{% endif %}</p>
                 <select id="physicalImportanceEdit" class="edit-field w-full border rounded px-3 py-2">
-                    <option value="very_important" {% if profile.physical_importance == 'very_important' %}selected{% endif %}>Very Important</option>
-                    <option value="somewhat_important" {% if profile.physical_importance == 'somewhat_important' %}selected{% endif %}>Somewhat Important</option>
-                    <option value="not_important" {% if profile.physical_importance == 'not_important' or profile.physical_importance == 'skip' %}selected{% endif %}>Not Important</option>
+                    <option value="not" {% if profile.physical_importance == 'not' %}selected{% endif %}>Not Important</option>
+                    <option value="somewhat" {% if profile.physical_importance == 'somewhat' %}selected{% endif %}>Somewhat Important</option>
+                    <option value="very" {% if profile.physical_importance == 'very' %}selected{% endif %}>Very Important</option>
+                    <option value="skip" {% if profile.physical_importance == 'skip' %}selected{% endif %}>Skip</option>
                 </select>
                 <div id="physicalImportanceEditButtons" class="edit-field flex justify-end space-x-2 mt-4">
                     <button id="cancelPhysicalImportanceBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</button>
