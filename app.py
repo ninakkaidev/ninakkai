@@ -1248,7 +1248,7 @@ def send_reset_email(email: str, reset_token: str) -> Dict[str, Any]:
         smtp_server = 'smtp.gmail.com'
         smtp_port = 587
         smtp_user = 'ninakkaiforyou@gmail.com'
-        smtp_password = os.environ.get('SMTP_PASSWORD', 'porz cqqt bumr bumr wdgj')
+        smtp_password = os.environ.get('SMTP_PASSWORD', 'porz cqqt bumr wdgj')
         reset_url = f"https://www.ninakkai.com/reset-password/{reset_token}"
         msg = MIMEMultipart()
         msg['From'] = smtp_user
