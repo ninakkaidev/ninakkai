@@ -699,7 +699,7 @@
                         <li>The "Take Photo" button will enable only when a face is detected.</li>
                     </ul>
                 </div>
-                <img src="https://i.ibb.co/209FLrxR/Chat-GPT-Image-Sep-14-2025-11-36-52-AM.png" alt="Example of a good photo" class="example-image">
+                <img src="https://i.ibb.co/209FLrx/Chat-GPT-Image-Sep-14-2025-11-36-52-AM.png" alt="Example of a good photo" class="example-image">
                 <p class="example-caption">Example of a good photo</p>
                 <button id="next-to-capture" class="submit-btn">Next</button>
             </div>
@@ -746,9 +746,11 @@
 
         // Load face-api models on page load
         Promise.all([
-            faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/gh/vladmandic/face-api/model/'),
-        ]).then(() => {
-            console.log('Face detection models loaded successfully');
+            faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/gh/vladmandic/face-api/model/'),
+        ]).then(async () => {
+            await tf.setBackend('cpu');
+            await tf.ready();
+            console.log('Face detection models loaded successfully, backend:', tf.getBackend());
         }).catch(err => {
             console.error('Error loading face detection models:', err);
             message.textContent = 'Error loading face detection models: ' + err;
@@ -775,7 +777,7 @@
             detectionInterval = setInterval(async () => {
                 if (video.paused || video.ended) return;
                 try {
-                    const detections = await faceapi.detectAllFaces(video);
+                    const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }));
                     const ctx = overlay.getContext('2d');
                     ctx.clearRect(0, 0, overlay.width, overlay.height);
                     faceDetected = detections.length > 0;

@@ -1632,7 +1632,7 @@ def age_verification():
 def update_gender():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    data = request.get_json()
+    data = request.get_json() 
     new_gender = data.get('new_gender')
     if new_gender not in ['male', 'female']:
         return jsonify({'success': False, 'error': 'Invalid gender'}), 400
