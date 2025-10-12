@@ -1887,10 +1887,10 @@
       qaContainer.style.display = 'flex';
       questionBox.style.display = 'none';
       optionalSection.style.display = 'block';
-      // Hide skip button for profile setup section
-      btnSkip.style.display = 'none';
+      // Show skip button for profile setup section
+      btnSkip.style.display = 'inline-block';
       updateSectionInfo();
-      optionalP.textContent = "Let's set up your profile to help others get to know you better and improve your matching experience.";
+      optionalP.textContent = "Want to set up your profile to help others get to know you better and improve your matching experience?";
       optionalSection.classList.add('animate__animated', 'animate__fadeIn');
       setTimeout(() => {
         optionalSection.classList.remove('animate__animated', 'animate__fadeIn');

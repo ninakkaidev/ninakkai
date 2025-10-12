@@ -1312,7 +1312,7 @@
                         if (currentType && viewedType) {
                             const currentIndex = TYPE_ORDER[currentType] || 0;
                             const viewedIndex = TYPE_ORDER[viewedType] || 0;
-                            let useReverse = currentIndex > viewedIndex;
+                            let useReverse = currentIndex < viewedIndex;
                             let firstType = useReverse ? viewedType : currentType;
                             let secondType = useReverse ? currentType : viewedType;
                             const info = MATCH_NARRATIONS[firstType] ? MATCH_NARRATIONS[firstType][secondType] : null;
@@ -1502,7 +1502,7 @@
                         });
                         
                         // Attach event listeners to buttons in profile viewer
-                        attachProfileViewerListeners(profileViewer, userId);
+                        attachLikeButtonListeners();
 
                         // Attach photo click listeners
                         profileViewer.querySelectorAll('.photo-img').forEach(img => {
@@ -1821,14 +1821,15 @@
                     .replace(/\bYou\b/g, 'TEMP_THEY_CAP')
                     .replace(/\byou\b/g, 'temp_they')
                     .replace(/\bYour\b/g, 'TEMP_THEIR_CAP')
-                    .replace(/\byour\b/g, 'their')
+                    .replace(/\byour\b/g, 'temp_their')
                     .replace(/\bThey\b/g, 'You')
                     .replace(/\bthey\b/g, 'you')
                     .replace(/\bTheir\b/g, 'Your')
                     .replace(/\btheir\b/g, 'your')
                     .replace(/\bTEMP_THEY_CAP\b/g, 'They')
                     .replace(/\btemp_they\b/g, 'they')
-                    .replace(/\bTEMP_THEIR_CAP\b/g, 'Their');
+                    .replace(/\bTEMP_THEIR_CAP\b/g, 'Their')
+                    .replace(/\btemp_their\b/g, 'their');
             }
 
             function toThirdPerson(text) {
