@@ -1661,7 +1661,7 @@ def update_gender():
     if update_result['success']:
         return jsonify({'success': True, 'redirect': url_for('questions')}), 200
     else:
-        return jsonify({'success': False, 'error': 'Failed to update gender'}), 500
+        return jsonify({'success': False, 'error': 'Failed to update'}), 500
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password_endpoint(token):
