@@ -65,7 +65,7 @@ app.config.update(
 # Initialize Cloudinary
 configure_cloudinary()
 
-# Personality compatibility matrix (asymmetric - viewer perspective)
+# Personality compatibility matrix (short names)
 COMPATIBILITY_MATRIX = {
     'Prot': {'Prot': 70, 'Nurt': 85, 'Rom': 65, 'List': 82, 'Dream': 60, 'Ideal': 72},
     'Nurt': {'Prot': 85, 'Nurt': 75, 'Rom': 87, 'List': 92, 'Dream': 78, 'Ideal': 82},
@@ -106,7 +106,7 @@ PERSONALITIES = {
     '🌿 Nurturer': {
         'dominant_type': '🌿 Nurturer',
         'title': '“You are a Nurturer.”',
-        'description': 'You\'re gentle, loyal, and always ready to hold space for someone you love. You build relationships with quiet strength and warmth.',
+        'description': 'You’re gentle, loyal, and always ready to hold space for someone you love. You build relationships with quiet strength and warmth.',
         'tagline': '“Soft-hearted, deep-rooted.”',
         'strengths': ['Gentle', 'Loyal', 'Empathetic'],
         'compatibility': get_top_compatibles('🌿 Nurturer'),  # Dynamic: ['👂 Listener', '💘 Romantic']
@@ -115,7 +115,7 @@ PERSONALITIES = {
     '🛡️ Protector': {
         'dominant_type': '🛡️ Protector',
         'title': '“You are a Protector.”',
-        'description': 'You\'re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — and showing up when it matters.',
+        'description': 'You’re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — and showing up when it matters.',
         'tagline': '“Safe. Steady. Yours.”',
         'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
         'compatibility': get_top_compatibles('🛡️ Protector'),  # Dynamic: ['🌿 Nurturer', '👂 Listener']
@@ -133,7 +133,7 @@ PERSONALITIES = {
     '👂 Listener': {
         'dominant_type': '👂 Listener',
         'title': '“You are a Listener.”',
-        'description': 'Calm and thoughtful, you hear more than what\'s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
+        'description': 'Calm and thoughtful, you hear more than what’s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
         'tagline': '“Still waters, true heart.”',
         'strengths': ['Calm', 'Thoughtful', 'Present'],
         'compatibility': get_top_compatibles('👂 Listener'),  # Dynamic: ['🌿 Nurturer', '💘 Romantic']
@@ -142,7 +142,7 @@ PERSONALITIES = {
     '💘 Romantic': {
         'dominant_type': '💘 Romantic',
         'title': '“You are a Romantic.”',
-        'description': 'You lead with your heart, express love freely, and long for emotional electricity. You don\'t just fall in love — you dive in.',
+        'description': 'You lead with your heart, express love freely, and long for emotional electricity. You don’t just fall in love — you dive in.',
         'tagline': '“Loving loudly. Feeling deeply.”',
         'strengths': ['Heart-led', 'Expressive', 'Expressive'],
         'compatibility': get_top_compatibles('💘 Romantic'),  # Dynamic: ['👂 Listener', '🌿 Nurturer']
@@ -596,7 +596,7 @@ class MongoService:
                 if user_ks and other_ks and user_ks != other_ks:
                     continue  # No mismatch allowed
                 
-                # Step 2: Emotional compatibility - FROM current user's perspective
+                # Step 2: Emotional compatibility
                 match_percentage = self._calculate_match_percentage(user_scores, other_scores)
                 
                 # Step 3: Religion preferences
@@ -695,7 +695,7 @@ class MongoService:
                 if user_ks and other_ks and user_ks != other_ks:
                     continue  # No mismatch allowed
                 
-                # Step 2: Emotional compatibility - FROM current user's perspective
+                # Step 2: Emotional compatibility
                 match_percentage = self._calculate_match_percentage(user_scores, other_scores)
                 
                 # Step 3: Religion preferences
@@ -755,33 +755,6 @@ class MongoService:
             logger.error(f"Get potential matches error: {str(e)}")
             return []
 
-    def _calculate_physical_match(self, preferences: List, traits: List) -> float:
-        if not preferences or not traits:
-            return 1.0  # Full match if no preferences
-        
-        match_score = 0
-        total_comparisons = 0
-        
-        pref_dict = {p['label']: p['value'] for p in preferences if p['value'] != 'No Preference'}
-        trait_dict = {t['label']: t['value'] for t in traits}
-        
-        for label, pref_val in pref_dict.items():
-            total_comparisons += 1
-            if label in trait_dict:
-                trait_val = trait_dict[label]
-                if 'height' in label.lower():
-                    try:
-                        p = int(pref_val)
-                        t = int(trait_val)
-                        if abs(p - t) <= 10:
-                            match_score += 1
-                    except:
-                        pass
-                elif pref_val == trait_val:
-                    match_score += 1
-        
-        return match_score / total_comparisons if total_comparisons > 0 else 1.0
-
     def _calculate_match_percentage(self, user_scores: Dict[str, Any], other_scores: Dict[str, Any]) -> int:
         try:
             user_dom = user_scores['dominant_type']
@@ -790,8 +763,6 @@ class MongoService:
             other_dom_short = TYPE_MAP.get(other_dom)
             if not user_dom_short or not other_dom_short:
                 return 50
-            
-            # Calculate from user's perspective using the asymmetric matrix
             base_percentage = COMPATIBILITY_MATRIX.get(user_dom_short, {}).get(other_dom_short, 50)
 
             # Keeper seeker bonus
@@ -1072,6 +1043,34 @@ class MongoService:
         except Exception as e:
             logger.error(f"Clear notifications error: {str(e)}")
             return {'success': False, 'error': str(e)}
+
+    def _calculate_physical_match(self, preferences: List, traits: List) -> float:
+        if not preferences or not traits:
+            return 1.0  # Full match if no preferences
+        
+        match_score = 0
+        total_comparisons = 0
+        
+        pref_dict = {p['label']: p['value'] for p in preferences if p['value'] != 'No Preference'}
+        trait_dict = {t['label']: t['value'] for t in traits}
+        
+        for label, pref_val in pref_dict.items():
+            total_comparisons += 1
+            if label in trait_dict:
+                trait_val = trait_dict[label]
+                if 'height' in label.lower():
+                    try:
+                        p = int(pref_val)
+                        t = int(trait_val)
+                        if abs(p - t) <= 10:
+                            match_score += 1
+                    except:
+                        pass
+                elif pref_val == trait_val:
+                    match_score += 1
+        
+        return match_score / total_comparisons if total_comparisons > 0 else 1.0
+
 
 class ChatService:
     def __init__(self):
@@ -1663,7 +1662,7 @@ def update_gender():
     if update_result['success']:
         return jsonify({'success': True, 'redirect': url_for('questions')}), 200
     else:
-        return jsonify({'success': False, 'error': 'Failed to update gender'}), 500
+        return jsonify({'success': False, 'error': 'Failed to update'}), 500
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password_endpoint(token):
@@ -1935,16 +1934,40 @@ def user_profile(user_id):
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     try:
-        user = mongo_service.get_user_by_id(user_id)
-        if not user:
+        viewee_user = mongo_service.get_user_by_id(user_id)
+        if not viewee_user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
-        quiz_result = mongo_service.get_quiz_results(user_id)
-        current_quiz = mongo_service.get_quiz_results(session['user_id'])
+        viewee_quiz = mongo_service.get_quiz_results(user_id)
+        viewer_user = mongo_service.get_user_by_id(session['user_id'])
+        viewer_quiz = mongo_service.get_quiz_results(session['user_id'])
         match_percentage = 50
-        if current_quiz and quiz_result:
-            # Calculate match percentage FROM current user's perspective
-            match_percentage = mongo_service._calculate_match_percentage(current_quiz['scores'], quiz_result['scores'])
-        dominant_type = quiz_result['scores']['dominant_type'] if quiz_result else 'N/A'
+        if viewer_quiz and viewee_quiz:
+            match_percentage = mongo_service._calculate_match_percentage(viewer_quiz['scores'], viewee_quiz['scores'])
+
+            # Add religion bonus from viewer's perspective
+            religion_importance = viewer_user.get('religion_importance', 'skip')
+            user_religion = viewer_user.get('religion')
+            if religion_importance != 'skip' and user_religion:
+                other_religion = viewee_user.get('religion')
+                is_same_religion = other_religion == user_religion
+                if is_same_religion:
+                    if religion_importance == 'somewhat_important':
+                        match_percentage += 10
+                    elif religion_importance == 'not_important':
+                        match_percentage += 5
+
+            # Add physical bonus from viewer's perspective
+            physical_importance = viewer_user.get('physical_importance', 'skip')
+            physical_preferences = viewer_user.get('physical_preferences', [])
+            if physical_importance != 'skip' and physical_preferences:
+                other_physical = viewee_user.get('physical_traits', [])
+                physical_match_score = mongo_service._calculate_physical_match(physical_preferences, other_physical)
+                if physical_importance == 'somewhat_important':
+                    match_percentage += int(10 * physical_match_score)
+
+            match_percentage = min(match_percentage, 100)
+
+        dominant_type = viewee_quiz['scores']['dominant_type'] if viewee_quiz else 'N/A'
         personality_info = PERSONALITIES.get(dominant_type, {
             'dominant_type': dominant_type,
             'title': f'This person is a {dominant_type.replace(" ", "")}.',
@@ -1955,33 +1978,33 @@ def user_profile(user_id):
             'color': '#000000'
         })
         profile = {
-            'id': user['id'],
-            'full_name': user['full_name'],
-            'age': user.get('age'),
-            'gender': user.get('gender'),
-            'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-            'occupation': user.get('occupation', 'N/A'),
-            'bio': user.get('bio', 'No bio available'),
-            'interests': user.get('interests', []),
+            'id': viewee_user['id'],
+            'full_name': viewee_user['full_name'],
+            'age': viewee_user.get('age'),
+            'gender': viewee_user.get('gender'),
+            'image': viewee_user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+            'occupation': viewee_user.get('occupation', 'N/A'),
+            'bio': viewee_user.get('bio', 'No bio available'),
+            'interests': viewee_user.get('interests', []),
             'distance': 'N/A',
             'dominant_type': dominant_type,
             'match_percentage': match_percentage,
             'liked': mongo_service.has_liked_user(session['user_id'], user_id),
             'passed': mongo_service.has_passed_user(session['user_id'], user_id),
             'personality': {
-                'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
-                'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0
+                'dominant_type': viewee_quiz['scores']['dominant_type'] if viewee_quiz else 'N/A',
+                'dominant_percentage': viewee_quiz['scores']['dominant_percentage'] if viewee_quiz else 0
             },
             'personality_info': personality_info,
-            'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'Unknown') if quiz_result else 'Unknown',
-            'religion': user.get('religion', 'Not specified') if user.get('religion_public', False) else 'Private',
-            'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])} if user.get('physical_public', False) else 'Private',  # Added conditional visibility
-            'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
-            'summary': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), 'N/A'),
-            'photos': user.get('photos', [])
+            'keeper_seeker': viewee_quiz['scores'].get('keeper_seeker_type', 'Unknown') if viewee_quiz else 'Unknown',
+            'religion': viewee_user.get('religion', 'Not specified') if viewee_user.get('religion_public', False) else 'Private',
+            'physical_traits': {t['label']: t['value'] for t in viewee_user.get('physical_traits', [])} if viewee_user.get('physical_public', False) else 'Private',  # Added conditional visibility
+            'education_work': next((p['value'] for p in viewee_user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
+            'summary': next((p['value'] for p in viewee_user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), 'N/A'),
+            'photos': viewee_user.get('photos', [])
         }
         # Collect interests from profile_data
-        profile['profile_interests'] = [p['value'] for p in user.get('profile_data', []) if p['label'] == 'Interests (select all that apply)']
+        profile['profile_interests'] = [p['value'] for p in viewee_user.get('profile_data', []) if p['label'] == 'Interests (select all that apply)']
         return jsonify({'success': True, 'user': profile}), 200
     except Exception as e:
         logger.error(f"User profile endpoint error: {str(e)}")
