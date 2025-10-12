@@ -65,7 +65,7 @@ app.config.update(
 # Initialize Cloudinary
 configure_cloudinary()
 
-# Personality compatibility matrix (short names)
+# Personality compatibility matrix (asymmetric - viewer perspective)
 COMPATIBILITY_MATRIX = {
     'Prot': {'Prot': 70, 'Nurt': 85, 'Rom': 65, 'List': 82, 'Dream': 60, 'Ideal': 72},
     'Nurt': {'Prot': 85, 'Nurt': 75, 'Rom': 87, 'List': 92, 'Dream': 78, 'Ideal': 82},
@@ -106,7 +106,7 @@ PERSONALITIES = {
     '🌿 Nurturer': {
         'dominant_type': '🌿 Nurturer',
         'title': '“You are a Nurturer.”',
-        'description': 'You’re gentle, loyal, and always ready to hold space for someone you love. You build relationships with quiet strength and warmth.',
+        'description': 'You\'re gentle, loyal, and always ready to hold space for someone you love. You build relationships with quiet strength and warmth.',
         'tagline': '“Soft-hearted, deep-rooted.”',
         'strengths': ['Gentle', 'Loyal', 'Empathetic'],
         'compatibility': get_top_compatibles('🌿 Nurturer'),  # Dynamic: ['👂 Listener', '💘 Romantic']
@@ -115,7 +115,7 @@ PERSONALITIES = {
     '🛡️ Protector': {
         'dominant_type': '🛡️ Protector',
         'title': '“You are a Protector.”',
-        'description': 'You’re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — and showing up when it matters.',
+        'description': 'You\'re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — and showing up when it matters.',
         'tagline': '“Safe. Steady. Yours.”',
         'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
         'compatibility': get_top_compatibles('🛡️ Protector'),  # Dynamic: ['🌿 Nurturer', '👂 Listener']
@@ -133,7 +133,7 @@ PERSONALITIES = {
     '👂 Listener': {
         'dominant_type': '👂 Listener',
         'title': '“You are a Listener.”',
-        'description': 'Calm and thoughtful, you hear more than what’s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
+        'description': 'Calm and thoughtful, you hear more than what\'s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
         'tagline': '“Still waters, true heart.”',
         'strengths': ['Calm', 'Thoughtful', 'Present'],
         'compatibility': get_top_compatibles('👂 Listener'),  # Dynamic: ['🌿 Nurturer', '💘 Romantic']
@@ -142,7 +142,7 @@ PERSONALITIES = {
     '💘 Romantic': {
         'dominant_type': '💘 Romantic',
         'title': '“You are a Romantic.”',
-        'description': 'You lead with your heart, express love freely, and long for emotional electricity. You don’t just fall in love — you dive in.',
+        'description': 'You lead with your heart, express love freely, and long for emotional electricity. You don\'t just fall in love — you dive in.',
         'tagline': '“Loving loudly. Feeling deeply.”',
         'strengths': ['Heart-led', 'Expressive', 'Expressive'],
         'compatibility': get_top_compatibles('💘 Romantic'),  # Dynamic: ['👂 Listener', '🌿 Nurturer']
@@ -596,7 +596,7 @@ class MongoService:
                 if user_ks and other_ks and user_ks != other_ks:
                     continue  # No mismatch allowed
                 
-                # Step 2: Emotional compatibility
+                # Step 2: Emotional compatibility - FROM current user's perspective
                 match_percentage = self._calculate_match_percentage(user_scores, other_scores)
                 
                 # Step 3: Religion preferences
@@ -695,7 +695,7 @@ class MongoService:
                 if user_ks and other_ks and user_ks != other_ks:
                     continue  # No mismatch allowed
                 
-                # Step 2: Emotional compatibility
+                # Step 2: Emotional compatibility - FROM current user's perspective
                 match_percentage = self._calculate_match_percentage(user_scores, other_scores)
                 
                 # Step 3: Religion preferences
@@ -790,6 +790,8 @@ class MongoService:
             other_dom_short = TYPE_MAP.get(other_dom)
             if not user_dom_short or not other_dom_short:
                 return 50
+            
+            # Calculate from user's perspective using the asymmetric matrix
             base_percentage = COMPATIBILITY_MATRIX.get(user_dom_short, {}).get(other_dom_short, 50)
 
             # Keeper seeker bonus
@@ -1940,6 +1942,7 @@ def user_profile(user_id):
         current_quiz = mongo_service.get_quiz_results(session['user_id'])
         match_percentage = 50
         if current_quiz and quiz_result:
+            # Calculate match percentage FROM current user's perspective
             match_percentage = mongo_service._calculate_match_percentage(current_quiz['scores'], quiz_result['scores'])
         dominant_type = quiz_result['scores']['dominant_type'] if quiz_result else 'N/A'
         personality_info = PERSONALITIES.get(dominant_type, {
@@ -2140,7 +2143,7 @@ def stop_typing(to_id):
 def profile():
     logger.debug(f"Session in profile: {session}")
     if 'user_id' not in session:
-        logger.debug("No user in session for /profile")
+        logger.debug("No user_id in session for /profile")
         return redirect(url_for('auth'))
     user = mongo_service.get_user_by_id(session['user_id'])
     if not user.get('age_verified', False):
