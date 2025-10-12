@@ -1661,7 +1661,7 @@ def update_gender():
     if update_result['success']:
         return jsonify({'success': True, 'redirect': url_for('questions')}), 200
     else:
-        return jsonify({'success': False, 'error': 'Failed to update'}), 500
+        return jsonify({'success': False, 'error': 'Failed to update gender'}), 500
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password_endpoint(token):
@@ -2140,7 +2140,7 @@ def stop_typing(to_id):
 def profile():
     logger.debug(f"Session in profile: {session}")
     if 'user_id' not in session:
-        logger.debug("No user_id in session for /profile")
+        logger.debug("No user in session for /profile")
         return redirect(url_for('auth'))
     user = mongo_service.get_user_by_id(session['user_id'])
     if not user.get('age_verified', False):
