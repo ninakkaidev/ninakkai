@@ -1387,86 +1387,97 @@ def auth():
                         mongo_service.inc_rate_limit(rate_key)
                         error = 'An error occurred during login. Please try again.'
         elif form_type == 'signup':
-            data = {
-                'email': request.form.get('email'),
-                'password': request.form.get('password'),
-                'full_name': request.form.get('full_name'),
-                'age': request.form.get('age', type=int),
-                'gender': request.form.get('gender'),
-                'occupation': request.form.get('occupation', ''),
-                'bio': request.form.get('bio', ''),
-                'interests': request.form.get('interests', '').split(',') if request.form.get('interests') else []
-            }
-            agree_terms = request.form.get('agree_terms')
-            agree_privacy = request.form.get('agree_privacy')
-            if not agree_terms or not agree_privacy:
-                error = 'You must agree to the terms and conditions and privacy policy'
-            elif not all([data['email'], data['password'], data['full_name']]):
-                error = 'Please fill all required fields'
-            elif not re.match(r"[^@]+@[^@]+\.[^@]+", data['email']):
-                error = 'Please enter a valid email address'
-            elif len(data['password']) < 8:
-                error = 'Password must be at least 8 characters'
-            elif data['password'] != request.form.get('confirm_password'):
-                error = 'Passwords do not match'
-            elif data['age'] is None or data['age'] < 18:
-                error = 'You must be at least 18 years old'
+            ip = request.remote_addr
+            rate_key = f"signup_{ip}"
+            if not mongo_service.check_rate_limit(rate_key, 3):
+                error = 'Too many signup attempts. Please try again later.'
             else:
-                try:
-                    existing_user = mongo_service.get_user_by_email(data['email'])
-                    if existing_user:
-                        error = 'Email already registered'
-                    else:
-                        result = mongo_service.create_user(
-                            data['email'], data['password'], data['full_name'], data['age'], data['gender'],
-                            data.get('image'), data['occupation'], data['bio'], data['interests']
-                        )
-                        if not result['success']:
-                            error = result.get('error', 'Failed to create user')
+                data = {
+                    'email': request.form.get('email'),
+                    'password': request.form.get('password'),
+                    'full_name': request.form.get('full_name'),
+                    'age': request.form.get('age', type=int),
+                    'gender': request.form.get('gender'),
+                    'occupation': request.form.get('occupation', ''),
+                    'bio': request.form.get('bio', ''),
+                    'interests': request.form.get('interests', '').split(',') if request.form.get('interests') else []
+                }
+                agree_terms = request.form.get('agree_terms')
+                agree_privacy = request.form.get('agree_privacy')
+                if not agree_terms or not agree_privacy:
+                    error = 'You must agree to the terms and conditions and privacy policy'
+                elif not all([data['email'], data['password'], data['full_name']]):
+                    error = 'Please fill all required fields'
+                elif not re.match(r"[^@]+@[^@]+\.[^@]+", data['email']):
+                    error = 'Please enter a valid email address'
+                elif len(data['password']) < 8:
+                    error = 'Password must be at least 8 characters'
+                elif data['password'] != request.form.get('confirm_password'):
+                    error = 'Passwords do not match'
+                elif data['age'] is None or data['age'] < 18:
+                    error = 'You must be at least 18 years old'
+                else:
+                    try:
+                        existing_user = mongo_service.get_user_by_email(data['email'])
+                        if existing_user:
+                            error = 'Email already registered'
                         else:
-                            email_result = send_verification_email(data['email'], result['user']['verification_token'])
-                            if not email_result['success']:
-                                error = 'Failed to send verification email'
+                            result = mongo_service.create_user(
+                                data['email'], data['password'], data['full_name'], data['age'], data['gender'],
+                                data.get('image'), data['occupation'], data['bio'], data['interests']
+                            )
+                            if not result['success']:
+                                error = result.get('error', 'Failed to create user')
                             else:
-                                session.permanent = True
-                                session['email'] = data['email']
-                                session['user_id'] = result['user']['id']
-                                session['verification_pending'] = True
-                                session.modified = True
-                                verification_sent = True
-                                success = 'Verification email sent! Please check your inbox.'
-                except Exception as e:
-                    logger.error(f"Signup error: {str(e)}")
-                    error = 'An error occurred during signup. Please try again.'
+                                email_result = send_verification_email(data['email'], result['user']['verification_token'])
+                                if not email_result['success']:
+                                    error = 'Failed to send verification email'
+                                else:
+                                    session.permanent = True
+                                    session['email'] = data['email']
+                                    session['user_id'] = result['user']['id']
+                                    session['verification_pending'] = True
+                                    session.modified = True
+                                    verification_sent = True
+                                    success = 'Verification email sent! Please check your inbox.'
+                    except Exception as e:
+                        logger.error(f"Signup error: {str(e)}")
+                        mongo_service.inc_rate_limit(rate_key)
+                        error = 'An error occurred during signup. Please try again.'
         elif form_type == 'resend_verification':
-            try:
+            ip = request.remote_addr
+            rate_key = f"resend_{ip}"
+            if not mongo_service.check_rate_limit(rate_key, 3):
+                error = 'Too many resend requests. Please try again later.'
+            else:
                 email = request.form.get('email') or session.get('email')
                 if not email:
                     error = 'No email provided'
                 else:
-                    user = mongo_service.get_user_by_email(email)
-                    if not user:
-                        error = 'User not found'
-                    elif user.get('email_verified', False):
-                        error = 'Email already verified'
-                    else:
-                        verification_token = user.get('verification_token')
-                        if not verification_token:
-                            verification_token = secrets.token_urlsafe(32)
-                            mongo_service.update_user(user['id'], {'verification_token': verification_token})
-                        email_result = send_verification_email(email, verification_token)
-                        if not email_result['success']:
-                            error = 'Failed to send verification email'
+                    try:
+                        user = mongo_service.get_user_by_email(email)
+                        if not user:
+                            error = 'User not found'
+                        elif user.get('email_verified', False):
+                            error = 'Email already verified'
                         else:
-                            session.permanent = True
-                            session['email'] = email
-                            session['verification_pending'] = True
-                            session.modified = True
-                            verification_sent = True
-                            success = 'Verification email resent successfully!'
-            except Exception as e:
-                logger.error(f"Resend verification error: {str(e)}")
-                error = 'An unexpected error occurred'
+                            verification_token = user.get('verification_token')
+                            if not verification_token:
+                                verification_token = secrets.token_urlsafe(32)
+                                mongo_service.update_user(user['id'], {'verification_token': verification_token})
+                            email_result = send_verification_email(email, verification_token)
+                            if not email_result['success']:
+                                error = 'Failed to send verification email'
+                            else:
+                                session.permanent = True
+                                session['email'] = email
+                                session['verification_pending'] = True
+                                session.modified = True
+                                verification_sent = True
+                                success = 'Verification email resent successfully!'
+                    except Exception as e:
+                        logger.error(f"Resend verification error: {str(e)}")
+                        error = 'An unexpected error occurred'
         elif form_type == 'forgot_password':
             ip = request.remote_addr
             rate_key = f"forgot_{ip}"
