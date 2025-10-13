@@ -106,7 +106,7 @@ PERSONALITIES = {
     '🌿 Nurturer': {
         'dominant_type': '🌿 Nurturer',
         'title': '“You are a Nurturer.”',
-        'description': 'You’re gentle, loyal, and always ready to hold space for someone you love. You build relationships with quiet strength and warmth.',
+        'description': 'You\'re gentle, loyal, and always ready to hold space for someone you love. You build relationships with quiet strength and warmth.',
         'tagline': '“Soft-hearted, deep-rooted.”',
         'strengths': ['Gentle', 'Loyal', 'Empathetic'],
         'compatibility': get_top_compatibles('🌿 Nurturer'),  # Dynamic: ['👂 Listener', '💘 Romantic']
@@ -115,7 +115,7 @@ PERSONALITIES = {
     '🛡️ Protector': {
         'dominant_type': '🛡️ Protector',
         'title': '“You are a Protector.”',
-        'description': 'You’re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — and showing up when it matters.',
+        'description': 'You\'re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — and showing up when it matters.',
         'tagline': '“Safe. Steady. Yours.”',
         'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
         'compatibility': get_top_compatibles('🛡️ Protector'),  # Dynamic: ['🌿 Nurturer', '👂 Listener']
@@ -133,7 +133,7 @@ PERSONALITIES = {
     '👂 Listener': {
         'dominant_type': '👂 Listener',
         'title': '“You are a Listener.”',
-        'description': 'Calm and thoughtful, you hear more than what’s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
+        'description': 'Calm and thoughtful, you hear more than what\'s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
         'tagline': '“Still waters, true heart.”',
         'strengths': ['Calm', 'Thoughtful', 'Present'],
         'compatibility': get_top_compatibles('👂 Listener'),  # Dynamic: ['🌿 Nurturer', '💘 Romantic']
@@ -142,7 +142,7 @@ PERSONALITIES = {
     '💘 Romantic': {
         'dominant_type': '💘 Romantic',
         'title': '“You are a Romantic.”',
-        'description': 'You lead with your heart, express love freely, and long for emotional electricity. You don’t just fall in love — you dive in.',
+        'description': 'You lead with your heart, express love freely, and long for emotional electricity. You don\'t just fall in love — you dive in.',
         'tagline': '“Loving loudly. Feeling deeply.”',
         'strengths': ['Heart-led', 'Expressive', 'Expressive'],
         'compatibility': get_top_compatibles('💘 Romantic'),  # Dynamic: ['👂 Listener', '🌿 Nurturer']
@@ -763,12 +763,25 @@ class MongoService:
             other_dom_short = TYPE_MAP.get(other_dom)
             if not user_dom_short or not other_dom_short:
                 return 50
+            
+            # Get base compatibility from matrix
             base_percentage = COMPATIBILITY_MATRIX.get(user_dom_short, {}).get(other_dom_short, 50)
 
-            # Keeper seeker bonus
-            keeper_seeker_bonus = 15 if user_scores.get('keeper_seeker_type') == other_scores.get('keeper_seeker_type') else 0
+            # Keeper seeker bonus - only add if they match
+            keeper_seeker_bonus = 0
+            if user_scores.get('keeper_seeker_type') == other_scores.get('keeper_seeker_type'):
+                keeper_seeker_bonus = 15
 
-            return int(min(base_percentage + keeper_seeker_bonus, 100))
+            # Calculate final percentage (base + bonus, capped at 100)
+            final_percentage = base_percentage + keeper_seeker_bonus
+            
+            # Apply caps to ensure realistic percentages
+            # Maximum possible without religion/physical bonuses should be 85 (70 base + 15 keeper bonus)
+            # This leaves room for religion/physical bonuses to reach 100
+            if final_percentage > 85:
+                final_percentage = 85
+                
+            return int(final_percentage)
         except Exception as e:
             logger.error(f"Calculate match percentage error: {str(e)}")
             return 50
