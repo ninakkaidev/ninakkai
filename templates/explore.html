@@ -1180,17 +1180,22 @@
                 }
             });
 
+            function shuffle(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
             // Search dynamically with progressive loading
             function updateMatches(matches) {
                 const matchesGrid = document.getElementById('matches-grid');
                 matchesGrid.innerHTML = '';
-                const unseen = matches.filter(m => !m.liked && !m.passed);
-                let displayMatches = unseen;
-                if (unseen.length === 0 && matches.length > 0) {
-                    displayMatches = matches;
-                    showNotification('No new suggestions found. Showing previous ones.');
-                }
-                displayMatches.sort((a, b) => b.match_percentage - a.match_percentage);
+                matches.sort((a, b) => b.match_percentage - a.match_percentage);
+                const topMatches = matches.slice(0, 3);
+                const unseen = topMatches.filter(m => !m.liked && !m.passed);
+                let displayMatches = unseen.length ? unseen : topMatches;
                 displayMatches.forEach((match, index) => {
                     setTimeout(() => {
                         const card = document.createElement('div');
@@ -1221,13 +1226,12 @@
             function updateDiscovery(matches) {
                 const discoveryGrid = document.getElementById('discovery-grid');
                 discoveryGrid.innerHTML = '';
-                const unseen = matches.filter(m => !m.liked && !m.passed);
-                let displayMatches = unseen;
-                if (unseen.length === 0 && matches.length > 0) {
-                    displayMatches = matches;
-                    showNotification('No new suggestions found. Showing previous ones.');
-                }
-                displayMatches.sort((a, b) => b.match_percentage - a.match_percentage);
+                matches.sort((a, b) => b.match_percentage - a.match_percentage);
+                const remaining = matches.slice(3);
+                const shuffled = shuffle([...remaining]);
+                const discover = shuffled.slice(0, 3);
+                const unseen = discover.filter(m => !m.liked && !m.passed);
+                let displayMatches = unseen.length ? unseen : discover;
                 displayMatches.forEach((match, index) => {
                     setTimeout(() => {
                         const card = document.createElement('div');
@@ -1787,19 +1791,19 @@
                 },
                 '🌙 Dreamer': {
                     '🌙 Dreamer': {tagline: '🌙 Double vision.', narration: 'Two imaginations flying. Life feels colorful, exciting, and full of possibilities.'},
-                    '🌿 Nurturer': {tagline: '🌙 Roots & wings.', narration: 'You bring comfort, they bring wonder. One keeps things steady, the other sparks magic — a sweet balance that makes life feel bigger.'},
+                    '🌿 Nurturer': {tagline: '🌙 Roots & wings.', narration: 'You bring wonder, they bring comfort. One keeps things steady, the other sparks magic — a sweet balance that makes life feel bigger.'},
                     '🛡️ Protector': {tagline: '🛡️ Anchor & wings.', narration: 'Stability meets imagination. Together, life feels secure and inspired.'},
                     '💘 Romantic': {tagline: '🔥 Romantic vision.', narration: 'Passion and creativity intertwine. Love feels magical and heartfelt.'},
                     '🌟 Idealist': {tagline: '🌟 Dream + purpose.', narration: 'Your vision and their ideals lift each other. Together, purpose feels alive.'},
-                    '👂 Listener': {tagline: '🌙 Heard dreams.', narration: 'They listen, you imagine. Together, hearts feel seen, safe, and inspired.'},
+                    '👂 Listener': {tagline: '💞 Heard dreams.', narration: 'You imagine, they listen. Together, hearts feel seen, safe, and inspired.'},
                 },
                 '🌟 Idealist': {
                     '🌟 Idealist': {tagline: '🌟 Shared purpose.', narration: 'Two believers, united by vision. Together, you shine brighter, naturally and warmly.'},
-                    '🌿 Nurturer': {tagline: '🌟 Gentle purpose.', narration: 'You care for the small moments, they dream of the big picture. Together, you make love both meaningful and kind.'},
+                    '🌿 Nurturer': {tagline: '🌟 Gentle purpose.', narration: 'You dream of the big picture, they care for the small moments. Together, you make love both meaningful and kind.'},
                     '🛡️ Protector': {tagline: '🛡️ Guarding the dream.', narration: 'Loyalty meets vision. Together, your hearts feel safe and inspired.'},
                     '💘 Romantic': {tagline: '🔥 Love with purpose.', narration: 'Passion meets ideals. Together, love feels heartfelt and deeply alive.'},
-                    '👂 Listener': {tagline: '💞 Cause and care.', narration: 'Your vision meets their attention. Together, ideals feel nurtured and real.'},
-                    '🌙 Dreamer': {tagline: '🌙 Dream + purpose.', narration: 'You dream, they inspire. Together, life feels meaningful, gentle, and full of hope.'},
+                    '👂 Listener': {tagline: '💞 Cause and care.', narration: 'Your vision meets their attentive heart. Together, purpose feels nurtured and tender.'},
+                    '🌙 Dreamer': {tagline: '🌙 Dream + purpose.', narration: 'You inspire, they dream. Together, life feels meaningful, gentle, and full of hope.'},
                 }
             };
 

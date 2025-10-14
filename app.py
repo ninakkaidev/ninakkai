@@ -30,7 +30,7 @@ def configure_cloudinary():
         cloudinary.config(
             cloud_name='dibbkr9vs',
             api_key='869559855343136',
-            api_secret='FfJnI44v31rzfPvp7-K9lnI5BDM',
+            api_secret='FfJnI44v31rzfPvp7-K9lnI5BDMBDM',
             secure=True
         )
         config = cloudinary.config()
@@ -425,7 +425,7 @@ class MongoService:
             }
             quiz_result_id = self.quiz_results.insert_one(quiz_result)
 
-            # Parse optional from answers and update user
+            # Parse optional from answers and update
             update_data = {}
             for ans in quiz_data['answers']:
                 if 'section' in ans:
@@ -492,7 +492,7 @@ class MongoService:
                 dominant_type = tied_types[0]
         else:
             dominant_type = max(type_counts, key=type_counts.get)
-        # Keeper Seeker
+        # Resolve Keeper Seeker
         ks_answers = [a for a in answers if 'question_id' in a and a['question_id'].startswith('ks')]
         keeper_count = sum(1 for a in ks_answers if a.get('keeperSeeker') == 'Keeper')
         seeker_count = len(ks_answers) - keeper_count
@@ -879,9 +879,6 @@ class MongoService:
 
     def search_matches(self, query: str, user_id: str) -> List[Dict[str, Any]]:
         try:
-            current_user = self.get_user_by_id(user_id)
-            if not current_user:
-                return []
             query = query.lower().strip()
             matches = []
             all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
@@ -891,7 +888,7 @@ class MongoService:
             user_scores = user_quiz['scores']
             for other_user in all_users:
                 user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
-                if user_data and user_data['gender'] != current_user['gender'] and (query in user_data['full_name'].lower() or any(query in interest.lower() for interest in user_data.get('interests', []))):
+                if user_data and user_data['gender'] != self.get_user_by_id(user_id)['gender'] and (query in user_data['full_name'].lower() or any(query in interest.lower() for interest in user_data.get('interests', []))):
                     match_percentage = self._calculate_match_percentage(user_scores, other_user['scores'])
                     matches.append({
                         'id': str(user_data['_id']),
@@ -1678,7 +1675,7 @@ def update_gender():
         return jsonify({'success': False, 'error': 'Failed to update'}), 500
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
-def reset_password_endpoint(token):
+def reset_password_endpoint():
     if request.method == 'GET':
         user = mongo_service.get_user_by_reset_token(token)
         if not user:
@@ -1884,10 +1881,10 @@ def like_user():
             return jsonify({'success': False, 'error': 'No matched user ID provided'}), 400
         result = mongo_service.like_user(session['user_id'], matched_user_id)
         if result['success']:
-            logger.info(f"Like successful for user_id: {session['user_id']}, matched_user_id: {matched_user_id}")
+            logger.info(f"Like successful for for user_id: {session['user_id']}, matched_user_id: {matched_user_id}")
             return jsonify(result), 200
         else:
-            logger.error(f"Like failed: {result.get('error', 'Unknown error')}")
+            logger.error(f"Like failed for {result.get('error', 'Unknown error')}")
             return jsonify({'success': False, 'error': result.get('error', 'Failed to like user')}), 500
     except Exception as e:
         logger.error(f"Like user endpoint error: {str(e)}")
