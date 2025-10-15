@@ -791,7 +791,7 @@
     {% if show_feedback_prompt %}
     <div id="feedbackModal" class="popup text-gray-800 dark:text-gray-100">
         <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
-            <i class="fas fa-heart text-pink-500 mr-2 animate-pulse"></i> Ninakkai grows with your feelings. Share one honest thought — big or small — and we’ll use it to make your experience even more real
+            <i class="fas fa-heart text-pink-500 mr-2 animate-pulse"></i> Ninakkai grows with your feelings. Share one honest thought — big or small — and we'll use it to make your experience even more real
         </h3>
         <textarea id="feedbackText" class="w-full p-2 border rounded mb-4 dark:bg-gray-800 dark:border-gray-600 focus:ring-2 focus:ring-pink-500 transition-all" placeholder="Suggestions and feedback..."></textarea>
         <div class="flex justify-end space-x-2">
@@ -826,7 +826,7 @@
         <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
             <i class="fas fa-heart text-pink-500 mr-2 animate-pulse"></i> Every Like Matters
         </h3>
-        <p class="mb-4 text-center">On Ninakkai, every like carries meaning. That’s why you receive 3 chances each day to send a genuine like — not endless swipes, but mindful choices. Take your time, notice the details, and let your likes truly connect.</p>
+        <p class="mb-4 text-center">On Ninakkai, every like carries meaning. That's why you receive 3 chances each day to send a genuine like — not endless swipes, but mindful choices. Take your time, notice the details, and let your likes truly connect.</p>
         <div class="flex justify-center">
             <button id="continueLike" class="px-4 py-2 bg-pink-500 text-white rounded flex items-center">
                 <i class="fas fa-check mr-2"></i> Got it
@@ -1030,7 +1030,7 @@
                         const userId = this.dataset.userId;
                         const isLiked = this.dataset.liked === 'true';
                         const endpoint = isLiked ? '/unlike-user' : '/like-user';
-                        const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
+                        const actionMessage = isLiked ? 'Unliked' : 'Liked! We'll let them know';
                         
                         proceedLikeOrUnlike(this, endpoint, actionMessage, isLiked, userId);
                     });
@@ -1555,7 +1555,7 @@
                         
                         const isLiked = this.dataset.liked === 'true';
                         const endpoint = isLiked ? '/unlike-user' : '/like-user';
-                        const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
+                        const actionMessage = isLiked ? 'Unliked' : 'Liked! We'll let them know';
                         
                         showLoading();
                         try {
@@ -1755,16 +1755,18 @@
                 });
             }
 
-            // Match narrations data
+            // Match narrations data - UPDATED WITH SAME-TYPE NARRATIONS
             const MATCH_NARRATIONS = {
                 '🌿 Nurturer': {
-                    '👂 Listener': {tagline: '💞 Heard and held.', narration: 'You love to care, and they love to listen. Their calm presence makes your tenderness feel valued — it’s easy to be fully yourself here.'},
-                    '🛡️ Protector': {tagline: '🛡️ Wrapped in safety.', narration: 'Their quiet strength protects your gentle heart. You feel grounded and cherished — it’s love that feels steady, not rushed.'},
+                    '🌿 Nurturer': {tagline: '💞 Two hearts, one comfort.', narration: 'You both give more than you take. In this love, care never runs out — it simply circles back. Together, you create a world that feels safe, gentle, and endlessly kind.'},
+                    '👂 Listener': {tagline: '💞 Heard and held.', narration: 'You love to care, and they love to listen. Their calm presence makes your tenderness feel valued — it\'s easy to be fully yourself here.'},
+                    '🛡️ Protector': {tagline: '🛡️ Wrapped in safety.', narration: 'Their quiet strength protects your gentle heart. You feel grounded and cherished — it\'s love that feels steady, not rushed.'},
                     '🌙 Dreamer': {tagline: '🌙 Roots & wings.', narration: 'You bring comfort, they bring imagination. Their wonder inspires you to dream, and your care helps their dreams feel safe to bloom.'},
                     '💘 Romantic': {tagline: '🔥 Soft fire.', narration: 'Their passion excites you while your calm warmth soothes them. Together, love feels alive yet peaceful — heat without chaos.'},
                     '🌟 Idealist': {tagline: '🌟 Gentle purpose.', narration: 'You care for the little things; they dream of the big picture. You bring heart to their ideals, and they give meaning to your care.'},
                 },
                 '👂 Listener': {
+                    '👂 Listener': {tagline: '🌸 Silence that speaks.', narration: 'Two calm souls, fluent in unspoken language. You listen without judgment, love without noise, and create peace simply by being present.'},
                     '🌿 Nurturer': {tagline: '🌸 Safe to feel.', narration: 'You listen deeply, and their warmth feels like home. You give them peace, and they give you comfort — together, emotions flow freely.'},
                     '🛡️ Protector': {tagline: '🕊 Safe silence.', narration: 'You listen, they protect. Their quiet strength comforts you, and your patience helps them open up.'},
                     '🌙 Dreamer': {tagline: '🌙 Heard dreams.', narration: 'You listen to their ideas with curiosity and care. They feel seen, and you feel inspired — a soft, creative harmony.'},
@@ -1772,6 +1774,7 @@
                     '🌟 Idealist': {tagline: '🌟 Cause and care.', narration: 'You listen deeply to their ideals. Your attention gives their purpose strength and roots.'},
                 },
                 '🛡️ Protector': {
+                    '🛡️ Protector': {tagline: '⚔️ Trust built strong.', narration: 'Loyalty meets loyalty. You both stand firm, shielding what matters most. Beneath the strength lies a quiet tenderness — a bond built on reliability and deep respect.'},
                     '🌿 Nurturer': {tagline: '🌸 Gentle guard.', narration: 'You protect what you love, and their kindness softens your edges. Their warmth reminds you why you choose loyalty every day.'},
                     '👂 Listener': {tagline: '💞 Strength in calm.', narration: 'You offer loyalty; they offer peace. Their empathy melts your guard, and your steadiness gives them safety.'},
                     '🌙 Dreamer': {tagline: '🌙 Anchor & wings.', narration: 'You ground their imagination. They remind you of wonder and possibility — a bond where safety meets adventure.'},
@@ -1779,6 +1782,7 @@
                     '🌟 Idealist': {tagline: '🌟 Guarding the dream.', narration: 'You stand by their purpose with quiet strength. You keep their hopes safe from storms, turning vision into reality.'},
                 },
                 '🌙 Dreamer': {
+                    '🌙 Dreamer': {tagline: '☁️ Shared sky.', narration: 'You both see the world in colors others can\'t. Together, dreams multiply — turning imagination into a soft, infinite space where hope feels like home.'},
                     '🌿 Nurturer': {tagline: '🌷 Soft anchor.', narration: 'You dream, they ground. Their steady affection makes your creativity feel supported — a balance of heart and vision.'},
                     '🛡️ Protector': {tagline: '⚓ Trust to fly.', narration: 'You dream freely because they make you feel safe. Their loyalty turns your vision into something real.'},
                     '👂 Listener': {tagline: '🎶 Safe imagination.', narration: 'You share your wild thoughts freely because they truly listen. Their empathy makes your mind feel understood.'},
@@ -1786,13 +1790,15 @@
                     '🌟 Idealist': {tagline: '🌟 Dream + purpose.', narration: 'You imagine; they believe. Their ideals give your dreams shape, and your wonder gives their mission soul.'},
                 },
                 '💘 Romantic': {
-                    '🌿 Nurturer': {tagline: '🌸 Held passion.', narration: 'You burn bright, and they hold that flame with care. Their tenderness teaches you that love doesn’t have to hurt to be deep.'},
+                    '💘 Romantic': {tagline: '💫 Passion mirrored.', narration: 'Two hearts that burn bright, meeting flame to flame. Every glance feels electric — but it\'s your mutual depth that keeps the fire beautiful, not destructive.'},
+                    '🌿 Nurturer': {tagline: '🌸 Held passion.', narration: 'You burn bright, and they hold that flame with care. Their tenderness teaches you that love doesn\'t have to hurt to be deep.'},
                     '🛡️ Protector': {tagline: '🛡️ Held desire.', narration: 'You love intensely, and they meet it with steadiness. Their calm presence turns your passion into lasting love.'},
                     '👂 Listener': {tagline: '🌿 Heard desire.', narration: 'You express deeply, and they truly listen. Their understanding softens your intensity, turning love into connection.'},
                     '🌙 Dreamer': {tagline: '🌙 Fire and fantasy.', narration: 'You bring heart, they bring imagination. Together, you create a love story that feels like poetry.'},
                     '🌟 Idealist': {tagline: '🌟 Love with purpose.', narration: 'You love with heart; they love with meaning. Together, you make passion feel profound and purposeful.'},
                 },
                 '🌟 Idealist': {
+                    '🌟 Idealist': {tagline: '✨ Vision in sync.', narration: 'You both believe in something bigger — love with purpose, life with meaning. Together, ideals find balance and hope turns into action.'},
                     '🌿 Nurturer': {tagline: '🌿 Heart with purpose.', narration: 'You dream of making a difference, and they remind you to rest and feel. Their love makes your vision human and warm.'},
                     '🛡️ Protector': {tagline: '🛡️ Vision in trust.', narration: 'You dream of a better world, and they make it feel possible. Their loyalty protects your ideals with heart.'},
                     '👂 Listener': {tagline: '💞 Purpose and peace.', narration: 'You have vision, and they have presence. Their understanding keeps your dreams from feeling lonely.'},
