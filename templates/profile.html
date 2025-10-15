@@ -724,6 +724,22 @@
         .tab-btn.border-pink-500 {
             font-weight: bold;
         }
+
+        /* Fix for religion and physical importance sections */
+        .religion-importance-section .edit-field,
+        .physical-importance-section .edit-field {
+            display: none;
+        }
+
+        .religion-importance-section.edit-mode .view-field,
+        .physical-importance-section.edit-mode .view-field {
+            display: none;
+        }
+
+        .religion-importance-section.edit-mode .edit-field,
+        .physical-importance-section.edit-mode .edit-field {
+            display: block;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -1230,88 +1246,94 @@
                 }
             });
             
-            // Separate edit for Religion Importance
+            // FIXED: Separate edit for Religion Importance
             const religionImportanceSection = document.querySelector('.religion-importance-section');
             if (religionImportanceSection) {
                 const editReligionImportanceBtn = document.getElementById('editReligionImportanceBtn');
                 const cancelReligionImportanceBtn = document.getElementById('cancelReligionImportanceBtn');
                 const saveReligionImportanceBtn = document.getElementById('saveReligionImportanceBtn');
                 
-                editReligionImportanceBtn.addEventListener('click', () => {
-                    religionImportanceSection.classList.add('edit-mode');
-                });
+                // Make sure elements exist before adding event listeners
+                if (editReligionImportanceBtn && cancelReligionImportanceBtn && saveReligionImportanceBtn) {
+                    editReligionImportanceBtn.addEventListener('click', () => {
+                        religionImportanceSection.classList.add('edit-mode');
+                    });
 
-                cancelReligionImportanceBtn.addEventListener('click', () => {
-                    religionImportanceSection.classList.remove('edit-mode');
-                });
+                    cancelReligionImportanceBtn.addEventListener('click', () => {
+                        religionImportanceSection.classList.remove('edit-mode');
+                    });
 
-                saveReligionImportanceBtn.addEventListener('click', async () => {
-                    const data = {
-                        religion_importance: document.getElementById('religionImportanceEdit').value,
-                    };
-                    try {
-                        const response = await fetch('/update_profile', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(data),
-                            credentials: 'include'
-                        });
-                        const result = await response.json();
-                        if (result.success) {
-                            let displayText = data.religion_importance.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                            document.getElementById('religionImportanceView').textContent = displayText;
-                            religionImportanceSection.classList.remove('edit-mode');
-                            showNotification('Religion importance updated successfully');
-                            setTimeout(() => location.reload(), 1000);
-                        } else {
-                            showNotification('Failed to update religion importance');
+                    saveReligionImportanceBtn.addEventListener('click', async () => {
+                        const data = {
+                            religion_importance: document.getElementById('religionImportanceEdit').value,
+                        };
+                        try {
+                            const response = await fetch('/update_profile', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(data),
+                                credentials: 'include'
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                let displayText = data.religion_importance.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                                document.getElementById('religionImportanceView').textContent = displayText;
+                                religionImportanceSection.classList.remove('edit-mode');
+                                showNotification('Religion importance updated successfully');
+                                setTimeout(() => location.reload(), 1000);
+                            } else {
+                                showNotification('Failed to update religion importance');
+                            }
+                        } catch (error) {
+                            showNotification('Error updating religion importance');
                         }
-                    } catch (error) {
-                        showNotification('Error updating religion importance');
-                    }
-                });
+                    });
+                }
             }
 
-            // Separate edit for Physical Importance
+            // FIXED: Separate edit for Physical Importance
             const physicalImportanceSection = document.querySelector('.physical-importance-section');
             if (physicalImportanceSection) {
                 const editPhysicalImportanceBtn = document.getElementById('editPhysicalImportanceBtn');
                 const cancelPhysicalImportanceBtn = document.getElementById('cancelPhysicalImportanceBtn');
                 const savePhysicalImportanceBtn = document.getElementById('savePhysicalImportanceBtn');
                 
-                editPhysicalImportanceBtn.addEventListener('click', () => {
-                    physicalImportanceSection.classList.add('edit-mode');
-                });
+                // Make sure elements exist before adding event listeners
+                if (editPhysicalImportanceBtn && cancelPhysicalImportanceBtn && savePhysicalImportanceBtn) {
+                    editPhysicalImportanceBtn.addEventListener('click', () => {
+                        physicalImportanceSection.classList.add('edit-mode');
+                    });
 
-                cancelPhysicalImportanceBtn.addEventListener('click', () => {
-                    physicalImportanceSection.classList.remove('edit-mode');
-                });
+                    cancelPhysicalImportanceBtn.addEventListener('click', () => {
+                        physicalImportanceSection.classList.remove('edit-mode');
+                    });
 
-                savePhysicalImportanceBtn.addEventListener('click', async () => {
-                    const data = {
-                        physical_importance: document.getElementById('physicalImportanceEdit').value,
-                    };
-                    try {
-                        const response = await fetch('/update_profile', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(data),
-                            credentials: 'include'
-                        });
-                        const result = await response.json();
-                        if (result.success) {
-                            let displayText = data.physical_importance.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                            document.getElementById('physicalImportanceView').textContent = displayText;
-                            physicalImportanceSection.classList.remove('edit-mode');
-                            showNotification('Physical importance updated successfully');
-                            setTimeout(() => location.reload(), 1000);
-                        } else {
-                            showNotification('Failed to update physical importance');
+                    savePhysicalImportanceBtn.addEventListener('click', async () => {
+                        const data = {
+                            physical_importance: document.getElementById('physicalImportanceEdit').value,
+                        };
+                        try {
+                            const response = await fetch('/update_profile', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(data),
+                                credentials: 'include'
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                let displayText = data.physical_importance.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                                document.getElementById('physicalImportanceView').textContent = displayText;
+                                physicalImportanceSection.classList.remove('edit-mode');
+                                showNotification('Physical importance updated successfully');
+                                setTimeout(() => location.reload(), 1000);
+                            } else {
+                                showNotification('Failed to update physical importance');
+                            }
+                        } catch (error) {
+                            showNotification('Error updating physical importance');
                         }
-                    } catch (error) {
-                        showNotification('Error updating physical importance');
-                    }
-                });
+                    });
+                }
             }
             
             // Profile picture upload
@@ -2103,7 +2125,7 @@
                     '👂 Listener': {tagline: '💞 Strength in calm.', narration: 'Their strength meets your attentive heart. Together, safety feels warm and steady, like a quiet embrace.'},
                     '🛡️ Protector': {tagline: '🛡 Two pillars.', narration: 'Both loyal and steady. Safety is never in doubt, and together you create a rock-solid bond.'},
                     '🌙 Dreamer': {tagline: '🌙 Anchor & wings.', narration: 'You give stability, they bring imagination. Together, life feels safe yet full of wonder.'},
-                    '💘 Romantic': {tagline: '🔥 Safe passion.', narration: 'Their love ignites, your care protects. Together, it’s passion wrapped in warmth.'},
+                    '💘 Romantic': {tagline: '🔥 Safe passion.', narration: 'Their love ignites, your care protects. Together, it\'s passion wrapped in warmth.'},
                     '🌟 Idealist': {tagline: '🌟 Guarding the dream.', narration: 'Your loyalty supports their ideals. Together, hope and security grow hand in hand.'},
                     '🌿 Nurturer': {tagline: '🛡 Wrapped in safety.', narration: 'Their steady strength protects your gentle heart, while your kindness warms their world. Together, it feels like home.'},
                 },

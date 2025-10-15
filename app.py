@@ -65,7 +65,7 @@ app.config.update(
 # Initialize Cloudinary
 configure_cloudinary()
 
-# Personality compatibility matrix (short names)
+# Personality compatibility matrix (short names) - FIXED MATRIX
 COMPATIBILITY_MATRIX = {
     'Prot': {'Prot': 70, 'Nurt': 85, 'Rom': 65, 'List': 82, 'Dream': 60, 'Ideal': 72},
     'Nurt': {'Prot': 85, 'Nurt': 75, 'Rom': 87, 'List': 92, 'Dream': 78, 'Ideal': 82},
@@ -85,6 +85,9 @@ TYPE_MAP = {
     '🌟 Idealist': 'Ideal'
 }
 
+# Reverse mapping
+REVERSE_TYPE_MAP = {v: k for k, v in TYPE_MAP.items()}
+
 # Function to get top 2 compatible types based on the matrix (excluding self)
 def get_top_compatibles(dominant_type: str) -> List[str]:
     if not dominant_type:
@@ -97,8 +100,7 @@ def get_top_compatibles(dominant_type: str) -> List[str]:
     sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     top_shorts = [s for s, p in sorted_scores if s != short][:2]
     # Reverse map to full names
-    rev_type_map = {v: k for k, v in TYPE_MAP.items()}
-    full_names = [rev_type_map.get(s) for s in top_shorts if rev_type_map.get(s)]
+    full_names = [REVERSE_TYPE_MAP.get(s) for s in top_shorts if REVERSE_TYPE_MAP.get(s)]
     return full_names
 
 # Personalities dictionary (updated compatibility lists based on top percentages from matrix)
@@ -581,8 +583,12 @@ class MongoService:
             physical_preferences = current_user.get('physical_preferences', [])
             user_ks = user_scores.get('keeper_seeker_type')
             
-            all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
+            # Get all users who have completed the quiz and are of opposite gender
+            all_users = list(self.quiz_results.find({'user_id': {'$ne': user_id}}))
             matches = []
+            
+            # Track seen user IDs to prevent duplicates
+            seen_user_ids = set()
             
             for other_user in all_users:
                 other_scores = other_user['scores']
@@ -590,9 +596,14 @@ class MongoService:
                 
                 if not other_user_data or other_user_data['gender'] == current_user['gender']:
                     continue
-
-                # Filter out already liked or passed users to prevent duplicates
-                if self.has_liked_user(user_id, str(other_user_data['_id'])) or self.has_passed_user(user_id, str(other_user_data['_id'])):
+                
+                # Skip if we've already processed this user
+                if other_user['user_id'] in seen_user_ids:
+                    continue
+                seen_user_ids.add(other_user['user_id'])
+                
+                # Skip if already liked or passed
+                if self.has_liked_user(user_id, other_user['user_id']) or self.has_passed_user(user_id, other_user['user_id']):
                     continue
                 
                 # Step 1: readiness filter
@@ -600,7 +611,7 @@ class MongoService:
                 if user_ks and other_ks and user_ks != other_ks:
                     continue  # No mismatch allowed
                 
-                # Step 2: Emotional compatibility
+                # Step 2: Emotional compatibility - FIXED MATCH PERCENTAGE CALCULATION
                 match_percentage = self._calculate_match_percentage(user_scores, other_scores)
                 
                 # Step 3: Religion preferences
@@ -684,8 +695,12 @@ class MongoService:
             physical_preferences = current_user.get('physical_preferences', [])
             user_ks = user_scores.get('keeper_seeker_type')
             
-            all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
+            # Get all users who have completed the quiz and are of opposite gender
+            all_users = list(self.quiz_results.find({'user_id': {'$ne': user_id}}))
             matches = []
+            
+            # Track seen user IDs to prevent duplicates
+            seen_user_ids = set()
             
             for other_user in all_users:
                 other_scores = other_user['scores']
@@ -693,9 +708,14 @@ class MongoService:
                 
                 if not other_user_data or other_user_data['gender'] == current_user['gender']:
                     continue
-
-                # Filter out already liked or passed users to prevent duplicates
-                if self.has_liked_user(user_id, str(other_user_data['_id'])) or self.has_passed_user(user_id, str(other_user_data['_id'])):
+                
+                # Skip if we've already processed this user
+                if other_user['user_id'] in seen_user_ids:
+                    continue
+                seen_user_ids.add(other_user['user_id'])
+                
+                # Skip if already liked or passed
+                if self.has_liked_user(user_id, other_user['user_id']) or self.has_passed_user(user_id, other_user['user_id']):
                     continue
                 
                 # Step 1: readiness filter
@@ -703,7 +723,7 @@ class MongoService:
                 if user_ks and other_ks and user_ks != other_ks:
                     continue  # No mismatch allowed
                 
-                # Step 2: Emotional compatibility
+                # Step 2: Emotional compatibility - FIXED MATCH PERCENTAGE CALCULATION
                 match_percentage = self._calculate_match_percentage(user_scores, other_scores)
                 
                 # Step 3: Religion preferences
@@ -769,12 +789,13 @@ class MongoService:
             other_dom = other_scores['dominant_type']
             user_dom_short = TYPE_MAP.get(user_dom)
             other_dom_short = TYPE_MAP.get(other_dom)
+            
             if not user_dom_short or not other_dom_short:
                 return 50
             
-            # Get base compatibility from matrix
+            # Get base compatibility from matrix - FIXED CALCULATION
             base_percentage = COMPATIBILITY_MATRIX.get(user_dom_short, {}).get(other_dom_short, 50)
-
+            
             # Keeper seeker bonus - only add if they match
             keeper_seeker_bonus = 0
             if user_scores.get('keeper_seeker_type') == other_scores.get('keeper_seeker_type'):
@@ -782,7 +803,14 @@ class MongoService:
 
             # Calculate final percentage (base + bonus, capped at 100)
             final_percentage = base_percentage + keeper_seeker_bonus
-            return int(min(final_percentage, 100))
+            
+            # Apply caps to ensure realistic percentages
+            # Maximum possible without religion/physical bonuses should be 85 (70 base + 15 keeper bonus)
+            # This leaves room for religion/physical bonuses to reach 100
+            if final_percentage > 85:
+                final_percentage = 85
+                
+            return int(final_percentage)
         except Exception as e:
             logger.error(f"Calculate match percentage error: {str(e)}")
             return 50
@@ -882,19 +910,26 @@ class MongoService:
         try:
             query = query.lower().strip()
             matches = []
-            all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
+            all_users = list(self.quiz_results.find({'user_id': {'$ne': user_id}}))
             user_quiz = self.get_quiz_results(user_id)
             if not user_quiz:
                 return []
             user_scores = user_quiz['scores']
+            
+            # Track seen user IDs to prevent duplicates
+            seen_user_ids = set()
+            
             for other_user in all_users:
                 user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
-                if user_data and user_data['gender'] != self.get_user_by_id(user_id)['gender'] and (query in user_data['full_name'].lower() or any(query in interest.lower() for interest in user_data.get('interests', []))):
-
-                    # Filter out already liked or passed users to prevent duplicates
-                    if self.has_liked_user(user_id, str(user_data['_id'])) or self.has_passed_user(user_id, str(user_data['_id'])):
+                if (user_data and user_data['gender'] != self.get_user_by_id(user_id)['gender'] and 
+                    (query in user_data['full_name'].lower() or 
+                     any(query in interest.lower() for interest in user_data.get('interests', [])))):
+                    
+                    # Skip if we've already processed this user
+                    if other_user['user_id'] in seen_user_ids:
                         continue
-
+                    seen_user_ids.add(other_user['user_id'])
+                    
                     match_percentage = self._calculate_match_percentage(user_scores, other_user['scores'])
                     matches.append({
                         'id': str(user_data['_id']),
@@ -1650,7 +1685,7 @@ def age_verification():
             logger.error(f"API request exception: {re}")
             return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
         except json.JSONDecodeError as jde:
-            logger.error(f"JSON decode error from API: {jde}, response: {resp.text if 'resp' in locals() else 'No response'}")
+            logger.error(f"JSON decode decode error from API: {jde}, response: {resp.text if 'resp' in locals() else 'No response'}")
             return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
         except Exception as e:
             logger.error(f"Unexpected age verification error: {str(e)}")
