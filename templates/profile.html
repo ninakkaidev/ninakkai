@@ -1413,7 +1413,7 @@
                         setTimeout(() => location.reload(), 1000);
                     } else {
                         showNotification('Failed to delete photo');
-                        }
+                    }
                 } catch (error) {
                     showNotification('Error deleting photo');
                 }
@@ -1692,7 +1692,7 @@
                             additionalSections += `
                                 <div class="mb-6">
                                     <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Religion</h3>
-                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.religion}</p>
+                                    <p class="text-text-gray-700 dark:text-gray-300">${profile.user.religion}</p>
                                 </div>
                             `;
                         }
@@ -1990,12 +1990,12 @@
                                 profileViewer.querySelectorAll('.like-button').forEach(b => {
                                     if (isLiked) {
                                         b.classList.remove('liked-button');
-                                        b.classList.add('bg-pink-500', 'hover:bg-pink-600');
-                                        b.innerHTML = '<i class="fas fa-heart mr-2"></i> Accept'; // Changed to Accept
+                                        b.classList.add('bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400');
+                                        b.innerHTML = '<i class="fas fa-heart mr-2"></i> Accept';
                                         b.dataset.liked = 'false';
                                     } else {
                                         b.classList.add('liked-button');
-                                        b.classList.remove('bg-pink-500', 'hover:bg-pink-600');
+                                        b.classList.remove('bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400');
                                         b.innerHTML = '<i class="fas fa-check mr-2"></i> Accepted';
                                         b.dataset.liked = 'true';
                                     }
@@ -2338,13 +2338,13 @@
                     const userId = button.dataset.userId;
                     if (likedUsers[userId]) {
                         button.classList.add('liked-button');
-                        button.classList.remove('bg-pink-500', 'hover:bg-pink-600');
-                        button.innerHTML = '<i class="fas fa-check"></i>';
+                        button.classList.remove('bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400');
+                        button.innerHTML = '<i class="fas fa-check mr-2"></i> Accepted';
                         button.dataset.liked = 'true';
                     } else {
                         button.classList.remove('liked-button');
-                        button.classList.add('bg-pink-500', 'hover:bg-pink-600');
-                        button.innerHTML = '<i class="fas fa-heart"></i>';
+                        button.classList.add('bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400');
+                        button.innerHTML = '<i class="fas fa-heart mr-2"></i> Accept';
                         button.dataset.liked = 'false';
                     }
                 });
