@@ -590,6 +590,10 @@ class MongoService:
                 
                 if not other_user_data or other_user_data['gender'] == current_user['gender']:
                     continue
+
+                # Filter out already liked or passed users to prevent duplicates
+                if self.has_liked_user(user_id, str(other_user_data['_id'])) or self.has_passed_user(user_id, str(other_user_data['_id'])):
+                    continue
                 
                 # Step 1: readiness filter
                 other_ks = other_scores.get('keeper_seeker_type')
@@ -689,6 +693,10 @@ class MongoService:
                 
                 if not other_user_data or other_user_data['gender'] == current_user['gender']:
                     continue
+
+                # Filter out already liked or passed users to prevent duplicates
+                if self.has_liked_user(user_id, str(other_user_data['_id'])) or self.has_passed_user(user_id, str(other_user_data['_id'])):
+                    continue
                 
                 # Step 1: readiness filter
                 other_ks = other_scores.get('keeper_seeker_type')
@@ -774,14 +782,7 @@ class MongoService:
 
             # Calculate final percentage (base + bonus, capped at 100)
             final_percentage = base_percentage + keeper_seeker_bonus
-            
-            # Apply caps to ensure realistic percentages
-            # Maximum possible without religion/physical bonuses should be 85 (70 base + 15 keeper bonus)
-            # This leaves room for religion/physical bonuses to reach 100
-            if final_percentage > 85:
-                final_percentage = 85
-                
-            return int(final_percentage)
+            return int(min(final_percentage, 100))
         except Exception as e:
             logger.error(f"Calculate match percentage error: {str(e)}")
             return 50
@@ -889,6 +890,11 @@ class MongoService:
             for other_user in all_users:
                 user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
                 if user_data and user_data['gender'] != self.get_user_by_id(user_id)['gender'] and (query in user_data['full_name'].lower() or any(query in interest.lower() for interest in user_data.get('interests', []))):
+
+                    # Filter out already liked or passed users to prevent duplicates
+                    if self.has_liked_user(user_id, str(user_data['_id'])) or self.has_passed_user(user_id, str(user_data['_id'])):
+                        continue
+
                     match_percentage = self._calculate_match_percentage(user_scores, other_user['scores'])
                     matches.append({
                         'id': str(user_data['_id']),
@@ -1644,7 +1650,7 @@ def age_verification():
             logger.error(f"API request exception: {re}")
             return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
         except json.JSONDecodeError as jde:
-            logger.error(f"JSON decode decode error from API: {jde}, response: {resp.text if 'resp' in locals() else 'No response'}")
+            logger.error(f"JSON decode error from API: {jde}, response: {resp.text if 'resp' in locals() else 'No response'}")
             return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
         except Exception as e:
             logger.error(f"Unexpected age verification error: {str(e)}")
