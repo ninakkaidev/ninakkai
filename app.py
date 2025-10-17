@@ -917,7 +917,7 @@ class MongoService:
             if user_scores.get('keeper_seeker_type') == other_scores.get('keeper_seeker_type'):
                 keeper_seeker_bonus = 15
 
-            # Calculate final percentage (base + bonus, capped at 100)
+            # Calculate final percentage (base + bonus, no cap here to allow variation)
             final_percentage = base_percentage + keeper_seeker_bonus
             
             return int(final_percentage)
