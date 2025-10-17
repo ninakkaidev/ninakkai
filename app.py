@@ -917,15 +917,9 @@ class MongoService:
             if user_scores.get('keeper_seeker_type') == other_scores.get('keeper_seeker_type'):
                 keeper_seeker_bonus = 15
 
-            # Calculate final percentage (base + bonus, capped at 100)
+            # Calculate final percentage (base + bonus, no artificial cap here - cap at 100 in route)
             final_percentage = base_percentage + keeper_seeker_bonus
             
-            # Apply caps to ensure realistic percentages
-            # Maximum possible without religion/physical bonuses should be 85 (70 base + 15 keeper bonus)
-            # This leaves room for religion/physical bonuses to reach 100
-            if final_percentage > 85:
-                final_percentage = 85
-                
             return int(final_percentage)
         except Exception as e:
             logger.error(f"Calculate match percentage error: {str(e)}")
