@@ -23,6 +23,7 @@ import json
 import http.client
 import requests
 import time
+import random
 
 # Configure Cloudinary with explicit credentials and enhanced logging
 def configure_cloudinary():
@@ -781,6 +782,121 @@ class MongoService:
             return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:20]
         except Exception as e:
             logger.error(f"Get potential matches error: {str(e)}")
+            return []
+
+    def get_random_potential(self, user_id: str) -> List[Dict[str, Any]]:
+        try:
+            current_user = self.get_user_by_id(user_id)
+            if not current_user:
+                return []
+                
+            user_quiz = self.get_quiz_results(user_id)
+            if not user_quiz:
+                return []
+                
+            user_scores = user_quiz['scores']
+            
+            # Get user preferences - consolidated filters (same as potential matches)
+            religion_importance = current_user.get('religion_importance', 'skip')
+            user_religion = current_user.get('religion')
+            filter_settings = current_user.get('filter_settings', [])
+            show_only_same_religion = any(t['value'] for t in filter_settings if t['label'] == 'Show only same religion matches')
+            show_only_preferred_physical = any(t['value'] for t in filter_settings if t['label'] == 'Show only preferred physical traits')
+            emotional_strict = any(t['value'] for t in filter_settings if t['label'] == 'Show only high emotional compatibility matches')
+            physical_importance = current_user.get('physical_importance', 'skip')
+            physical_preferences = current_user.get('physical_preferences', [])
+            user_ks = user_scores.get('keeper_seeker_type')
+            
+            # Get all users who have completed the quiz and are of opposite gender
+            all_users = list(self.quiz_results.find({'user_id': {'$ne': user_id}}))
+            candidates = []
+            
+            # Track seen user IDs to prevent duplicates
+            seen_user_ids = set()
+            
+            for other_user in all_users:
+                other_scores = other_user['scores']
+                other_user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
+                
+                if not other_user_data or other_user_data['gender'] == current_user['gender']:
+                    continue
+                
+                # Skip if we've already processed this user
+                if other_user['user_id'] in seen_user_ids:
+                    continue
+                seen_user_ids.add(other_user['user_id'])
+                
+                # Skip if already liked or passed
+                if self.has_liked_user(user_id, other_user['user_id']) or self.has_passed_user(user_id, other_user['user_id']):
+                    continue
+                
+                # Step 1: readiness filter
+                other_ks = other_scores.get('keeper_seeker_type')
+                if user_ks and other_ks and user_ks != other_ks:
+                    continue  # No mismatch allowed
+                
+                # Calculate match percentage (still use for consistency, but ignore for sorting)
+                match_percentage = self._calculate_match_percentage(user_scores, other_scores)
+                
+                # Step 3: Religion preferences (same filters)
+                skip_religion = False
+                if religion_importance != 'skip' and user_religion:
+                    other_religion = other_user_data.get('religion')
+                    is_same_religion = other_religion == user_religion
+                    if religion_importance == 'very_important' and not is_same_religion:
+                        continue
+                    if show_only_same_religion and not is_same_religion:
+                        continue
+                    elif is_same_religion:
+                        if religion_importance == 'somewhat_important':
+                            match_percentage += 10
+                        elif religion_importance == 'not_important':
+                            match_percentage += 5
+                
+                # Step 4: Physical preferences (same filters)
+                skip_physical = False
+                if physical_importance != 'skip' and physical_preferences:
+                    other_physical = other_user_data.get('physical_traits', [])
+                    physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
+                    
+                    if physical_importance == 'very_important':
+                        if physical_match_score < 1.0:
+                            continue
+                    elif physical_importance == 'somewhat_important':
+                        match_percentage += int(10 * physical_match_score)
+                    
+                    # Apply filter if set
+                    if show_only_preferred_physical and physical_match_score < 1.0:
+                        continue
+                
+                # Step 5: Emotional strict filter (lower threshold for random discovery)
+                if emotional_strict and match_percentage < 50:
+                    continue
+                
+                match_percentage = min(match_percentage, 100)
+                
+                candidates.append({
+                    'id': str(other_user_data['_id']),
+                    'full_name': other_user_data['full_name'],
+                    'age': other_user_data.get('age'),
+                    'gender': other_user_data.get('gender'),
+                    'image': other_user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+                    'occupation': other_user_data.get('occupation', 'N/A'),
+                    'bio': other_user_data.get('bio', 'No bio available'),
+                    'interests': other_user_data.get('interests', []),
+                    'distance': 'N/A',
+                    'dominant_type': other_scores['dominant_type'],
+                    'match_percentage': match_percentage,
+                    'keeper_seeker': other_scores.get('keeper_seeker_type', 'Unknown'),
+                    'liked': self.has_liked_user(user_id, str(other_user_data['_id'])),
+                    'passed': self.has_passed_user(user_id, str(other_user_data['_id']))
+                })
+            
+            # Shuffle for randomness
+            random.shuffle(candidates)
+            return candidates[:20]
+        except Exception as e:
+            logger.error(f"Get random potential error: {str(e)}")
             return []
 
     def _calculate_match_percentage(self, user_scores: Dict[str, Any], other_scores: Dict[str, Any]) -> int:
@@ -1906,6 +2022,20 @@ def api_matches():
     except Exception as e:
         logger.error(f"API matches error: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to fetch matches'}), 500
+
+@app.route('/api/discovery', methods=['GET'])
+def api_discovery():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    try:
+        matches = mongo_service.get_random_potential(session['user_id'])
+        return jsonify({
+            'success': True, 
+            'matches': matches
+        }), 200
+    except Exception as e:
+        logger.error(f"API discovery error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to fetch discovery'}), 500
 
 @app.route('/like-user', methods=['POST'])
 def like_user():

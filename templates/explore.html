@@ -990,6 +990,9 @@
                                         }
                                         localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
                                     }
+                                    // Refresh sections after action
+                                    loadMatches();
+                                    loadDiscovery();
                                 }, 1000);
                             } else {
                                 showError(result.error || 'Failed to submit report');
@@ -1084,6 +1087,13 @@
                                 showPopup('Only 2 likes left for today!');
                             } else if (result.likes_remaining === 1) {
                                 showPopup('Only 1 like left for today!');
+                            } else if (result.likes_remaining === 0) {
+                                showPopup('No likes left for today! Come back tomorrow.');
+                                // After 3 likes, refresh sections to remove any remaining cards if needed
+                                setTimeout(() => {
+                                    loadMatches();
+                                    loadDiscovery();
+                                }, 2000);
                             }
                         }
                         
@@ -1114,6 +1124,11 @@
                     } else {
                         if (result.error === 'Daily like limit exceeded') {
                             showPopup('Your daily like limit has been exceeded!');
+                            // Refresh sections after limit exceeded
+                            setTimeout(() => {
+                                loadMatches();
+                                loadDiscovery();
+                            }, 2000);
                         } else {
                             showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
                         }
@@ -1165,7 +1180,8 @@
                     const result = await response.json();
                     if (result.success) {
                         updateMatches(result.matches);
-                        updateDiscovery(result.matches);
+                        // Refresh discovery randomly after search
+                        loadDiscovery();
                         attachLikeButtonListeners();
                         attachProfileClickListeners();
                     } else {
@@ -1188,7 +1204,7 @@
                 return array;
             }
 
-            // Search dynamically with progressive loading
+            // Update matches dynamically with progressive loading
             function updateMatches(matches) {
                 const matchesGrid = document.getElementById('matches-grid');
                 matchesGrid.innerHTML = '';
@@ -1222,17 +1238,15 @@
                 }
             }
 
-            // Update discovery dynamically with progressive loading
-            function updateDiscovery(matches) {
+            // Update discovery dynamically with progressive loading (renamed from updateDiscovery)
+            function updateDiscoverySection(matches) {
                 const discoveryGrid = document.getElementById('discovery-grid');
                 discoveryGrid.innerHTML = '';
-                matches.sort((a, b) => b.match_percentage - a.match_percentage);
-                const remaining = matches.slice(3);
-                const shuffled = shuffle([...remaining]);
-                const discover = shuffled.slice(0, 3);
-                const unseen = discover.filter(m => !m.liked && !m.passed);
-                let displayMatches = unseen.length ? unseen : discover;
-                displayMatches.forEach((match, index) => {
+                if (!matches.length) {
+                    discoveryGrid.innerHTML = '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">No people to discover. Try completing your quiz!</p>';
+                    return;
+                }
+                matches.forEach((match, index) => {
                     setTimeout(() => {
                         const card = document.createElement('div');
                         card.className = 'discovery-profile discovery-card';
@@ -1252,9 +1266,6 @@
                         attachProfileClickListeners();
                     }, index * 200);  // 200ms delay between each card
                 });
-                if (!displayMatches.length) {
-                    discoveryGrid.innerHTML = '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">No people to discover. Try completing your quiz!</p>';
-                }
             }
             
             // Function to load matches with caching
@@ -1286,9 +1297,49 @@
                     }
                 }
                 updateMatches(data);
-                updateDiscovery(data);
                 isLoading = false;
                 hideLoading();
+            }
+
+            // New function to load random discovery
+            async function loadDiscovery(forceRefresh = false) {
+                if (isLoading) return;
+                
+                isLoading = true;
+                const discoveryGrid = document.getElementById('discovery-grid');
+                // Show skeletons
+                discoveryGrid.innerHTML = `
+                    <div class="discovery-profile">
+                        <div class="skeleton w-full h-72 rounded-xl"></div>
+                    </div>
+                    <div class="discovery-profile">
+                        <div class="skeleton w-full h-72 rounded-xl"></div>
+                    </div>
+                    <div class="discovery-profile">
+                        <div class="skeleton w-full h-72 rounded-xl"></div>
+                    </div>
+                `;
+
+                try {
+                    const response = await fetch('/api/discovery');
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        const shuffled = shuffle(result.matches);
+                        const discover = shuffled.slice(0, 3);
+                        const unseen = discover.filter(m => !m.liked && !m.passed);
+                        let displayMatches = unseen.length ? unseen : discover;
+                        updateDiscoverySection(displayMatches);
+                    } else {
+                        showError(result.error || 'Failed to load discovery');
+                        discoveryGrid.innerHTML = '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">No people to discover right now.</p>';
+                    }
+                } catch (error) {
+                    showError('Network error while loading discovery');
+                    discoveryGrid.innerHTML = '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">No people to discover right now.</p>';
+                } finally {
+                    isLoading = false;
+                }
             }
 
             // Profile viewer
@@ -1607,6 +1658,8 @@
                                         showPopup('Only 2 likes left for today!');
                                     } else if (result.likes_remaining === 1) {
                                         showPopup('Only 1 like left for today!');
+                                    } else if (result.likes_remaining === 0) {
+                                        showPopup('No likes left for today! Come back tomorrow.');
                                     }
                                 }
                                 
@@ -1635,11 +1688,19 @@
                                             card.style.transition = 'opacity 0.5s ease';
                                             setTimeout(() => card.remove(), 500);
                                         }
+                                        // Refresh sections after action
+                                        loadMatches();
+                                        loadDiscovery();
                                     }, 1500);
                                 }
                             } else {
                                 if (result.error === 'Daily like limit exceeded') {
                                     showPopup('Your daily like limit has been exceeded!');
+                                    // Refresh sections after limit exceeded
+                                    setTimeout(() => {
+                                        loadMatches();
+                                        loadDiscovery();
+                                    }, 2000);
                                 } else {
                                     showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
                                 }
@@ -1688,6 +1749,9 @@
                                     card.style.transition = 'opacity 0.5s ease';
                                     setTimeout(() => card.remove(), 500);
                                 }
+                                // Refresh sections after action
+                                loadMatches();
+                                loadDiscovery();
                             } else {
                                 showError(result.error || 'Failed to pass user');
                             }
@@ -1715,6 +1779,7 @@
 
             // Initial load
             loadMatches();
+            loadDiscovery();
 
             // Refresh button - ensure it's wired
             if (refreshMatchesBtn) {
