@@ -615,13 +615,7 @@ class MongoService:
                 # Step 2: Emotional compatibility - FIXED MATCH PERCENTAGE CALCULATION
                 match_percentage = self._calculate_match_percentage(user_scores, other_scores)
                 
-                # Step 5: Emotional strict filter
-                if emotional_strict and match_percentage < 80:
-                    continue
-                
                 # Step 3: Religion preferences
-                is_same_religion = False
-                religion_boost = 0
                 if religion_importance != 'skip' and user_religion:
                     other_religion = other_user_data.get('religion')
                     is_same_religion = other_religion == user_religion
@@ -629,17 +623,13 @@ class MongoService:
                         continue
                     if show_only_same_religion and not is_same_religion:
                         continue
-                    if is_same_religion:
-                        if religion_importance == 'very_important':
-                            religion_boost = 15
-                        elif religion_importance == 'somewhat_important':
-                            religion_boost = 10
+                    elif is_same_religion:
+                        if religion_importance == 'somewhat_important':
+                            match_percentage += 10
                         elif religion_importance == 'not_important':
-                            religion_boost = 5
-                match_percentage += religion_boost
+                            match_percentage += 5
                 
                 # Step 4: Physical preferences
-                physical_boost = 0
                 if physical_importance != 'skip' and physical_preferences:
                     other_physical = other_user_data.get('physical_traits', [])
                     physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
@@ -647,17 +637,16 @@ class MongoService:
                     if physical_importance == 'very_important':
                         if physical_match_score < 1.0:
                             continue
-                        physical_boost = 15
                     elif physical_importance == 'somewhat_important':
-                        physical_boost = int(10 * physical_match_score)
-                    elif physical_importance == 'not_important':
-                        if physical_match_score >= 1.0:
-                            physical_boost = 5
+                        match_percentage += int(10 * physical_match_score)
                     
                     # Apply filter if set
                     if show_only_preferred_physical and physical_match_score < 1.0:
                         continue
-                match_percentage += physical_boost
+                
+                # Step 5: Emotional strict filter
+                if emotional_strict and match_percentage < 80:
+                    continue
                 
                 match_percentage = min(match_percentage, 100)
                 
@@ -738,13 +727,7 @@ class MongoService:
                 # Step 2: Emotional compatibility - FIXED MATCH PERCENTAGE CALCULATION
                 match_percentage = self._calculate_match_percentage(user_scores, other_scores)
                 
-                # Step 5: Emotional strict filter
-                if emotional_strict and match_percentage < 80:
-                    continue
-                
                 # Step 3: Religion preferences
-                is_same_religion = False
-                religion_boost = 0
                 if religion_importance != 'skip' and user_religion:
                     other_religion = other_user_data.get('religion')
                     is_same_religion = other_religion == user_religion
@@ -752,17 +735,13 @@ class MongoService:
                         continue
                     if show_only_same_religion and not is_same_religion:
                         continue
-                    if is_same_religion:
-                        if religion_importance == 'very_important':
-                            religion_boost = 15
-                        elif religion_importance == 'somewhat_important':
-                            religion_boost = 10
+                    elif is_same_religion:
+                        if religion_importance == 'somewhat_important':
+                            match_percentage += 10
                         elif religion_importance == 'not_important':
-                            religion_boost = 5
-                match_percentage += religion_boost
+                            match_percentage += 5
                 
                 # Step 4: Physical preferences
-                physical_boost = 0
                 if physical_importance != 'skip' and physical_preferences:
                     other_physical = other_user_data.get('physical_traits', [])
                     physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
@@ -770,17 +749,16 @@ class MongoService:
                     if physical_importance == 'very_important':
                         if physical_match_score < 1.0:
                             continue
-                        physical_boost = 15
                     elif physical_importance == 'somewhat_important':
-                        physical_boost = int(10 * physical_match_score)
-                    elif physical_importance == 'not_important':
-                        if physical_match_score >= 1.0:
-                            physical_boost = 5
+                        match_percentage += int(10 * physical_match_score)
                     
                     # Apply filter if set
                     if show_only_preferred_physical and physical_match_score < 1.0:
                         continue
-                match_percentage += physical_boost
+                
+                # Step 5: Emotional strict filter
+                if emotional_strict and match_percentage < 80:
+                    continue
                 
                 match_percentage = min(match_percentage, 100)
                 
@@ -860,13 +838,8 @@ class MongoService:
                 # Calculate match percentage (still use for consistency, but ignore for sorting)
                 match_percentage = self._calculate_match_percentage(user_scores, other_scores)
                 
-                # Step 5: Emotional strict filter (lower threshold for random discovery)
-                if emotional_strict and match_percentage < 50:
-                    continue
-                
                 # Step 3: Religion preferences (same filters)
-                is_same_religion = False
-                religion_boost = 0
+                skip_religion = False
                 if religion_importance != 'skip' and user_religion:
                     other_religion = other_user_data.get('religion')
                     is_same_religion = other_religion == user_religion
@@ -874,17 +847,14 @@ class MongoService:
                         continue
                     if show_only_same_religion and not is_same_religion:
                         continue
-                    if is_same_religion:
-                        if religion_importance == 'very_important':
-                            religion_boost = 15
-                        elif religion_importance == 'somewhat_important':
-                            religion_boost = 10
+                    elif is_same_religion:
+                        if religion_importance == 'somewhat_important':
+                            match_percentage += 10
                         elif religion_importance == 'not_important':
-                            religion_boost = 5
-                match_percentage += religion_boost
+                            match_percentage += 5
                 
                 # Step 4: Physical preferences (same filters)
-                physical_boost = 0
+                skip_physical = False
                 if physical_importance != 'skip' and physical_preferences:
                     other_physical = other_user_data.get('physical_traits', [])
                     physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
@@ -892,17 +862,16 @@ class MongoService:
                     if physical_importance == 'very_important':
                         if physical_match_score < 1.0:
                             continue
-                        physical_boost = 15
                     elif physical_importance == 'somewhat_important':
-                        physical_boost = int(10 * physical_match_score)
-                    elif physical_importance == 'not_important':
-                        if physical_match_score >= 1.0:
-                            physical_boost = 5
+                        match_percentage += int(10 * physical_match_score)
                     
                     # Apply filter if set
                     if show_only_preferred_physical and physical_match_score < 1.0:
                         continue
-                match_percentage += physical_boost
+                
+                # Step 5: Emotional strict filter (lower threshold for random discovery)
+                if emotional_strict and match_percentage < 50:
+                    continue
                 
                 match_percentage = min(match_percentage, 100)
                 
@@ -2157,9 +2126,7 @@ def user_profile(user_id):
                 other_religion = viewee_user.get('religion')
                 is_same_religion = other_religion == user_religion
                 if is_same_religion:
-                    if religion_importance == 'very_important':
-                        match_percentage += 15
-                    elif religion_importance == 'somewhat_important':
+                    if religion_importance == 'somewhat_important':
                         match_percentage += 10
                     elif religion_importance == 'not_important':
                         match_percentage += 5
@@ -2170,14 +2137,8 @@ def user_profile(user_id):
             if physical_importance != 'skip' and physical_preferences:
                 other_physical = viewee_user.get('physical_traits', [])
                 physical_match_score = mongo_service._calculate_physical_match(physical_preferences, other_physical)
-                if physical_importance == 'very_important':
-                    if physical_match_score >= 1.0:
-                        match_percentage += 15
-                elif physical_importance == 'somewhat_important':
+                if physical_importance == 'somewhat_important':
                     match_percentage += int(10 * physical_match_score)
-                elif physical_importance == 'not_important':
-                    if physical_match_score >= 1.0:
-                        match_percentage += 5
 
             match_percentage = min(match_percentage, 100)
 
