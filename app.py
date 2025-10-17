@@ -624,9 +624,10 @@ class MongoService:
                     if show_only_same_religion and not is_same_religion:
                         continue
                     elif is_same_religion:
-                        if religion_importance == 'somewhat_important':
-                            match_percentage += 10
-                        elif religion_importance == 'not_important':
+                        # Varied bonus based on current match_percentage (approximating matrix influence)
+                        if match_percentage >= 80:
+                            match_percentage += 3
+                        else:
                             match_percentage += 5
                 
                 # Step 4: Physical preferences
@@ -638,7 +639,11 @@ class MongoService:
                         if physical_match_score < 1.0:
                             continue
                     elif physical_importance == 'somewhat_important':
-                        match_percentage += int(10 * physical_match_score)
+                        # Varied bonus based on current match_percentage
+                        if match_percentage >= 80:
+                            match_percentage += int(3 * physical_match_score)
+                        else:
+                            match_percentage += int(5 * physical_match_score)
                     
                     # Apply filter if set
                     if show_only_preferred_physical and physical_match_score < 1.0:
@@ -736,9 +741,10 @@ class MongoService:
                     if show_only_same_religion and not is_same_religion:
                         continue
                     elif is_same_religion:
-                        if religion_importance == 'somewhat_important':
-                            match_percentage += 10
-                        elif religion_importance == 'not_important':
+                        # Varied bonus based on current match_percentage (approximating matrix influence)
+                        if match_percentage >= 80:
+                            match_percentage += 3
+                        else:
                             match_percentage += 5
                 
                 # Step 4: Physical preferences
@@ -750,7 +756,11 @@ class MongoService:
                         if physical_match_score < 1.0:
                             continue
                     elif physical_importance == 'somewhat_important':
-                        match_percentage += int(10 * physical_match_score)
+                        # Varied bonus based on current match_percentage
+                        if match_percentage >= 80:
+                            match_percentage += int(3 * physical_match_score)
+                        else:
+                            match_percentage += int(5 * physical_match_score)
                     
                     # Apply filter if set
                     if show_only_preferred_physical and physical_match_score < 1.0:
@@ -848,9 +858,10 @@ class MongoService:
                     if show_only_same_religion and not is_same_religion:
                         continue
                     elif is_same_religion:
-                        if religion_importance == 'somewhat_important':
-                            match_percentage += 10
-                        elif religion_importance == 'not_important':
+                        # Varied bonus based on current match_percentage (approximating matrix influence)
+                        if match_percentage >= 80:
+                            match_percentage += 3
+                        else:
                             match_percentage += 5
                 
                 # Step 4: Physical preferences (same filters)
@@ -863,7 +874,11 @@ class MongoService:
                         if physical_match_score < 1.0:
                             continue
                     elif physical_importance == 'somewhat_important':
-                        match_percentage += int(10 * physical_match_score)
+                        # Varied bonus based on current match_percentage
+                        if match_percentage >= 80:
+                            match_percentage += int(3 * physical_match_score)
+                        else:
+                            match_percentage += int(5 * physical_match_score)
                     
                     # Apply filter if set
                     if show_only_preferred_physical and physical_match_score < 1.0:
@@ -912,10 +927,17 @@ class MongoService:
             # Get base compatibility from matrix - FIXED CALCULATION
             base_percentage = COMPATIBILITY_MATRIX.get(user_dom_short, {}).get(other_dom_short, 50)
             
-            # Keeper seeker bonus - only add if they match
+            # Keeper seeker bonus - varied based on base matrix value
             keeper_seeker_bonus = 0
             if user_scores.get('keeper_seeker_type') == other_scores.get('keeper_seeker_type'):
-                keeper_seeker_bonus = 15
+                if base_percentage >= 85:
+                    keeper_seeker_bonus = 5
+                elif base_percentage >= 75:
+                    keeper_seeker_bonus = 8
+                elif base_percentage >= 65:
+                    keeper_seeker_bonus = 12
+                else:
+                    keeper_seeker_bonus = 15
 
             # Calculate final percentage (base + bonus, capped at 100 later with other bonuses)
             final_percentage = base_percentage + keeper_seeker_bonus
@@ -2126,9 +2148,10 @@ def user_profile(user_id):
                 other_religion = viewee_user.get('religion')
                 is_same_religion = other_religion == user_religion
                 if is_same_religion:
-                    if religion_importance == 'somewhat_important':
-                        match_percentage += 10
-                    elif religion_importance == 'not_important':
+                    # Varied bonus based on current match_percentage
+                    if match_percentage >= 80:
+                        match_percentage += 3
+                    else:
                         match_percentage += 5
 
             # Add physical bonus from viewer's perspective
@@ -2138,7 +2161,11 @@ def user_profile(user_id):
                 other_physical = viewee_user.get('physical_traits', [])
                 physical_match_score = mongo_service._calculate_physical_match(physical_preferences, other_physical)
                 if physical_importance == 'somewhat_important':
-                    match_percentage += int(10 * physical_match_score)
+                    # Varied bonus based on current match_percentage
+                    if match_percentage >= 80:
+                        match_percentage += int(3 * physical_match_score)
+                    else:
+                        match_percentage += int(5 * physical_match_score)
 
             match_percentage = min(match_percentage, 100)
 
