@@ -66,14 +66,14 @@ app.config.update(
 # Initialize Cloudinary
 configure_cloudinary()
 
-# Personality compatibility matrix (short names) - FIXED MATRIX
+# Personality compatibility matrix (updated with new high scores and symmetry)
 COMPATIBILITY_MATRIX = {
     'Prot': {'Prot': 70, 'Nurt': 85, 'Rom': 65, 'List': 82, 'Dream': 60, 'Ideal': 72},
     'Nurt': {'Prot': 85, 'Nurt': 75, 'Rom': 87, 'List': 92, 'Dream': 78, 'Ideal': 82},
-    'Rom': {'Prot': 65, 'Nurt': 87, 'Rom': 80, 'List': 88, 'Dream': 70, 'Ideal': 75},
+    'Rom': {'Prot': 65, 'Nurt': 87, 'Rom': 80, 'List': 88, 'Dream': 90, 'Ideal': 75},
     'List': {'Prot': 82, 'Nurt': 92, 'Rom': 88, 'List': 85, 'Dream': 77, 'Ideal': 80},
-    'Dream': {'Prot': 60, 'Nurt': 78, 'Rom': 70, 'List': 77, 'Dream': 75, 'Ideal': 68},
-    'Ideal': {'Prot': 72, 'Nurt': 82, 'Rom': 75, 'List': 80, 'Dream': 68, 'Ideal': 78},
+    'Dream': {'Prot': 60, 'Nurt': 78, 'Rom': 90, 'List': 77, 'Dream': 75, 'Ideal': 92},
+    'Ideal': {'Prot': 72, 'Nurt': 82, 'Rom': 75, 'List': 80, 'Dream': 92, 'Ideal': 78},
 }
 
 # Type mapping from emoji to short name
@@ -130,7 +130,7 @@ PERSONALITIES = {
         'description': 'You feel deeply and love boldly. You seek the kind of connection that feels written in the stars. You crave the kind of love that makes your soul glow.',
         'tagline': '“Romance is your religion.”',
         'strengths': ['Deep', 'Bold', 'Soulful'],
-        'compatibility': get_top_compatibles('🌙 Dreamer'),  # Dynamic: ['🌿 Nurturer', '👂 Listener']
+        'compatibility': get_top_compatibles('🌙 Dreamer'),  # Dynamic: ['🌟 Idealist', '💘 Romantic']
         'color': '#9C27B0'  # Purple
     },
     '👂 Listener': {
@@ -607,53 +607,44 @@ class MongoService:
                 if self.has_liked_user(user_id, other_user['user_id']) or self.has_passed_user(user_id, other_user['user_id']):
                     continue
                 
-                # Step 1: readiness filter
+                # Step 1: readiness filter - only match Keeper with Keeper, Seeker with Seeker
                 other_ks = other_scores.get('keeper_seeker_type')
                 if user_ks and other_ks and user_ks != other_ks:
                     continue  # No mismatch allowed
                 
-                # Step 2: Emotional compatibility - FIXED MATCH PERCENTAGE CALCULATION
-                match_percentage = self._calculate_match_percentage(user_scores, other_scores)
+                # Step 2: Emotional compatibility - BASE MATCH PERCENTAGE ONLY FROM MATRIX
+                match_calc = self._calculate_match_percentage(user_scores, other_scores)
+                base_percentage = match_calc['base']
                 
-                # Step 3: Religion preferences
-                if religion_importance != 'skip' and user_religion:
+                # Step 3: Religion preferences - FILTER ONLY, NO BONUS
+                if religion_importance == 'very_important' and user_religion:
                     other_religion = other_user_data.get('religion')
                     is_same_religion = other_religion == user_religion
-                    if religion_importance == 'very_important' and not is_same_religion:
+                    if not is_same_religion:
                         continue
-                    if show_only_same_religion and not is_same_religion:
+                if show_only_same_religion and user_religion:
+                    other_religion = other_user_data.get('religion')
+                    if other_religion != user_religion:
                         continue
-                    elif is_same_religion:
-                        # Varied bonus based on current match_percentage (approximating matrix influence)
-                        if match_percentage >= 80:
-                            match_percentage += 3
-                        else:
-                            match_percentage += 5
                 
-                # Step 4: Physical preferences
-                if physical_importance != 'skip' and physical_preferences:
+                # Step 4: Physical preferences - FILTER ONLY, NO BONUS
+                if physical_importance == 'very_important' and physical_preferences:
                     other_physical = other_user_data.get('physical_traits', [])
                     physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
-                    
-                    if physical_importance == 'very_important':
-                        if physical_match_score < 1.0:
-                            continue
-                    elif physical_importance == 'somewhat_important':
-                        # Varied bonus based on current match_percentage
-                        if match_percentage >= 80:
-                            match_percentage += int(3 * physical_match_score)
-                        else:
-                            match_percentage += int(5 * physical_match_score)
-                    
-                    # Apply filter if set
-                    if show_only_preferred_physical and physical_match_score < 1.0:
+                    if physical_match_score < 1.0:
+                        continue
+                if show_only_preferred_physical and physical_preferences:
+                    other_physical = other_user_data.get('physical_traits', [])
+                    physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
+                    if physical_match_score < 1.0:
                         continue
                 
                 # Step 5: Emotional strict filter
-                if emotional_strict and match_percentage < 80:
+                if emotional_strict and base_percentage < 80:
                     continue
                 
-                match_percentage = min(match_percentage, 100)
+                # Final match percentage is just base (capped at 92 implicitly by matrix)
+                match_percentage = base_percentage
                 
                 matches.append({
                     'id': str(other_user_data['_id']),
@@ -724,53 +715,44 @@ class MongoService:
                 if self.has_liked_user(user_id, other_user['user_id']) or self.has_passed_user(user_id, other_user['user_id']):
                     continue
                 
-                # Step 1: readiness filter
+                # Step 1: readiness filter - only match Keeper with Keeper, Seeker with Seeker
                 other_ks = other_scores.get('keeper_seeker_type')
                 if user_ks and other_ks and user_ks != other_ks:
                     continue  # No mismatch allowed
                 
-                # Step 2: Emotional compatibility - FIXED MATCH PERCENTAGE CALCULATION
-                match_percentage = self._calculate_match_percentage(user_scores, other_scores)
+                # Step 2: Emotional compatibility - BASE MATCH PERCENTAGE ONLY FROM MATRIX
+                match_calc = self._calculate_match_percentage(user_scores, other_scores)
+                base_percentage = match_calc['base']
                 
-                # Step 3: Religion preferences
-                if religion_importance != 'skip' and user_religion:
+                # Step 3: Religion preferences - FILTER ONLY, NO BONUS
+                if religion_importance == 'very_important' and user_religion:
                     other_religion = other_user_data.get('religion')
                     is_same_religion = other_religion == user_religion
-                    if religion_importance == 'very_important' and not is_same_religion:
+                    if not is_same_religion:
                         continue
-                    if show_only_same_religion and not is_same_religion:
+                if show_only_same_religion and user_religion:
+                    other_religion = other_user_data.get('religion')
+                    if other_religion != user_religion:
                         continue
-                    elif is_same_religion:
-                        # Varied bonus based on current match_percentage (approximating matrix influence)
-                        if match_percentage >= 80:
-                            match_percentage += 3
-                        else:
-                            match_percentage += 5
                 
-                # Step 4: Physical preferences
-                if physical_importance != 'skip' and physical_preferences:
+                # Step 4: Physical preferences - FILTER ONLY, NO BONUS
+                if physical_importance == 'very_important' and physical_preferences:
                     other_physical = other_user_data.get('physical_traits', [])
                     physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
-                    
-                    if physical_importance == 'very_important':
-                        if physical_match_score < 1.0:
-                            continue
-                    elif physical_importance == 'somewhat_important':
-                        # Varied bonus based on current match_percentage
-                        if match_percentage >= 80:
-                            match_percentage += int(3 * physical_match_score)
-                        else:
-                            match_percentage += int(5 * physical_match_score)
-                    
-                    # Apply filter if set
-                    if show_only_preferred_physical and physical_match_score < 1.0:
+                    if physical_match_score < 1.0:
+                        continue
+                if show_only_preferred_physical and physical_preferences:
+                    other_physical = other_user_data.get('physical_traits', [])
+                    physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
+                    if physical_match_score < 1.0:
                         continue
                 
                 # Step 5: Emotional strict filter
-                if emotional_strict and match_percentage < 80:
+                if emotional_strict and base_percentage < 80:
                     continue
                 
-                match_percentage = min(match_percentage, 100)
+                # Final match percentage is just base (capped at 92 implicitly by matrix)
+                match_percentage = base_percentage
                 
                 matches.append({
                     'id': str(other_user_data['_id']),
@@ -840,55 +822,44 @@ class MongoService:
                 if self.has_liked_user(user_id, other_user['user_id']) or self.has_passed_user(user_id, other_user['user_id']):
                     continue
                 
-                # Step 1: readiness filter
+                # Step 1: readiness filter - only match Keeper with Keeper, Seeker with Seeker
                 other_ks = other_scores.get('keeper_seeker_type')
                 if user_ks and other_ks and user_ks != other_ks:
                     continue  # No mismatch allowed
                 
                 # Calculate match percentage (still use for consistency, but ignore for sorting)
-                match_percentage = self._calculate_match_percentage(user_scores, other_scores)
+                match_calc = self._calculate_match_percentage(user_scores, other_scores)
+                base_percentage = match_calc['base']
                 
                 # Step 3: Religion preferences (same filters)
-                skip_religion = False
-                if religion_importance != 'skip' and user_religion:
+                if religion_importance == 'very_important' and user_religion:
                     other_religion = other_user_data.get('religion')
                     is_same_religion = other_religion == user_religion
-                    if religion_importance == 'very_important' and not is_same_religion:
+                    if not is_same_religion:
                         continue
-                    if show_only_same_religion and not is_same_religion:
+                if show_only_same_religion and user_religion:
+                    other_religion = other_user_data.get('religion')
+                    if other_religion != user_religion:
                         continue
-                    elif is_same_religion:
-                        # Varied bonus based on current match_percentage (approximating matrix influence)
-                        if match_percentage >= 80:
-                            match_percentage += 3
-                        else:
-                            match_percentage += 5
                 
                 # Step 4: Physical preferences (same filters)
-                skip_physical = False
-                if physical_importance != 'skip' and physical_preferences:
+                if physical_importance == 'very_important' and physical_preferences:
                     other_physical = other_user_data.get('physical_traits', [])
                     physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
-                    
-                    if physical_importance == 'very_important':
-                        if physical_match_score < 1.0:
-                            continue
-                    elif physical_importance == 'somewhat_important':
-                        # Varied bonus based on current match_percentage
-                        if match_percentage >= 80:
-                            match_percentage += int(3 * physical_match_score)
-                        else:
-                            match_percentage += int(5 * physical_match_score)
-                    
-                    # Apply filter if set
-                    if show_only_preferred_physical and physical_match_score < 1.0:
+                    if physical_match_score < 1.0:
+                        continue
+                if show_only_preferred_physical and physical_preferences:
+                    other_physical = other_user_data.get('physical_traits', [])
+                    physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
+                    if physical_match_score < 1.0:
                         continue
                 
                 # Step 5: Emotional strict filter (lower threshold for random discovery)
-                if emotional_strict and match_percentage < 50:
+                if emotional_strict and base_percentage < 50:
                     continue
                 
-                match_percentage = min(match_percentage, 100)
+                # Final match percentage is just base (capped at 92 implicitly by matrix)
+                match_percentage = base_percentage
                 
                 candidates.append({
                     'id': str(other_user_data['_id']),
@@ -914,7 +885,7 @@ class MongoService:
             logger.error(f"Get random potential error: {str(e)}")
             return []
 
-    def _calculate_match_percentage(self, user_scores: Dict[str, Any], other_scores: Dict[str, Any]) -> int:
+    def _calculate_match_percentage(self, user_scores: Dict[str, Any], other_scores: Dict[str, Any]) -> Dict[str, int]:
         try:
             user_dom = user_scores['dominant_type']
             other_dom = other_scores['dominant_type']
@@ -922,30 +893,21 @@ class MongoService:
             other_dom_short = TYPE_MAP.get(other_dom)
             
             if not user_dom_short or not other_dom_short:
-                return 50
+                return {'base': 50, 'percentage': 50}
             
-            # Get base compatibility from matrix - FIXED CALCULATION
+            # Get base compatibility from matrix - NO BONUSES
             base_percentage = COMPATIBILITY_MATRIX.get(user_dom_short, {}).get(other_dom_short, 50)
             
-            # Keeper seeker bonus - varied based on base matrix value
-            keeper_seeker_bonus = 0
-            if user_scores.get('keeper_seeker_type') == other_scores.get('keeper_seeker_type'):
-                if base_percentage >= 85:
-                    keeper_seeker_bonus = 5
-                elif base_percentage >= 75:
-                    keeper_seeker_bonus = 8
-                elif base_percentage >= 65:
-                    keeper_seeker_bonus = 12
-                else:
-                    keeper_seeker_bonus = 15
-
-            # Calculate final percentage (base + bonus, capped at 100 later with other bonuses)
-            final_percentage = base_percentage + keeper_seeker_bonus
+            # Calculate percentage (base only, capped at 92 implicitly)
+            percentage = base_percentage
             
-            return int(final_percentage)
+            return {
+                'base': base_percentage,
+                'percentage': percentage
+            }
         except Exception as e:
             logger.error(f"Calculate match percentage error: {str(e)}")
-            return 50
+            return {'base': 50, 'percentage': 50}
 
     def is_matched(self, user1: str, user2: str) -> bool:
         try:
@@ -1062,7 +1024,11 @@ class MongoService:
                         continue
                     seen_user_ids.add(other_user['user_id'])
                     
-                    match_percentage = self._calculate_match_percentage(user_scores, other_user['scores'])
+                    # UPDATED: Use new calculation with no bonuses
+                    match_calc = self._calculate_match_percentage(user_scores, other_user['scores'])
+                    base_percentage = match_calc['base']
+                    match_percentage = base_percentage
+                    
                     matches.append({
                         'id': str(user_data['_id']),
                         'full_name': user_data['full_name'],
@@ -1707,7 +1673,7 @@ def auth():
 
 @app.route('/verify-email')
 def verify_email_endpoint():
-    logger.debug(f"Verify-email session: {session}")
+    logger.debug(f"Verify email session: {session}")
     token = request.args.get('token')
     if not token:
         return redirect(url_for('auth', error='Invalid verification link'))
@@ -1808,8 +1774,8 @@ def age_verification():
                 return jsonify({'success': False, 'error': 'gender_mismatch', 'detected_gender': detected_gender}), 403
             if age_lower < 18:
                 return jsonify({'success': False, 'error': 'You must be at least 18 years old. If you think this is a mistake, contact help@ninakkai.com'}), 403
-            update_result = mongo_service.update_user(session['user_id'], {'age_verified': True})
-            if not update_result['success']:
+            update = mongo_service.update_user(session['user_id'], {'age_verified': True})
+            if not update['success']:
                 logger.error("Failed to update age_verified in DB")
                 return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
             return jsonify({'success': True, 'redirect': url_for('questions')}), 200
@@ -1817,7 +1783,7 @@ def age_verification():
             logger.error(f"API request exception: {re}")
             return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
         except json.JSONDecodeError as jde:
-            logger.error(f"JSON decode decode error from API: {jde}, response: {resp.text if 'resp' in locals() else 'No response'}")
+            logger.error(f"JSON decode error from API: {jde}, response: {resp.text if 'resp' in locals() else 'No response'}")
             return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
         except Exception as e:
             logger.error(f"Unexpected age verification error: {str(e)}")
@@ -2139,35 +2105,10 @@ def user_profile(user_id):
         viewer_quiz = mongo_service.get_quiz_results(session['user_id'])
         match_percentage = 50
         if viewer_quiz and viewee_quiz:
-            match_percentage = mongo_service._calculate_match_percentage(viewer_quiz['scores'], viewee_quiz['scores'])
-
-            # Add religion bonus from viewer's perspective
-            religion_importance = viewer_user.get('religion_importance', 'skip')
-            user_religion = viewer_user.get('religion')
-            if religion_importance != 'skip' and user_religion:
-                other_religion = viewee_user.get('religion')
-                is_same_religion = other_religion == user_religion
-                if is_same_religion:
-                    # Varied bonus based on current match_percentage
-                    if match_percentage >= 80:
-                        match_percentage += 3
-                    else:
-                        match_percentage += 5
-
-            # Add physical bonus from viewer's perspective
-            physical_importance = viewer_user.get('physical_importance', 'skip')
-            physical_preferences = viewer_user.get('physical_preferences', [])
-            if physical_importance != 'skip' and physical_preferences:
-                other_physical = viewee_user.get('physical_traits', [])
-                physical_match_score = mongo_service._calculate_physical_match(physical_preferences, other_physical)
-                if physical_importance == 'somewhat_important':
-                    # Varied bonus based on current match_percentage
-                    if match_percentage >= 80:
-                        match_percentage += int(3 * physical_match_score)
-                    else:
-                        match_percentage += int(5 * physical_match_score)
-
-            match_percentage = min(match_percentage, 100)
+            # UPDATED: Use new calculation with no bonuses
+            match_calc = mongo_service._calculate_match_percentage(viewer_quiz['scores'], viewee_quiz['scores'])
+            base_percentage = match_calc['base']
+            match_percentage = base_percentage
 
         dominant_type = viewee_quiz['scores']['dominant_type'] if viewee_quiz else 'N/A'
         personality_info = PERSONALITIES.get(dominant_type, {
@@ -2467,7 +2408,7 @@ def submit_quiz():
         data = request.get_json()
         answers = data.get('answers', [])
         if not answers:
-            return jsonify({'success': False, 'error': 'No answers provided'}), 400
+            return jsonify({'error': 'No answers provided'}), 400
         
         # Add types to answers for emotional questions
         for ans in answers:
@@ -2537,7 +2478,7 @@ def upload_profile_picture():
         logger.info(f"Uploaded profile picture URL: {url}")
         update_result = mongo_service.update_user(session['user_id'], {'image': url})
         if update_result['success']:
-            logger.info("User profile profile picture updated successfully in database")
+            logger.info("User profile picture updated successfully in database")
             return jsonify({'success': True, 'url': url}), 200
         else:
             logger.error("Failed to update user profile picture in database")
