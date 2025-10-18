@@ -993,7 +993,7 @@
                                             }
                                             // Now refresh sections
                                             loadMatches();
-                                            loadDiscovery();
+                                            loadDiscovery([]);
                                         }, 500);
                                     } else {
                                         // If no card, just refresh
@@ -1006,7 +1006,7 @@
                                             localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
                                         }
                                         loadMatches();
-                                        loadDiscovery();
+                                        loadDiscovery([]);
                                     }
                                 }, 1000);
                             } else {
@@ -1107,7 +1107,7 @@
                                 // After 3 likes, refresh sections to remove any remaining cards if needed
                                 setTimeout(() => {
                                     loadMatches();
-                                    loadDiscovery();
+                                    loadDiscovery([]);
                                 }, 2000);
                             }
                         }
@@ -1133,11 +1133,11 @@
                                     setTimeout(() => {
                                         card.remove();
                                         loadMatches();
-                                        loadDiscovery();
+                                        loadDiscovery([]);
                                     }, 500);
                                 } else {
                                     loadMatches();
-                                    loadDiscovery();
+                                    loadDiscovery([]);
                                 }
                             }, 150);
                         } else {
@@ -1149,7 +1149,7 @@
                             // Refresh sections after limit exceeded
                             setTimeout(() => {
                                 loadMatches();
-                                loadDiscovery();
+                                loadDiscovery([]);
                             }, 2000);
                         } else {
                             showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
@@ -1203,7 +1203,7 @@
                     if (result.success) {
                         updateMatches(result.matches);
                         // Refresh discovery randomly after search
-                        loadDiscovery();
+                        loadDiscovery([]);
                         attachLikeButtonListeners();
                         attachProfileClickListeners();
                     } else {
@@ -1319,12 +1319,14 @@
                     }
                 }
                 updateMatches(data);
+                // Load discovery with excluded IDs from matches
+                loadDiscovery(data.map(m => m.id));
                 isLoading = false;
                 hideLoading();
             }
 
-            // New function to load random discovery
-            async function loadDiscovery(forceRefresh = false) {
+            // New function to load random discovery, now accepting excluded user IDs
+            async function loadDiscovery(excluded = []) {
                 if (isLoading) return;
                 
                 isLoading = true;
@@ -1348,7 +1350,13 @@
                     
                     if (result.success) {
                         const shuffled = shuffle(result.matches);
-                        const discover = shuffled.slice(0, 3);
+                        // Filter out excluded users first
+                        let filtered = shuffled.filter(m => !excluded.includes(m.id));
+                        // If no non-excluded, fall back to shuffled
+                        if (filtered.length === 0) {
+                            filtered = shuffled;
+                        }
+                        const discover = filtered.slice(0, 3);
                         const unseen = discover.filter(m => !m.liked && !m.passed);
                         let displayMatches = unseen.length ? unseen : discover;
                         updateDiscoverySection(displayMatches);
@@ -1711,7 +1719,7 @@
                                                 history.back();
                                                 // Now refresh
                                                 loadMatches();
-                                                loadDiscovery();
+                                                loadDiscovery([]);
                                             }, 500);
                                         } else {
                                             profileViewer.remove();
@@ -1719,7 +1727,7 @@
                                             document.body.style.overflow = '';
                                             history.back();
                                             loadMatches();
-                                            loadDiscovery();
+                                            loadDiscovery([]);
                                         }
                                     }, 1500);
                                 }
@@ -1729,7 +1737,7 @@
                                     // Refresh sections after limit exceeded
                                     setTimeout(() => {
                                         loadMatches();
-                                        loadDiscovery();
+                                        loadDiscovery([]);
                                     }, 2000);
                                 } else {
                                     showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
@@ -1780,7 +1788,7 @@
                                         history.back();
                                         // Now refresh
                                         loadMatches();
-                                        loadDiscovery();
+                                        loadDiscovery([]);
                                     }, 500);
                                 } else {
                                     profileViewer.remove();
@@ -1788,7 +1796,7 @@
                                     document.body.style.overflow = '';
                                     history.back();
                                     loadMatches();
-                                    loadDiscovery();
+                                    loadDiscovery([]);
                                 }
                             } else {
                                 showError(result.error || 'Failed to pass user');
@@ -1817,7 +1825,7 @@
 
             // Initial load
             loadMatches();
-            loadDiscovery();
+            loadDiscovery([]);
 
             // Refresh button - ensure it's wired
             if (refreshMatchesBtn) {
