@@ -1211,7 +1211,7 @@ class MongoService:
                     try:
                         p = int(pref_val)
                         t = int(trait_val)
-                        if abs(p - t) <= 10:
+                        if t >= p:  # If preferred height is 170cm, show matches 170cm or higher
                             match_score += 1
                     except:
                         pass
