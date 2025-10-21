@@ -1274,6 +1274,7 @@
                         card.className = 'discovery-profile discovery-card';
                         card.dataset.userId = match.id;
                         card.innerHTML = `
+                            <div class="match-percentage text-gray-800 dark:text-gray-100">${match.match_percentage}%</div>
                             <img src="${match.image}" alt="Profile" class="discovery-image">
                             <div class="discovery-content">
                                 <div class="flex justify-between items-end">
