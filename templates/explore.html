@@ -1202,8 +1202,8 @@
                     const result = await response.json();
                     if (result.success) {
                         updateMatches(result.matches);
-                        // Refresh discovery randomly after search
-                        loadDiscovery([]);
+                        // Refresh discovery with exclusion of search results
+                        loadDiscovery(result.matches.map(m => m.id));
                         attachLikeButtonListeners();
                         attachProfileClickListeners();
                     } else {
@@ -1353,10 +1353,7 @@
                         const shuffled = shuffle(result.matches);
                         // Filter out excluded users first
                         let filtered = shuffled.filter(m => !excluded.includes(m.id));
-                        // If no non-excluded, fall back to shuffled
-                        if (filtered.length === 0) {
-                            filtered = shuffled;
-                        }
+                        // Removed fallback: if no non-excluded, keep filtered empty to show message
                         const discover = filtered.slice(0, 3);
                         const unseen = discover.filter(m => !m.liked && !m.passed);
                         let displayMatches = unseen.length ? unseen : discover;
