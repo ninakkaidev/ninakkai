@@ -741,7 +741,10 @@
               messagesContainer.appendChild(el);
             });
             attachBottomSentinel();
-            smartScrollToBottom(true);
+            // FIXED: Add timeout to ensure DOM reflow and scroll to the last message on open
+            setTimeout(() => {
+              smartScrollToBottom(true);
+            }, 150);  // Increased timeout for better reliability on slower devices
 
             const responseProfile = await fetch(`/user-profile/${userId}`);
             const resultProfile = await responseProfile.json();
