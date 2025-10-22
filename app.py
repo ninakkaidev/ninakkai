@@ -776,7 +776,7 @@ class MongoService:
             logger.error(f"Get potential matches error: {str(e)}")
             return []
 
-    def get_random_potential(self, user_id: str) -> List[Dict[str, Any]]:
+    def get_random_potential(self, user_id: str, excluded: List[str] = []) -> List[Dict[str, Any]]:
         try:
             current_user = self.get_user_by_id(user_id)
             if not current_user:
@@ -817,6 +817,10 @@ class MongoService:
                 if other_user['user_id'] in seen_user_ids:
                     continue
                 seen_user_ids.add(other_user['user_id'])
+                
+                # Skip excluded users
+                if other_user['user_id'] in excluded:
+                    continue
                 
                 # Skip if already liked or passed
                 if self.has_liked_user(user_id, other_user['user_id']) or self.has_passed_user(user_id, other_user['user_id']):
@@ -2010,7 +2014,9 @@ def api_discovery():
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     try:
-        matches = mongo_service.get_random_potential(session['user_id'])
+        excluded_str = request.args.get('excluded', '')
+        excluded = [id.strip() for id in excluded_str.split(',') if id.strip()]
+        matches = mongo_service.get_random_potential(session['user_id'], excluded)
         return jsonify({
             'success': True, 
             'matches': matches

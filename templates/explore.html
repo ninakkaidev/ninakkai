@@ -1346,7 +1346,8 @@
                 `;
 
                 try {
-                    const response = await fetch('/api/discovery');
+                    const excludedParam = excluded.length ? `?excluded=${excluded.join(',')}` : '';
+                    const response = await fetch(`/api/discovery${excludedParam}`);
                     const result = await response.json();
                     
                     if (result.success) {

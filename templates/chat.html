@@ -741,10 +741,8 @@
               messagesContainer.appendChild(el);
             });
             attachBottomSentinel();
-            // FIXED: Add timeout to ensure DOM reflow and scroll to the last message on open
-            setTimeout(() => {
-              smartScrollToBottom(true);
-            }, 150);  // Increased timeout for better reliability on slower devices
+            // Initial scroll before showing chat area
+            smartScrollToBottom(true);
 
             const responseProfile = await fetch(`/user-profile/${userId}`);
             const resultProfile = await responseProfile.json();
@@ -755,6 +753,13 @@
             }
 
             enterChatMode();
+            // Scroll again after enterChatMode() to ensure it works in mobile after layout changes
+            requestAnimationFrame(() => {
+              setTimeout(() => {
+                smartScrollToBottom(true);
+              }, 150); // Small delay for mobile layout transition
+            });
+
             document.querySelectorAll('.conversation').forEach(c => c.classList.remove('active'));
             const conv = document.querySelector(`.conversation[data-user-id="${currentChatUserId}"]`);
             if (conv) {
