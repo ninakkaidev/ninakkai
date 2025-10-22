@@ -1122,22 +1122,24 @@
                             localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
                         }
 
-                        // For like, remove card immediately; for unlike, keep it
+                        // For like, remove card; for unlike, keep it
                         if (!isLiked) {
-                            // Remove card immediately if exists
-                            const card = button.closest('.discovery-card');
-                            if (card) {
-                                card.style.opacity = '0';
-                                card.style.transition = 'opacity 0.3s ease';
-                                setTimeout(() => {
-                                    card.remove();
-                                }, 300);
-                            }
-                            // Reload sections shortly after
+                            // No need to filter cache since we updated the flag
                             setTimeout(() => {
-                                loadMatches();
-                                loadDiscovery([]);
-                            }, 500);
+                                const card = button.closest('.discovery-card');
+                                if (card) {
+                                    card.style.opacity = '0';
+                                    card.style.transition = 'opacity 0.5s ease';
+                                    setTimeout(() => {
+                                        card.remove();
+                                        loadMatches();
+                                        loadDiscovery([]);
+                                    }, 500);
+                                } else {
+                                    loadMatches();
+                                    loadDiscovery([]);
+                                }
+                            }, 150);
                         } else {
                             // For unlike, optionally refresh to add back, but skipping for simplicity
                         }
@@ -1700,29 +1702,21 @@
                                     localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
                                 }
 
-                                // For like, close viewer and remove card immediately; for unlike, keep viewer open
+                                // For like, close viewer and remove card instantly; for unlike, keep viewer open
                                 if (!isLiked) {
-                                    // Remove card immediately if exists
+                                    // Remove card instantly if it exists
                                     const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
                                     if (card) {
-                                        card.style.opacity = '0';
-                                        card.style.transition = 'opacity 0.3s ease';
-                                        setTimeout(() => {
-                                            card.remove();
-                                        }, 300);
+                                        card.remove();
                                     }
-                                    // Close viewer after short delay
-                                    setTimeout(() => {
-                                        profileViewer.remove();
-                                        mainHeader.style.display = 'flex';
-                                        document.body.style.overflow = '';
-                                        history.back();
-                                        // Reload sections after closing
-                                        setTimeout(() => {
-                                            loadMatches();
-                                            loadDiscovery([]);
-                                        }, 500);
-                                    }, 500);
+                                    // Close viewer immediately
+                                    profileViewer.remove();
+                                    mainHeader.style.display = 'flex';
+                                    document.body.style.overflow = '';
+                                    history.back();
+                                    // Refresh sections immediately
+                                    loadMatches();
+                                    loadDiscovery([]);
                                 }
                             } else {
                                 if (result.error === 'Daily like limit exceeded') {
