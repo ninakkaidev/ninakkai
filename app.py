@@ -858,8 +858,8 @@ class MongoService:
                     if physical_match_score < 1.0:
                         continue
                 
-                # Step 5: Emotional strict filter (lower threshold for random discovery)
-                if emotional_strict and base_percentage < 50:
+                # Step 5: Emotional strict filter (same as potential: 80)
+                if emotional_strict and base_percentage < 80:
                     continue
                 
                 # Final match percentage is just base (capped at 92 implicitly by matrix)
@@ -882,8 +882,8 @@ class MongoService:
                     'passed': self.has_passed_user(user_id, str(other_user_data['_id']))
                 })
             
-            # Shuffle for randomness
-            random.shuffle(candidates)
+            # Sort by match_percentage descending (same as potential_matches)
+            candidates.sort(key=lambda x: x['match_percentage'], reverse=True)
             return candidates[:20]
         except Exception as e:
             logger.error(f"Get random potential error: {str(e)}")
