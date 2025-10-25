@@ -607,10 +607,14 @@ class MongoService:
                 if self.has_liked_user(user_id, other_user['user_id']) or self.has_passed_user(user_id, other_user['user_id']):
                     continue
                 
-                # Step 1: readiness filter - only match Keeper with Keeper, Seeker with Seeker
+                # FIXED: Keeper/Seeker matching logic
                 other_ks = other_scores.get('keeper_seeker_type')
-                if user_ks and other_ks and user_ks != other_ks:
-                    continue  # No mismatch allowed
+                # Only apply Keeper/Seeker filter if both users have a defined type
+                if user_ks and other_ks:
+                    # Keepers should only match with Keepers, Seekers with Seekers
+                    if user_ks != other_ks:
+                        continue  # Skip if types don't match
+                # If one user doesn't have a type, allow the match (backward compatibility)
                 
                 # Step 2: Emotional compatibility - BASE MATCH PERCENTAGE ONLY FROM MATRIX
                 match_calc = self._calculate_match_percentage(user_scores, other_scores)
@@ -715,10 +719,14 @@ class MongoService:
                 if self.has_liked_user(user_id, other_user['user_id']) or self.has_passed_user(user_id, other_user['user_id']):
                     continue
                 
-                # Step 1: readiness filter - only match Keeper with Keeper, Seeker with Seeker
+                # FIXED: Keeper/Seeker matching logic
                 other_ks = other_scores.get('keeper_seeker_type')
-                if user_ks and other_ks and user_ks != other_ks:
-                    continue  # No mismatch allowed
+                # Only apply Keeper/Seeker filter if both users have a defined type
+                if user_ks and other_ks:
+                    # Keepers should only match with Keepers, Seekers with Seekers
+                    if user_ks != other_ks:
+                        continue  # Skip if types don't match
+                # If one user doesn't have a type, allow the match (backward compatibility)
                 
                 # Step 2: Emotional compatibility - BASE MATCH PERCENTAGE ONLY FROM MATRIX
                 match_calc = self._calculate_match_percentage(user_scores, other_scores)
@@ -826,10 +834,14 @@ class MongoService:
                 if self.has_liked_user(user_id, other_user['user_id']) or self.has_passed_user(user_id, other_user['user_id']):
                     continue
                 
-                # Step 1: readiness filter - only match Keeper with Keeper, Seeker with Seeker
+                # FIXED: Keeper/Seeker matching logic
                 other_ks = other_scores.get('keeper_seeker_type')
-                if user_ks and other_ks and user_ks != other_ks:
-                    continue  # No mismatch allowed
+                # Only apply Keeper/Seeker filter if both users have a defined type
+                if user_ks and other_ks:
+                    # Keepers should only match with Keepers, Seekers with Seekers
+                    if user_ks != other_ks:
+                        continue  # Skip if types don't match
+                # If one user doesn't have a type, allow the match (backward compatibility)
                 
                 # Calculate match percentage (still use for consistency, but ignore for sorting)
                 match_calc = self._calculate_match_percentage(user_scores, other_scores)
@@ -1027,6 +1039,16 @@ class MongoService:
                     if other_user['user_id'] in seen_user_ids:
                         continue
                     seen_user_ids.add(other_user['user_id'])
+                    
+                    # FIXED: Keeper/Seeker matching logic
+                    user_ks = user_scores.get('keeper_seeker_type')
+                    other_ks = other_user['scores'].get('keeper_seeker_type')
+                    # Only apply Keeper/Seeker filter if both users have a defined type
+                    if user_ks and other_ks:
+                        # Keepers should only match with Keepers, Seekers with Seekers
+                        if user_ks != other_ks:
+                            continue  # Skip if types don't match
+                    # If one user doesn't have a type, allow the match (backward compatibility)
                     
                     # UPDATED: Use new calculation with no bonuses
                     match_calc = self._calculate_match_percentage(user_scores, other_user['scores'])
