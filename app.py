@@ -178,7 +178,7 @@ QUESTION_TYPES = {
 
 class MongoService:
     def __init__(self):
-        self.uri = os.getenv('MONGODB_URI', "mongodb+srv://ninakkaiforyou:9t2GADiJUf8xFhDZ@cluster0.fdoiudh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+        self.uri = os.getenv('MONGODB_URI', "mongodb+srv://ninakkaiforyou:9t2GADiJUJUf8xFhDZ@cluster0.fdoiudh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
         self.client = MongoClient(self.uri, tlsAllowInvalidCertificates=True)
         self.db = self.client['ninakkai']
         self.users = self.db['users']
