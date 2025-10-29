@@ -868,6 +868,12 @@
             const userGender = '{{ profile.gender }}';
             let showLikePrompt = {{ profile.show_like_prompt | tojson }};
 
+            // Check for retake refresh flag
+            const refreshExplore = localStorage.getItem('refresh_explore') === 'true';
+            if (refreshExplore) {
+                localStorage.removeItem('refresh_explore');
+            }
+
             function showLoading() {
                 loading.style.display = 'flex';
             }
@@ -1809,8 +1815,8 @@
                 });
             }
 
-            // Initial load
-            loadMatches();
+            // Initial load with refresh check
+            loadMatches(refreshExplore);
             loadDiscovery([]);
 
             // Refresh button - ensure it's wired
@@ -1844,6 +1850,7 @@
             if (retakeModal) {
                 retakeModal.style.display = 'block';
                 document.getElementById('retakeYes').addEventListener('click', () => {
+                    localStorage.setItem('refresh_explore', 'true');
                     window.location.href = '/questions?retake=true';
                 });
                 document.getElementById('retakeNo').addEventListener('click', async () => {
