@@ -262,6 +262,67 @@
             color: #f3f4f6;
         }
 
+        /* Quiz Retake Popup Styles */
+        .quiz-retake-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #e0f2fe, #ddd6fe); /* Light blue to purple gradient */
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2), 0 0 20px rgba(59, 130, 246, 0.5); /* Blue glow effect */
+            animation: enhancedPopupAnim 1.2s ease-out forwards;
+            z-index: 1002;
+            max-width: 400px;
+            width: 90%;
+            overflow: hidden;
+            border: 2px solid #3b82f6; /* Blue border */
+            text-align: center;
+        }
+
+        html.dark .quiz-retake-popup {
+            background: linear-gradient(135deg, #1e3a8a, #4c1d95); /* Dark blue to purple gradient */
+            color: #f3f4f6;
+            box-shadow: 0 10px 30px rgba(255,255,255,0.1), 0 0 20px rgba(59, 130, 246, 0.3);
+            border: 2px solid #3b82f6;
+        }
+
+        .quiz-retake-popup h3 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            text-align: center;
+            color: #3b82f6; /* Blue color */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .quiz-retake-popup p {
+            margin-bottom: 1.5rem;
+            color: #4b5563;
+        }
+
+        html.dark .quiz-retake-popup p {
+            color: #d1d5db;
+        }
+
+        .quiz-retake-popup .refresh-button {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6); /* Blue to purple gradient */
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .quiz-retake-popup .refresh-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+
         /* Image styling for consistent appearance */
         .profile-image {
             width: 100%;
@@ -791,7 +852,7 @@
     {% if show_feedback_prompt %}
     <div id="feedbackModal" class="popup text-gray-800 dark:text-gray-100">
         <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
-            <i class="fas fa-heart text-pink-500 mr-2 animate-pulse"></i> Ninakkai grows with your feelings. Share one honest thought — big or small — and we’ll use it to make your experience even more real
+            <i class="fas fa-heart text-pink-500 mr-2 animate-pulse"></i> Ninakkai grows with your feelings. Share one honest thought — big or small — and we'll use it to make your experience even more real
         </h3>
         <textarea id="feedbackText" class="w-full p-2 border rounded mb-4 dark:bg-gray-800 dark:border-gray-600 focus:ring-2 focus:ring-pink-500 transition-all" placeholder="Suggestions and feedback..."></textarea>
         <div class="flex justify-end space-x-2">
@@ -821,31 +882,28 @@
     </div>
     {% endif %}
 
+    <!-- Quiz Retake Modal -->
+    {% if quiz_just_retaken %}
+    <div id="quizRetakeModal" class="quiz-retake-popup">
+        <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
+            <i class="fas fa-check-circle text-blue-500 mr-2"></i> Quiz Resubmitted!
+        </h3>
+        <p>You've just updated your quiz responses. Refresh to see your updated matches based on your new answers.</p>
+        <button id="refreshQuizResults" class="refresh-button">
+            <i class="fas fa-sync-alt mr-2"></i> Refresh for Updated Matches
+        </button>
+    </div>
+    {% endif %}
+
     <!-- Like Prompt Modal for Male Users (First Like Attempt) -->
     <div id="likePromptModal" class="popup text-gray-800 dark:text-gray-100" style="display: none;">
         <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
             <i class="fas fa-heart text-pink-500 mr-2 animate-pulse"></i> Every Like Matters
         </h3>
-        <p class="mb-4 text-center">On Ninakkai, every like carries meaning. That’s why you receive 3 chances each day to send a genuine like — not endless swipes, but mindful choices. Take your time, notice the details, and let your likes truly connect.</p>
+        <p class="mb-4 text-center">On Ninakkai, every like carries meaning. That's why you receive 3 chances each day to send a genuine like — not endless swipes, but mindful choices. Take your time, notice the details, and let your likes truly connect.</p>
         <div class="flex justify-center">
             <button id="continueLike" class="px-4 py-2 bg-pink-500 text-white rounded flex items-center">
                 <i class="fas fa-check mr-2"></i> Got it
-            </button>
-        </div>
-    </div>
-
-    <!-- Retake Refresh Prompt Modal -->
-    <div id="retakeRefreshModal" class="popup text-gray-800 dark:text-gray-100" style="display: none;">
-        <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
-            <i class="fas fa-sync-alt text-blue-500 mr-2 animate-spin"></i> Quiz Updated!
-        </h3>
-        <p class="mb-4 text-center">You just resubmitted your quiz. Refresh for updated matches based on your new answers.</p>
-        <div class="flex justify-center space-x-2">
-            <button id="refreshMatchesNow" class="px-4 py-2 bg-blue-500 text-white rounded flex items-center">
-                <i class="fas fa-refresh mr-2"></i> Refresh Matches
-            </button>
-            <button id="refreshLater" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded flex items-center">
-                <i class="fas fa-times mr-2"></i> Later
             </button>
         </div>
     </div>
@@ -861,14 +919,12 @@
             const refreshMatchesBtn = document.getElementById('refresh-matches');
             const likePromptModal = document.getElementById('likePromptModal');
             const continueLikeBtn = document.getElementById('continueLike');
-            const retakeRefreshModal = document.getElementById('retakeRefreshModal');
-            const refreshMatchesNowBtn = document.getElementById('refreshMatchesNow');
-            const refreshLaterBtn = document.getElementById('refreshLater');
+            const quizRetakeModal = document.getElementById('quizRetakeModal');
+            const refreshQuizResultsBtn = document.getElementById('refreshQuizResults');
             
             // State for loading
             let isLoading = false;
             let pendingLikeButton = null;
-            let hasLoadedOnce = false;
             
             // Cache key
             const CACHE_KEY = 'ninakkai_matches';
@@ -1198,25 +1254,14 @@
                 showLikePrompt = false;
             });
 
-            // Retake refresh modal handling
-            if (refreshExplore) {
-                retakeRefreshModal.style.display = 'block';
-                document.body.style.overflow = 'hidden';
+            // Quiz retake refresh button
+            if (refreshQuizResultsBtn) {
+                refreshQuizResultsBtn.addEventListener('click', () => {
+                    quizRetakeModal.style.display = 'none';
+                    loadMatches(true);
+                    showNotification('Refreshing matches based on your updated quiz...');
+                });
             }
-            refreshMatchesNowBtn.addEventListener('click', () => {
-                retakeRefreshModal.style.display = 'none';
-                document.body.style.overflow = '';
-                loadMatches(true); // Force refresh
-                hasLoadedOnce = true;
-            });
-            refreshLaterBtn.addEventListener('click', () => {
-                retakeRefreshModal.style.display = 'none';
-                document.body.style.overflow = '';
-                if (!hasLoadedOnce) {
-                    loadMatches(false); // Normal load
-                    hasLoadedOnce = true;
-                }
-            });
 
             // Header scroll effect
             window.addEventListener('scroll', () => {
@@ -1855,14 +1900,9 @@
                 });
             }
 
-            // Initial load: Check if retake refresh, show modal first
-            if (refreshExplore) {
-                // Modal is shown via CSS display: block above
-                // Do not load yet, wait for user action
-            } else {
-                loadMatches(false);
-                hasLoadedOnce = true;
-            }
+            // Initial load with refresh check
+            loadMatches(refreshExplore);
+            loadDiscovery([]);
 
             // Refresh button - ensure it's wired
             if (refreshMatchesBtn) {
@@ -1908,8 +1948,8 @@
             const MATCH_NARRATIONS = {
                 '🌿 Nurturer': {
                     '🌿 Nurturer': {tagline: '💞 Two hearts, one comfort.', narration: 'You both give more than you take. In this love, care never runs out — it simply circles back. Together, you create a world that feels safe, gentle, and endlessly kind.'},
-                    '👂 Listener': {tagline: '💞 Heard and held.', narration: 'You love to care, and they love to listen. Their calm presence makes your tenderness feel valued — it’s easy to be fully yourself here.'},
-                    '🛡️ Protector': {tagline: '🛡️ Wrapped in safety.', narration: 'Their quiet strength protects your gentle heart. You feel grounded and cherished — it’s love that feels steady, not rushed.'},
+                    '👂 Listener': {tagline: '💞 Heard and held.', narration: 'You love to care, and they love to listen. Their calm presence makes your tenderness feel valued — it's easy to be fully yourself here.'},
+                    '🛡️ Protector': {tagline: '🛡️ Wrapped in safety.', narration: 'Their quiet strength protects your gentle heart. You feel grounded and cherished — it's love that feels steady, not rushed.'},
                     '🌙 Dreamer': {tagline: '🌙 Roots & wings.', narration: 'You bring comfort, they bring imagination. Their wonder inspires you to dream, and your care helps their dreams feel safe to bloom.'},
                     '💘 Romantic': {tagline: '🔥 Soft fire.', narration: 'Their passion excites you while your calm warmth soothes them. Together, love feels alive yet peaceful — heat without chaos.'},
                     '🌟 Idealist': {tagline: '🌟 Gentle purpose.', narration: 'You care for the little things; they dream of the big picture. You bring heart to their ideals, and they give meaning to your care.'},
@@ -1934,16 +1974,16 @@
                     '🌿 Nurturer': {tagline: '🌷 Soft anchor.', narration: 'You dream, they ground. Their steady affection makes your creativity feel supported — a balance of heart and vision.'},
                     '👂 Listener': {tagline: '🎶 Safe imagination.', narration: 'You share your wild thoughts freely because they truly listen. Their empathy makes your mind feel understood.'},
                     '🛡️ Protector': {tagline: '⚓ Trust to fly.', narration: 'You dream freely because they make you feel safe. Their loyalty turns your vision into something real.'},
-                    '🌙 Dreamer': {tagline: '☁️ Shared sky.', narration: 'You both see the world in colors others can’t. Together, dreams multiply — turning imagination into a soft, infinite space where hope feels like home.'},
+                    '🌙 Dreamer': {tagline: '☁️ Shared sky.', narration: 'You both see the world in colors others can't. Together, dreams multiply — turning imagination into a soft, infinite space where hope feels like home.'},
                     '💘 Romantic': {tagline: '🌙 Fire and fantasy.', narration: 'You bring imagination; they bring intensity. Love becomes art — passionate and beautifully expressive.'},
                     '🌟 Idealist': {tagline: '🌟 Dream + purpose.', narration: 'You imagine; they believe. Their ideals give your dreams shape, and your wonder gives their mission soul.'},
                 },
                 '💘 Romantic': {
-                    '🌿 Nurturer': {tagline: '🌸 Held passion.', narration: 'You burn bright, and they hold that flame with care. Their tenderness teaches you that love doesn’t have to hurt to be deep.'},
+                    '🌿 Nurturer': {tagline: '🌸 Held passion.', narration: 'You burn bright, and they hold that flame with care. Their tenderness teaches you that love doesn't have to hurt to be deep.'},
                     '👂 Listener': {tagline: '🌿 Heard desire.', narration: 'You express deeply, and they truly listen. Their understanding softens your intensity, turning love into connection.'},
                     '🛡️ Protector': {tagline: '🛡️ Held desire.', narration: 'You love intensely, and they meet it with steadiness. Their calm presence turns your passion into lasting love.'},
                     '🌙 Dreamer': {tagline: '🌙 Fire and fantasy.', narration: 'You bring heart, they bring imagination. Together, you create a love story that feels like poetry.'},
-                    '💘 Romantic': {tagline: '💫 Passion mirrored.', narration: 'Two hearts that burn bright, meeting flame to flame. Every glance feels electric — but it’s your mutual depth that keeps the fire beautiful, not destructive.'},
+                    '💘 Romantic': {tagline: '💫 Passion mirrored.', narration: 'Two hearts that burn bright, meeting flame to flame. Every glance feels electric — but it's your mutual depth that keeps the fire beautiful, not destructive.'},
                     '🌟 Idealist': {tagline: '🌟 Love with purpose.', narration: 'You love with heart; they love with meaning. Together, you make passion feel profound and purposeful.'},
                 },
                 '🌟 Idealist': {

@@ -1993,6 +1993,9 @@ def explore():
         if not quiz_result:
             return redirect(url_for('questions', error='Please complete the quiz to access the explore page'))
         
+        # Check if quiz was just retaken
+        quiz_just_retaken = session.pop('quiz_just_retaken', False)
+        
         profile = {
             'id': user['id'],
             'full_name': user['full_name'],
@@ -2010,12 +2013,24 @@ def explore():
         prompt_status = mongo_service.get_user_prompt_status(session['user_id'])
         
         # Render with empty data, load asynchronously
-        resp = make_response(render_template('explore.html', profile=profile, matches=[], discovery=[], error=None, **prompt_status))
+        resp = make_response(render_template('explore.html', 
+                                            profile=profile, 
+                                            matches=[], 
+                                            discovery=[], 
+                                            error=None, 
+                                            quiz_just_retaken=quiz_just_retaken,
+                                            **prompt_status))
         resp.headers['Cache-Control'] = 'public, max-age=300'  # Cache the page for 5 mins
         return resp
     except Exception as e:
         logger.error(f"Explore error: {str(e)}")
-        return render_template('explore.html', profile={'show_like_prompt': False, 'gender': '', 'dominant_type': ''}, matches=[], discovery=[], error='An error occurred while loading the explore page. Please try again.')
+        return render_template('explore.html', 
+                             profile={'show_like_prompt': False, 'gender': '', 'dominant_type': ''}, 
+                             matches=[], 
+                             discovery=[], 
+                             error='An error occurred while loading the explore page. Please try again.')
+
+
 
 @app.route('/api/matches', methods=['GET'])
 def api_matches():
@@ -2438,6 +2453,9 @@ def submit_quiz():
         if not answers:
             return jsonify({'error': 'No answers provided'}), 400
         
+        # Check if this is a quiz retake
+        is_retake = request.args.get('retake') == 'true'
+        
         # Add types to answers for emotional questions
         for ans in answers:
             qid = ans.get('question_id')
@@ -2453,6 +2471,9 @@ def submit_quiz():
         quiz_data = {'answers': answers}
         result = mongo_service.save_quiz_results(session['user_id'], quiz_data)
         if result['success']:
+            # Set flag if this was a retake
+            if is_retake:
+                session['quiz_just_retaken'] = True
             return jsonify(result), 200
         else:
             return jsonify({'success': False, 'error': result.get('error', 'Failed to save quiz results')}), 500
