@@ -2015,8 +2015,7 @@ def explore():
         return resp
     except Exception as e:
         logger.error(f"Explore error: {str(e)}")
-        fresh_quiz = session.pop('quiz_completed_fresh', False)
-        return render_template('explore.html', profile={'show_like_prompt': False, 'gender': '', 'dominant_type': ''}, matches=[], discovery=[], fresh_quiz=fresh_quiz, error='An error occurred while loading the explore page. Please try again.')
+        return render_template('explore.html', profile={'show_like_prompt': False, 'gender': '', 'dominant_type': ''}, matches=[], discovery=[], error='An error occurred while loading the explore page. Please try again.')
 
 @app.route('/api/matches', methods=['GET'])
 def api_matches():
@@ -2454,8 +2453,6 @@ def submit_quiz():
         quiz_data = {'answers': answers}
         result = mongo_service.save_quiz_results(session['user_id'], quiz_data)
         if result['success']:
-            session['quiz_completed_fresh'] = True
-            session.modified = True
             return jsonify(result), 200
         else:
             return jsonify({'success': False, 'error': result.get('error', 'Failed to save quiz results')}), 500
