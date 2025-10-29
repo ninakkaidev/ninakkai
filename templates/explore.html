@@ -854,6 +854,9 @@
             const CACHE_KEY = 'ninakkai_matches';
             const CACHE_EXPIRY = 3600000; // 1 hour in ms
             
+            // Fresh quiz flag from backend
+            const freshQuiz = {{ fresh_quiz | tojson }};
+            
             // Dark mode persistence
             if (localStorage.theme === 'dark') {
                 document.documentElement.classList.add('dark');
@@ -1293,6 +1296,12 @@
             // Function to load matches with caching
             async function loadMatches(forceRefresh = false) {
                 if (isLoading) return;
+                
+                // Invalidate cache if fresh quiz
+                if (freshQuiz) {
+                    localStorage.removeItem(CACHE_KEY);
+                    forceRefresh = true;
+                }
                 
                 isLoading = true;
                 showLoading(); // Show loader on refresh
@@ -1809,8 +1818,8 @@
                 });
             }
 
-            // Initial load
-            loadMatches();
+            // Initial load with force refresh if fresh quiz
+            loadMatches(freshQuiz);
             loadDiscovery([]);
 
             // Refresh button - ensure it's wired
