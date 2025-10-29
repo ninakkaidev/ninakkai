@@ -2009,16 +2009,13 @@ def explore():
         
         prompt_status = mongo_service.get_user_prompt_status(session['user_id'])
         
-        # Check for just retaken quiz and set force_reload flag
-        force_reload = session.pop('just_retaken', False)
-        
         # Render with empty data, load asynchronously
-        resp = make_response(render_template('explore.html', profile=profile, matches=[], discovery=[], error=None, **prompt_status, force_reload=force_reload))
+        resp = make_response(render_template('explore.html', profile=profile, matches=[], discovery=[], error=None, **prompt_status))
         resp.headers['Cache-Control'] = 'public, max-age=300'  # Cache the page for 5 mins
         return resp
     except Exception as e:
         logger.error(f"Explore error: {str(e)}")
-        return render_template('explore.html', profile={'show_like_prompt': False, 'gender': '', 'dominant_type': ''}, matches=[], discovery=[], error='An error occurred while loading the explore page. Please try again.', force_reload=False)
+        return render_template('explore.html', profile={'show_like_prompt': False, 'gender': '', 'dominant_type': ''}, matches=[], discovery=[], error='An error occurred while loading the explore page. Please try again.')
 
 @app.route('/api/matches', methods=['GET'])
 def api_matches():
@@ -2438,7 +2435,6 @@ def submit_quiz():
     try:
         data = request.get_json()
         answers = data.get('answers', [])
-        is_retake = data.get('retake', False)
         if not answers:
             return jsonify({'error': 'No answers provided'}), 400
         
@@ -2457,9 +2453,6 @@ def submit_quiz():
         quiz_data = {'answers': answers}
         result = mongo_service.save_quiz_results(session['user_id'], quiz_data)
         if result['success']:
-            if is_retake:
-                session['just_retaken'] = True
-                session.modified = True
             return jsonify(result), 200
         else:
             return jsonify({'success': False, 'error': result.get('error', 'Failed to save quiz results')}), 500
