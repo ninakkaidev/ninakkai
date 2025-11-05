@@ -14,7 +14,7 @@
             overflow-x: hidden;
             transition: background-color 0.3s ease;
         }
-        
+       
         .profile-pic-upload {
             position: absolute;
             bottom: 10px;
@@ -29,58 +29,58 @@
             color: hsl(0, 0%, 100%);
             cursor: pointer;
         }
-        
+       
         .photo-slider {
             scrollbar-width: none; /* Firefox */
             -ms-overflow-style: none; /* IE and Edge */
             scroll-behavior: smooth; /* Smoother scrolling */
         }
-        
+       
         .photo-slider::-webkit-scrollbar {
             display: none; /* Chrome, Safari, Opera */
         }
-        
+       
         .tab-content {
             display: none;
         }
-        
+       
         .tab-content.active {
             display: block;
         }
-        
+       
         .notification-item.unread {
             background-color: #f3f4f6;
         }
-        
+       
         .settings-option:hover {
             background-color: #f9fafb;
         }
-        
+       
         .chat-message.sent {
             background-color: #404150;
             color: white;
             margin-left: auto;
             border-bottom-right-radius: 0;
         }
-        
+       
         .chat-message.received {
             background-color: #f3f4f6;
             margin-right: auto;
             border-bottom-left-radius: 0;
         }
-        
+       
         .edit-field {
             display: none;
         }
-        
+       
         .edit-mode .view-field {
             display: none;
         }
-        
+       
         .edit-mode .edit-field {
             display: block;
         }
-        
+       
         /* Background animation */
         .bg-circles {
             position: fixed;
@@ -91,14 +91,14 @@
             z-index: -1;
             overflow: hidden;
         }
-        
+       
         .circle {
             position: absolute;
             border-radius: 50%;
             background: rgba(31, 113, 212, 0.812);
             animation: move 15s infinite linear;
         }
-        
+       
         @keyframes move {
             0% { transform: translateY(0) translateX(0); }
             25% { transform: translateY(-50px) translateX(50px); }
@@ -106,103 +106,101 @@
             75% { transform: translateY(50px) translateX(50px); }
             100% { transform: translateY(0) translateX(0); }
         }
-        
+       
         /* Responsive adjustments */
         @media (max-width: 640px) {
             .photo-slider {
                 -webkit-overflow-scrolling: touch;
             }
-            
+           
             .circle {
                 animation-duration: 20s;
             }
-            
+           
             .chat-message {
                 max-width: 80% !important;
             }
         }
-        
+       
         /* Dark mode styles */
         .dark body {
             background-color: #000000;
             color: #f3f4f6;
         }
-        
+       
         .dark .bg-white {
             background-color: #000000 !important;
             color: #f3f4f6;
         }
-        
+       
         .dark .text-gray-800 {
             color: #f3f4f6 !important;
         }
-        
+       
         .dark .bg-gray-100 {
             background-color: #000000 !important;
         }
-        
+       
         .dark .bg-gray-50 {
             background-color: #000000 !important;
         }
-        
+       
         .dark .text-gray-500 {
             color: #9ca3af !important;
         }
-        
+       
         .dark .text-gray-600 {
             color: #9ca3af !important;
         }
-        
+       
         .dark .text-gray-700 {
             color: #d1d5db !important;
         }
-        
+       
         .dark .border-gray-200 {
             border-color: #374151 !important;
         }
-        
+       
         .dark .notification-item.unread {
             background-color: #374151 !important;
         }
-        
+       
         .dark .chat-message.received {
             background-color: #374151 !important;
         }
-        
+       
         /* Settings Modal Styles */
         #settingsModal {
             transition: opacity 0.3s ease;
         }
-        
+       
         #settingsModal .settings-option {
             transition: background-color 0.2s ease;
         }
-        
+       
         .dark #settingsModal .settings-option:hover {
             background-color: #000000 !important;
         }
-        
+       
         /* Change Password Modal */
         #changePasswordModal {
             transition: all 0.3s ease;
         }
-        
+       
         /* Confirmation Dialog */
         .confirmation-dialog {
             transition: all 0.3s ease;
         }
-        
+       
         .dark .confirmation-dialog div {
             background-color: #000000;
             color: #f3f4f6;
         }
- 
         /* Updated Toggle Styles */
         .toggle-container {
             display: flex;
             align-items: center;
         }
-
         .toggle-label {
             position: relative;
             display: inline-block;
@@ -213,19 +211,15 @@
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
-
         .toggle-label:hover {
             background-color: #9ca3af;
         }
-
         .toggle-label.peer-checked {
             background-color: #ec4899;
         }
-
         .toggle-label.peer-checked:hover {
             background-color: #db2777;
         }
-
         .toggle-knob {
             position: absolute;
             top: 2px;
@@ -238,38 +232,30 @@
             transform: translateX(0);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-
         .toggle-label.peer-checked .toggle-knob {
             transform: translateX(20px);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
-
         .toggle-status {
             min-width: 50px; /* Adjusted for Public/Private */
             transition: color 0.3s ease;
         }
-
         .dark .toggle-label {
             background-color: #4b5563;
         }
-
         .dark .toggle-label:hover {
             background-color: #6b7280;
         }
-
         .dark .toggle-label.peer-checked {
             background-color: #ec4899;
         }
-
         .dark .toggle-label.peer-checked:hover {
             background-color: #db2777;
         }
-
         .toggle-label:focus-within {
             outline: 2px solid #ec4899;
             outline-offset: 2px;
         }
-
         /* Popup Animation */
         .popup {
             position: fixed;
@@ -283,31 +269,25 @@
             animation: popupAnim 1s ease;
             z-index: 1002;
         }
-
         @keyframes popupAnim {
             0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
             50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
             100% { transform: translate(-50%, -50%) scale(1); }
         }
-
         .dark .popup {
             background-color: #1f2937;
             color: #f3f4f6;
         }
-
         /* Connection Card Styles */
         .connection-card {
             cursor: pointer;
         }
-
         .connection-card:hover {
             background-color: #f9fafb;
         }
-
         .dark .connection-card:hover {
             background-color: #374151;
         }
-
         /* Action Buttons Container */
         .action-buttons {
             margin-top: 0.5rem;
@@ -315,7 +295,6 @@
             justify-content: center;
             gap: 0.5rem;
         }
-
         /* Loading State */
         .loading {
             display: none;
@@ -330,7 +309,6 @@
             align-items: center;
             flex-direction: column;
         }
-
         .loading-spinner {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #ec4899;
@@ -340,21 +318,17 @@
             animation: spin 1s linear infinite;
             margin-bottom: 1rem;
         }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
         .dark .loading {
             background: rgba(0, 0, 0, 0.7);
         }
-
         .dark .loading-spinner {
             border: 4px solid #374151;
             border-top: 4px solid #ec4899;
         }
-
         /* Override gradients in dark mode */
         .dark .bg-gradient-to-r.from-indigo-50.via-white.to-pink-50 {
             background-image: linear-gradient(to right, var(--tw-gradient-stops)) !important;
@@ -362,7 +336,6 @@
             --tw-gradient-to: #831843 var(--tw-gradient-to-position);
             --tw-gradient-stops: var(--tw-gradient-from), #111827 var(--tw-gradient-via-position), var(--tw-gradient-to);
         }
-
         /* Optimized dark mode styles for edit inputs */
         .dark input[type="text"],
         .dark input[type="number"],
@@ -372,7 +345,6 @@
             color: #f3f4f6 !important;
             border-color: #4b5563 !important;
         }
-
         .dark input[type="text"]:focus,
         .dark input[type="number"]:focus,
         .dark textarea:focus,
@@ -381,7 +353,6 @@
             border-color: #ec4899 !important;
             box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.5) !important;
         }
-
         /* Personality Styles - Minimized font sizes */
         .primary-personality {
             font-size: 1em;
@@ -389,35 +360,28 @@
             color: #000; /* Darker color for highlight */
             line-height: 1.4;
         }
-
         .secondary-personality {
             font-size: 0.8em;
             color: #666; /* Lighter color for less highlight */
             line-height: 1.4;
         }
-
         .dark .primary-personality {
             color: #f3f4f6 !important;
         }
-
         .dark .secondary-personality {
             color: #d1d5db !important;
         }
-
         /* Personality Card for attractiveness */
         .personality-card {
             transition: all 0.3s ease;
         }
-
         .personality-card:hover {
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-
         /* Dark mode for circles (fallback if script fails) */
         .dark .circle {
             animation-duration: 18s; /* Slightly slower in dark mode for calmer effect */
         }
-
         /* Profile viewer styling */
         .profile-viewer {
             position: fixed;
@@ -429,11 +393,9 @@
             flex-direction: column;
             animation: profileOpen 0.4s ease-out forwards;
         }
-
         html.dark .profile-viewer {
             background: #000000;
         }
-
         @keyframes profileOpen {
             0% {
                 opacity: 0;
@@ -448,7 +410,6 @@
                 transform: translateY(0) scale(1);
             }
         }
-
         /* Image styling for consistent appearance */
         .profile-viewer-image {
             width: 100%;
@@ -456,7 +417,6 @@
             object-fit: cover;
             object-position: center center;
         }
-
         /* Report modal styling */
         .report-modal {
             position: fixed;
@@ -470,7 +430,6 @@
             justify-content: center;
             align-items: center;
         }
-
         .report-modal-content {
             background: white;
             padding: 20px;
@@ -480,12 +439,10 @@
             max-height: 80vh;
             overflow-y: auto;
         }
-
         html.dark .report-modal-content {
             background: #000000;
             color: #f3f4f6;
         }
-
         .report-option {
             display: block;
             padding: 10px;
@@ -495,24 +452,19 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-
         .report-option:hover {
             background-color: #f0f0f0;
         }
-
         html.dark .report-option {
             border-color: #374151;
         }
-
         html.dark .report-option:hover {
             background-color: #374151;
         }
-
         .report-option.selected {
             background-color: #ec4899;
             color: white;
         }
-
         /* Animation for burst effects */
         @keyframes burstAnim {
             0% {
@@ -524,7 +476,7 @@
                 transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(1.5);
             }
         }
-        
+       
         /* Enhanced Popup Animation with extraordinary effects */
         .popup {
             position: fixed;
@@ -542,14 +494,12 @@
             overflow: hidden;
             border: 2px solid #ec4899; /* Pink border */
         }
-
         html.dark .popup {
             background: linear-gradient(135deg, #1f2937, #4b5563); /* Dark gradient */
             color: #f3f4f6;
             box-shadow: 0 10px 30px rgba(255,255,255,0.1), 0 0 20px rgba(236, 72, 153, 0.3);
             border: 2px solid #ec4899;
         }
-
         @keyframes enhancedPopupAnim {
             0% {
                 transform: translate(-50%, -50%) scale(0.5) rotate(-10deg);
@@ -569,7 +519,6 @@
                 opacity: 1;
             }
         }
-
         .popup::before {
             content: '';
             position: absolute;
@@ -581,13 +530,11 @@
             animation: glowPulse 2s infinite ease-in-out;
             z-index: -1;
         }
-
         @keyframes glowPulse {
             0% { opacity: 0.5; }
             50% { opacity: 1; }
             100% { opacity: 0.5; }
         }
-
         .popup h3 {
             font-size: 1.5rem;
             font-weight: bold;
@@ -596,7 +543,6 @@
             color: #ec4899; /* Pink color */
             text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
         .popup textarea {
             width: 100%;
             padding: 10px;
@@ -607,54 +553,47 @@
             height: 100px;
             background: rgba(255,255,255,0.8);
         }
-
         html.dark .popup textarea {
             background: rgba(31,41,55,0.8);
             border-color: #ec4899;
             color: #f3f4f6;
         }
-
         .popup .flex button {
             padding: 0.5rem 1rem;
             border-radius: 9999px; /* Rounded buttons */
             transition: transform 0.2s ease, background-color 0.2s ease;
         }
-
         .popup .flex button:hover {
             transform: scale(1.05);
         }
-
         .popup .flex button:first-child {
             background: linear-gradient(135deg, #ec4899, #a855f7); /* Gradient button */
             color: white;
         }
-
         .popup .flex button:last-child {
             background: linear-gradient(135deg, #d1d5db, #9ca3af);
             color: #1f2937;
         }
-
         html.dark .popup .flex button:last-child {
             background: linear-gradient(135deg, #4b5563, #374151);
             color: #f3f4f6;
         }
-
         /* Responsive adjustments */
         @media (max-width: 640px) {
             .profile-image {
                 height: 400px;
             }
-            
+           
             .discovery-image {
                 height: 350px;
                 width: 105%;
                 margin-left: -2.5%;
             }
-            
+           
             .profile-viewer-image {
                 height: 300px;
             }
-            
+           
             #searchBox {
                 position: absolute;
                 top: 100%;
@@ -663,79 +602,68 @@
                 padding: 0.5rem 1rem;
                 background-color: rgba(255, 255, 255, 0.95);
             }
-            
+           
             html.dark #searchBox {
                 background-color: rgba(17, 24, 39, 0.95);
             }
-
             #searchBox input {
                 width: 100%;
             }
         }
-
         @media (min-width: 641px) and (max-width: 1024px) {
             .profile-image {
                 height: 280px;
             }
-            
+           
             .discovery-image {
                 height: 350px;
             }
-            
+           
             .profile-viewer-image {
                 height: 350px;
             }
         }
-
         @media (min-width: 1025px) {
             .profile-image {
                 height: 500px;
             }
-            
+           
             .discovery-image {
                 height: 400px;
             }
-            
+           
             .profile-viewer-image {
                 height: 400px;
             }
         }
-
         /* Attractive buttons with animation */
         .accept-btn,
         .decline-btn {
             transition: all 0.3s ease;
         }
-
         .accept-btn:hover {
             transform: scale(1.05);
         }
-
         .decline-btn:hover {
             transform: scale(1.05);
         }
-
         /* Tab button enhancements */
         .tab-btn:hover {
             transition: all 0.2s ease;
             transform: scale(1.05);
         }
-
         .tab-btn.border-pink-500 {
             font-weight: bold;
         }
-
         /* Fix for religion and physical importance sections */
         .religion-importance-section .edit-field,
         .physical-importance-section .edit-field {
             display: none;
         }
-
         .religion-importance-section.edit-mode .view-field,
         .physical-importance-section.edit-mode .view-field {
             display: none;
         }
-
         .religion-importance-section.edit-mode .edit-field,
         .physical-importance-section.edit-mode .edit-field {
             display: block;
@@ -748,10 +676,9 @@
         <div class="loading-spinner"></div>
         <p class="text-gray-800 text-center">Processing...</p>
     </div>
-
     <!-- Background Animation -->
     <div class="bg-circles" id="bgCircles"></div>
-    
+   
     <!-- Header -->
     <header class="bg-white shadow-sm sticky top-0 z-10">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
@@ -764,7 +691,6 @@
             </button>
         </div>
     </header>
-
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-2"> <!-- Reduced py-4 to py-2 for compactness -->
         <!-- Profile Header -->
@@ -780,7 +706,7 @@
                         </label>
                     </div>
                 </div>
-                
+               
                 <!-- Profile Info -->
                 <div class="flex-grow text-center md:text-left">
                     <div class="mb-4">
@@ -807,7 +733,7 @@
                     </div>
                 </div>
             </div>
-            
+           
             <!-- Bio -->
             {% if profile.bio %}
             <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4 -->
@@ -816,7 +742,6 @@
                 <textarea id="bioEdit" class="edit-field w-full border rounded px-3 py-2 h-24">{{ profile.bio }}</textarea>
             </div>
             {% endif %}
-
             <!-- Personality Description - Enhanced for attractiveness -->
             <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4 -->
                 <div class="flex justify-between items-center">
@@ -832,7 +757,6 @@
                 <a href="/questions" class="bg-pink-100 text-pink-500 px-3 py-1 rounded-full font-medium hover:bg-pink-200 transition-all 0.3s ease">Take Quiz</a> <!-- Button-like styling -->
                 {% endif %}
             </div>
-
             <!-- Relationship Style (Keeper/Seeker) -->
             {% if profile.keeper_seeker %}
             <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
@@ -840,7 +764,6 @@
                 <p class="text-gray-700">{{ profile.keeper_seeker }}{% if profile.keeper_seeker == 'Keeper' %} (long-term commitment){% elif profile.keeper_seeker == 'Seeker' %} (still exploring){% endif %}</p>
             </div>
             {% endif %}
-
             <!-- Religion Importance - Fixed conditional logic -->
             {% if profile.religion %}
             <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease religion-importance-section"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
@@ -855,7 +778,6 @@
                 {% endif %}
                 <select id="religionImportanceEdit" class="edit-field w-full border rounded px-3 py-2">
                     <option value="not_important" {% if profile.religion_importance == 'not_important' or profile.religion_importance == 'skip' %}selected{% endif %}>Not Important</option>
-                    <option value="somewhat_important" {% if profile.religion_importance == 'somewhat_important' %}selected{% endif %}>Somewhat Important</option>
                     <option value="very_important" {% if profile.religion_importance == 'very_important' %}selected{% endif %}>Very Important</option>
                 </select>
                 <div id="religionImportanceEditButtons" class="edit-field flex justify-end space-x-2 mt-4">
@@ -864,7 +786,6 @@
                 </div>
             </div>
             {% endif %}
-
             <!-- Physical Importance - Fixed conditional logic -->
             {% if profile.physical_traits %}
             <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease physical-importance-section"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
@@ -879,7 +800,6 @@
                 {% endif %}
                 <select id="physicalImportanceEdit" class="edit-field w-full border rounded px-3 py-2">
                     <option value="very_important" {% if profile.physical_importance == 'very_important' %}selected{% endif %}>Very Important</option>
-                    <option value="somewhat_important" {% if profile.physical_importance == 'somewhat_important' %}selected{% endif %}>Somewhat Important</option>
                     <option value="not_important" {% if profile.physical_importance == 'not_important' or profile.physical_importance == 'skip' %}selected{% endif %}>Not Important</option>
                 </select>
                 <div id="physicalImportanceEditButtons" class="edit-field flex justify-end space-x-2 mt-4">
@@ -888,7 +808,6 @@
                 </div>
             </div>
             {% endif %}
-
             <!-- Education/Work -->
             {% if profile.education_work %}
             <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
@@ -896,7 +815,6 @@
                 <p class="text-gray-700">{{ profile.education_work }}</p>
             </div>
             {% endif %}
-
             <!-- Profile Interests -->
             {% if profile.profile_interests %}
             <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
@@ -908,7 +826,6 @@
                 </div>
             </div>
             {% endif %}
-
             <!-- Self-Summary -->
             {% if profile.summary %}
             <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
@@ -916,14 +833,14 @@
                 <p class="text-gray-700">{{ profile.summary }}</p>
             </div>
             {% endif %}
-            
+           
             <!-- Edit Buttons (shown only in edit mode) -->
             <div id="editButtons" class="edit-field flex justify-end space-x-2 mt-4">
                 <button id="cancelEditBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</button>
                 <button id="saveProfileBtn" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600">Save Changes</button>
             </div>
         </div>
-        
+       
         <!-- Photo Gallery -->
         <div class="bg-gradient-to-r from-indigo-50 via-white to-pink-50 rounded-xl shadow-md p-6 mb-6 relative hover:shadow-md transition-all 0.3s ease"> <!-- Softer gradient and hover -->
             <div class="flex justify-between items-center mb-4">
@@ -933,7 +850,7 @@
                 </label>
                 <input type="file" id="photoUpload" accept="image/*" class="hidden" multiple>
             </div>
-            
+           
             <div class="photo-slider flex overflow-x-auto pb-2 -mx-2" style="scroll-snap-type: x mandatory;">
                 {% for photo in profile.photos %}
                 <div class="flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative" style="scroll-snap-align: start;">
@@ -945,7 +862,7 @@
                 {% endfor %}
             </div>
         </div>
-        
+       
         <!-- Tabs -->
         <div class="bg-gradient-to-r from-indigo-50 via-white to-pink-50 rounded-xl shadow-md p-6 mb-6 relative"> <!-- Softer gradient -->
             <div class="flex border-b">
@@ -956,7 +873,7 @@
                     Notifications ({{ notifications | selectattr('read', 'equalto', False) | list | length }})
                 </button>
             </div>
-            
+           
             <div class="p-4">
                 <!-- Connections Tab -->
                 <div id="connections" class="tab-content active">
@@ -981,14 +898,14 @@
                         </div>
                         {% endfor %}
                     </div>
-                    
+                   
                     {% if pending_likers %}
                     <div class="text-center mt-4">
                         <button class="text-pink-500 font-medium">View All Connections</button>
                     </div>
                     {% endif %}
                 </div>
-                
+               
                 <!-- Notifications Tab -->
                 <div id="notifications" class="tab-content">
                     <div class="space-y-3">
@@ -1007,7 +924,7 @@
                         </div>
                         {% endfor %}
                     </div>
-                    
+                   
                     <div class="text-center mt-4">
                         <button id="clearNotificationsBtn" class="text-pink-500 font-medium">Clear All Notifications</button>
                     </div>
@@ -1015,7 +932,6 @@
             </div>
         </div>
     </main>
-
     <!-- Settings Modal -->
     <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden">
         <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto dark:bg-gray-800">
@@ -1025,7 +941,7 @@
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
-            
+           
             <div class="space-y-4">
                 <!-- Account Settings -->
                 <div class="settings-option p-3 rounded-lg dark:bg-gray-700">
@@ -1038,7 +954,7 @@
                         <button id="changePasswordBtn" class="w-full text-left text-pink-500 font-medium mt-2 dark:text-pink-400">Change Password</button>
                     </div>
                 </div>
-                
+               
                 <!-- Notification Settings -->
                 <div class="settings-option p-3 rounded-lg dark:bg-gray-700">
                     <h3 class="font-medium mb-2 dark:text-white">Notifications</h3>
@@ -1075,7 +991,7 @@
                         </div>
                     </div>
                 </div>
-                
+               
                 <!-- App Settings -->
                 <div class="settings-option p-3 rounded-lg dark:bg-gray-700">
                     <h3 class="font-medium mb-2 dark:text-white">App Settings</h3>
@@ -1092,7 +1008,7 @@
                         </div>
                     </div>
                 </div>
-                
+               
                 <!-- Danger Zone -->
                 <div class="settings-option p-3 rounded-lg border border-red-100 dark:border-red-900 dark:bg-gray-700">
                     <div class="space-y-3">
@@ -1103,7 +1019,6 @@
             </div>
         </div>
     </div>
-
     <!-- Change Password Modal -->
     <div id="changePasswordModal" class="fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center hidden">
         <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 dark:bg-gray-800">
@@ -1121,7 +1036,6 @@
             </form>
         </div>
     </div>
-
     <!-- Bottom Navigation -->
     <nav class="bottom-nav fixed bottom-0 left-0 right-0 bg-white shadow-lg z-10 dark:bg-gray-800">
         <div class="container mx-auto px-4">
@@ -1141,79 +1055,76 @@
             </div>
         </div>
     </nav>
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Background circles colors
             const lightColors = ['rgba(236, 72, 153, 0.1)', 'rgba(236, 72, 153, 0.08)', 'rgba(236, 72, 153, 0.06)'];
             const darkColors = ['rgba(236, 72, 153, 0.3)', 'rgba(236, 72, 153, 0.25)', 'rgba(236, 72, 153, 0.2)'];
             const bgCircles = document.getElementById('bgCircles');
-
             function updateBackgroundCircles() {
                 bgCircles.innerHTML = '';
                 const colors = document.documentElement.classList.contains('dark') ? darkColors : lightColors;
                 for (let i = 0; i < 15; i++) {
                     const circle = document.createElement('div');
                     circle.className = 'circle';
-                    
+                   
                     const size = Math.random() * 150 + 50;
                     circle.style.width = `${size}px`;
                     circle.style.height = `${size}px`;
-                    
+                   
                     circle.style.left = `${Math.random() * 100}%`;
                     circle.style.top = `${Math.random() * 100}%`;
-                    
+                   
                     circle.style.background = colors[Math.floor(Math.random() * colors.length)];
-                    
+                   
                     const duration = Math.random() * 20 + 10;
                     const delay = Math.random() * 5;
                     circle.style.animationDuration = `${duration}s`;
                     circle.style.animationDelay = `${delay}s`;
-                    
+                   
                     bgCircles.appendChild(circle);
                 }
             }
-
             // Initial call
             updateBackgroundCircles();
-            
+           
             // Tab functionality
             const tabButtons = document.querySelectorAll('.tab-btn');
             const tabContents = document.querySelectorAll('.tab-content');
-            
+           
             tabButtons.forEach(button => {
                 button.addEventListener('click', () => {
                     tabButtons.forEach(btn => {
                         btn.classList.remove('border-pink-500', 'text-pink-500');
                         btn.classList.add('border-transparent', 'text-gray-500');
                     });
-                    
+                   
                     tabContents.forEach(content => {
                         content.classList.remove('active');
                     });
-                    
+                   
                     button.classList.remove('border-transparent', 'text-gray-500');
                     button.classList.add('border-pink-500', 'text-pink-500');
-                    
+                   
                     const tabId = button.getAttribute('data-tab');
                     document.getElementById(tabId).classList.add('active');
                 });
             });
-            
+           
             // Profile edit functionality (main)
             const editProfileBtn = document.getElementById('editProfileBtn');
             const cancelEditBtn = document.getElementById('cancelEditBtn');
             const saveProfileBtn = document.getElementById('saveProfileBtn');
             const profileSection = document.querySelector('.bg-gradient-to-r.from-indigo-50.via-white.to-pink-50.rounded-xl.shadow-md.p-6.mb-6.relative');
-            
+           
             editProfileBtn.addEventListener('click', () => {
                 profileSection.classList.add('edit-mode');
             });
-            
+           
             cancelEditBtn.addEventListener('click', () => {
                 profileSection.classList.remove('edit-mode');
             });
-            
+           
             saveProfileBtn.addEventListener('click', async () => {
                 const data = {
                     full_name: document.getElementById('nameEdit').value,
@@ -1234,7 +1145,7 @@
                         document.getElementById('ageView').textContent = data.age ? ', ' + data.age : '';
                         document.getElementById('locationView').textContent = data.location;
                         document.getElementById('bioView').textContent = data.bio;
-                        
+                       
                         profileSection.classList.remove('edit-mode');
                         showNotification('Profile updated successfully');
                         setTimeout(() => location.reload(), 1000);
@@ -1245,24 +1156,22 @@
                     showNotification('Error updating profile');
                 }
             });
-            
+           
             // FIXED: Separate edit for Religion Importance
             const religionImportanceSection = document.querySelector('.religion-importance-section');
             if (religionImportanceSection) {
                 const editReligionImportanceBtn = document.getElementById('editReligionImportanceBtn');
                 const cancelReligionImportanceBtn = document.getElementById('cancelReligionImportanceBtn');
                 const saveReligionImportanceBtn = document.getElementById('saveReligionImportanceBtn');
-                
+               
                 // Make sure elements exist before adding event listeners
                 if (editReligionImportanceBtn && cancelReligionImportanceBtn && saveReligionImportanceBtn) {
                     editReligionImportanceBtn.addEventListener('click', () => {
                         religionImportanceSection.classList.add('edit-mode');
                     });
-
                     cancelReligionImportanceBtn.addEventListener('click', () => {
                         religionImportanceSection.classList.remove('edit-mode');
                     });
-
                     saveReligionImportanceBtn.addEventListener('click', async () => {
                         const data = {
                             religion_importance: document.getElementById('religionImportanceEdit').value,
@@ -1290,24 +1199,21 @@
                     });
                 }
             }
-
             // FIXED: Separate edit for Physical Importance
             const physicalImportanceSection = document.querySelector('.physical-importance-section');
             if (physicalImportanceSection) {
                 const editPhysicalImportanceBtn = document.getElementById('editPhysicalImportanceBtn');
                 const cancelPhysicalImportanceBtn = document.getElementById('cancelPhysicalImportanceBtn');
                 const savePhysicalImportanceBtn = document.getElementById('savePhysicalImportanceBtn');
-                
+               
                 // Make sure elements exist before adding event listeners
                 if (editPhysicalImportanceBtn && cancelPhysicalImportanceBtn && savePhysicalImportanceBtn) {
                     editPhysicalImportanceBtn.addEventListener('click', () => {
                         physicalImportanceSection.classList.add('edit-mode');
                     });
-
                     cancelPhysicalImportanceBtn.addEventListener('click', () => {
                         physicalImportanceSection.classList.remove('edit-mode');
                     });
-
                     savePhysicalImportanceBtn.addEventListener('click', async () => {
                         const data = {
                             physical_importance: document.getElementById('physicalImportanceEdit').value,
@@ -1335,16 +1241,16 @@
                     });
                 }
             }
-            
+           
             // Profile picture upload
             const profileUpload = document.getElementById('profileUpload');
             const profileImage = document.getElementById('profileImage');
-            
+           
             profileUpload.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
                 if (file) {
                     const formData = new FormData();
-                    formData.append('image', file);  // Changed from 'file' to 'image' to match server
+                    formData.append('image', file); // Changed from 'file' to 'image' to match server
                     try {
                         const response = await fetch('/upload_profile_picture', {
                             method: 'POST',
@@ -1364,7 +1270,7 @@
                     }
                 }
             });
-            
+           
             // Update Personality Button
             const updatePersonalityBtn = document.getElementById('updatePersonalityBtn');
             if (updatePersonalityBtn) {
@@ -1374,11 +1280,11 @@
                     }
                 });
             }
-            
+           
             // Photo upload
             const photoUpload = document.getElementById('photoUpload');
             const photoSlider = document.querySelector('.photo-slider');
-            
+           
             photoUpload.addEventListener('change', async (e) => {
                 const files = e.target.files;
                 if (files.length > 0) {
@@ -1414,7 +1320,7 @@
                     setTimeout(() => location.reload(), 1000);
                 }
             });
-            
+           
             // Delete photo functionality
             window.deletePhoto = async function(url) {
                 try {
@@ -1440,7 +1346,6 @@
                     showNotification('Error deleting photo');
                 }
             };
-
             // Notification functionality
             document.querySelectorAll('.notification-item').forEach(item => {
                 item.addEventListener('click', async function() {
@@ -1463,7 +1368,6 @@
                     }
                 });
             });
-
             // Clear Notifications
             const clearNotificationsBtn = document.getElementById('clearNotificationsBtn');
             clearNotificationsBtn.addEventListener('click', async () => {
@@ -1480,29 +1384,29 @@
                     console.error('Error clearing notifications:', error);
                 }
             });
-            
+           
             // Settings modal
             const settingsBtn = document.getElementById('settingsBtn');
             const settingsModal = document.getElementById('settingsModal');
             const closeSettings = document.getElementById('closeSettings');
-            
+           
             settingsBtn.addEventListener('click', () => {
                 settingsModal.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
             });
-            
+           
             closeSettings.addEventListener('click', () => {
                 settingsModal.classList.add('hidden');
                 document.body.style.overflow = '';
             });
-            
+           
             settingsModal.addEventListener('click', (e) => {
                 if (e.target === settingsModal) {
                     settingsModal.classList.add('hidden');
                     document.body.style.overflow = '';
                 }
             });
-            
+           
             // Updated Toggle switches functionality
             function updateToggleStatus(toggle) {
                 const status = toggle.parentElement.querySelector('.toggle-status');
@@ -1512,14 +1416,12 @@
                     status.classList.toggle('text-gray-500', !toggle.checked);
                 }
             }
-
             // Notification toggles with localStorage persistence
             const notificationToggles = {
                 newMatchesToggle: 'newMatchesNotify',
                 messagesToggle: 'messagesNotify',
                 profileLikesToggle: 'profileLikesNotify'
             };
-
             Object.entries(notificationToggles).forEach(([id, key]) => {
                 const toggle = document.getElementById(id);
                 const saved = localStorage.getItem(key);
@@ -1532,10 +1434,9 @@
                     updateToggleStatus(this);
                 });
             });
-
             // Dark mode toggle
             const darkModeToggle = document.getElementById('darkModeToggle');
-            
+           
             if (localStorage.theme === 'dark') {
                 document.documentElement.classList.add('dark');
                 darkModeToggle.checked = true;
@@ -1545,7 +1446,7 @@
                 darkModeToggle.checked = false;
                 updateToggleStatus(darkModeToggle);
             }
-            
+           
             darkModeToggle.addEventListener('change', function() {
                 if (this.checked) {
                     document.documentElement.classList.add('dark');
@@ -1559,41 +1460,40 @@
                 updateToggleStatus(this);
                 updateBackgroundCircles(); // Update circles on mode change
             });
-            
+           
             // Change Password functionality
             const changePasswordBtn = document.getElementById('changePasswordBtn');
             const changePasswordModal = document.getElementById('changePasswordModal');
             const closePasswordModal = document.querySelector('.close-password-modal');
             const changePasswordForm = document.getElementById('changePasswordForm');
-
             changePasswordBtn.addEventListener('click', () => {
                 changePasswordModal.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
             });
-            
+           
             closePasswordModal.addEventListener('click', () => {
                 changePasswordModal.classList.add('hidden');
                 document.body.style.overflow = '';
             });
-            
+           
             changePasswordModal.addEventListener('click', (e) => {
                 if (e.target === changePasswordModal) {
                     changePasswordModal.classList.add('hidden');
                     document.body.style.overflow = '';
                 }
             });
-            
+           
             changePasswordForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const currentPassword = document.getElementById('currentPassword').value;
                 const newPassword = document.getElementById('newPassword').value;
                 const confirmNewPassword = document.getElementById('confirmNewPassword').value;
-                
+               
                 if (newPassword !== confirmNewPassword) {
                     showNotification('New passwords do not match');
                     return;
                 }
-                
+               
                 try {
                     const response = await fetch('/change_password', {
                         method: 'POST',
@@ -1613,7 +1513,7 @@
                     showNotification('Error changing password');
                 }
             });
-            
+           
             // Helper function to create confirmation dialogs
             function createConfirmationDialog(title, message, confirmText, cancelText, confirmBgClass = 'bg-pink-500 hover:bg-pink-600') {
                 const dialog = document.createElement('div');
@@ -1632,11 +1532,11 @@
                         </div>
                     </div>
                 `;
-                
+               
                 document.body.appendChild(dialog);
                 return dialog;
             }
-            
+           
             // Notification function
             function showNotification(message) {
                 const notification = document.createElement('div');
@@ -1647,16 +1547,16 @@
                         <i class="fas fa-times"></i>
                     </button>
                 `;
-                
+               
                 document.body.appendChild(notification);
-                
+               
                 const autoRemove = setTimeout(() => {
                     notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
                     setTimeout(() => {
                         notification.remove();
                     }, 300);
                 }, 3000);
-                
+               
                 notification.querySelector('button').addEventListener('click', () => {
                     clearTimeout(autoRemove);
                     notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
@@ -1665,21 +1565,18 @@
                     }, 300);
                 });
             }
-
             // Loading functions
             function showLoading() {
                 document.getElementById('loading').style.display = 'flex';
             }
-
             function hideLoading() {
                 document.getElementById('loading').style.display = 'none';
             }
-
             // Profile viewer functionality
             function openProfileViewer(userId) {
                 showLoading();
                 document.body.style.overflow = 'hidden';
-                
+               
                 fetch(`/user-profile/${userId}`)
                     .then(response => response.json())
                     .then(profile => {
@@ -1689,7 +1586,7 @@
                             document.body.style.overflow = '';
                             return;
                         }
-                        
+                       
                         const currentType = document.body.dataset.currentType;
                         const viewedType = profile.user.dominant_type;
                         let tagline = '';
@@ -1706,7 +1603,6 @@
                                 tagline = info.tagline;
                             }
                         }
-
                         const profileViewer = document.createElement('div');
                         profileViewer.className = 'profile-viewer bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100';
                         let additionalSections = '';
@@ -1762,13 +1658,12 @@
                                 <i class="fas fa-heart mr-2"></i> Accept
                             </button>`;
                         } else {
-                            bottomLikeHTML = `<button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400'} animate-pulse text-white rounded-full px-6 py-4 flex-1 ml-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" 
-                                            data-user-id="${userId}" 
+                            bottomLikeHTML = `<button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400'} animate-pulse text-white rounded-full px-6 py-4 flex-1 ml-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out"
+                                            data-user-id="${userId}"
                                             data-liked="${profile.user.liked}">
                                         <i class="fas ${profile.user.liked ? 'fa-check' : 'fa-heart'} mr-2"></i> ${profile.user.liked ? 'Accepted' : 'Accept'}
                                     </button>`;
                         }
-
                         // Compatibility badge with color cues
                         const match_percentage = profile.user.match_percentage;
                         let colorClass = '';
@@ -1786,7 +1681,6 @@
                             colorClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
                             colorEmoji = '🔴';
                         }
-
                         let aboutSection = '';
                         if (profile.user.bio && profile.user.bio !== 'No bio available' && profile.user.bio !== 'N/A') {
                             aboutSection = `
@@ -1796,7 +1690,6 @@
                                 </div>
                             `;
                         }
-
                         let photosSection = '';
                         if (profile.user.photos && profile.user.photos.length > 0) {
                             photosSection = `
@@ -1808,7 +1701,6 @@
                                 </div>
                             `;
                         }
-
                         profileViewer.innerHTML = `
                             <div class="relative">
                                 <img src="${profile.user.image}" alt="${profile.user.full_name}" class="profile-viewer-image">
@@ -1868,26 +1760,24 @@
                                 <button class="absolute top-4 right-4 text-white text-3xl" onclick="document.getElementById('photoModal').classList.add('hidden')">&times;</button>
                             </div>
                         `;
-                        
+                       
                         document.body.appendChild(profileViewer);
                         window.history.pushState({profileOpen: true}, '');
-                        
+                       
                         profileViewer.querySelector('.close-profile').addEventListener('click', () => {
                             profileViewer.remove();
                             document.body.style.overflow = '';
                             history.back();
                         });
-
                         // Attach report button listener
                         profileViewer.querySelector('.report-button').addEventListener('click', (e) => {
                             e.stopPropagation();
                             const userId = e.currentTarget.dataset.userId;
                             showReportModal(userId);
                         });
-                        
+                       
                         // Attach event listeners to buttons in profile viewer
                         attachProfileViewerListeners(profileViewer, userId);
-
                         // Attach photo click listeners
                         profileViewer.querySelectorAll('.photo-img').forEach(img => {
                             img.addEventListener('click', (e) => {
@@ -1906,7 +1796,6 @@
                         document.body.style.overflow = '';
                     });
             }
-
             // Attach profile click listeners for connections
             document.querySelectorAll('.connection-card').forEach(card => {
                 card.addEventListener('click', function(e) {
@@ -1914,7 +1803,6 @@
                     openProfileViewer(userId);
                 });
             });
-
             // Handle accept and decline buttons
             document.querySelectorAll('.accept-btn').forEach(btn => {
                 btn.addEventListener('click', async function(e) {
@@ -1942,7 +1830,6 @@
                     }
                 });
             });
-
             document.querySelectorAll('.decline-btn').forEach(btn => {
                 btn.addEventListener('click', async function(e) {
                     e.stopPropagation();
@@ -1969,7 +1856,6 @@
                     }
                 });
             });
-
             // Handle back button to close profile
             window.addEventListener('popstate', function(event) {
                 const profileViewer = document.querySelector('.profile-viewer');
@@ -1978,16 +1864,15 @@
                     document.body.style.overflow = '';
                 }
             });
-
             function attachProfileViewerListeners(profileViewer, userId) {
                 profileViewer.querySelectorAll('.like-button').forEach(btn => {
                     btn.addEventListener('click', async function(e) {
                         e.stopPropagation();
-                        
+                       
                         const isLiked = this.dataset.liked === 'true';
                         const endpoint = isLiked ? '/unlike-user' : '/like-user';
                         const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
-                        
+                       
                         showLoading();
                         try {
                             const response = await fetch(endpoint, {
@@ -1998,7 +1883,7 @@
                             });
                             const result = await response.json();
                             hideLoading();
-                            
+                           
                             if (result.success) {
                                 if (isLiked) {
                                     delete likedUsers[userId];
@@ -2007,7 +1892,7 @@
                                     createHeartBurst(this);
                                 }
                                 localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
-                                
+                               
                                 // Update all like buttons for this user, including this one
                                 profileViewer.querySelectorAll('.like-button').forEach(b => {
                                     if (isLiked) {
@@ -2022,24 +1907,24 @@
                                         b.dataset.liked = 'true';
                                     }
                                 });
-                                
+                               
                                 // Update main page buttons as well
                                 updateLikeButtons();
-                                
+                               
                                 showNotification(actionMessage);
-                                
+                               
                                 if (!isLiked && result.is_match) {
                                     showMatchPopup();
                                     showNotification("It's a match! You can now chat.");
                                 }
-                                
+                               
                                 // For like, close viewer and remove card; for unlike, keep viewer open
                                 if (!isLiked) {
                                     setTimeout(() => {
                                         profileViewer.remove();
                                         document.body.style.overflow = '';
                                         history.back();
-                                        
+                                       
                                         // Remove the card from the main view
                                         const card = document.querySelector(`.connection-card[data-user-id="${userId}"]`);
                                         if (card) {
@@ -2062,7 +1947,7 @@
                         }
                     });
                 });
-                
+               
                 const passButton = profileViewer.querySelector('.pass-button');
                 if (passButton) {
                     passButton.addEventListener('click', async function() {
@@ -2076,7 +1961,7 @@
                             });
                             const result = await response.json();
                             hideLoading();
-                            
+                           
                             if (result.success) {
                                 createPassBurst(this);
                                 showNotification('Passed');
@@ -2092,7 +1977,7 @@
                                 profileViewer.remove();
                                 document.body.style.overflow = '';
                                 history.back();
-                                
+                               
                                 // Remove the card from the main view
                                 const card = document.querySelector(`.connection-card[data-user-id="${userId}"]`);
                                 if (card) {
@@ -2110,7 +1995,6 @@
                     });
                 }
             }
-
             // Match narrations data
             const MATCH_NARRATIONS = {
                 '🌿 Nurturer': {
@@ -2162,7 +2046,6 @@
                     '🌙 Dreamer': {tagline: '🌙 Dream + purpose.', narration: 'You dream, they inspire. Together, life feels meaningful, gentle, and full of hope.'},
                 }
             };
-
             const TYPE_ORDER = {
                 '🛡️ Protector': 1,
                 '🌿 Nurturer': 2,
@@ -2171,7 +2054,6 @@
                 '🌙 Dreamer': 5,
                 '🌟 Idealist': 6
             };
-
             function reversePerspective(text) {
                 return text
                     .replace(/\bYou\b/g, 'TEMP_THEY_CAP')
@@ -2186,7 +2068,6 @@
                     .replace(/\btemp_they\b/g, 'they')
                     .replace(/\bTEMP_THEIR_CAP\b/g, 'Their');
             }
-
             function toThirdPerson(text) {
                 return text
                     .replace(/\bYou\b/g, 'They')
@@ -2200,7 +2081,6 @@
                     .replace(/\bYou're\b/g, 'They\'re')
                     .replace(/\byou're\b/g, 'they\'re');
             }
-
             function showMatchPopup() {
                 const popup = document.createElement('div');
                 popup.className = 'popup text-gray-800 dark:text-gray-100';
@@ -2210,7 +2090,6 @@
                     popup.remove();
                 }, 2000);
             }
-
             function createHeartBurst(target) {
                 const rect = target.getBoundingClientRect();
                 const burst = document.createElement('div');
@@ -2237,7 +2116,6 @@
                 document.body.appendChild(burst);
                 setTimeout(() => burst.remove(), 1000);
             }
-
             function createPassBurst(target) {
                 const rect = target.getBoundingClientRect();
                 const burst = document.createElement('div');
@@ -2264,7 +2142,6 @@
                 document.body.appendChild(burst);
                 setTimeout(() => burst.remove(), 1000);
             }
-
             function showReportModal(userId) {
                 const modal = document.createElement('div');
                 modal.className = 'report-modal';
@@ -2284,7 +2161,6 @@
                     </div>
                 `;
                 document.body.appendChild(modal);
-
                 let selectedReason = null;
                 document.querySelectorAll('.report-option').forEach(option => {
                     option.addEventListener('click', () => {
@@ -2294,7 +2170,6 @@
                         document.getElementById('submit-report').disabled = false;
                     });
                 });
-
                 document.getElementById('cancel-report').addEventListener('click', () => modal.remove());
                 document.getElementById('submit-report').addEventListener('click', async (e) => {
                     if (selectedReason) {
@@ -2323,7 +2198,6 @@
                     }
                 });
             }
-
             function createReportBurst(target) {
                 const rect = target.getBoundingClientRect();
                 const burst = document.createElement('div');
@@ -2350,10 +2224,8 @@
                 document.body.appendChild(burst);
                 setTimeout(() => burst.remove(), 1000);
             }
-
             // Store liked users in localStorage to persist across page refreshes
             let likedUsers = JSON.parse(localStorage.getItem('likedUsers') || '{}');
-
             // Update like buttons based on stored liked status
             function updateLikeButtons() {
                 document.querySelectorAll('.like-button').forEach(button => {
@@ -2371,10 +2243,8 @@
                     }
                 });
             }
-
             // Initial likes update
             updateLikeButtons();
-
             // Navigation press effect
             const navLinks = document.querySelectorAll('.bottom-nav a');
             navLinks.forEach(link => {
@@ -2387,7 +2257,7 @@
                     this.classList.add('text-pink-500', 'dark:text-pink-400');
                 });
             });
-            
+           
             // Logout functionality
             const logoutBtn = document.getElementById('logoutBtn');
             logoutBtn.addEventListener('click', () => {
@@ -2398,7 +2268,7 @@
                     'Cancel',
                     'bg-red-500 hover:bg-red-600'
                 );
-                
+               
                 dialog.querySelector('.cancel-btn').addEventListener('click', () => dialog.remove());
                 dialog.querySelector('.confirm-btn').addEventListener('click', async () => {
                     try {
@@ -2418,7 +2288,7 @@
                     dialog.remove();
                 });
             });
-            
+           
             // Delete account functionality
             const deleteAccountBtn = document.getElementById('deleteAccountBtn');
             deleteAccountBtn.addEventListener('click', () => {
@@ -2429,7 +2299,7 @@
                     'Cancel',
                     'bg-red-500 hover:bg-red-600'
                 );
-                
+               
                 dialog.querySelector('.cancel-btn').addEventListener('click', () => dialog.remove());
                 dialog.querySelector('.confirm-btn').addEventListener('click', async () => {
                     try {
