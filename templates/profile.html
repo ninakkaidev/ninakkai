@@ -855,7 +855,6 @@
                 {% endif %}
                 <select id="religionImportanceEdit" class="edit-field w-full border rounded px-3 py-2">
                     <option value="not_important" {% if profile.religion_importance == 'not_important' or profile.religion_importance == 'skip' %}selected{% endif %}>Not Important</option>
-                    <option value="somewhat_important" {% if profile.religion_importance == 'somewhat_important' %}selected{% endif %}>Somewhat Important</option>
                     <option value="very_important" {% if profile.religion_importance == 'very_important' %}selected{% endif %}>Very Important</option>
                 </select>
                 <div id="religionImportanceEditButtons" class="edit-field flex justify-end space-x-2 mt-4">
@@ -879,7 +878,6 @@
                 {% endif %}
                 <select id="physicalImportanceEdit" class="edit-field w-full border rounded px-3 py-2">
                     <option value="very_important" {% if profile.physical_importance == 'very_important' %}selected{% endif %}>Very Important</option>
-                    <option value="somewhat_important" {% if profile.physical_importance == 'somewhat_important' %}selected{% endif %}>Somewhat Important</option>
                     <option value="not_important" {% if profile.physical_importance == 'not_important' or profile.physical_importance == 'skip' %}selected{% endif %}>Not Important</option>
                 </select>
                 <div id="physicalImportanceEditButtons" class="edit-field flex justify-end space-x-2 mt-4">
