@@ -679,9 +679,9 @@
 
 <div class="intro-container" id="intro-container">
   <div class="intro-text">Hey 👋, before you dive in, I want to share a little note with you.</div>
-  <div class="sub-text">Dear friends, if you’re here sincerely ❤️, ready to show your heart and find a meaningful connection, you’re in the right place. If you’re only looking for casual chats or short-term connections, this space is not for that.</div>
+  <div class="sub-text">Dear friends, if you're here sincerely ❤️, ready to show your heart and find a meaningful connection, you're in the right place. If you're only looking for casual chats or short-term connections, this space is not for that.</div>
   <div class="sub-text">Ninakai was created for those seeking a true life partner 💑, someone to share their journey genuinely and sincerely. Here, emotional compatibility, values, and character come first — while things like looks, money, or status are comparatively less important.</div>
-  <div class="sub-text">Please honor this intention, respect others’ journeys, and take every step with honesty, kindness, and sincerity.</div>
+  <div class="sub-text">Please honor this intention, respect others' journeys, and take every step with honesty, kindness, and sincerity.</div>
   <div class="sub-text">Welcome to Ninakai — a space for genuine hearts to meet.</div>
   <button class="btn-start" id="btn-start">Begin Your Journey</button>
 </div>
@@ -914,14 +914,14 @@
       }
     ];
 
-    // FIXED: Religion section now has exactly 1 base question (no filter)
+    // MODIFIED: Religion section - only "High" and "Skip" options
     const religionImportance = {
       id: 'religion_importance',
       question: "How important is religion/faith in a future partner?",
-      answers: ["High - Must match my faith", "Medium - Prefer same faith", "Low - Note but not prioritize", "Skip - Religion won't affect matches"],
+      answers: ["High - Must match my faith", "Skip - Religion won't affect matches"],
       section: "religion",
       nextQuestion: (index) => {
-        if (index === 3) {
+        if (index === 1) {
           return null;
         } else {
           return religionSelect;
@@ -947,19 +947,19 @@
       ],
       isSelectWithOther: true,
       section: "religion",
-      nextQuestion: () => null  // No more filter here
+      nextQuestion: () => null
     };
 
     const religionQuestions = [religionImportance];
 
-    // FIXED Physical section
+    // MODIFIED: Physical section - only "Important" and "Not Important" options
     const physicalPreferencesQuestion = {
       id: 'physical_preferences',
       question: "Are physical traits important in a partner?",
-      answers: ["Very Important", "Somewhat Important", "Not Important"],
+      answers: ["Important", "Not Important"],
       section: "physical_preferences",
       nextQuestion: (answerIndex) => {
-        if (answerIndex === 2) {
+        if (answerIndex === 1) {
           return null;
         }
         const preferredQuestion = {
@@ -1019,7 +1019,7 @@
 
     const physicalQuestions = [physicalPreferencesQuestion];
 
-    // NEW: Profile setup questions as a separate section, now includes filter_settings
+    // Profile setup questions
     const profileSetupQuestions = [
       {
         id: 'profile_setup',
@@ -1068,7 +1068,7 @@
       },
       keeperSeeker: {
         title: "Relationship Readiness",
-        description: "These three questions are essential. They reveal whether you’re ready for long-term commitment (keeper)or still exploring (seeker). Your answers will make sure we match you with people who want the same kind of relationship as you."
+        description: "These three questions are essential. They reveal whether you're ready for long-term commitment (keeper)or still exploring (seeker). Your answers will make sure we match you with people who want the same kind of relationship as you."
       },
       religion: {
         title: "Religion & Faith Preferences",
@@ -1209,11 +1209,11 @@
         // Compute hasAnswered flags
         const relAnswers = selectedAnswers.filter(a => a.section === 'religion');
         const relImpAns = relAnswers.find(a => a.id === 'religion_importance');
-        hasReligionAnswered = !!relImpAns && relImpAns.index !== 3;
+        hasReligionAnswered = !!relImpAns && relImpAns.index !== 1; // MODIFIED: index 1 is "Skip"
 
         const physAnswers = selectedAnswers.filter(a => a.section && a.section.startsWith('physical_'));
         const physPrefAns = physAnswers.find(a => a.id === 'physical_preferences');
-        hasPhysicalAnswered = !!physPrefAns && physPrefAns.index !== 2;
+        hasPhysicalAnswered = !!physPrefAns && physPrefAns.index !== 1; // MODIFIED: index 1 is "Not Important"
 
         // Reset
         questions = [...mandatoryQuestions];
@@ -1241,9 +1241,9 @@
 
         // Handle dynamic questions for religion
         if (relAnswers.length > 0) {
-          const impIndex = relImpAns ? relImpAns.index : 3;
+          const impIndex = relImpAns ? relImpAns.index : 1; // MODIFIED: default to skip
           const impQIndex = questions.findIndex(q => q.id === 'religion_importance');
-          if (impQIndex !== -1 && impIndex !== 3) {
+          if (impQIndex !== -1 && impIndex !== 1) { // MODIFIED: index 1 is "Skip"
             const hasRelAnswered = relAnswers.some(a => a.id === 'religion');
             if (hasRelAnswered) {
               const insertPos = impQIndex + 1;
@@ -1254,9 +1254,9 @@
 
         // Handle dynamic for physical
         if (physAnswers.length > 0) {
-          const prefIndex = physPrefAns ? physPrefAns.index : 2;
+          const prefIndex = physPrefAns ? physPrefAns.index : 1; // MODIFIED: default to "Not Important"
           const prefQIndex = questions.findIndex(q => q.id === 'physical_preferences');
-          if (prefQIndex !== -1 && prefIndex !== 2) {
+          if (prefQIndex !== -1 && prefIndex !== 1) { // MODIFIED: index 1 is "Not Important"
             let insertPos = prefQIndex + 1;
             const hasPrefTraitAnswered = physAnswers.some(a => a.id === 'physical_traits_preferred');
             const hasOwnAnswered = physAnswers.some(a => a.id === 'physical_traits_own');
@@ -1444,11 +1444,11 @@
         progress = (((currentQuestion - secInfo.start) + 1) / sectionLen) * 100;
       } else if (secInfo.section === 'religion') {
         const impAns = selectedAnswers.find(a => a.question_id === 'religion_importance');
-        sectionLen = impAns ? (impAns.index === 3 ? 1 : 2) : 2;
+        sectionLen = impAns ? (impAns.index === 1 ? 1 : 2) : 2; // MODIFIED: index 1 is "Skip"
         progress = Math.min((((currentQuestion - secInfo.start) + 1) / sectionLen) * 100, 100);
       } else if (secInfo.section === 'physical') {
         const prefAns = selectedAnswers.find(a => a.question_id === 'physical_preferences');
-        sectionLen = prefAns ? (prefAns.index === 2 ? 1 : 3) : 3;
+        sectionLen = prefAns ? (prefAns.index === 1 ? 1 : 3) : 3; // MODIFIED: index 1 is "Not Important"
         progress = Math.min((((currentQuestion - secInfo.start) + 1) / sectionLen) * 100, 100);
       } else if (secInfo.section === 'profileSetup') {
         sectionLen = questions.slice(secInfo.start).length;
@@ -1772,11 +1772,11 @@
 
       // Set hasAnswered flags based on current question
       if (questionData.id === 'religion_importance') {
-        hasReligionAnswered = data.index !== 3;
+        hasReligionAnswered = data.index !== 1; // MODIFIED: index 1 is "Skip"
       } else if (questionData.id === 'religion') {
         hasReligionAnswered = true;
       } else if (questionData.id === 'physical_preferences') {
-        hasPhysicalAnswered = data.index !== 2;
+        hasPhysicalAnswered = data.index !== 1; // MODIFIED: index 1 is "Not Important"
       } else if (questionData.section && questionData.section.startsWith('physical_') && questionData.id !== 'physical_preferences') {
         hasPhysicalAnswered = true;
       }
