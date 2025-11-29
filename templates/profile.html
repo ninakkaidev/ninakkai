@@ -1219,6 +1219,18 @@
                     location: document.getElementById('locationEdit').value,
                     bio: document.getElementById('bioEdit').value,
                 };
+                
+                // Also collect religion and physical importance if they are in edit mode
+                const religionSection = document.querySelector('.religion-importance-section');
+                if (religionSection && religionSection.classList.contains('edit-mode')) {
+                    data.religion_importance = document.getElementById('religionImportanceEdit').value;
+                }
+                
+                const physicalSection = document.querySelector('.physical-importance-section');
+                if (physicalSection && physicalSection.classList.contains('edit-mode')) {
+                    data.physical_importance = document.getElementById('physicalImportanceEdit').value;
+                }
+                
                 try {
                     const response = await fetch('/update_profile', {
                         method: 'POST',
@@ -1233,14 +1245,28 @@
                         document.getElementById('locationView').textContent = data.location;
                         document.getElementById('bioView').textContent = data.bio;
                         
+                        // Update religion importance view if it was edited
+                        if (data.religion_importance && religionSection) {
+                            let displayText = data.religion_importance.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                            document.getElementById('religionImportanceView').textContent = displayText;
+                            religionSection.classList.remove('edit-mode');
+                        }
+                        
+                        // Update physical importance view if it was edited
+                        if (data.physical_importance && physicalSection) {
+                            let displayText = data.physical_importance.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                            document.getElementById('physicalImportanceView').textContent = displayText;
+                            physicalSection.classList.remove('edit-mode');
+                        }
+                        
                         profileSection.classList.remove('edit-mode');
                         showNotification('Profile updated successfully');
                         setTimeout(() => location.reload(), 1000);
                     } else {
-                        showNotification('Failed to update profile');
+                        showNotification('Failed to update profile: ' + (result.error || 'Unknown error'));
                     }
                 } catch (error) {
-                    showNotification('Error updating profile');
+                    showNotification('Error updating profile: ' + error.message);
                 }
             });
             
@@ -1280,10 +1306,10 @@
                                 showNotification('Religion importance updated successfully');
                                 setTimeout(() => location.reload(), 1000);
                             } else {
-                                showNotification('Failed to update religion importance');
+                                showNotification('Failed to update religion importance: ' + (result.error || 'Unknown error'));
                             }
                         } catch (error) {
-                            showNotification('Error updating religion importance');
+                            showNotification('Error updating religion importance: ' + error.message);
                         }
                     });
                 }
@@ -1325,10 +1351,10 @@
                                 showNotification('Physical importance updated successfully');
                                 setTimeout(() => location.reload(), 1000);
                             } else {
-                                showNotification('Failed to update physical importance');
+                                showNotification('Failed to update physical importance: ' + (result.error || 'Unknown error'));
                             }
                         } catch (error) {
-                            showNotification('Error updating physical importance');
+                            showNotification('Error updating physical importance: ' + error.message);
                         }
                     });
                 }
