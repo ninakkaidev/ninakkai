@@ -740,6 +740,27 @@
         .physical-importance-section.edit-mode .edit-field {
             display: block;
         }
+
+        /* Name and age specific edit styles */
+        .name-age-section .edit-field {
+            display: none;
+        }
+
+        .name-age-section.edit-mode .view-field {
+            display: none;
+        }
+
+        .name-age-section.edit-mode .edit-field {
+            display: inline-flex;
+        }
+
+        .name-age-edit-buttons {
+            display: none;
+        }
+
+        .name-age-section.edit-mode .name-age-edit-buttons {
+            display: flex;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -783,16 +804,29 @@
                 
                 <!-- Profile Info -->
                 <div class="flex-grow text-center md:text-left">
-                    <div class="mb-4">
+                    <div class="mb-4 name-age-section">
                         <h2 class="text-2xl font-bold flex items-center justify-center md:justify-start">
+                            <!-- Name and Age View Mode -->
                             <span id="nameView" class="view-field">{{ profile.full_name }}</span>
-                            <input id="nameEdit" type="text" value="{{ profile.full_name }}" class="edit-field w-full border rounded px-2 py-1">
                             <span id="ageView" class="view-field ml-2 text-gray-600">{% if profile.age %}, {{ profile.age }}{% endif %}</span>
-                            <input id="ageEdit" type="number" value="{{ profile.age }}" class="edit-field w-16 border rounded px-2 py-1 ml-2">
-                            <button id="editProfileBtn" class="ml-2 text-pink-500 hover:text-pink-600">
+                            
+                            <!-- Name and Age Edit Mode -->
+                            <div class="edit-field flex items-center">
+                                <input id="nameEdit" type="text" value="{{ profile.full_name }}" class="w-48 border rounded px-2 py-1 mr-2">
+                                <input id="ageEdit" type="number" value="{{ profile.age }}" class="w-16 border rounded px-2 py-1">
+                            </div>
+                            
+                            <button id="editNameAgeBtn" class="ml-2 text-pink-500 hover:text-pink-600">
                                 <i class="fas fa-pencil-alt text-sm"></i>
                             </button>
                         </h2>
+                        
+                        <!-- Name and Age Edit Buttons -->
+                        <div class="name-age-edit-buttons flex justify-center md:justify-start space-x-2 mt-2">
+                            <button id="cancelNameAgeEditBtn" class="px-3 py-1 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 text-sm">Cancel</button>
+                            <button id="saveNameAgeBtn" class="px-3 py-1 bg-pink-500 text-white rounded-lg hover:bg-pink-600 text-sm">Save</button>
+                        </div>
+                        
                         {% if profile.location %}
                         <div class="text-gray-600 mb-2">
                             <span id="locationView" class="view-field">{{ profile.location }}</span>
@@ -1198,38 +1232,41 @@
                 });
             });
             
-            // Profile edit functionality (main)
-            const editProfileBtn = document.getElementById('editProfileBtn');
-            const cancelEditBtn = document.getElementById('cancelEditBtn');
-            const saveProfileBtn = document.getElementById('saveProfileBtn');
-            const profileSection = document.querySelector('.bg-gradient-to-r.from-indigo-50.via-white.to-pink-50.rounded-xl.shadow-md.p-6.mb-6.relative');
+            // Name and Age Edit functionality (separate from main profile edit)
+            const nameAgeSection = document.querySelector('.name-age-section');
+            const editNameAgeBtn = document.getElementById('editNameAgeBtn');
+            const cancelNameAgeEditBtn = document.getElementById('cancelNameAgeEditBtn');
+            const saveNameAgeBtn = document.getElementById('saveNameAgeBtn');
             
-            editProfileBtn.addEventListener('click', () => {
-                profileSection.classList.add('edit-mode');
+            editNameAgeBtn.addEventListener('click', () => {
+                nameAgeSection.classList.add('edit-mode');
             });
             
-            cancelEditBtn.addEventListener('click', () => {
-                profileSection.classList.remove('edit-mode');
+            cancelNameAgeEditBtn.addEventListener('click', () => {
+                nameAgeSection.classList.remove('edit-mode');
+                // Reset values to original
+                document.getElementById('nameEdit').value = document.getElementById('nameView').textContent;
+                document.getElementById('ageEdit').value = document.getElementById('ageView').textContent.replace(', ', '');
             });
             
-            saveProfileBtn.addEventListener('click', async () => {
+            saveNameAgeBtn.addEventListener('click', async () => {
+                const name = document.getElementById('nameEdit').value.trim();
+                const age = parseInt(document.getElementById('ageEdit').value);
+                
+                if (!name) {
+                    showNotification('Name is required');
+                    return;
+                }
+                
+                if (isNaN(age) || age < 18) {
+                    showNotification('Age must be at least 18');
+                    return;
+                }
+                
                 const data = {
-                    full_name: document.getElementById('nameEdit').value,
-                    age: document.getElementById('ageEdit').value,
-                    location: document.getElementById('locationEdit').value,
-                    bio: document.getElementById('bioEdit').value,
+                    full_name: name,
+                    age: age
                 };
-                
-                // Also collect religion and physical importance if they are in edit mode
-                const religionSection = document.querySelector('.religion-importance-section');
-                if (religionSection && religionSection.classList.contains('edit-mode')) {
-                    data.religion_importance = document.getElementById('religionImportanceEdit').value;
-                }
-                
-                const physicalSection = document.querySelector('.physical-importance-section');
-                if (physicalSection && physicalSection.classList.contains('edit-mode')) {
-                    data.physical_importance = document.getElementById('physicalImportanceEdit').value;
-                }
                 
                 try {
                     const response = await fetch('/update_profile', {
@@ -1240,35 +1277,31 @@
                     });
                     const result = await response.json();
                     if (result.success) {
-                        document.getElementById('nameView').textContent = data.full_name;
-                        document.getElementById('ageView').textContent = data.age ? ', ' + data.age : '';
-                        document.getElementById('locationView').textContent = data.location;
-                        document.getElementById('bioView').textContent = data.bio;
+                        // Update view fields
+                        document.getElementById('nameView').textContent = name;
+                        document.getElementById('ageView').textContent = `, ${age}`;
                         
-                        // Update religion importance view if it was edited
-                        if (data.religion_importance && religionSection) {
-                            let displayText = data.religion_importance.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                            document.getElementById('religionImportanceView').textContent = displayText;
-                            religionSection.classList.remove('edit-mode');
-                        }
-                        
-                        // Update physical importance view if it was edited
-                        if (data.physical_importance && physicalSection) {
-                            let displayText = data.physical_importance.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                            document.getElementById('physicalImportanceView').textContent = displayText;
-                            physicalSection.classList.remove('edit-mode');
-                        }
-                        
-                        profileSection.classList.remove('edit-mode');
-                        showNotification('Profile updated successfully');
-                        setTimeout(() => location.reload(), 1000);
+                        nameAgeSection.classList.remove('edit-mode');
+                        showNotification('Name and age updated successfully');
                     } else {
-                        showNotification('Failed to update profile: ' + (result.error || 'Unknown error'));
+                        showNotification('Failed to update name and age: ' + (result.error || 'Unknown error'));
                     }
                 } catch (error) {
-                    showNotification('Error updating profile: ' + error.message);
+                    showNotification('Error updating name and age: ' + error.message);
                 }
             });
+            
+            // Profile edit functionality (main - for other fields)
+            const editProfileBtn = document.getElementById('editProfileBtn');
+            const cancelEditBtn = document.getElementById('cancelEditBtn');
+            const saveProfileBtn = document.getElementById('saveProfileBtn');
+            const profileSection = document.querySelector('.bg-gradient-to-r.from-indigo-50.via-white.to-pink-50.rounded-xl.shadow-md.p-6.mb-6.relative');
+            
+            // Note: editProfileBtn is now used for name/age only, so we'll hide the main edit button
+            // or repurpose it. For now, let's keep it hidden since we have separate name/age editing
+            if (editProfileBtn) {
+                editProfileBtn.style.display = 'none'; // Hide the old edit button
+            }
             
             // FIXED: Separate edit for Religion Importance
             const religionImportanceSection = document.querySelector('.religion-importance-section');
@@ -1304,12 +1337,11 @@
                                 document.getElementById('religionImportanceView').textContent = displayText;
                                 religionImportanceSection.classList.remove('edit-mode');
                                 showNotification('Religion importance updated successfully');
-                                setTimeout(() => location.reload(), 1000);
                             } else {
-                                showNotification('Failed to update religion importance: ' + (result.error || 'Unknown error'));
+                                showNotification('Failed to update religion importance');
                             }
                         } catch (error) {
-                            showNotification('Error updating religion importance: ' + error.message);
+                            showNotification('Error updating religion importance');
                         }
                     });
                 }
@@ -1349,12 +1381,11 @@
                                 document.getElementById('physicalImportanceView').textContent = displayText;
                                 physicalImportanceSection.classList.remove('edit-mode');
                                 showNotification('Physical importance updated successfully');
-                                setTimeout(() => location.reload(), 1000);
                             } else {
-                                showNotification('Failed to update physical importance: ' + (result.error || 'Unknown error'));
+                                showNotification('Failed to update physical importance');
                             }
                         } catch (error) {
-                            showNotification('Error updating physical importance: ' + error.message);
+                            showNotification('Error updating physical importance');
                         }
                     });
                 }
@@ -1379,7 +1410,6 @@
                         if (result.success) {
                             profileImage.src = result.url;
                             showNotification('Profile picture updated');
-                            setTimeout(() => location.reload(), 1000);
                         } else {
                             showNotification('Failed to update profile picture: ' + result.error);
                         }
@@ -1435,7 +1465,6 @@
                             showNotification('Error uploading photo: ' + error.message);
                         }
                     }
-                    setTimeout(() => location.reload(), 1000);
                 }
             });
             
@@ -1456,7 +1485,6 @@
                             }
                         });
                         showNotification('Photo deleted successfully');
-                        setTimeout(() => location.reload(), 1000);
                     } else {
                         showNotification('Failed to delete photo');
                     }
