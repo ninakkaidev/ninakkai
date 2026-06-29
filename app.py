@@ -1795,9 +1795,17 @@ def age_verification():
             if 'gender' not in prediction:
                 logger.error(f"Missing gender in prediction: {prediction}")
                 return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
-            detected_gender = prediction['gender'].lower()
-            if detected_gender != user['gender']:
-                return jsonify({'success': False, 'error': 'gender_mismatch', 'detected_gender': detected_gender}), 403
+            
+            raw_detected_gender = str(prediction['gender']).strip().lower()
+            normalized_gender = raw_detected_gender
+            
+            if raw_detected_gender in ['woman', 'women', 'f', 'female', 'girl']:
+                normalized_gender = 'female'
+            elif raw_detected_gender in ['man', 'men', 'm', 'male', 'boy']:
+                normalized_gender = 'male'
+                
+            if normalized_gender != user.get('gender', '').lower():
+                return jsonify({'success': False, 'error': 'gender_mismatch', 'detected_gender': raw_detected_gender}), 403
             if age_lower < 18:
                 return jsonify({'success': False, 'error': 'You must be at least 18 years old. If you think this is a mistake, contact help@ninakkai.com'}), 403
             update = mongo_service.update_user(session['user_id'], {'age_verified': True})
