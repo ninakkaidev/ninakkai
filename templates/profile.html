@@ -33,6 +33,7 @@
         .photo-slider {
             scrollbar-width: none; /* Firefox */
             -ms-overflow-style: none; /* IE and Edge */
+            scroll-behavior: smooth; /* Smoother scrolling */
         }
         
         .photo-slider::-webkit-scrollbar {
@@ -99,21 +100,11 @@
         }
         
         @keyframes move {
-            0% {
-                transform: translateY(0) translateX(0);
-            }
-            25% {
-                transform: translateY(-50px) translateX(50px);
-            }
-            50% {
-                transform: translateY(0) translateX(100px);
-            }
-            75% {
-                transform: translateY(50px) translateX(50px);
-            }
-            100% {
-                transform: translateY(0) translateX(0);
-            }
+            0% { transform: translateY(0) translateX(0); }
+            25% { transform: translateY(-50px) translateX(50px); }
+            50% { transform: translateY(0) translateX(100px); }
+            75% { transform: translateY(50px) translateX(50px); }
+            100% { transform: translateY(0) translateX(0); }
         }
         
         /* Responsive adjustments */
@@ -133,12 +124,12 @@
         
         /* Dark mode styles */
         .dark body {
-            background-color: #111827;
+            background-color: #000000;
             color: #f3f4f6;
         }
         
         .dark .bg-white {
-            background-color: #1f2937 !important;
+            background-color: #000000 !important;
             color: #f3f4f6;
         }
         
@@ -147,15 +138,23 @@
         }
         
         .dark .bg-gray-100 {
-            background-color: #111827 !important;
+            background-color: #000000 !important;
         }
         
         .dark .bg-gray-50 {
-            background-color: #374151 !important;
+            background-color: #000000 !important;
         }
         
         .dark .text-gray-500 {
             color: #9ca3af !important;
+        }
+        
+        .dark .text-gray-600 {
+            color: #9ca3af !important;
+        }
+        
+        .dark .text-gray-700 {
+            color: #d1d5db !important;
         }
         
         .dark .border-gray-200 {
@@ -180,52 +179,7 @@
         }
         
         .dark #settingsModal .settings-option:hover {
-            background-color: #374151 !important;
-        }
-        
-        /* Language Selector Styles */
-        .language-selector {
-            position: relative;
-        }
-        
-        .language-options {
-            position: absolute;
-            right: 0;
-            top: 100%;
-            width: 150px;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            z-index: 10;
-            display: none;
-        }
-        
-        .dark .language-options {
-            background-color: #1f2937;
-            border-color: #374151;
-        }
-        
-        .language-options.active {
-            display: block;
-        }
-        
-        .language-option {
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-        }
-        
-        .language-option:hover {
-            background-color: #f9fafb;
-        }
-        
-        .dark .language-option:hover {
-            background-color: #374151;
-        }
-        
-        .language-option.selected {
-            color: #ec4899;
-            font-weight: 500;
+            background-color: #000000 !important;
         }
         
         /* Change Password Modal */
@@ -239,10 +193,10 @@
         }
         
         .dark .confirmation-dialog div {
-            background-color: #1f2937;
+            background-color: #000000;
             color: #f3f4f6;
         }
-
+ 
         /* Updated Toggle Styles */
         .toggle-container {
             display: flex;
@@ -291,7 +245,7 @@
         }
 
         .toggle-status {
-            min-width: 30px;
+            min-width: 50px; /* Adjusted for Public/Private */
             transition: color 0.3s ease;
         }
 
@@ -335,9 +289,487 @@
             50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
             100% { transform: translate(-50%, -50%) scale(1); }
         }
+
+        .dark .popup {
+            background-color: #1f2937;
+            color: #f3f4f6;
+        }
+
+        /* Connection Card Styles */
+        .connection-card {
+            cursor: pointer;
+        }
+
+        .connection-card:hover {
+            background-color: #f9fafb;
+        }
+
+        .dark .connection-card:hover {
+            background-color: #374151;
+        }
+
+        /* Action Buttons Container */
+        .action-buttons {
+            margin-top: 0.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        /* Loading State */
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ec4899;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .dark .loading {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .dark .loading-spinner {
+            border: 4px solid #374151;
+            border-top: 4px solid #ec4899;
+        }
+
+        /* Override gradients in dark mode */
+        .dark .bg-gradient-to-r.from-indigo-50.via-white.to-pink-50 {
+            background-image: linear-gradient(to right, var(--tw-gradient-stops)) !important;
+            --tw-gradient-from: #312e81 var(--tw-gradient-from-position);
+            --tw-gradient-to: #831843 var(--tw-gradient-to-position);
+            --tw-gradient-stops: var(--tw-gradient-from), #111827 var(--tw-gradient-via-position), var(--tw-gradient-to);
+        }
+
+        /* Optimized dark mode styles for edit inputs */
+        .dark input[type="text"],
+        .dark input[type="number"],
+        .dark textarea,
+        .dark select {
+            background-color: #374151 !important;
+            color: #f3f4f6 !important;
+            border-color: #4b5563 !important;
+        }
+
+        .dark input[type="text"]:focus,
+        .dark input[type="number"]:focus,
+        .dark textarea:focus,
+        .dark select:focus {
+            outline: none;
+            border-color: #ec4899 !important;
+            box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.5) !important;
+        }
+
+        /* Personality Styles - Minimized font sizes */
+        .primary-personality {
+            font-size: 1em;
+            font-weight: bold;
+            color: #000; /* Darker color for highlight */
+            line-height: 1.4;
+        }
+
+        .secondary-personality {
+            font-size: 0.8em;
+            color: #666; /* Lighter color for less highlight */
+            line-height: 1.4;
+        }
+
+        .dark .primary-personality {
+            color: #f3f4f6 !important;
+        }
+
+        .dark .secondary-personality {
+            color: #d1d5db !important;
+        }
+
+        /* Personality Card for attractiveness */
+        .personality-card {
+            transition: all 0.3s ease;
+        }
+
+        .personality-card:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Dark mode for circles (fallback if script fails) */
+        .dark .circle {
+            animation-duration: 18s; /* Slightly slower in dark mode for calmer effect */
+        }
+
+        /* Profile viewer styling */
+        .profile-viewer {
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 100;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            animation: profileOpen 0.4s ease-out forwards;
+        }
+
+        html.dark .profile-viewer {
+            background: #000000;
+        }
+
+        @keyframes profileOpen {
+            0% {
+                opacity: 0;
+                transform: translateY(20%) scale(0.95);
+            }
+            50% {
+                opacity: 1;
+                transform: translateY(-5%) scale(1.02);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Image styling for consistent appearance */
+        .profile-viewer-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            object-position: center center;
+        }
+
+        /* Report modal styling */
+        .report-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1003;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .report-modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        html.dark .report-modal-content {
+            background: #000000;
+            color: #f3f4f6;
+        }
+
+        .report-option {
+            display: block;
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .report-option:hover {
+            background-color: #f0f0f0;
+        }
+
+        html.dark .report-option {
+            border-color: #374151;
+        }
+
+        html.dark .report-option:hover {
+            background-color: #374151;
+        }
+
+        .report-option.selected {
+            background-color: #ec4899;
+            color: white;
+        }
+
+        /* Animation for burst effects */
+        @keyframes burstAnim {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(1.5);
+            }
+        }
+        
+        /* Enhanced Popup Animation with extraordinary effects */
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #fff1eb, #ace0f9); /* Attractive gradient */
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2), 0 0 20px rgba(236, 72, 153, 0.5); /* Glow effect */
+            animation: enhancedPopupAnim 1.2s ease-out forwards;
+            z-index: 1002;
+            max-width: 400px;
+            width: 90%;
+            overflow: hidden;
+            border: 2px solid #ec4899; /* Pink border */
+        }
+
+        html.dark .popup {
+            background: linear-gradient(135deg, #1f2937, #4b5563); /* Dark gradient */
+            color: #f3f4f6;
+            box-shadow: 0 10px 30px rgba(255,255,255,0.1), 0 0 20px rgba(236, 72, 153, 0.3);
+            border: 2px solid #ec4899;
+        }
+
+        @keyframes enhancedPopupAnim {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5) rotate(-10deg);
+                opacity: 0;
+                filter: blur(5px);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2) rotate(5deg);
+                opacity: 1;
+                filter: blur(0);
+            }
+            75% {
+                transform: translate(-50%, -50%) scale(0.9) rotate(-3deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        .popup::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.2), transparent);
+            animation: glowPulse 2s infinite ease-in-out;
+            z-index: -1;
+        }
+
+        @keyframes glowPulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        .popup h3 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            text-align: center;
+            color: #ec4899; /* Pink color */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .popup textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ec4899;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            resize: none;
+            height: 100px;
+            background: rgba(255,255,255,0.8);
+        }
+
+        html.dark .popup textarea {
+            background: rgba(31,41,55,0.8);
+            border-color: #ec4899;
+            color: #f3f4f6;
+        }
+
+        .popup .flex button {
+            padding: 0.5rem 1rem;
+            border-radius: 9999px; /* Rounded buttons */
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .popup .flex button:hover {
+            transform: scale(1.05);
+        }
+
+        .popup .flex button:first-child {
+            background: linear-gradient(135deg, #ec4899, #a855f7); /* Gradient button */
+            color: white;
+        }
+
+        .popup .flex button:last-child {
+            background: linear-gradient(135deg, #d1d5db, #9ca3af);
+            color: #1f2937;
+        }
+
+        html.dark .popup .flex button:last-child {
+            background: linear-gradient(135deg, #4b5563, #374151);
+            color: #f3f4f6;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .profile-image {
+                height: 400px;
+            }
+            
+            .discovery-image {
+                height: 350px;
+                width: 105%;
+                margin-left: -2.5%;
+            }
+            
+            .profile-viewer-image {
+                height: 300px;
+            }
+            
+            #searchBox {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                padding: 0.5rem 1rem;
+                background-color: rgba(255, 255, 255, 0.95);
+            }
+            
+            html.dark #searchBox {
+                background-color: rgba(17, 24, 39, 0.95);
+            }
+
+            #searchBox input {
+                width: 100%;
+            }
+        }
+
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .profile-image {
+                height: 280px;
+            }
+            
+            .discovery-image {
+                height: 350px;
+            }
+            
+            .profile-viewer-image {
+                height: 350px;
+            }
+        }
+
+        @media (min-width: 1025px) {
+            .profile-image {
+                height: 500px;
+            }
+            
+            .discovery-image {
+                height: 400px;
+            }
+            
+            .profile-viewer-image {
+                height: 400px;
+            }
+        }
+
+        /* Attractive buttons with animation */
+        .accept-btn,
+        .decline-btn {
+            transition: all 0.3s ease;
+        }
+
+        .accept-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .decline-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Tab button enhancements */
+        .tab-btn:hover {
+            transition: all 0.2s ease;
+            transform: scale(1.05);
+        }
+
+        .tab-btn.border-pink-500 {
+            font-weight: bold;
+        }
+
+        /* Fix for religion and physical importance sections */
+        .religion-importance-section .edit-field,
+        .physical-importance-section .edit-field {
+            display: none;
+        }
+
+        .religion-importance-section.edit-mode .view-field,
+        .physical-importance-section.edit-mode .view-field {
+            display: none;
+        }
+
+        .religion-importance-section.edit-mode .edit-field,
+        .physical-importance-section.edit-mode .edit-field {
+            display: block;
+        }
+
+        /* Name and age specific edit styles */
+        .name-age-section .edit-field {
+            display: none;
+        }
+
+        .name-age-section.edit-mode .view-field {
+            display: none;
+        }
+
+        .name-age-section.edit-mode .edit-field {
+            display: inline-flex;
+        }
+
+        .name-age-edit-buttons {
+            display: none;
+        }
+
+        .name-age-section.edit-mode .name-age-edit-buttons {
+            display: flex;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
+    <!-- Loading State -->
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <p class="text-gray-800 text-center">Processing...</p>
+    </div>
+
     <!-- Background Animation -->
     <div class="bg-circles" id="bgCircles"></div>
     
@@ -355,14 +787,14 @@
     </header>
 
     <!-- Main Content -->
-    <main class="container mx-auto px-4 py-4">
+    <main class="container mx-auto px-4 py-2"> <!-- Reduced py-4 to py-2 for compactness -->
         <!-- Profile Header -->
-        <div class="bg-gradient-to-r from-indigo-100 via-white to-pink-100 rounded-xl shadow-md p-6 mb-6 relative">
+        <div class="bg-gradient-to-r from-indigo-50 via-white to-pink-50 rounded-xl shadow-md p-6 mb-6 relative"> <!-- Softer gradient -->
             <div class="flex flex-col md:flex-row items-center md:items-start">
                 <!-- Profile Picture -->
                 <div class="relative mb-4 md:mb-0 md:mr-6">
                     <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-pink-200 relative">
-                        <img id="profileImage" src="{{ profile.image }}" alt="Profile" class="w-full h-full object-cover">
+                        <img id="profileImage" src="{{ profile.image }}" alt="Profile" class="w-full h-full object-cover rounded-full"> <!-- Added rounded-full for softer image -->
                         <label class="profile-pic-upload">
                             <i class="fas fa-camera text-sm"></i>
                             <input type="file" id="profileUpload" accept="image/*" class="hidden">
@@ -372,20 +804,35 @@
                 
                 <!-- Profile Info -->
                 <div class="flex-grow text-center md:text-left">
-                    <div class="mb-4">
+                    <div class="mb-4 name-age-section">
                         <h2 class="text-2xl font-bold flex items-center justify-center md:justify-start">
+                            <!-- Name and Age View Mode -->
                             <span id="nameView" class="view-field">{{ profile.full_name }}</span>
-                            <input id="nameEdit" type="text" value="{{ profile.full_name }}" class="edit-field w-full border rounded px-2 py-1">
                             <span id="ageView" class="view-field ml-2 text-gray-600">{% if profile.age %}, {{ profile.age }}{% endif %}</span>
-                            <input id="ageEdit" type="number" value="{{ profile.age }}" class="edit-field w-16 border rounded px-2 py-1 ml-2">
-                            <button id="editProfileBtn" class="ml-2 text-pink-500 hover:text-pink-600">
+                            
+                            <!-- Name and Age Edit Mode -->
+                            <div class="edit-field flex items-center">
+                                <input id="nameEdit" type="text" value="{{ profile.full_name }}" class="w-48 border rounded px-2 py-1 mr-2">
+                                <input id="ageEdit" type="number" value="{{ profile.age }}" class="w-16 border rounded px-2 py-1">
+                            </div>
+                            
+                            <button id="editNameAgeBtn" class="ml-2 text-pink-500 hover:text-pink-600">
                                 <i class="fas fa-pencil-alt text-sm"></i>
                             </button>
                         </h2>
+                        
+                        <!-- Name and Age Edit Buttons -->
+                        <div class="name-age-edit-buttons flex justify-center md:justify-start space-x-2 mt-2">
+                            <button id="cancelNameAgeEditBtn" class="px-3 py-1 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 text-sm">Cancel</button>
+                            <button id="saveNameAgeBtn" class="px-3 py-1 bg-pink-500 text-white rounded-lg hover:bg-pink-600 text-sm">Save</button>
+                        </div>
+                        
+                        {% if profile.location %}
                         <div class="text-gray-600 mb-2">
                             <span id="locationView" class="view-field">{{ profile.location }}</span>
                             <input id="locationEdit" type="text" value="{{ profile.location }}" class="edit-field w-full border rounded px-2 py-1">
                         </div>
+                        {% endif %}
                         <div class="flex justify-center md:justify-start space-x-2">
                             {% for interest in profile.interests %}
                             <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">{{ interest }}</span>
@@ -396,21 +843,121 @@
             </div>
             
             <!-- Bio -->
-            <div class="mt-6">
+            {% if profile.bio %}
+            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4 -->
                 <h3 class="font-semibold mb-2">About Me</h3>
                 <p id="bioView" class="view-field text-gray-700">{{ profile.bio }}</p>
                 <textarea id="bioEdit" class="edit-field w-full border rounded px-3 py-2 h-24">{{ profile.bio }}</textarea>
             </div>
+            {% endif %}
+
+            <!-- Personality Description - Enhanced for attractiveness -->
+            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4 -->
+                <div class="flex justify-between items-center">
+                    <h3 class="font-semibold mb-2"><i class="fas fa-user-circle text-pink-500 mr-2"></i>My Personality</h3> <!-- Added icon -->
+                    <button id="updatePersonalityBtn" class="text-pink-500 hover:text-pink-600">
+                        <i class="fas fa-pencil-alt text-sm"></i> Update
+                    </button>
+                </div>
+                {% if profile.personality_info %}
+                <div class="mt-2 mb-4">{{ profile.personality_info | safe }}</div> <!-- Wrapped for better spacing -->
+                {% else %}
+                <p class="text-gray-700 mt-2 mb-2">Complete the quiz to discover your personality!</p> <!-- Added spacing -->
+                <a href="/questions" class="bg-pink-100 text-pink-500 px-3 py-1 rounded-full font-medium hover:bg-pink-200 transition-all 0.3s ease">Take Quiz</a> <!-- Button-like styling -->
+                {% endif %}
+            </div>
+
+            <!-- Relationship Style (Keeper/Seeker) -->
+            {% if profile.keeper_seeker %}
+            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
+                <h3 class="font-semibold mb-2"><i class="fas fa-heart text-pink-500 mr-2"></i>Relationship Style</h3>
+                <p class="text-gray-700">{{ profile.keeper_seeker }}{% if profile.keeper_seeker == 'Keeper' %} (long-term commitment){% elif profile.keeper_seeker == 'Seeker' %} (still exploring){% endif %}</p>
+            </div>
+            {% endif %}
+
+            <!-- Religion Importance - Fixed conditional logic -->
+            {% if profile.religion %}
+            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease religion-importance-section"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-semibold"><i class="fas fa-pray text-pink-500 mr-2"></i>Religion Importance in Matching</h3>
+                    <button id="editReligionImportanceBtn" class="ml-2 text-pink-500 hover:text-pink-600 dark:text-pink-400 dark:hover:text-pink-300">
+                        <i class="fas fa-pencil-alt text-sm"></i>
+                    </button>
+                </div>
+                {% if profile.religion_importance != 'skip' %}
+                <p id="religionImportanceView" class="view-field text-gray-700">{{ profile.religion_importance | replace('_', ' ') | title }}</p>
+                {% endif %}
+                <select id="religionImportanceEdit" class="edit-field w-full border rounded px-3 py-2">
+                    <option value="not_important" {% if profile.religion_importance == 'not_important' or profile.religion_importance == 'skip' %}selected{% endif %}>Not Important</option>
+                    <option value="very_important" {% if profile.religion_importance == 'very_important' %}selected{% endif %}>Very Important</option>
+                </select>
+                <div id="religionImportanceEditButtons" class="edit-field flex justify-end space-x-2 mt-4">
+                    <button id="cancelReligionImportanceBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</button>
+                    <button id="saveReligionImportanceBtn" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600">Save</button>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Physical Importance - Fixed conditional logic -->
+            {% if profile.physical_traits %}
+            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease physical-importance-section"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-semibold"><i class="fas fa-dumbbell text-pink-500 mr-2"></i>Physical Preference Importance in Matching</h3>
+                    <button id="editPhysicalImportanceBtn" class="ml-2 text-pink-500 hover:text-pink-600 dark:text-pink-400 dark:hover:text-pink-300">
+                        <i class="fas fa-pencil-alt text-sm"></i>
+                    </button>
+                </div>
+                {% if profile.physical_importance != 'skip' %}
+                <p id="physicalImportanceView" class="view-field text-gray-700">{{ profile.physical_importance | replace('_', ' ') | title }}</p>
+                {% endif %}
+                <select id="physicalImportanceEdit" class="edit-field w-full border rounded px-3 py-2">
+                    <option value="very_important" {% if profile.physical_importance == 'very_important' %}selected{% endif %}>Very Important</option>
+                    <option value="not_important" {% if profile.physical_importance == 'not_important' or profile.physical_importance == 'skip' %}selected{% endif %}>Not Important</option>
+                </select>
+                <div id="physicalImportanceEditButtons" class="edit-field flex justify-end space-x-2 mt-4">
+                    <button id="cancelPhysicalImportanceBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</button>
+                    <button id="savePhysicalImportanceBtn" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600">Save</button>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Education/Work -->
+            {% if profile.education_work %}
+            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
+                <h3 class="font-semibold mb-2"><i class="fas fa-graduation-cap text-pink-500 mr-2"></i>Education/Work</h3>
+                <p class="text-gray-700">{{ profile.education_work }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Profile Interests -->
+            {% if profile.profile_interests %}
+            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
+                <h3 class="font-semibold mb-2"><i class="fas fa-tags text-pink-500 mr-2"></i>Interests</h3>
+                <div class="flex flex-wrap gap-2">
+                    {% for interest in profile.profile_interests %}
+                    <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">{{ interest }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Self-Summary -->
+            {% if profile.summary %}
+            <div class="mt-4 personality-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-all 0.3s ease"> <!-- Reduced mt-6 to mt-4, wrapped in card -->
+                <h3 class="font-semibold mb-2"><i class="fas fa-info-circle text-pink-500 mr-2"></i>Self-Summary</h3>
+                <p class="text-gray-700">{{ profile.summary }}</p>
+            </div>
+            {% endif %}
             
             <!-- Edit Buttons (shown only in edit mode) -->
             <div id="editButtons" class="edit-field flex justify-end space-x-2 mt-4">
-                <button id="cancelEditBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100">Cancel</button>
+                <button id="cancelEditBtn" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</button>
                 <button id="saveProfileBtn" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600">Save Changes</button>
             </div>
         </div>
         
         <!-- Photo Gallery -->
-        <div class="bg-gradient-to-r from-indigo-100 via-white to-pink-100 rounded-xl shadow-md p-6 mb-6 relative">
+        <div class="bg-gradient-to-r from-indigo-50 via-white to-pink-50 rounded-xl shadow-md p-6 mb-6 relative hover:shadow-md transition-all 0.3s ease"> <!-- Softer gradient and hover -->
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold">My Photos</h2>
                 <label for="photoUpload" class="text-pink-500 text-sm font-medium flex items-center cursor-pointer">
@@ -422,7 +969,7 @@
             <div class="photo-slider flex overflow-x-auto pb-2 -mx-2" style="scroll-snap-type: x mandatory;">
                 {% for photo in profile.photos %}
                 <div class="flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative" style="scroll-snap-align: start;">
-                    <img src="{{ photo }}" class="w-full h-full object-cover">
+                    <img src="{{ photo }}" alt="Photo" class="w-full h-full object-cover">
                     <button onclick="deletePhoto('{{ photo }}')" class="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
                         <i class="fas fa-times text-xs"></i>
                     </button>
@@ -432,36 +979,34 @@
         </div>
         
         <!-- Tabs -->
-        <div class="bg-gradient-to-r from-indigo-100 via-white to-pink-100 rounded-xl shadow-md p-6 mb-6 relative">
+        <div class="bg-gradient-to-r from-indigo-50 via-white to-pink-50 rounded-xl shadow-md p-6 mb-6 relative"> <!-- Softer gradient -->
             <div class="flex border-b">
                 <button class="tab-btn flex-1 py-3 font-medium text-center border-b-2 border-pink-500 text-pink-500" data-tab="connections">
                     Connections ({{ pending_likers|length }})
                 </button>
-                <button class="tab-btn flex-1 py-3 font-medium text-center border-b-2 border-transparent text-gray-500 hover:text-pink-500" data-tab="chats">
-                    Chats
-                </button>
                 <button class="tab-btn flex-1 py-3 font-medium text-center border-b-2 border-transparent text-gray-500 hover:text-pink-500" data-tab="notifications">
-                    Notifications
+                    Notifications ({{ notifications | selectattr('read', 'equalto', False) | list | length }})
                 </button>
             </div>
             
-            <!-- Tab Contents -->
             <div class="p-4">
                 <!-- Connections Tab -->
                 <div id="connections" class="tab-content active">
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {% for user in pending_likers %}
-                        <div class="bg-gray-50 rounded-lg p-3 text-center">
-                            <div class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-2">
-                                <img src="{{ user.image }}" alt="{{ user.full_name }}" class="w-full h-full object-cover">
+                        <div class="connection-item">
+                            <div class="bg-gray-50 rounded-lg p-3 text-center connection-card" data-user-id="{{ user.id }}">
+                                <div class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-2">
+                                    <img src="{{ user.image }}" alt="{{ user.full_name }}" class="w-full h-full object-cover">
+                                </div>
+                                <h3 class="font-medium">{{ user.full_name }}</h3>
+                                <p class="text-gray-500 text-sm">{{ user.occupation }}</p>
                             </div>
-                            <h3 class="font-medium">{{ user.full_name }}</h3>
-                            <p class="text-gray-500 text-sm">{{ user.occupation }}</p>
-                            <div class="flex justify-center space-x-2 mt-2">
-                                <button class="accept-btn text-green-500 hover:text-green-600" data-user-id="{{ user.id }}">
+                            <div class="action-buttons">
+                                <button class="accept-btn bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-400 text-white px-3 py-1 rounded shadow-md hover:scale-105 transition-all duration-300 text-sm" data-user-id="{{ user.id }}">
                                     <i class="fas fa-check"></i> Accept
                                 </button>
-                                <button class="decline-btn text-red-500 hover:text-red-600" data-user-id="{{ user.id }}">
+                                <button class="decline-btn bg-gradient-to-r from-red-400 to-red-600 hover:from-red-600 hover:to-red-400 text-white px-3 py-1 rounded shadow-md hover:scale-105 transition-all duration-300 text-sm" data-user-id="{{ user.id }}">
                                     <i class="fas fa-times"></i> Decline
                                 </button>
                             </div>
@@ -476,49 +1021,27 @@
                     {% endif %}
                 </div>
                 
-                <!-- Chats Tab -->
-                <div id="chats" class="tab-content">
-                    <!-- Chat list -->
-                    <div class="space-y-3">
-                        <!-- No real data, so empty -->
-                    </div>
-                    
-                    <!-- Chat view (hidden by default) -->
-                    <div id="chatView" class="hidden h-64">
-                        <div class="flex items-center border-b pb-3 mb-3">
-                            <button id="backToChats" class="mr-2 text-gray-600">
-                                <i class="fas fa-arrow-left"></i>
-                            </button>
-                            <div class="w-10 h-10 rounded-full overflow-hidden mr-3">
-                                <img id="chatUserImage" src="" alt="" class="w-full h-full object-cover">
-                            </div>
-                            <div>
-                                <h3 id="chatUserName" class="font-medium"></h3>
-                                <p id="chatUserStatus" class="text-xs text-gray-500">Online</p>
-                            </div>
-                        </div>
-                        
-                        <div id="chatMessages" class="h-64 overflow-y-auto mb-3 space-y-2">
-                            <!-- Messages will be loaded here -->
-                        </div>
-                        
-                        <div class="flex">
-                            <input type="text" placeholder="Type a message..." class="flex-grow border rounded-l-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500">
-                            <button class="bg-pink-500 text-white px-4 py-2 rounded-r-lg hover:bg-pink-600">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
                 <!-- Notifications Tab -->
                 <div id="notifications" class="tab-content">
                     <div class="space-y-3">
-                        <!-- No real data, so empty -->
+                        {% for notif in notifications %}
+                        <div class="notification-item {% if not notif.read %}unread{% endif %} flex items-center p-3 border-b" data-id="{{ notif.id }}">
+                            <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center mr-3">
+                                <i class="fas fa-{% if notif.type == 'like' %}heart{% elif notif.type == 'match' %}user-plus{% else %}bell{% endif %} text-pink-500"></i>
+                            </div>
+                            <div>
+                                <p>{{ notif.message }}</p>
+                                <p class="text-xs text-gray-500">{{ notif.timestamp }}</p>
+                            </div>
+                            {% if not notif.read %}
+                            <div class="ml-auto bg-blue-500 w-2 h-2 rounded-full"></div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
                     </div>
                     
                     <div class="text-center mt-4">
-                        <button class="text-pink-500 font-medium">Clear All Notifications</button>
+                        <button id="clearNotificationsBtn" class="text-pink-500 font-medium">Clear All Notifications</button>
                     </div>
                 </div>
             </div>
@@ -543,10 +1066,6 @@
                         <div class="flex justify-between items-center dark:text-gray-300">
                             <span>Email</span>
                             <span class="text-gray-500 dark:text-gray-400">{{ profile.email }}</span>
-                        </div>
-                        <div class="flex justify-between items-center dark:text-gray-300">
-                            <span>Phone</span>
-                            <span class="text-gray-500 dark:text-gray-400">+1 (555) 123-4567</span>
                         </div>
                         <button id="changePasswordBtn" class="w-full text-left text-pink-500 font-medium mt-2 dark:text-pink-400">Change Password</button>
                     </div>
@@ -603,27 +1122,11 @@
                                 <span class="toggle-status text-sm text-gray-500 ml-2 dark:text-gray-400"></span>
                             </div>
                         </div>
-                        <div class="flex justify-between items-center dark:text-gray-300">
-                            <span>Language</span>
-                            <div class="language-selector relative">
-                                <span class="text-gray-500 cursor-pointer flex items-center dark:text-gray-400">
-                                    English <i class="fas fa-chevron-down ml-1 text-xs"></i>
-                                </span>
-                                <div class="language-options hidden absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg shadow-lg z-10">
-                                    <div class="language-option selected px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="en">English</div>
-                                    <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="es">Español</div>
-                                    <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="fr">Français</div>
-                                    <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="de">Deutsch</div>
-                                    <div class="language-option px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="ja">日本語</div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 
                 <!-- Danger Zone -->
                 <div class="settings-option p-3 rounded-lg border border-red-100 dark:border-red-900 dark:bg-gray-700">
-                    <h3 class="font-medium mb-2 text-red-500 dark:text-red-400">Danger Zone</h3>
                     <div class="space-y-3">
                         <button id="deleteAccountBtn" class="w-full text-left text-red-500 dark:text-red-400">Delete Account</button>
                         <button id="logoutBtn" class="w-full text-left text-red-500 dark:text-red-400">Log Out</button>
@@ -633,19 +1136,37 @@
         </div>
     </div>
 
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 dark:bg-gray-800">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold dark:text-white">Change Password</h3>
+                <button class="close-password-modal text-gray-500 hover:text-gray-700 dark:text-gray-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="changePasswordForm">
+                <input type="password" id="currentPassword" placeholder="Current Password" class="w-full border rounded px-3 py-2 mb-3 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <input type="password" id="newPassword" placeholder="New Password" class="w-full border rounded px-3 py-2 mb-3 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <input type="password" id="confirmNewPassword" placeholder="Confirm New Password" class="w-full border rounded px-3 py-2 mb-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <button type="submit" class="w-full bg-pink-500 text-white py-2 rounded-lg hover:bg-pink-600">Save</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg z-10 dark:bg-gray-800">
+    <nav class="bottom-nav fixed bottom-0 left-0 right-0 bg-white shadow-lg z-10 dark:bg-gray-800">
         <div class="container mx-auto px-4">
             <div class="flex justify-around py-3">
-                <a href="/explore" class="text-gray-500 hover:text-pink-500 flex flex-col items-center dark:text-gray-400">
-                    <i class="fas fa-compass text-xl"></i>
-                    <span class="text-xs mt-1">Explore</span>
+                <a href="/chat" class="text-gray-500 hover:text-pink-500 dark:text-gray-400 dark:hover:text-pink-400 flex flex-col items-center">
+                    <i class="fas fa-comments text-xl"></i>
+                    <span class="text-xs mt-1">Chat</span>
                 </a>
-                <a href="/explore#matches-section" class="text-gray-500 hover:text-pink-500 flex flex-col items-center dark:text-gray-400">
+                <a href="/explore" class="text-gray-500 hover:text-pink-500 dark:text-gray-400 dark:hover:text-pink-400 flex flex-col items-center">
                     <i class="fas fa-heart text-xl"></i>
                     <span class="text-xs mt-1">Matches</span>
                 </a>
-                <a href="#" class="text-pink-500 flex flex-col items-center dark:text-pink-400">
+                <a href="/profile" class="text-pink-500 dark:text-pink-400 flex flex-col items-center">
                     <i class="fas fa-user text-xl"></i>
                     <span class="text-xs mt-1">Profile</span>
                 </a>
@@ -655,34 +1176,38 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Create background circles
+            // Background circles colors
+            const lightColors = ['rgba(236, 72, 153, 0.1)', 'rgba(236, 72, 153, 0.08)', 'rgba(236, 72, 153, 0.06)'];
+            const darkColors = ['rgba(236, 72, 153, 0.3)', 'rgba(236, 72, 153, 0.25)', 'rgba(236, 72, 153, 0.2)'];
             const bgCircles = document.getElementById('bgCircles');
-            const colors = ['rgba(236, 72, 153, 0.1)', 'rgba(236, 72, 153, 0.08)', 'rgba(236, 72, 153, 0.06)'];
-            
-            for (let i = 0; i < 15; i++) {
-                const circle = document.createElement('div');
-                circle.className = 'circle';
-                
-                // Random size between 50px and 200px
-                const size = Math.random() * 150 + 50;
-                circle.style.width = `${size}px`;
-                circle.style.height = `${size}px`;
-                
-                // Random position
-                circle.style.left = `${Math.random() * 100}%`;
-                circle.style.top = `${Math.random() * 100}%`;
-                
-                // Random color
-                circle.style.background = colors[Math.floor(Math.random() * colors.length)];
-                
-                // Random animation duration and delay
-                const duration = Math.random() * 20 + 10;
-                const delay = Math.random() * 5;
-                circle.style.animationDuration = `${duration}s`;
-                circle.style.animationDelay = `${delay}s`;
-                
-                bgCircles.appendChild(circle);
+
+            function updateBackgroundCircles() {
+                bgCircles.innerHTML = '';
+                const colors = document.documentElement.classList.contains('dark') ? darkColors : lightColors;
+                for (let i = 0; i < 15; i++) {
+                    const circle = document.createElement('div');
+                    circle.className = 'circle';
+                    
+                    const size = Math.random() * 150 + 50;
+                    circle.style.width = `${size}px`;
+                    circle.style.height = `${size}px`;
+                    
+                    circle.style.left = `${Math.random() * 100}%`;
+                    circle.style.top = `${Math.random() * 100}%`;
+                    
+                    circle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    const duration = Math.random() * 20 + 10;
+                    const delay = Math.random() * 5;
+                    circle.style.animationDuration = `${duration}s`;
+                    circle.style.animationDelay = `${delay}s`;
+                    
+                    bgCircles.appendChild(circle);
+                }
             }
+
+            // Initial call
+            updateBackgroundCircles();
             
             // Tab functionality
             const tabButtons = document.querySelectorAll('.tab-btn');
@@ -690,7 +1215,6 @@
             
             tabButtons.forEach(button => {
                 button.addEventListener('click', () => {
-                    // Remove active class from all buttons and contents
                     tabButtons.forEach(btn => {
                         btn.classList.remove('border-pink-500', 'text-pink-500');
                         btn.classList.add('border-transparent', 'text-gray-500');
@@ -700,7 +1224,6 @@
                         content.classList.remove('active');
                     });
                     
-                    // Add active class to clicked button and corresponding content
                     button.classList.remove('border-transparent', 'text-gray-500');
                     button.classList.add('border-pink-500', 'text-pink-500');
                     
@@ -709,160 +1232,220 @@
                 });
             });
             
-            // Chat functionality
-            const chatItems = document.querySelectorAll('#chats .flex.items-center.p-3');
-            const chatList = document.querySelector('#chats > div:first-child');
-            const chatView = document.getElementById('chatView');
-            const backToChats = document.getElementById('backToChats');
+            // Name and Age Edit functionality (separate from main profile edit)
+            const nameAgeSection = document.querySelector('.name-age-section');
+            const editNameAgeBtn = document.getElementById('editNameAgeBtn');
+            const cancelNameAgeEditBtn = document.getElementById('cancelNameAgeEditBtn');
+            const saveNameAgeBtn = document.getElementById('saveNameAgeBtn');
             
-            chatItems.forEach(item => {
-                item.addEventListener('click', () => {
-                    const userName = item.querySelector('h3').textContent;
-                    const userImage = item.querySelector('img').src;
-                    
-                    document.getElementById('chatUserName').textContent = userName;
-                    document.getElementById('chatUserImage').src = userImage;
-                    
-                    // Load chat messages (simulated)
-                    const chatMessages = document.getElementById('chatMessages');
-                    chatMessages.innerHTML = '';
-                    
-                    // Sample messages
-                    const messages = [
-                        { text: "Hey there! How are you?", sent: false, time: "10:30 AM" },
-                        { text: "I'm good, thanks! How about you?", sent: true, time: "10:32 AM" },
-                        { text: "Doing well! Want to grab coffee this weekend?", sent: false, time: "10:33 AM" },
-                        { text: "That sounds great! How about Saturday at 2pm?", sent: true, time: "10:35 AM" },
-                        { text: "Perfect! See you then at Central Perk", sent: false, time: "10:36 AM" }
-                    ];
-                    
-                    messages.forEach(msg => {
-                        const messageDiv = document.createElement('div');
-                        messageDiv.className = `chat-message rounded-lg px-3 py-2 max-w-xs ${msg.sent ? 'sent' : 'received'}`;
-                        messageDiv.innerHTML = `
-                            <p>${msg.text}</p>
-                            <p class="text-xs opacity-70 mt-1 text-right">${msg.time}</p>
-                        `;
-                        chatMessages.appendChild(messageDiv);
-                    });
-                    
-                    // Scroll to bottom
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                    
-                    // Show chat view
-                    chatList.classList.add('hidden');
-                    chatView.classList.remove('hidden');
-                });
+            editNameAgeBtn.addEventListener('click', () => {
+                nameAgeSection.classList.add('edit-mode');
             });
             
-            backToChats.addEventListener('click', () => {
-                chatList.classList.remove('hidden');
-                chatView.classList.add('hidden');
+            cancelNameAgeEditBtn.addEventListener('click', () => {
+                nameAgeSection.classList.remove('edit-mode');
+                // Reset values to original
+                document.getElementById('nameEdit').value = document.getElementById('nameView').textContent;
+                document.getElementById('ageEdit').value = document.getElementById('ageView').textContent.replace(', ', '');
             });
             
-            // Profile edit functionality
-            const editProfileBtn = document.getElementById('editProfileBtn');
-            const cancelEditBtn = document.getElementById('cancelEditBtn');
-            const saveProfileBtn = document.getElementById('saveProfileBtn');
-            const profileSection = document.querySelector('.bg-gradient-to-r.from-indigo-100.via-white.to-pink-100.rounded-xl.shadow-md.p-6.mb-6.relative');
-            
-            editProfileBtn.addEventListener('click', () => {
-                profileSection.classList.add('edit-mode');
-            });
-            
-            cancelEditBtn.addEventListener('click', () => {
-                profileSection.classList.remove('edit-mode');
-            });
-            
-            saveProfileBtn.addEventListener('click', async () => {
+            saveNameAgeBtn.addEventListener('click', async () => {
+                const name = document.getElementById('nameEdit').value.trim();
+                const age = parseInt(document.getElementById('ageEdit').value);
+                
+                if (!name) {
+                    showNotification('Name is required');
+                    return;
+                }
+                
+                if (isNaN(age) || age < 18) {
+                    showNotification('Age must be at least 18');
+                    return;
+                }
+                
                 const data = {
-                    full_name: document.getElementById('nameEdit').value,
-                    age: document.getElementById('ageEdit').value,
-                    location: document.getElementById('locationEdit').value,
-                    bio: document.getElementById('bioEdit').value
+                    full_name: name,
+                    age: age
                 };
+                
                 try {
                     const response = await fetch('/update_profile', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
+                        body: JSON.stringify(data),
+                        credentials: 'include'
                     });
                     const result = await response.json();
                     if (result.success) {
                         // Update view fields
-                        document.getElementById('nameView').textContent = data.full_name;
-                        document.getElementById('ageView').textContent = data.age ? ', ' + data.age : '';
-                        document.getElementById('locationView').textContent = data.location;
-                        document.getElementById('bioView').textContent = data.bio;
+                        document.getElementById('nameView').textContent = name;
+                        document.getElementById('ageView').textContent = `, ${age}`;
                         
-                        profileSection.classList.remove('edit-mode');
-                        showNotification('Profile updated successfully');
-                        setTimeout(() => location.reload(), 1000); // Reload to confirm changes
+                        nameAgeSection.classList.remove('edit-mode');
+                        showNotification('Name and age updated successfully');
                     } else {
-                        showNotification('Failed to update profile');
+                        showNotification('Failed to update name and age: ' + (result.error || 'Unknown error'));
                     }
                 } catch (error) {
-                    showNotification('Error updating profile');
+                    showNotification('Error updating name and age: ' + error.message);
                 }
             });
+            
+            // Profile edit functionality (main - for other fields)
+            const editProfileBtn = document.getElementById('editProfileBtn');
+            const cancelEditBtn = document.getElementById('cancelEditBtn');
+            const saveProfileBtn = document.getElementById('saveProfileBtn');
+            const profileSection = document.querySelector('.bg-gradient-to-r.from-indigo-50.via-white.to-pink-50.rounded-xl.shadow-md.p-6.mb-6.relative');
+            
+            // Note: editProfileBtn is now used for name/age only, so we'll hide the main edit button
+            // or repurpose it. For now, let's keep it hidden since we have separate name/age editing
+            if (editProfileBtn) {
+                editProfileBtn.style.display = 'none'; // Hide the old edit button
+            }
+            
+            // FIXED: Separate edit for Religion Importance
+            const religionImportanceSection = document.querySelector('.religion-importance-section');
+            if (religionImportanceSection) {
+                const editReligionImportanceBtn = document.getElementById('editReligionImportanceBtn');
+                const cancelReligionImportanceBtn = document.getElementById('cancelReligionImportanceBtn');
+                const saveReligionImportanceBtn = document.getElementById('saveReligionImportanceBtn');
+                
+                // Make sure elements exist before adding event listeners
+                if (editReligionImportanceBtn && cancelReligionImportanceBtn && saveReligionImportanceBtn) {
+                    editReligionImportanceBtn.addEventListener('click', () => {
+                        religionImportanceSection.classList.add('edit-mode');
+                    });
+
+                    cancelReligionImportanceBtn.addEventListener('click', () => {
+                        religionImportanceSection.classList.remove('edit-mode');
+                    });
+
+                    saveReligionImportanceBtn.addEventListener('click', async () => {
+                        const data = {
+                            religion_importance: document.getElementById('religionImportanceEdit').value,
+                        };
+                        try {
+                            const response = await fetch('/update_profile', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(data),
+                                credentials: 'include'
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                let displayText = data.religion_importance.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                                document.getElementById('religionImportanceView').textContent = displayText;
+                                religionImportanceSection.classList.remove('edit-mode');
+                                showNotification('Religion importance updated successfully');
+                            } else {
+                                showNotification('Failed to update religion importance');
+                            }
+                        } catch (error) {
+                            showNotification('Error updating religion importance');
+                        }
+                    });
+                }
+            }
+
+            // FIXED: Separate edit for Physical Importance
+            const physicalImportanceSection = document.querySelector('.physical-importance-section');
+            if (physicalImportanceSection) {
+                const editPhysicalImportanceBtn = document.getElementById('editPhysicalImportanceBtn');
+                const cancelPhysicalImportanceBtn = document.getElementById('cancelPhysicalImportanceBtn');
+                const savePhysicalImportanceBtn = document.getElementById('savePhysicalImportanceBtn');
+                
+                // Make sure elements exist before adding event listeners
+                if (editPhysicalImportanceBtn && cancelPhysicalImportanceBtn && savePhysicalImportanceBtn) {
+                    editPhysicalImportanceBtn.addEventListener('click', () => {
+                        physicalImportanceSection.classList.add('edit-mode');
+                    });
+
+                    cancelPhysicalImportanceBtn.addEventListener('click', () => {
+                        physicalImportanceSection.classList.remove('edit-mode');
+                    });
+
+                    savePhysicalImportanceBtn.addEventListener('click', async () => {
+                        const data = {
+                            physical_importance: document.getElementById('physicalImportanceEdit').value,
+                        };
+                        try {
+                            const response = await fetch('/update_profile', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(data),
+                                credentials: 'include'
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                let displayText = data.physical_importance.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                                document.getElementById('physicalImportanceView').textContent = displayText;
+                                physicalImportanceSection.classList.remove('edit-mode');
+                                showNotification('Physical importance updated successfully');
+                            } else {
+                                showNotification('Failed to update physical importance');
+                            }
+                        } catch (error) {
+                            showNotification('Error updating physical importance');
+                        }
+                    });
+                }
+            }
             
             // Profile picture upload
             const profileUpload = document.getElementById('profileUpload');
             const profileImage = document.getElementById('profileImage');
             
             profileUpload.addEventListener('change', async (e) => {
-                console.log('Profile picture change event triggered');
                 const file = e.target.files[0];
                 if (file) {
-                    console.log('File selected:', file.name);
                     const formData = new FormData();
-                    formData.append('file', file);
+                    formData.append('image', file);  // Changed from 'file' to 'image' to match server
                     try {
-                        console.log('Sending fetch to /upload_profile_picture');
                         const response = await fetch('/upload_profile_picture', {
                             method: 'POST',
-                            body: formData
+                            body: formData,
+                            credentials: 'include'
                         });
-                        console.log('Response status:', response.status);
                         const result = await response.json();
-                        console.log('Response result:', result);
                         if (result.success) {
                             profileImage.src = result.url;
-                            showNotification('Profile picture updated successfully');
-                            setTimeout(() => location.reload(), 1000); // Reload to confirm changes
+                            showNotification('Profile picture updated');
                         } else {
                             showNotification('Failed to update profile picture: ' + result.error);
                         }
                     } catch (error) {
-                        console.error('Error in upload:', error);
                         showNotification('Error updating profile picture: ' + error.message);
                     }
-                } else {
-                    console.log('No file selected');
                 }
             });
+            
+            // Update Personality Button
+            const updatePersonalityBtn = document.getElementById('updatePersonalityBtn');
+            if (updatePersonalityBtn) {
+                updatePersonalityBtn.addEventListener('click', () => {
+                    if (confirm("Are you sure you want to update your personality? This may require retaking the quiz.")) {
+                        window.location.href = '/questions?retake=true';
+                    }
+                });
+            }
             
             // Photo upload
             const photoUpload = document.getElementById('photoUpload');
             const photoSlider = document.querySelector('.photo-slider');
             
             photoUpload.addEventListener('change', async (e) => {
-                console.log('Photo upload change event triggered');
                 const files = e.target.files;
                 if (files.length > 0) {
                     for (let file of files) {
-                        console.log('File selected:', file.name);
                         const formData = new FormData();
                         formData.append('file', file);
                         try {
-                            console.log('Sending fetch to /upload_photo');
                             const response = await fetch('/upload_photo', {
                                 method: 'POST',
-                                body: formData
+                                body: formData,
+                                credentials: 'include'
                             });
-                            console.log('Response status:', response.status);
                             const result = await response.json();
-                            console.log('Response result:', result);
                             if (result.success) {
                                 const photoDiv = document.createElement('div');
                                 photoDiv.className = 'flex-none w-32 h-32 mx-2 rounded-lg overflow-hidden relative';
@@ -879,13 +1462,9 @@
                                 showNotification('Failed to upload photo: ' + result.error);
                             }
                         } catch (error) {
-                            console.error('Error in upload:', error);
                             showNotification('Error uploading photo: ' + error.message);
                         }
                     }
-                    setTimeout(() => location.reload(), 1000); // Reload to confirm changes
-                } else {
-                    console.log('No files selected');
                 }
             });
             
@@ -895,7 +1474,8 @@
                     const response = await fetch('/delete_photo', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ url: url })
+                        body: JSON.stringify({ url: url }),
+                        credentials: 'include'
                     });
                     const result = await response.json();
                     if (result.success) {
@@ -905,7 +1485,6 @@
                             }
                         });
                         showNotification('Photo deleted successfully');
-                        setTimeout(() => location.reload(), 1000); // Reload to confirm changes
                     } else {
                         showNotification('Failed to delete photo');
                     }
@@ -916,10 +1495,42 @@
 
             // Notification functionality
             document.querySelectorAll('.notification-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    this.classList.remove('unread');
-                    this.querySelector('.rounded-full')?.remove();
+                item.addEventListener('click', async function() {
+                    if (this.classList.contains('unread')) {
+                        const notifId = this.dataset.id;
+                        try {
+                            const response = await fetch('/mark_notification_read', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ notif_id: notifId }),
+                                credentials: 'include'
+                            });
+                            if (response.ok) {
+                                this.classList.remove('unread');
+                                this.querySelector('.rounded-full')?.remove();
+                            }
+                        } catch (error) {
+                            console.error('Error marking read:', error);
+                        }
+                    }
                 });
+            });
+
+            // Clear Notifications
+            const clearNotificationsBtn = document.getElementById('clearNotificationsBtn');
+            clearNotificationsBtn.addEventListener('click', async () => {
+                try {
+                    const response = await fetch('/clear_notifications', {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+                    if (response.ok) {
+                        document.querySelectorAll('.notification-item').forEach(item => item.remove());
+                        showNotification('All notifications cleared');
+                    }
+                } catch (error) {
+                    console.error('Error clearing notifications:', error);
+                }
             });
             
             // Settings modal
@@ -937,7 +1548,6 @@
                 document.body.style.overflow = '';
             });
             
-            // Close modal when clicking outside
             settingsModal.addEventListener('click', (e) => {
                 if (e.target === settingsModal) {
                     settingsModal.classList.add('hidden');
@@ -955,174 +1565,109 @@
                 }
             }
 
-            document.querySelectorAll('.toggle-container input[type="checkbox"]').forEach(toggle => {
-                // Initialize status
-                updateToggleStatus(toggle);
+            // Notification toggles with localStorage persistence
+            const notificationToggles = {
+                newMatchesToggle: 'newMatchesNotify',
+                messagesToggle: 'messagesNotify',
+                profileLikesToggle: 'profileLikesNotify'
+            };
 
+            Object.entries(notificationToggles).forEach(([id, key]) => {
+                const toggle = document.getElementById(id);
+                const saved = localStorage.getItem(key);
+                toggle.checked = saved !== null ? saved === 'true' : true;
+                updateToggleStatus(toggle);
                 toggle.addEventListener('change', function() {
+                    localStorage.setItem(key, this.checked);
                     const settingName = this.closest('.flex').querySelector('span').textContent;
-                    updateToggleStatus(this);
                     showNotification(`${settingName} ${this.checked ? 'enabled' : 'disabled'}`);
+                    updateToggleStatus(this);
                 });
             });
 
             // Dark mode toggle
             const darkModeToggle = document.getElementById('darkModeToggle');
             
-            // Check for saved user preference or use system preference
-            if (localStorage.getItem('darkMode') === 'enabled' ||
-                (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            if (localStorage.theme === 'dark') {
                 document.documentElement.classList.add('dark');
                 darkModeToggle.checked = true;
+                updateToggleStatus(darkModeToggle);
+            } else {
+                document.documentElement.classList.remove('dark');
+                darkModeToggle.checked = false;
                 updateToggleStatus(darkModeToggle);
             }
             
             darkModeToggle.addEventListener('change', function() {
                 if (this.checked) {
                     document.documentElement.classList.add('dark');
-                    localStorage.setItem('darkMode', 'enabled');
+                    localStorage.theme = 'dark';
                     showNotification('Dark mode enabled');
                 } else {
                     document.documentElement.classList.remove('dark');
-                    localStorage.setItem('darkMode', 'disabled');
+                    localStorage.theme = 'light';
                     showNotification('Dark mode disabled');
                 }
                 updateToggleStatus(this);
-            });
-            
-            // Language selector functionality
-            const languageSelectors = document.querySelectorAll('.language-selector');
-            
-            languageSelectors.forEach(selector => {
-                const toggle = selector.querySelector('span');
-                const options = selector.querySelector('.language-options');
-                
-                toggle.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    options.classList.toggle('hidden');
-                });
-                
-                selector.querySelectorAll('.language-option').forEach(option => {
-                    option.addEventListener('click', function() {
-                        const lang = this.getAttribute('data-lang');
-                        
-                        // Update selected language
-                        selector.querySelectorAll('.language-option').forEach(opt => {
-                            opt.classList.remove('selected');
-                        });
-                        this.classList.add('selected');
-                        
-                        // Update display
-                        toggle.innerHTML = `${this.textContent} <i class="fas fa-chevron-down ml-1 text-xs"></i>`;
-                        options.classList.add('hidden');
-                        
-                        showNotification(`Language changed to ${this.textContent}`);
-                    });
-                });
-            });
-            
-            // Close language selector when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.language-selector')) {
-                    document.querySelectorAll('.language-options').forEach(options => {
-                        options.classList.add('hidden');
-                    });
-                }
+                updateBackgroundCircles(); // Update circles on mode change
             });
             
             // Change Password functionality
             const changePasswordBtn = document.getElementById('changePasswordBtn');
-            const changePasswordModal = document.createElement('div');
-            changePasswordModal.id = 'changePasswordModal';
-            changePasswordModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center hidden';
-            changePasswordModal.innerHTML = `
-                <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 dark:bg-gray-800">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-bold dark:text-white">Change Password</h3>
-                        <button class="close-password-modal text-gray-500 hover:text-gray-700 dark:text-gray-300">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Current Password</label>
-                            <input type="password" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">New Password</label>
-                            <input type="password" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Confirm New Password</label>
-                            <input type="password" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        </div>
-                        <button class="w-full bg-pink-500 text-white py-2 rounded-lg hover:bg-pink-600 mt-2">
-                            Update Password
-                        </button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(changePasswordModal);
-            
+            const changePasswordModal = document.getElementById('changePasswordModal');
+            const closePasswordModal = document.querySelector('.close-password-modal');
+            const changePasswordForm = document.getElementById('changePasswordForm');
+
             changePasswordBtn.addEventListener('click', () => {
                 changePasswordModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
             });
             
-            changePasswordModal.querySelector('.close-password-modal').addEventListener('click', () => {
+            closePasswordModal.addEventListener('click', () => {
                 changePasswordModal.classList.add('hidden');
+                document.body.style.overflow = '';
             });
             
-            changePasswordModal.querySelector('button:not(.close-password-modal)').addEventListener('click', () => {
-                changePasswordModal.classList.add('hidden');
-                showNotification('Password changed successfully');
+            changePasswordModal.addEventListener('click', (e) => {
+                if (e.target === changePasswordModal) {
+                    changePasswordModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
             });
             
-            // Log Out functionality
-            const logoutBtn = document.getElementById('logoutBtn');
-            logoutBtn.addEventListener('click', () => {
-                const confirmation = createConfirmationDialog(
-                    'Log Out',
-                    'Are you sure you want to log out?',
-                    'Log Out',
-                    'Cancel'
-                );
+            changePasswordForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmNewPassword = document.getElementById('confirmNewPassword').value;
                 
-                confirmation.querySelector('.confirm-btn').addEventListener('click', () => {
-                    showNotification('Logged out successfully');
-                    confirmation.remove();
-                    settingsModal.classList.add('hidden');
-                    window.location.href = '/logout';
-                });
+                if (newPassword !== confirmNewPassword) {
+                    showNotification('New passwords do not match');
+                    return;
+                }
                 
-                confirmation.querySelector('.cancel-btn').addEventListener('click', () => {
-                    confirmation.remove();
-                });
-            });
-            
-            // Delete Account functionality
-            const deleteAccountBtn = document.getElementById('deleteAccountBtn');
-            deleteAccountBtn.addEventListener('click', () => {
-                const confirmation = createConfirmationDialog(
-                    'Delete Account',
-                    'This will permanently delete your account and all data. This action cannot be undone.',
-                    'Delete',
-                    'Cancel',
-                    'text-red-500'
-                );
-                
-                confirmation.querySelector('.confirm-btn').addEventListener('click', () => {
-                    showNotification('Account deleted successfully');
-                    confirmation.remove();
-                    settingsModal.classList.add('hidden');
-                });
-                
-                confirmation.querySelector('.cancel-btn').addEventListener('click', () => {
-                    confirmation.remove();
-                });
+                try {
+                    const response = await fetch('/change_password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+                        credentials: 'include'
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('Password changed successfully');
+                        changePasswordModal.classList.add('hidden');
+                        document.body.style.overflow = '';
+                    } else {
+                        showNotification(result.error || 'Failed to change password');
+                    }
+                } catch (error) {
+                    showNotification('Error changing password');
+                }
             });
             
             // Helper function to create confirmation dialogs
-            function createConfirmationDialog(title, message, confirmText, cancelText, confirmColor = 'text-pink-500') {
+            function createConfirmationDialog(title, message, confirmText, cancelText, confirmBgClass = 'bg-pink-500 hover:bg-pink-600') {
                 const dialog = document.createElement('div');
                 dialog.className = 'confirmation-dialog fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center';
                 dialog.innerHTML = `
@@ -1133,7 +1678,7 @@
                             <button class="cancel-btn px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
                                 ${cancelText}
                             </button>
-                            <button class="confirm-btn px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 ${confirmColor}">
+                            <button class="confirm-btn px-4 py-2 ${confirmBgClass} text-white rounded-lg">
                                 ${confirmText}
                             </button>
                         </div>
@@ -1157,7 +1702,6 @@
                 
                 document.body.appendChild(notification);
                 
-                // Auto-remove after 3 seconds
                 const autoRemove = setTimeout(() => {
                     notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
                     setTimeout(() => {
@@ -1165,7 +1709,6 @@
                     }, 300);
                 }, 3000);
                 
-                // Manual close
                 notification.querySelector('button').addEventListener('click', () => {
                     clearTimeout(autoRemove);
                     notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
@@ -1175,60 +1718,788 @@
                 });
             }
 
-            // Accept and Decline functionality for pending likers
-            document.querySelectorAll('.accept-btn').forEach(button => {
-                button.addEventListener('click', async function(e) {
-                    e.preventDefault();
+            // Loading functions
+            function showLoading() {
+                document.getElementById('loading').style.display = 'flex';
+            }
+
+            function hideLoading() {
+                document.getElementById('loading').style.display = 'none';
+            }
+
+            // Profile viewer functionality
+            function openProfileViewer(userId) {
+                showLoading();
+                document.body.style.overflow = 'hidden';
+                
+                fetch(`/user-profile/${userId}`)
+                    .then(response => response.json())
+                    .then(profile => {
+                        hideLoading();
+                        if (!profile.success) {
+                            showNotification(profile.error || 'Failed to load profile');
+                            document.body.style.overflow = '';
+                            return;
+                        }
+                        
+                        const currentType = document.body.dataset.currentType;
+                        const viewedType = profile.user.dominant_type;
+                        let tagline = '';
+                        let narration = '';
+                        if (currentType && viewedType) {
+                            const currentIndex = TYPE_ORDER[currentType] || 0;
+                            const viewedIndex = TYPE_ORDER[viewedType] || 0;
+                            let useReverse = currentIndex > viewedIndex;
+                            let firstType = useReverse ? viewedType : currentType;
+                            let secondType = useReverse ? currentType : viewedType;
+                            let info = MATCH_NARRATIONS[firstType] ? MATCH_NARRATIONS[firstType][secondType] : null;
+                            if (info) {
+                                narration = useReverse ? reversePerspective(info.narration) : info.narration;
+                                tagline = info.tagline;
+                            }
+                        }
+
+                        const profileViewer = document.createElement('div');
+                        profileViewer.className = 'profile-viewer bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100';
+                        let additionalSections = '';
+                        if (profile.user.religion && profile.user.religion !== 'Private' && profile.user.religion !== 'Not specified') {
+                            additionalSections += `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Religion</h3>
+                                    <p class="text-text-gray-700 dark:text-gray-300">${profile.user.religion}</p>
+                                </div>
+                            `;
+                        }
+                        if (profile.user.physical_traits && typeof profile.user.physical_traits === 'object' && !Array.isArray(profile.user.physical_traits) && Object.keys(profile.user.physical_traits).length > 0) {
+                            additionalSections += `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Physical Traits</h3>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${Object.entries(profile.user.physical_traits).map(([key, value]) => `
+                                            <span class="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100 px-3 py-1 rounded-full text-sm">${key}: ${value}</span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        if (profile.user.education_work && profile.user.education_work !== 'N/A') {
+                            additionalSections += `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Education/Work</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.education_work}</p>
+                                </div>
+                            `;
+                        }
+                        if (profile.user.summary && profile.user.summary !== 'N/A') {
+                            additionalSections += `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Self Summary</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.summary}</p>
+                                </div>
+                            `;
+                        }
+                        let passButtonHTML;
+                        if (profile.user.passed) {
+                            passButtonHTML = `<button class="animate-pulse bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-400 text-white rounded-full px-6 py-4 flex-1 mr-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" disabled>
+                                <i class="fas fa-times mr-2"></i> Passed
+                            </button>`;
+                        } else {
+                            passButtonHTML = `<button class="animate-pulse bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-400 text-white rounded-full px-6 py-4 flex-1 mr-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out pass-button" data-user-id="${userId}">
+                                <i class="fas fa-times mr-2"></i> Pass
+                            </button>`;
+                        }
+                        let bottomLikeHTML;
+                        if (profile.user.passed) {
+                            bottomLikeHTML = `<button class="animate-pulse bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400 text-white rounded-full px-6 py-4 flex-1 ml-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" disabled>
+                                <i class="fas fa-heart mr-2"></i> Accept
+                            </button>`;
+                        } else {
+                            bottomLikeHTML = `<button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400'} animate-pulse text-white rounded-full px-6 py-4 flex-1 ml-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" 
+                                            data-user-id="${userId}" 
+                                            data-liked="${profile.user.liked}">
+                                        <i class="fas ${profile.user.liked ? 'fa-check' : 'fa-heart'} mr-2"></i> ${profile.user.liked ? 'Accepted' : 'Accept'}
+                                    </button>`;
+                        }
+
+                        // Compatibility badge with color cues
+                        const match_percentage = profile.user.match_percentage;
+                        let colorClass = '';
+                        let colorEmoji = '';
+                        if (match_percentage >= 85) {
+                            colorClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                            colorEmoji = '🟢';
+                        } else if (match_percentage >= 75) {
+                            colorClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                            colorEmoji = '🟡';
+                        } else if (match_percentage >= 65) {
+                            colorClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+                            colorEmoji = '🔵';
+                        } else {
+                            colorClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+                            colorEmoji = '🔴';
+                        }
+
+                        let aboutSection = '';
+                        if (profile.user.bio && profile.user.bio !== 'No bio available' && profile.user.bio !== 'N/A') {
+                            aboutSection = `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">About</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.bio}</p>
+                                </div>
+                            `;
+                        }
+
+                        let photosSection = '';
+                        if (profile.user.photos && profile.user.photos.length > 0) {
+                            photosSection = `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Photos</h3>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        ${profile.user.photos.map(photo => `<img src="${photo}" alt="User photo" class="photo-img rounded-lg object-cover h-40 w-full cursor-pointer" oncontextmenu="return false;">`).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        profileViewer.innerHTML = `
+                            <div class="relative">
+                                <img src="${profile.user.image}" alt="${profile.user.full_name}" class="profile-viewer-image">
+                                <button class="absolute top-4 left-4 bg-white dark:bg-gray-800 bg-opacity-80 rounded-full w-10 h-10 flex items-center justify-center close-profile">
+                                    <i class="fas fa-arrow-left text-gray-800 dark:text-gray-100"></i>
+                                </button>
+                                <div class="absolute bottom-4 left-4 ${colorClass} rounded-full px-3 py-1">
+                                    <span class="font-bold text-black dark:text-white">${colorEmoji} 💞 ${match_percentage}% Compatible</span>
+                                </div>
+                            </div>
+                            <div class="p-6 flex-1">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">${profile.user.full_name}, ${profile.user.age || 'N/A'}</h2>
+                                    </div>
+                                </div>
+                                ${tagline ? `
+                                <div class="mb-6">
+                                    <p class="text-gray-700 dark:text-gray-300 font-bold">${tagline}</p>
+                                    <p class="text-gray-700 dark:text-gray-300">${narration}</p>
+                                </div>
+                                ` : ''}
+                                ${aboutSection}
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Personality Type</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.dominant_type}</p>
+                                </div>
+                                <div class="mb-6">
+                                    ${profile.user.personality_info ? `
+                                        ${profile.user.personality_info.title ? `<p class="text-gray-700 dark:text-gray-300"><strong>${toThirdPerson(profile.user.personality_info.title)}</strong></p>` : ''}
+                                        ${profile.user.personality_info.description && profile.user.personality_info.description !== 'Description not available.' ? `<p class="text-gray-700 dark:text-gray-300">${toThirdPerson(profile.user.personality_info.description)}</p>` : ''}
+                                        ${profile.user.personality_info.tagline ? `<p class="text-gray-700 dark:text-gray-300"><em>${toThirdPerson(profile.user.personality_info.tagline)}</em></p>` : ''}
+                                        ${profile.user.personality_info.strengths && profile.user.personality_info.strengths.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Strengths:</strong> ${profile.user.personality_info.strengths.join(', ')}</p>` : ''}
+                                        ${profile.user.personality_info.compatibility && profile.user.personality_info.compatibility.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Compatibility:</strong> ${profile.user.personality_info.compatibility.join(', ')}</p>` : ''}
+                                    ` : '<p class="text-gray-700 dark:text-gray-300">No personality information available</p>'}
+                                </div>
+                                ${profile.user.interests && profile.user.interests.length > 0 ? `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Interests</h3>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${profile.user.interests.map(interest => `<span class="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100 px-3 py-1 rounded-full text-sm">${interest}</span>`).join('')}
+                                    </div>
+                                </div>
+                                ` : ''}
+                                ${additionalSections}
+                                ${photosSection}
+                                <div class="flex justify-between mt-8">
+                                    ${passButtonHTML}
+                                    <button class="animate-pulse bg-gradient-to-r from-red-400 to-red-600 hover:from-red-600 hover:to-red-400 text-white rounded-full px-6 py-4 flex-1 mx-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out report-button" data-user-id="${userId}">
+                                        <i class="fas fa-flag mr-2"></i> Report
+                                    </button>
+                                    ${bottomLikeHTML}
+                                </div>
+                            </div>
+                            <div id="photoModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center" onclick="this.classList.add('hidden')">
+                                <img id="fullPhoto" src="" class="max-h-[90vh] max-w-[90vw] object-contain" oncontextmenu="return false;">
+                                <button class="absolute top-4 right-4 text-white text-3xl" onclick="document.getElementById('photoModal').classList.add('hidden')">&times;</button>
+                            </div>
+                        `;
+                        
+                        document.body.appendChild(profileViewer);
+                        window.history.pushState({profileOpen: true}, '');
+                        
+                        profileViewer.querySelector('.close-profile').addEventListener('click', () => {
+                            profileViewer.remove();
+                            document.body.style.overflow = '';
+                            history.back();
+                        });
+
+                        // Attach report button listener
+                        profileViewer.querySelector('.report-button').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const userId = e.currentTarget.dataset.userId;
+                            showReportModal(userId);
+                        });
+                        
+                        // Attach event listeners to buttons in profile viewer
+                        attachProfileViewerListeners(profileViewer, userId);
+
+                        // Attach photo click listeners
+                        profileViewer.querySelectorAll('.photo-img').forEach(img => {
+                            img.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                const modal = profileViewer.querySelector('#photoModal');
+                                const fullPhoto = profileViewer.querySelector('#fullPhoto');
+                                fullPhoto.src = img.src;
+                                modal.classList.remove('hidden');
+                            });
+                            img.addEventListener('contextmenu', e => e.preventDefault());
+                        });
+                    })
+                    .catch(error => {
+                        hideLoading();
+                        showNotification('Network error while loading profile');
+                        document.body.style.overflow = '';
+                    });
+            }
+
+            // Attach profile click listeners for connections
+            document.querySelectorAll('.connection-card').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    const userId = this.dataset.userId;
+                    openProfileViewer(userId);
+                });
+            });
+
+            // Handle accept and decline buttons
+            document.querySelectorAll('.accept-btn').forEach(btn => {
+                btn.addEventListener('click', async function(e) {
+                    e.stopPropagation();
                     const userId = this.dataset.userId;
                     try {
                         const response = await fetch('/like-user', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ matched_user_id: userId })
+                            body: JSON.stringify({ matched_user_id: userId }),
+                            credentials: 'include'
                         });
                         const result = await response.json();
                         if (result.success) {
-                            this.closest('.bg-gray-50').remove();
-                            showNotification('Accepted!');
-                            if (result.is_match) {
-                                const popup = document.createElement('div');
-                                popup.className = 'popup';
-                                popup.textContent = 'Connection Successful!';
-                                document.body.appendChild(popup);
-                                setTimeout(() => {
-                                    popup.remove();
-                                }, 2000);
-                                showNotification("It's a match! You can now chat.");
-                            }
+                            showNotification(result.is_match ? "It's a match! You can now chat." : "Accepted");
+                            // Remove the connection item
+                            this.closest('.connection-item').style.opacity = '0';
+                            this.closest('.connection-item').style.transition = 'opacity 0.5s ease';
+                            setTimeout(() => this.closest('.connection-item').remove(), 500);
                         } else {
                             showNotification(result.error || 'Failed to accept');
                         }
                     } catch (error) {
-                        showNotification('Network error');
+                        showNotification('Error accepting');
                     }
                 });
             });
 
-            document.querySelectorAll('.decline-btn').forEach(button => {
-                button.addEventListener('click', async function(e) {
-                    e.preventDefault();
+            document.querySelectorAll('.decline-btn').forEach(btn => {
+                btn.addEventListener('click', async function(e) {
+                    e.stopPropagation();
                     const userId = this.dataset.userId;
                     try {
                         const response = await fetch('/pass-user', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ passed_user_id: userId })
+                            body: JSON.stringify({ passed_user_id: userId }),
+                            credentials: 'include'
                         });
                         const result = await response.json();
                         if (result.success) {
-                            this.closest('.bg-gray-50').remove();
                             showNotification('Declined');
+                            // Remove the connection item
+                            this.closest('.connection-item').style.opacity = '0';
+                            this.closest('.connection-item').style.transition = 'opacity 0.5s ease';
+                            setTimeout(() => this.closest('.connection-item').remove(), 500);
                         } else {
                             showNotification(result.error || 'Failed to decline');
                         }
                     } catch (error) {
-                        showNotification('Network error');
+                        showNotification('Error declining');
                     }
+                });
+            });
+
+            // Handle back button to close profile
+            window.addEventListener('popstate', function(event) {
+                const profileViewer = document.querySelector('.profile-viewer');
+                if (profileViewer) {
+                    profileViewer.remove();
+                    document.body.style.overflow = '';
+                }
+            });
+
+            function attachProfileViewerListeners(profileViewer, userId) {
+                profileViewer.querySelectorAll('.like-button').forEach(btn => {
+                    btn.addEventListener('click', async function(e) {
+                        e.stopPropagation();
+                        
+                        const isLiked = this.dataset.liked === 'true';
+                        const endpoint = isLiked ? '/unlike-user' : '/like-user';
+                        const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
+                        
+                        showLoading();
+                        try {
+                            const response = await fetch(endpoint, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ matched_user_id: userId }),
+                                credentials: 'include'
+                            });
+                            const result = await response.json();
+                            hideLoading();
+                            
+                            if (result.success) {
+                                if (isLiked) {
+                                    delete likedUsers[userId];
+                                } else {
+                                    likedUsers[userId] = true;
+                                    createHeartBurst(this);
+                                }
+                                localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
+                                
+                                // Update all like buttons for this user, including this one
+                                profileViewer.querySelectorAll('.like-button').forEach(b => {
+                                    if (isLiked) {
+                                        b.classList.remove('liked-button');
+                                        b.classList.add('bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400');
+                                        b.innerHTML = '<i class="fas fa-heart mr-2"></i> Accept';
+                                        b.dataset.liked = 'false';
+                                    } else {
+                                        b.classList.add('liked-button');
+                                        b.classList.remove('bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400');
+                                        b.innerHTML = '<i class="fas fa-check mr-2"></i> Accepted';
+                                        b.dataset.liked = 'true';
+                                    }
+                                });
+                                
+                                // Update main page buttons as well
+                                updateLikeButtons();
+                                
+                                showNotification(actionMessage);
+                                
+                                if (!isLiked && result.is_match) {
+                                    showMatchPopup();
+                                    showNotification("It's a match! You can now chat.");
+                                }
+                                
+                                // For like, close viewer and remove card; for unlike, keep viewer open
+                                if (!isLiked) {
+                                    setTimeout(() => {
+                                        profileViewer.remove();
+                                        document.body.style.overflow = '';
+                                        history.back();
+                                        
+                                        // Remove the card from the main view
+                                        const card = document.querySelector(`.connection-card[data-user-id="${userId}"]`);
+                                        if (card) {
+                                            card.closest('.connection-item').style.opacity = '0';
+                                            card.closest('.connection-item').style.transition = 'opacity 0.5s ease';
+                                            setTimeout(() => card.closest('.connection-item').remove(), 500);
+                                        }
+                                    }, 1500);
+                                }
+                            } else {
+                                if (result.error === 'Daily like limit exceeded') {
+                                    showNotification('Your daily like limit has been exceeded!');
+                                } else {
+                                    showNotification(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
+                                }
+                            }
+                        } catch (error) {
+                            hideLoading();
+                            showNotification(`Network error while ${isLiked ? 'unliking' : 'liking'} user`);
+                        }
+                    });
+                });
+                
+                const passButton = profileViewer.querySelector('.pass-button');
+                if (passButton) {
+                    passButton.addEventListener('click', async function() {
+                        showLoading();
+                        try {
+                            const response = await fetch('/pass-user', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ passed_user_id: userId }),
+                                credentials: 'include'
+                            });
+                            const result = await response.json();
+                            hideLoading();
+                            
+                            if (result.success) {
+                                createPassBurst(this);
+                                showNotification('Passed');
+                                // Update cache
+                                const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                                if (cached) {
+                                    const match = cached.data.find(m => m.id === userId);
+                                    if (match) {
+                                        match.passed = true;
+                                    }
+                                    localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                                }
+                                profileViewer.remove();
+                                document.body.style.overflow = '';
+                                history.back();
+                                
+                                // Remove the card from the main view
+                                const card = document.querySelector(`.connection-card[data-user-id="${userId}"]`);
+                                if (card) {
+                                    card.closest('.connection-item').style.opacity = '0';
+                                    card.closest('.connection-item').style.transition = 'opacity 0.5s ease';
+                                    setTimeout(() => card.closest('.connection-item').remove(), 500);
+                                }
+                            } else {
+                                showNotification(result.error || 'Failed to pass user');
+                            }
+                        } catch (error) {
+                            hideLoading();
+                            showNotification('Network error while passing user');
+                        }
+                    });
+                }
+            }
+
+            // Match narrations data
+            const MATCH_NARRATIONS = {
+                '🌿 Nurturer': {
+                    '👂 Listener': {tagline: '💞 Heard and held.', narration: 'You love to care, and they love to listen. This match feels like two souls curled up in the same safe space. Simple, soft, and deeply natural.'},
+                    '🛡️ Protector': {tagline: '🛡️ Wrapped in safety.', narration: 'Their steady strength protects your gentle heart, while your kindness warms their world. Together, it feels like home.'},
+                    '🌙 Dreamer': {tagline: '🌙 Roots & wings.', narration: 'You bring comfort, they bring wonder. One keeps things steady, the other sparks magic — a sweet balance that makes life feel bigger.'},
+                    '💘 Romantic': {tagline: '🔥 Soft fire.', narration: 'Their passion meets your tenderness. You hold their heart with care, while they remind you how exciting love can be.'},
+                    '🌟 Idealist': {tagline: '🌟 Gentle purpose.', narration: 'You care for the small moments, they dream of the big picture. Together, you make love both meaningful and kind.'},
+                    '🌿 Nurturer': {tagline: '🌸 Endless comfort.', narration: 'Two hearts that love to give. Affection flows easily — the only challenge is remembering to also receive.'},
+                },
+                '🛡️ Protector': {
+                    '👂 Listener': {tagline: '💞 Strength in calm.', narration: 'Their strength meets your attentive heart. Together, safety feels warm and steady, like a quiet embrace.'},
+                    '🛡️ Protector': {tagline: '🛡 Two pillars.', narration: 'Both loyal and steady. Safety is never in doubt, and together you create a rock-solid bond.'},
+                    '🌙 Dreamer': {tagline: '🌙 Anchor & wings.', narration: 'You give stability, they bring imagination. Together, life feels safe yet full of wonder.'},
+                    '💘 Romantic': {tagline: '🔥 Safe passion.', narration: 'Their love ignites, your care protects. Together, it\'s passion wrapped in warmth.'},
+                    '🌟 Idealist': {tagline: '🌟 Guarding the dream.', narration: 'Your loyalty supports their ideals. Together, hope and security grow hand in hand.'},
+                    '🌿 Nurturer': {tagline: '🛡 Wrapped in safety.', narration: 'Their steady strength protects your gentle heart, while your kindness warms their world. Together, it feels like home.'},
+                },
+                '💘 Romantic': {
+                    '👂 Listener': {tagline: '💞 Heartfelt bond.', narration: 'You express, they listen. Together, your hearts feel deeply seen and understood.'},
+                    '🛡️ Protector': {tagline: '🛡 Safe passion.', narration: 'You bring fire, they bring safety. Together, love feels thrilling yet secure.'},
+                    '🌙 Dreamer': {tagline: '🌙 Romantic vision.', narration: 'Passion meets imagination. Together, you create a world full of color and wonder.'},
+                    '🌟 Idealist': {tagline: '🌟 Love with purpose.', narration: 'Affection meets ideals. Together, romance feels meaningful and kind.'},
+                    '🌿 Nurturer': {tagline: '🔥 Soft fire.', narration: 'Their passion meets your tenderness. You hold their heart with care, while they remind you how exciting love can be.'},
+                    '💘 Romantic': {tagline: '💘 True hearts.', narration: 'Two souls that crave closeness. Love here is vibrant, deep, and entirely natural.'},
+                },
+                '👂 Listener': {
+                    '👂 Listener': {tagline: '💞 Two hearts listening.', narration: 'Both attentive and patient. Together, you create a quiet, comforting bond full of understanding.'},
+                    '🛡️ Protector': {tagline: '🛡 Strength in calm.', narration: 'Your attentive heart meets their loyal strength. Together, life feels steady and safe.'},
+                    '🌙 Dreamer': {tagline: '🌙 Heard dreams.', narration: 'They dream, you listen. Their imagination feels valued, and your care feels received.'},
+                    '💘 Romantic': {tagline: '🔥 Heartfelt bond.', narration: 'They feel deeply, you understand them fully. Together, love feels tender and genuine.'},
+                    '🌟 Idealist': {tagline: '🌟 Cause and care.', narration: 'Their vision meets your attention. Together, ideals feel nurtured and real.'},
+                    '🌿 Nurturer': {tagline: '💞 Heard and held.', narration: 'You love to care, and they love to listen. This match feels like two souls curled up in the same safe space.'},
+                },
+                '🌙 Dreamer': {
+                    '🌙 Dreamer': {tagline: '🌙 Double vision.', narration: 'Two imaginations flying. Life feels colorful, exciting, and full of possibilities.'},
+                    '🌿 Nurturer': {tagline: '🌙 Roots & wings.', narration: 'You bring comfort, they bring wonder. One keeps things steady, the other sparks magic — a sweet balance that makes life feel bigger.'},
+                    '🛡️ Protector': {tagline: '🛡 Anchor & wings.', narration: 'Stability meets imagination. Together, life feels secure and inspired.'},
+                    '💘 Romantic': {tagline: '🔥 Romantic vision.', narration: 'Passion and creativity intertwine. Love feels magical and heartfelt.'},
+                    '🌟 Idealist': {tagline: '🌟 Dream + purpose.', narration: 'Your vision and their ideals lift each other. Together, purpose feels alive.'},
+                    '👂 Listener': {tagline: '💞 Heard dreams.', narration: 'You listen, they imagine. Together, hearts feel seen, safe, and inspired.'},
+                },
+                '🌟 Idealist': {
+                    '🌟 Idealist': {tagline: '🌟 Shared purpose.', narration: 'Two believers, united by vision. Together, you shine brighter, naturally and warmly.'},
+                    '🌿 Nurturer': {tagline: '🌟 Gentle purpose.', narration: 'You care for the small moments, they dream of the big picture. Together, you make love both meaningful and kind.'},
+                    '🛡️ Protector': {tagline: '🛡 Guarding the dream.', narration: 'Loyalty meets vision. Together, your hearts feel safe and inspired.'},
+                    '💘 Romantic': {tagline: '🔥 Love with purpose.', narration: 'Passion meets ideals. Together, love feels heartfelt and deeply alive.'},
+                    '👂 Listener': {tagline: '💞 Cause and care.', narration: 'Their vision meets your attentive heart. Together, purpose feels nurtured and tender.'},
+                    '🌙 Dreamer': {tagline: '🌙 Dream + purpose.', narration: 'You dream, they inspire. Together, life feels meaningful, gentle, and full of hope.'},
+                }
+            };
+
+            const TYPE_ORDER = {
+                '🛡️ Protector': 1,
+                '🌿 Nurturer': 2,
+                '💘 Romantic': 3,
+                '👂 Listener': 4,
+                '🌙 Dreamer': 5,
+                '🌟 Idealist': 6
+            };
+
+            function reversePerspective(text) {
+                return text
+                    .replace(/\bYou\b/g, 'TEMP_THEY_CAP')
+                    .replace(/\byou\b/g, 'temp_they')
+                    .replace(/\bYour\b/g, 'TEMP_THEIR_CAP')
+                    .replace(/\byour\b/g, 'their')
+                    .replace(/\bThey\b/g, 'You')
+                    .replace(/\bthey\b/g, 'you')
+                    .replace(/\bTheir\b/g, 'Your')
+                    .replace(/\btheir\b/g, 'your')
+                    .replace(/\bTEMP_THEY_CAP\b/g, 'They')
+                    .replace(/\btemp_they\b/g, 'they')
+                    .replace(/\bTEMP_THEIR_CAP\b/g, 'Their');
+            }
+
+            function toThirdPerson(text) {
+                return text
+                    .replace(/\bYou\b/g, 'They')
+                    .replace(/\byou\b/g, 'they')
+                    .replace(/\bYour\b/g, 'Their')
+                    .replace(/\byour\b/g, 'their')
+                    .replace(/\bYours\b/g, 'Theirs')
+                    .replace(/\byours\b/g, 'theirs')
+                    .replace(/\bYourself\b/g, 'Themselves')
+                    .replace(/\byourself\b/g, 'themselves')
+                    .replace(/\bYou're\b/g, 'They\'re')
+                    .replace(/\byou're\b/g, 'they\'re');
+            }
+
+            function showMatchPopup() {
+                const popup = document.createElement('div');
+                popup.className = 'popup text-gray-800 dark:text-gray-100';
+                popup.textContent = 'Connection Successful!';
+                document.body.appendChild(popup);
+                setTimeout(() => {
+                    popup.remove();
+                }, 2000);
+            }
+
+            function createHeartBurst(target) {
+                const rect = target.getBoundingClientRect();
+                const burst = document.createElement('div');
+                burst.style.position = 'fixed';
+                burst.style.left = `${rect.left + rect.width / 2}px`;
+                burst.style.top = `${rect.top + rect.height / 2}px`;
+                burst.style.pointerEvents = 'none';
+                burst.style.zIndex = '1002';
+                for (let i = 0; i < 8; i++) {
+                    const heart = document.createElement('i');
+                    heart.className = 'fas fa-heart text-pink-500';
+                    heart.style.position = 'absolute';
+                    heart.style.fontSize = `${Math.random() * 1 + 1}rem`;
+                    heart.style.left = '0';
+                    heart.style.top = '0';
+                    heart.style.transform = 'translate(-50%, -50%)';
+                    heart.style.animation = `burstAnim ${Math.random() * 0.5 + 0.5}s ease-out`;
+                    const angle = Math.random() * 2 * Math.PI;
+                    const distance = Math.random() * 50 + 30;
+                    heart.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+                    heart.style.setProperty('--dy', `${Math.sin(angle) * distance - 50}px`); // upward bias
+                    burst.appendChild(heart);
+                }
+                document.body.appendChild(burst);
+                setTimeout(() => burst.remove(), 1000);
+            }
+
+            function createPassBurst(target) {
+                const rect = target.getBoundingClientRect();
+                const burst = document.createElement('div');
+                burst.style.position = 'fixed';
+                burst.style.left = `${rect.left + rect.width / 2}px`;
+                burst.style.top = `${rect.top + rect.height / 2}px`;
+                burst.style.pointerEvents = 'none';
+                burst.style.zIndex = '1002';
+                for (let i = 0; i < 5; i++) {
+                    const cross = document.createElement('i');
+                    cross.className = 'fas fa-times text-red-500';
+                    cross.style.position = 'absolute';
+                    cross.style.fontSize = `${Math.random() * 1 + 1}rem`;
+                    cross.style.left = '0';
+                    cross.style.top = '0';
+                    cross.style.transform = 'translate(-50%, -50%)';
+                    cross.style.animation = `burstAnim ${Math.random() * 0.5 + 0.5}s ease-out`;
+                    const angle = Math.random() * 2 * Math.PI;
+                    const distance = Math.random() * 50 + 30;
+                    cross.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+                    cross.style.setProperty('--dy', `${Math.sin(angle) * distance}px`); // random direction
+                    burst.appendChild(cross);
+                }
+                document.body.appendChild(burst);
+                setTimeout(() => burst.remove(), 1000);
+            }
+
+            function showReportModal(userId) {
+                const modal = document.createElement('div');
+                modal.className = 'report-modal';
+                modal.innerHTML = `
+                    <div class="report-modal-content">
+                        <h3 class="text-lg font-bold mb-4">Why are you reporting this user?</h3>
+                        <div id="report-options">
+                            <label class="report-option" data-reason="inappropriate">Inappropriate content</label>
+                            <label class="report-option" data-reason="spam">Spam or fake profile</label>
+                            <label class="report-option" data-reason="harassment">Harassment or bullying</label>
+                            <label class="report-option" data-reason="other">Other</label>
+                        </div>
+                        <div class="flex justify-end mt-4 space-x-2">
+                            <button id="cancel-report" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
+                            <button id="submit-report" class="px-4 py-2 bg-red-500 text-white rounded" disabled>Submit Report</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                let selectedReason = null;
+                document.querySelectorAll('.report-option').forEach(option => {
+                    option.addEventListener('click', () => {
+                        document.querySelectorAll('.report-option').forEach(opt => opt.classList.remove('selected'));
+                        option.classList.add('selected');
+                        selectedReason = option.dataset.reason;
+                        document.getElementById('submit-report').disabled = false;
+                    });
+                });
+
+                document.getElementById('cancel-report').addEventListener('click', () => modal.remove());
+                document.getElementById('submit-report').addEventListener('click', async (e) => {
+                    if (selectedReason) {
+                        const button = e.currentTarget;
+                        showLoading();
+                        try {
+                            const response = await fetch('/report-user', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ reported_user_id: userId, reason: selectedReason }),
+                                credentials: 'include'
+                            });
+                            const result = await response.json();
+                            hideLoading();
+                            if (result.success) {
+                                createReportBurst(button);
+                                showNotification('Report submitted successfully');
+                                setTimeout(() => modal.remove(), 1000);
+                            } else {
+                                showNotification(result.error || 'Failed to submit report');
+                            }
+                        } catch (error) {
+                            hideLoading();
+                            showNotification('Network error while submitting report');
+                        }
+                    }
+                });
+            }
+
+            function createReportBurst(target) {
+                const rect = target.getBoundingClientRect();
+                const burst = document.createElement('div');
+                burst.style.position = 'fixed';
+                burst.style.left = `${rect.left + rect.width / 2}px`;
+                burst.style.top = `${rect.top + rect.height / 2}px`;
+                burst.style.pointerEvents = 'none';
+                burst.style.zIndex = '1002';
+                for (let i = 0; i < 5; i++) {
+                    const flag = document.createElement('i');
+                    flag.className = 'fas fa-flag text-orange-500';
+                    flag.style.position = 'absolute';
+                    flag.style.fontSize = `${Math.random() * 1 + 1}rem`;
+                    flag.style.left = '0';
+                    flag.style.top = '0';
+                    flag.style.transform = 'translate(-50%, -50%)';
+                    flag.style.animation = `burstAnim ${Math.random() * 0.5 + 0.5}s ease-out`;
+                    const angle = Math.random() * 2 * Math.PI;
+                    const distance = Math.random() * 50 + 30;
+                    flag.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+                    flag.style.setProperty('--dy', `${Math.sin(angle) * distance - 30}px`);
+                    burst.appendChild(flag);
+                }
+                document.body.appendChild(burst);
+                setTimeout(() => burst.remove(), 1000);
+            }
+
+            // Store liked users in localStorage to persist across page refreshes
+            let likedUsers = JSON.parse(localStorage.getItem('likedUsers') || '{}');
+
+            // Update like buttons based on stored liked status
+            function updateLikeButtons() {
+                document.querySelectorAll('.like-button').forEach(button => {
+                    const userId = button.dataset.userId;
+                    if (likedUsers[userId]) {
+                        button.classList.add('liked-button');
+                        button.classList.remove('bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400');
+                        button.innerHTML = '<i class="fas fa-check mr-2"></i> Accepted';
+                        button.dataset.liked = 'true';
+                    } else {
+                        button.classList.remove('liked-button');
+                        button.classList.add('bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 hover:to-pink-400');
+                        button.innerHTML = '<i class="fas fa-heart mr-2"></i> Accept';
+                        button.dataset.liked = 'false';
+                    }
+                });
+            }
+
+            // Initial likes update
+            updateLikeButtons();
+
+            // Navigation press effect
+            const navLinks = document.querySelectorAll('.bottom-nav a');
+            navLinks.forEach(link => {
+                link.addEventListener('pointerdown', function() {
+                    navLinks.forEach(l => {
+                        l.classList.remove('text-pink-500', 'dark:text-pink-400');
+                        l.classList.add('text-gray-500', 'dark:text-gray-400');
+                    });
+                    this.classList.remove('text-gray-500', 'dark:text-gray-400');
+                    this.classList.add('text-pink-500', 'dark:text-pink-400');
+                });
+            });
+            
+            // Logout functionality
+            const logoutBtn = document.getElementById('logoutBtn');
+            logoutBtn.addEventListener('click', () => {
+                const dialog = createConfirmationDialog(
+                    'Log Out',
+                    'Are you sure you want to log out?',
+                    'Log Out',
+                    'Cancel',
+                    'bg-red-500 hover:bg-red-600'
+                );
+                
+                dialog.querySelector('.cancel-btn').addEventListener('click', () => dialog.remove());
+                dialog.querySelector('.confirm-btn').addEventListener('click', async () => {
+                    try {
+                        const response = await fetch('/logout', {
+                            method: 'POST',
+                            credentials: 'include'
+                        });
+                        if (response.ok) {
+                            showNotification('Logged out successfully');
+                            window.location.href = '/auth'; // Redirect to login page
+                        } else {
+                            showNotification('Failed to log out');
+                        }
+                    } catch (error) {
+                        showNotification('Error logging out');
+                    }
+                    dialog.remove();
+                });
+            });
+            
+            // Delete account functionality
+            const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+            deleteAccountBtn.addEventListener('click', () => {
+                const dialog = createConfirmationDialog(
+                    'Delete Account',
+                    'Are you sure you want to delete your account? This action cannot be undone.',
+                    'Delete',
+                    'Cancel',
+                    'bg-red-500 hover:bg-red-600'
+                );
+                
+                dialog.querySelector('.cancel-btn').addEventListener('click', () => dialog.remove());
+                dialog.querySelector('.confirm-btn').addEventListener('click', async () => {
+                    try {
+                        const response = await fetch('/delete_account', {
+                            method: 'POST',
+                            credentials: 'include'
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            showNotification('Account deleted successfully');
+                            window.location.href = '/auth'; // Redirect to login page
+                        } else {
+                            showNotification(result.error || 'Failed to delete account');
+                        }
+                    } catch (error) {
+                        showNotification('Error deleting account');
+                    }
+                    dialog.remove();
                 });
             });
         });

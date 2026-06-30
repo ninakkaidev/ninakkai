@@ -3,8 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Responsive Animated Page</title>
+  <title>Ninakkai: Personality-Based Dating App for Meaningful Connections</title>
+  <meta name="description" content="Discover compatible matches with Ninakkai, the dating app that uses personality quizzes to connect nurturers, protectors, dreamers, and more. Find love based on emotional compatibility, shared values, and real connections. Join free today!">
+  <meta name="keywords" content="dating app, personality matching, compatibility quiz, meaningful relationships, online dating, find love, soulmate app, emotional connection">
+  <meta name="robots" content="index, follow">
+  <meta property="og:title" content="Ninakkai: Find Your Perfect Match Through Personality">
+  <meta property="og:description" content="Ninakkai helps you find deep, lasting relationships by matching based on your unique personality type. Take our quiz and meet compatible singles today!">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Ninakkai: Personality-Based Dating App">
+  <meta name="twitter:description" content="Connect with like-minded singles through personality insights. Download Ninakkai for authentic dating experiences.">
+  
+  <!-- Cache control for images -->
+  <meta http-equiv="Cache-Control" content="max-age=31536000, public">
+  
+  <!-- Preload critical resources -->
+  <link rel="preload" href="/static/images/photo-playful-man-gives-piggyback-ride-girlfriend.webp" as="image">
+  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --primary: #ff4d6d;
@@ -20,10 +37,79 @@
       box-sizing: border-box;
     }
 
+    html {
+      /* Enable smooth scrolling for the whole page */
+      scroll-behavior: smooth;
+    }
+
     body {
       font-family: 'Segoe UI', sans-serif;
-      scroll-behavior: smooth;
       background-color: #fdfdfd;
+      /* Prevent horizontal scroll */
+      overflow-x: hidden;
+      /* Improve text rendering on mobile */
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeSpeed;
+    }
+
+    /* Loader Styles */
+    #loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease-out;
+    }
+
+    .loader-text {
+      font-family: 'Noto Sans Malayalam', sans-serif;
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 30px;
+      background: linear-gradient(135deg, #000000 0%, #ffffff 50%, #000000 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 2s linear infinite, fadeIn 2s ease;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
+    .loader {
+      width: 60px;
+      aspect-ratio: 1;
+      background: linear-gradient(#dc1818 0 0) bottom/100% 0% no-repeat #ccc;
+      -webkit-mask: 
+        radial-gradient(circle at 60% 65%, #000 62%, #0000 65%) top left, 
+        radial-gradient(circle at 40% 65%, #000 62%, #0000 65%) top right, 
+        linear-gradient(to bottom left, #000 42%,#0000 43%) bottom left , 
+        linear-gradient(to bottom right,#000 42%,#0000 43%) bottom right;
+      -webkit-mask-size: 50% 50%;
+      -webkit-mask-repeat: no-repeat;
+      animation: l19 2s infinite linear;
+    }
+
+    @keyframes l19 {
+        90%,100% {background-size:100% 100%}
+    }
+
+    .content {
+      opacity: 0;
+      transition: opacity 0.5s ease-in;
+    }
+
+    .content.loaded {
+      opacity: 1;
     }
 
     header {
@@ -31,18 +117,22 @@
       top: 0;
       left: 0;
       width: 100%;
-      padding: 15px 30px;
+      padding: 15px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       background: transparent;
       z-index: 999;
-      transition: var(--transition);
+      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      /* Force GPU acceleration for smoother animations */
+      transform: translateZ(0);
+      will-change: transform, background-color;
     }
 
     header.sticky {
       background: var(--bg-dark);
       backdrop-filter: blur(10px);
+      padding: 10px 20px;
     }
 
     .logo {
@@ -55,6 +145,7 @@
     nav {
       display: flex;
       gap: 20px;
+      align-items: center;
     }
 
     nav a {
@@ -82,6 +173,10 @@
       z-index: 1000;
     }
 
+    #about.popup {
+      width: 400px;
+    }
+
     .popup.active {
       display: block;
       animation: fadeIn 0.3s ease-in-out;
@@ -103,9 +198,9 @@
     }
 
     .hero {
+      position: relative;
       height: 100vh;
-      background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.3)),
-          url("{{ url_for('static', filename='images/photo-playful-man-gives-piggyback-ride-girlfriend.jpg') }}") no-repeat top center/cover;
+      height: 100dvh;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -113,6 +208,43 @@
       text-align: center;
       padding: 0 20px;
       color: white;
+      overflow: hidden;
+      /* Prevent any scrolling issues */
+      isolation: isolate;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.3));
+      z-index: -1;
+    }
+
+    .hero-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      z-index: -2;
+      /* Force image to stay in memory and prevent reload */
+      will-change: transform;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      /* Prevent image from being unloaded */
+      content-visibility: auto;
+      contain: layout style paint;
+      /* Optimize for mobile */
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
     }
 
     .hero h1, .hero span {
@@ -128,17 +260,24 @@
       100% { background-position: 100% 50%; }
     }
 
-    /* For screens up to 720px */
     @media (max-width: 720px) {
-      .hero {
-        background-position: 70% center;
+      .hero-image {
+        object-position: 70% center;
       }
     }
 
-    /* For screens up to 480px */
     @media (max-width: 480px) {
-      .hero {
-        background-position: 70% center;
+      .hero-image {
+        object-position: 70% center;
+      }
+      
+      /* Optimize header for mobile */
+      header {
+        padding: 12px 15px;
+      }
+      
+      header.sticky {
+        padding: 8px 15px;
       }
     }
 
@@ -146,6 +285,16 @@
       font-size: 3rem;
       margin-bottom: 20px;
       animation: fadeInDown 1s ease;
+    }
+    
+    .hero-description {
+      max-width: 800px;
+      font-size: 1.2rem;
+      margin-bottom: 30px;
+      line-height: 1.6;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      animation: fadeInUp 1s ease;
+      padding: 0 20px;
     }
 
     .btn-hero {
@@ -165,11 +314,104 @@
       transform: scale(1.05);
     }
 
+    /* Updated About Section - More compact */
+    .about-section {
+      padding: 60px 20px;
+      background-color: #fff;
+    }
+
+    .about-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      align-items: center;
+    }
+
+    .about-image {
+      flex: 1;
+      min-width: 300px;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .about-image img {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.5s ease;
+    }
+
+    .about-image:hover img {
+      transform: scale(1.03);
+    }
+
+    .about-content {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .about-title {
+      font-size: 2rem;
+      color: #333;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .about-text {
+      color: #555;
+      line-height: 1.6;
+      font-size: 1rem;
+      margin-bottom: 20px;
+    }
+
+    .about-text p {
+      margin-bottom: 15px;
+    }
+
+    .about-highlight {
+      background: linear-gradient(120deg, rgba(255,77,109,0.1) 0%, rgba(255,77,109,0.3) 100%);
+      border-left: 4px solid var(--primary);
+      padding: 15px;
+      border-radius: 0 8px 8px 0;
+      margin: 20px 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .about-highlight p {
+      margin: 0;
+      color: #333;
+      font-style: italic;
+    }
+
+    .about-features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .feature-item {
+      flex: 1 1 200px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feature-icon {
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
     .hamburger {
       display: none;
       flex-direction: column;
       cursor: pointer;
       z-index: 1001;
+      padding: 5px;
     }
 
     .hamburger div {
@@ -200,12 +442,12 @@
       position: fixed;
       top: 0;
       right: 0;
-      width: 280px;
+      width: 300px;
       height: 100vh;
       padding: 80px 30px;
       box-shadow: var(--shadow);
       transform: translateX(100%);
-      transition: var(--transition);
+      transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
       z-index: 1000;
     }
 
@@ -231,10 +473,13 @@
       width: 100vw;
       background: rgba(0, 0, 0, 0.5);
       z-index: 998;
+      opacity: 0;
+      transition: opacity 0.4s ease-in-out;
     }
 
     .overlay.active {
       display: block;
+      opacity: 1;
     }
 
     .mobile-popup {
@@ -242,7 +487,7 @@
       position: fixed;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) scale(0.7);
       background: white;
       color: black;
       padding: 25px;
@@ -250,11 +495,14 @@
       box-shadow: var(--shadow);
       z-index: 1002;
       max-width: 90%;
+      opacity: 0;
+      transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55), opacity 0.4s ease-in-out;
     }
 
     .mobile-popup.active {
       display: block;
-      animation: fadeIn 0.3s ease;
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
     }
 
     .close-popup {
@@ -267,34 +515,43 @@
     }
 
     footer {
-      background: #111;
+      background: #1a1a1a;
       color: #ddd;
-      padding: 40px 20px;
+      padding: 50px 20px;
       text-align: center;
+    }
+
+    footer .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    footer h4 {
+      color: var(--primary);
+      margin-bottom: 15px;
+      font-size: 1.2rem;
     }
 
     footer .footer-columns {
       display: flex;
       flex-wrap: wrap;
-      justify-content: space-around;
+      justify-content: space-between;
       margin-bottom: 30px;
     }
 
     footer .footer-column {
       flex: 1 1 200px;
-      padding: 10px;
-    }
-
-    footer h4 {
-      color: var(--primary);
-      margin-bottom: 10px;
+      padding: 15px;
+      min-width: 180px;
     }
 
     footer a {
       color: #bbb;
       text-decoration: none;
       display: block;
-      margin: 5px 0;
+      margin: 8px 0;
+      font-size: 0.9rem;
+      transition: var(--transition);
     }
 
     footer a:hover {
@@ -302,17 +559,44 @@
     }
 
     footer .social-icons {
-      margin-top: 15px;
+      margin: 20px 0;
     }
 
     footer .social-icons a {
-      margin: 0 8px;
-      font-size: 1.2rem;
+      margin: 0 12px;
+      font-size: 1.5rem;
       color: #bbb;
+      transition: var(--transition);
     }
 
     footer .social-icons a:hover {
       color: var(--primary);
+    }
+
+    footer .newsletter {
+      margin: 20px 0;
+    }
+
+    footer .newsletter input {
+      padding: 10px;
+      border: none;
+      border-radius: 20px 0 0 20px;
+      width: 200px;
+      outline: none;
+    }
+
+    footer .newsletter button {
+      padding: 10px 20px;
+      border: none;
+      background: var(--primary);
+      color: white;
+      border-radius: 0 20px 20px 0;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    footer .newsletter button:hover {
+      background: #e0435f;
     }
 
     @keyframes fadeIn {
@@ -342,12 +626,68 @@
       .hero h1 {
         font-size: 2rem;
       }
+      
+      .hero-description {
+        font-size: 1rem;
+        padding: 0 10px;
+      }
 
       footer .footer-columns {
         flex-direction: column;
         text-align: left;
       }
+
+      #about.popup {
+        width: 300px;
+      }
+
+      .about-title {
+        font-size: 1.8rem;
+      }
+
+      .about-container {
+        flex-direction: column;
+      }
+      
+      .loader-text {
+        font-size: 2.5rem;
+      }
+
+      header.sticky {
+        backdrop-filter: none;
+        background: rgba(0,0,0,0.9);
+      }
+
+      .mobile-nav {
+        backdrop-filter: none;
+        background: rgba(0,0,0,0.9);
+      }
+
+      .hero h1, .hero span {
+        animation: none;
+      }
+
+      .animated-gradient {
+        animation: none;
+      }
+
+      .loader-text {
+        animation: none;
+      }
+      
+      /* Mobile-specific optimizations */
+      .hero {
+        /* Prevent any potential mobile scrolling issues */
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      .hero-image {
+        /* Force image to stay in memory on mobile */
+        -webkit-transform: translate3d(0,0,0);
+        transform: translate3d(0,0,0);
+      }
     }
+
     .animated-gradient {
       background: linear-gradient(90deg, #ff4e50, #f9d423, #00c9ff, #76b852, #ff4e50);
       background-size: 300% auto;
@@ -361,116 +701,335 @@
       0% { background-position: 0% 50%; }
       100% { background-position: 100% 50%; }
     }
+    /* How It Works Section */
+.how-it-works {
+  padding: 80px 20px;
+  background: #fafafa;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 50px;
+}
+
+.how-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 50px;
+  max-width: 1200px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+.how-content {
+  flex: 1;
+  min-width: 300px;
+}
+
+.how-content h3 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: var(--primary);
+}
+
+.how-content p {
+  font-size: 1.1rem;
+  color: #555;
+  line-height: 1.8;
+  margin-bottom: 25px;
+}
+
+.how-features {
+  list-style: none;
+}
+
+.how-features li {
+  margin-bottom: 15px;
+  font-size: 1rem;
+  color: #444;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.how-features i {
+  color: var(--primary);
+  font-size: 1.2rem;
+}
+
+/* Mobile Mockup */
+.how-mobile {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.mobile-frame {
+  width: 300px;
+  height: 600px;
+  border: 12px solid #000;
+  border-radius: 30px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  background: #000;
+  position: relative;
+}
+
+.mobile-frame::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 6px;
+  background: #333;
+  border-radius: 10px;
+}
+
+.mobile-frame video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .how-container {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .how-content {
+    order: 2;
+  }
+
+  .how-mobile {
+    order: 1;
+    margin-bottom: 30px;
+  }
+}
+
   </style>
 </head>
 <body>
-
-  <header id="header">
-    <div class="logo">
-        <span style="font-size: 2rem; background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; margin-right: 5px;">
-            നിനക്കായി-
-        </span>
-        <span style="font-size: 1.2rem; color: rgb(255, 255, 255); font-weight: 600;">
-            ForYou
-        </span>
-    </div>
-
-    <nav>
-      <div class="popup-container">
-        <a onmouseenter="showPopup(event, 'about')" onclick="showPopup(event, 'about')">About</a>
-        <div class="popup" id="about">
-          <p>
-            <strong>About Us</strong><br>
-            We are a dating platform helping people find real connections.<br>
-            ✅ 100% original and verified profiles<br>
-            ✅ Safe, secure, and privacy-focused<br>
-            ✅ Built for meaningful relationships<br>
-            ✅ Smooth user experience with modern tech
-          </p>
-        </div>
-      </div>
-
-      <div class="popup-container">
-        <a onmouseenter="showPopup(event, 'pricing')" onclick="showPopup(event, 'pricing')">Pricing</a>
-        <div class="popup" id="pricing">
-          <p>
-            <strong>Pricing</strong><br>
-            Basic: Free Forever 🎉<br>
-            Pro: <span class="animated-gradient">Coming Soon...</span>
-          </p>
-        </div>
-      </div>
-
-      <div class="popup-container">
-        <a onmouseenter="showPopup(event, 'contact')" onclick="showPopup(event, 'contact')">Contact</a>
-        <div class="popup" id="contact">
-          <p><strong>Contact</strong><br>Email: support@example.com</p>
-        </div>
-      </div>
-
-      <button class="btn-hero" onclick="location.href='{{ url_for('auth') }}'">Join Us</button>
-    </nav>
-
-    <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
-      <div></div><div></div><div></div>
-    </div>
-    <div class="mobile-nav" id="mobileMenu">
-      <a onclick="showMobilePopup('about')">About</a>
-      <a onclick="showMobilePopup('pricing')">Pricing</a>
-      <a onclick="showMobilePopup('contact')">Contact</a>
-      <a href="{{ url_for('auth') }}" class="join-btn" style="margin-top: 20px;">Join Us</a>
-    </div>
-  </header>
-
-  <div class="overlay" id="overlay" onclick="closeMobilePopup()"></div>
-
-  <div class="mobile-popup" id="mobilePopup">
-    <span class="close-popup" onclick="closeMobilePopup()">×</span>
-    <div id="popupContent"></div>
+  <!-- Loader -->
+  <div id="loader">
+    <div class="loader"></div>
+    <div class="loader-text">നിനക്കായി</div>
   </div>
 
-  <div class="hero">
-    <h1>Find Your Matches</h1>
-    <button class="btn-hero" onclick="location.href='{{ url_for('auth') }}'">Get Started</button>
-  </div>
+  <!-- Content (initially hidden) -->
+  <div class="content" id="content">
+    <header id="header">
+      <a href="/" class="logo" style="text-decoration: none;">
+          <span style="font-size: 2rem; background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; margin-right: 5px;">
+              നിനക്കായി-
+          </span>
+          <span style="font-size: 1.2rem; color: rgb(255, 255, 255); font-weight: 600;">
+              ForYou
+          </span>
+      </a>
+      <nav>
+        <a href="#about-section">About</a>
 
-  <footer>
-    <div class="footer-columns">
-      <div class="footer-column">
-        <h4>Company</h4>
-        <a href="{{ url_for('explore') }}">About Us | explore</a>
-        <a href="{{ url_for('chat') }}">Careers | chat</a>
-        <a href="{{ url_for('profile') }}">Privacy Policy | profile</a>
+        <div class="popup-container">
+          <a onmouseenter="showPopup(event, 'pricing')" onclick="showPopup(event, 'pricing')">Pricing</a>
+          <div class="popup" id="pricing">
+            <p>
+              <strong>Pricing</strong><br>
+              Basic: Free Forever 🎉<br>
+              Pro: <span class="animated-gradient">Coming Soon...</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="popup-container">
+          <a onmouseenter="showPopup(event, 'contact')" onclick="showPopup(event, 'contact')">Contact</a>
+          <div class="popup" id="contact">
+            <p><strong>Contact</strong><br>Email: support@ninakkai.com</p>
+          </div>
+        </div>
+
+        <button class="btn-hero" onclick="location.href='/auth'">Join Us</button>
+      </nav>
+
+      <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
+        <div></div><div></div><div></div>
       </div>
-      <div class="footer-column">
-        <h4>Support</h4>
-        <a href="{{ url_for('questions') }}">Contact | questions</a>
-        <a href="#">FAQs</a>
-        <a href="#">Help Center</a>
+      <div class="mobile-nav" id="mobileMenu">
+        <a href="#about-section" onclick="closeMobileMenu()">About</a>
+        <a onclick="showMobilePopup('pricing')">Pricing</a>
+        <a onclick="showMobilePopup('contact')">Contact</a>
+        <a href="/auth" class="join-btn" style="margin-top: 20px;">Join Us</a>
       </div>
-      <div class="footer-column">
-        <h4>Connect</h4>
-        <div class="social-icons">
-          <a href="#"><i class="fab fa-facebook-f"></i></a>
-          <a href="#"><i class="fab fa-twitter"></i></a>
-          <a href="#"><i class="fab fa-instagram"></i></a>
+    </header>
+
+    <div class="overlay" id="overlay" onclick="closeMobilePopup()"></div>
+
+    <div class="mobile-popup" id="mobilePopup">
+      <span class="close-popup" onclick="closeMobilePopup()">×</span>
+      <div id="popupContent"></div>
+    </div>
+
+    <div class="hero">
+      <!-- Preloaded hero image with caching optimizations -->
+      <img 
+        src="/static/images/photo-playful-man-gives-piggyback-ride-girlfriend.webp" 
+        alt="Hero background" 
+        class="hero-image" 
+        loading="eager"
+        id="heroImage"
+      >
+      <h1>Find Your Matches</h1>
+      <p class="hero-description">
+        Ninakkai is where authenticity meets compatibility. Our platform filters out the noise and focuses on what truly matters — emotional connection and genuine intentions. Through unique questions designed to uncover your real personality, we match you with people who truly resonate with you. Dating made real, simple, and meaningful.
+      </p>
+      <button class="btn-hero" onclick="location.href='/auth'">Get Started</button>
+    </div>
+
+    <!-- Updated About Section - More compact -->
+    <section class="about-section" id="about-section">
+      <h2 class="about-title">About Ninakkai</h2>
+      <div class="about-container">
+        <div class="about-content">
+          <div class="about-text">
+            <p>In today's dating world, finding a genuine connection has become harder than ever. Most apps focus on swipes, appearances, or casual interactions, leaving people frustrated and unsure if anyone is truly real. That's the problem we wanted to solve.</p>
+            
+            <div class="about-highlight">
+              <p>Ninakkai was created to bring authenticity back into dating. Our solution starts with understanding you — not just your profile, but your heart and character.</p>
+            </div>
+            
+            <p>We begin with 10 thoughtfully designed emotional questions that reveal your core personality, followed by 3 Keeper/Seeker questions that identify your relationship readiness.</p>
+            
+            <p>By combining all these insights, Ninakkai maps out who you truly are and connects you with people whose personalities, values, and emotional styles align with yours. This ensures every match isn't just a surface-level connection, but a meaningful, compatible partnership — built on sincerity, understanding, and real emotional compatibility.</p>
+            
+            <p>With Ninakkai, dating becomes more than just meeting someone new; it becomes a journey to find the person who genuinely fits your life.</p>
+          </div>
+          
+          <div class="about-features">
+            <div class="feature-item">
+              <span class="feature-icon"><i class="fas fa-heart"></i></span>
+              <span>Emotional Compatibility</span>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon"><i class="fas fa-brain"></i></span>
+              <span>Personality Insights</span>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon"><i class="fas fa-shield-alt"></i></span>
+              <span>Authentic Connections</span>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon"><i class="fas fa-handshake"></i></span>
+              <span>Relationship Readiness</span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-    <p>&copy; 2025 MyBrand. All Rights Reserved.</p>
-  </footer>
+    </section>
+
+    <footer>
+      <div class="footer-content">
+        <div class="footer-columns">
+          <!-- Company Info -->
+          <div class="footer-column">
+            <h4>Company</h4>
+            <a href="/terms">Terms & Conditions</a>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/faq">FAQs</a>
+          </div>
+
+          <!-- Support -->
+          <div class="footer-column">
+            <h4>Support</h4>
+            <a href="mailto:support@ninakkai.com?subject=Help%20Center%20Request">Help Center</a>
+            <a href="mailto:support@ninakkai.com?subject=Contact%20Us">Contact Us</a>
+          </div>
+
+          <!-- Social Links -->
+          <div class="footer-column">
+            <h4>Stay Connected</h4>
+            <div class="social-icons">
+              <a href="https:://instagram.com/ninakkai.dating"><i class="fab fa-instagram"></i></a>
+              <a href="https://www.facebook.com/share/1GdaRizHYi/"><i class="fab fa-facebook-f"></i></a>
+              <a href="#"><i class="fab fa-twitter"></i></a>
+            </div>
+          </div>
+
+          <!-- Logo Section -->
+          <div class="footer-column">
+            <h4>Powered By</h4>
+            <a href="/">
+              <img src="/static/images/ninakkayi-logo.webp" alt="Ninakkayi Logo" style="width:140px; margin-top:10px;" loading="eager">
+            </a>
+          </div>
+        </div>
+      </div>
+      <p>&copy; 2025 നിനക്കായി -ForYou. All Rights Reserved.</p>
+    </footer>
+  </div>
 
   <script>
-    window.addEventListener('scroll', function () {
-      document.getElementById('header').classList.toggle('sticky', window.scrollY > 10);
+    // Loader functionality - Reduced time from 1500ms to 1000ms
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        document.getElementById('loader').style.opacity = '0';
+        document.getElementById('content').classList.add('loaded');
+        
+        setTimeout(function() {
+          document.getElementById('loader').style.display = 'none';
+        }, 500);
+      }, 1000); // Show loader for 1 second (reduced from 1.5 seconds)
     });
+
+    // Optimized scroll handler for mobile
+    let ticking = false;
+    let lastScrollY = 0;
+    
+    function updateHeader() {
+      const header = document.getElementById('header');
+      const scrollY = window.scrollY;
+      
+      // Add a small threshold to prevent flickering on mobile
+      if (Math.abs(scrollY - lastScrollY) > 5) {
+        header.classList.toggle('sticky', scrollY > 10);
+        lastScrollY = scrollY;
+      }
+      
+      ticking = false;
+    }
+    
+    function onScroll() {
+      if (!ticking) {
+        requestAnimationFrame(updateHeader);
+        ticking = true;
+      }
+    }
+    
+    // Use passive scroll listener for better performance
+    window.addEventListener('scroll', onScroll, { passive: true });
 
     function showPopup(event, id) {
       closeAllPopups();
       const popup = document.getElementById(id);
       popup.classList.add('active');
+      
+      // Get the parent popup-container
+      const container = popup.parentElement;
+      
+      // Add mouseleave event to close popup when cursor leaves the container
+      container.addEventListener('mouseleave', function handler() {
+        closeAllPopups();
+        container.removeEventListener('mouseleave', handler);
+      });
+
+      // Add click event to close popup when clicking outside
       document.addEventListener('click', function handler(e) {
-        if (!popup.contains(e.target) && e.target !== event.currentTarget) {
+        if (!popup.contains(e.target) && !container.contains(e.target)) {
           closeAllPopups();
           document.removeEventListener('click', handler);
         }
@@ -487,11 +1046,16 @@
       document.getElementById('overlay').classList.toggle('active');
     }
 
+    function closeMobileMenu() {
+      document.getElementById('mobileMenu').classList.remove('active');
+      document.getElementById('hamburger').classList.remove('active');
+      document.getElementById('overlay').classList.remove('active');
+    }
+
     function showMobilePopup(section) {
       const data = {
-        about: "<strong>About Us</strong><br><br>We help businesses grow with creative tech solutions.",
-        pricing: "<strong>Pricing</strong><br><br>Basic: $9.99<br>Pro: $19.99",
-        contact: "<strong>Contact</strong><br><br>Email: support@example.com<br>Phone: +123456789"
+        pricing: "<strong>Pricing</strong><br><br>Basic: Free Forever 🎉<br>Pro: <span class='animated-gradient'>Coming Soon...</span>",
+        contact: "<strong>Contact</strong><br><br>Email: support@ninakkai.com<br>"
       };
       document.getElementById('popupContent').innerHTML = data[section];
       document.getElementById('mobilePopup').classList.add('active');
@@ -501,7 +1065,88 @@
     function closeMobilePopup() {
       document.getElementById('mobilePopup').classList.remove('active');
       document.getElementById('overlay').classList.remove('active');
+      closeMobileMenu();
     }
+    
+    // Image caching optimization for mobile
+    document.addEventListener('DOMContentLoaded', function() {
+      // Preload the hero image
+      const heroImage = document.getElementById('heroImage');
+      if (heroImage) {
+        // Force image to stay in cache by preventing reload
+        heroImage.setAttribute('fetchpriority', 'high');
+        
+        // If image is already loaded, keep it in memory
+        if (heroImage.complete) {
+          console.log('Hero image already loaded');
+          // Create a persistent reference to prevent garbage collection
+          window.heroImageRef = heroImage.cloneNode(true);
+        } else {
+          heroImage.addEventListener('load', function() {
+            console.log('Hero image loaded successfully');
+            // Create a persistent reference to prevent garbage collection
+            window.heroImageRef = heroImage.cloneNode(true);
+          });
+          
+          heroImage.addEventListener('error', function() {
+            console.log('Error loading hero image');
+          });
+        }
+      }
+      
+      // Optimized Intersection Observer for mobile
+      const observerOptions = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1
+      };
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && heroImage) {
+            // When hero section is visible, ensure image is in memory
+            if (!heroImage.complete) {
+              // If image isn't loaded, force load it
+              const src = heroImage.src;
+              heroImage.src = '';
+              heroImage.src = src;
+            }
+          }
+        });
+      }, observerOptions);
+      
+      const heroSection = document.querySelector('.hero');
+      if (heroSection) {
+        observer.observe(heroSection);
+      }
+      
+      // Mobile-specific optimizations
+      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        // Disable animations that might cause performance issues
+        document.body.classList.add('mobile-device');
+        
+        // Force GPU rendering for smoother experience
+        const style = document.createElement('style');
+        style.textContent = `
+          .hero-image {
+            -webkit-transform: translate3d(0,0,0);
+            transform: translate3d(0,0,0);
+          }
+          header {
+            -webkit-transform: translate3d(0,0,0);
+            transform: translate3d(0,0,0);
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    });
+    
+    // Prevent default touch actions that might interfere with scrolling
+    document.addEventListener('touchstart', function(e) {
+      if (e.target.tagName === 'IMG') {
+        e.preventDefault();
+      } 
+    }, { passive: false });
   </script>
 </body>
-</html>
+</html> 

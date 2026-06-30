@@ -552,6 +552,41 @@
         .hidden {
             display: none !important;
         }
+
+        .checkbox-group {
+            text-align: left;
+            margin-bottom: 1rem;
+        }
+
+        .checkbox-group label {
+            color: white;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-group a {
+            color: #8f94fb;
+            text-decoration: none;
+        }
+
+        .checkbox-group a:hover {
+            text-decoration: underline;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .toggle-password:hover {
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -560,7 +595,7 @@
     </div>
 
     <div class="container">
-        <a href="{{ url_for('index') }}" class="back-button">
+        <a href="{{ url_for('home') }}" class="back-button">
             <i class="fas fa-arrow-left"></i> Back to Home
         </a>
 
@@ -651,6 +686,7 @@
                     </div>
                     <div class="input-group">
                         <input type="password" name="password" placeholder="Password" required maxlength="50">
+                        <i class="fas fa-eye toggle-password"></i>
                     </div>
                     <button type="submit" class="submit-btn" id="loginSubmitBtn">Login</button>
                     <a href="#" class="forgot-link" id="forgotLink">Forgot password?</a>
@@ -720,12 +756,26 @@
                         <div class="signup-step" data-step="3">
                             <div class="input-group">
                                 <input type="password" name="password" placeholder="Password" required id="password" minlength="8" maxlength="50">
+                                <i class="fas fa-eye toggle-password"></i>
                                 <div class="password-strength">
                                     <div class="password-strength-bar" id="passwordStrengthBar"></div>
                                 </div>
                             </div>
                             <div class="input-group">
                                 <input type="password" name="confirm_password" placeholder="Confirm Password" required id="confirmPassword" maxlength="50">
+                                <i class="fas fa-eye toggle-password"></i>
+                            </div>
+                            <div class="checkbox-group">
+                                <label>
+                                    <input type="checkbox" name="agree_terms" required>
+                                    I agree to the <a href="{{ url_for('terms') }}" target="_blank">Terms and Conditions</a>
+                                </label>
+                            </div>
+                            <div class="checkbox-group">
+                                <label>
+                                    <input type="checkbox" name="agree_privacy" required>
+                                    I agree to the <a href="{{ url_for('privacy') }}" target="_blank">Privacy Policy</a>
+                                </label>
                             </div>
                             <button type="submit" class="submit-btn" id="signupSubmitBtn">Sign Up</button>
                             <div class="form-nav">
@@ -789,6 +839,12 @@
         const forgotSubmitBtn = document.getElementById('forgotSubmitBtn');
         const forgotEmailInput = document.getElementById('forgotEmail');
 
+        // Auto-remove existing error messages after 2 seconds
+        const existingErrors = document.querySelectorAll('.error-message');
+        existingErrors.forEach(error => {
+            setTimeout(() => error.remove(), 2000);
+        });
+
         // Show/hide loading spinner
         function showLoading() {
             loading.style.display = 'flex';
@@ -806,7 +862,7 @@
             const existingError = document.querySelector('.error-message');
             if (existingError) existingError.remove();
             document.querySelector('.container').insertBefore(errorDiv, formContainer || forgotSection);
-            setTimeout(() => errorDiv.remove(), 5000);
+            setTimeout(() => errorDiv.remove(), 2000);
         }
 
         // Toggle between login and signup forms
@@ -1037,6 +1093,18 @@
                 loginBtn.click();
             });
         }
+
+        // Toggle password visibility
+        const togglePasswordButtons = document.querySelectorAll('.toggle-password');
+        togglePasswordButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const passwordInput = button.previousElementSibling;
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                button.classList.toggle('fa-eye');
+                button.classList.toggle('fa-eye-slash');
+            });
+        });
 
         // Initialize form container
         formContainer.classList.add('active');

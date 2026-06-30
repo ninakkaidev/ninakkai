@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>നിനക്കായി-ForYou | Explore</title>
+    <title>Ninakkayi-ForYou | Matches</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -11,6 +11,10 @@
             padding-bottom: 70px;
             background: white;
             position: relative;
+        }
+
+        html.dark body {
+            background: #000000;
         }
 
         .container {
@@ -47,6 +51,12 @@
             font-weight: bold;
             font-size: 14px;
             border: 3px solid #ec4899;
+            z-index: 10;
+        }
+
+        html.dark .match-percentage {
+            background-color: rgba(31, 41, 55, 0.9);
+            color: #f3f4f6;
         }
 
         ::-webkit-scrollbar {
@@ -58,13 +68,25 @@
             border-radius: 10px;
         }
 
+        html.dark ::-webkit-scrollbar-track {
+            background: #000000;
+        }
+
         ::-webkit-scrollbar-thumb {
             background: #888;
             border-radius: 10px;
         }
 
+        html.dark ::-webkit-scrollbar-thumb {
+            background: #6b7280;
+        }
+
         ::-webkit-scrollbar-thumb:hover {
             background: #555;
+        }
+
+        html.dark ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
         }
 
         #mainHeader {
@@ -83,35 +105,9 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        @media (max-width: 640px) {
-            .discovery-card img {
-                height: 200px;
-            }
-            
-            .nearby-card {
-                flex-direction: column;
-            }
-            
-            .nearby-card > div {
-                width: 100% !important;
-            }
-            
-            .nearby-card img {
-                height: 150px;
-            }
-            
-            #searchBox {
-                position: absolute;
-                top: 100%;
-                left: 0;
-                right: 0;
-                padding: 0.5rem 1rem;
-                background-color: rgba(255, 255, 255, 0.95);
-            }
-            
-            #searchBox input {
-                width: 100%;
-            }
+        html.dark .scrolled-header {
+            background-color: rgba(17, 24, 39, 0.95);
+            box-shadow: 0 1px 3px rgba(255,255,255,0.1);
         }
 
         .search-box-transition {
@@ -142,37 +138,529 @@
             margin-bottom: 1rem;
         }
 
+        html.dark .loading-spinner {
+            border: 4px solid #374151;
+            border-top: 4px solid #ec4899;
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
 
-        /* Popup Animation */
+        /* Enhanced Popup Animation with extraordinary effects */
         .popup {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #fff1eb, #ace0f9); /* Attractive gradient */
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2), 0 0 20px rgba(236, 72, 153, 0.5); /* Glow effect */
+            animation: enhancedPopupAnim 1.2s ease-out forwards;
+            z-index: 1002;
+            max-width: 400px;
+            width: 90%;
+            overflow: hidden;
+            border: 2px solid #ec4899; /* Pink border */
+        }
+
+        html.dark .popup {
+            background: linear-gradient(135deg, #1f2937, #4b5563); /* Dark gradient */
+            color: #f3f4f6;
+            box-shadow: 0 10px 30px rgba(255,255,255,0.1), 0 0 20px rgba(236, 72, 153, 0.3);
+            border: 2px solid #ec4899;
+        }
+
+        @keyframes enhancedPopupAnim {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5) rotate(-10deg);
+                opacity: 0;
+                filter: blur(5px);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2) rotate(5deg);
+                opacity: 1;
+                filter: blur(0);
+            }
+            75% {
+                transform: translate(-50%, -50%) scale(0.9) rotate(-3deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        .popup::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.2), transparent);
+            animation: glowPulse 2s infinite ease-in-out;
+            z-index: -1;
+        }
+
+        @keyframes glowPulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        .popup h3 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            text-align: center;
+            color: #ec4899; /* Pink color */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .popup textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ec4899;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            resize: none;
+            height: 100px;
+            background: rgba(255,255,255,0.8);
+        }
+
+        html.dark .popup textarea {
+            background: rgba(31,41,55,0.8);
+            border-color: #ec4899;
+            color: #f3f4f6;
+        }
+
+        .popup .flex button {
+            padding: 0.5rem 1rem;
+            border-radius: 9999px; /* Rounded buttons */
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .popup .flex button:hover {
+            transform: scale(1.05);
+        }
+
+        .popup .flex button:first-child {
+            background: linear-gradient(135deg, #ec4899, #a855f7); /* Gradient button */
+            color: white;
+        }
+
+        .popup .flex button:last-child {
+            background: linear-gradient(135deg, #d1d5db, #9ca3af);
+            color: #1f2937;
+        }
+
+        html.dark .popup .flex button:last-child {
+            background: linear-gradient(135deg, #4b5563, #374151);
+            color: #f3f4f6;
+        }
+
+        /* Image styling for consistent appearance */
+        .profile-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            object-position: center center;
+        }
+
+        .discovery-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            object-position: center center;
+        }
+
+        /* Profile viewer image styling */
+        .profile-viewer-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            object-position: center center;
+        }
+
+        /* Discovery section specific styling */
+        .discovery-profile {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        html.dark .discovery-profile {
+            box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
+        }
+
+        .discovery-profile::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60%;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        html.dark .discovery-profile::before {
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+        }
+
+        .discovery-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px;
+            z-index: 2;
+        }
+
+        .discovery-rating {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+            z-index: 10;
+        }
+
+        html.dark .discovery-rating {
+            background-color: rgba(31, 41, 55, 0.9);
+            color: #f3f4f6;
+        }
+
+        /* Liked state styling */
+        .liked-button {
+            background-color: #10b981 !important;
+            color: white !important;
+        }
+
+        /* Profile viewer styling */
+        .profile-viewer {
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 100;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            animation: profileOpen 0.4s ease-out forwards;
+        }
+
+        html.dark .profile-viewer {
+            background: #000000;
+        }
+
+        @keyframes profileOpen {
+            0% {
+                opacity: 0;
+                transform: translateY(20%) scale(0.95);
+            }
+            50% {
+                opacity: 1;
+                transform: translateY(-5%) scale(1.02);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Bottom navigation styling */
+        .bottom-nav {
+            background-color: white;
+            box-shadow: 0 -1px 3px rgba(0,0,0,0.1);
+        }
+
+        html.dark .bottom-nav {
+            background-color: #000000;
+            box-shadow: 0 -1px 3px rgba(255,255,255,0.1);
+        }
+
+        /* Skeleton loading animation */
+        .skeleton {
+            background: linear-gradient(90deg, #f1f1f1 25%, #e0e0e0 50%, #f1f1f1 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        html.dark .skeleton {
+            background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+            background-size: 200% 100%;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Report modal styling */
+        .report-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1003;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .report-modal-content {
             background: white;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.2);
-            animation: popupAnim 1s ease;
-            z-index: 1002;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
-        @keyframes popupAnim {
-            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(1); }
+        html.dark .report-modal-content {
+            background: #000000;
+            color: #f3f4f6;
+        }
+
+        .report-option {
+            display: block;
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .report-option:hover {
+            background-color: #f0f0f0;
+        }
+
+        html.dark .report-option {
+            border-color: #374151;
+        }
+
+        html.dark .report-option:hover {
+            background-color: #374151;
+        }
+
+        .report-option.selected {
+            background-color: #ec4899;
+            color: white;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .profile-image {
+                height: 400px;
+            }
+            
+            .discovery-image {
+                height: 350px;
+                width: 105%;
+                margin-left: -2.5%;
+            }
+            
+            .profile-viewer-image {
+                height: 300px;
+            }
+            
+            #searchBox {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                padding: 0.5rem 1rem;
+                background-color: rgba(255, 255, 255, 0.95);
+            }
+            
+            html.dark #searchBox {
+                background-color: rgba(17, 24, 39, 0.95);
+            }
+
+            #searchBox input {
+                width: 100%;
+            }
+        }
+
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .profile-image {
+                height: 280px;
+            }
+            
+            .discovery-image {
+                height: 350px;
+            }
+            
+            .profile-viewer-image {
+                height: 350px;
+            }
+        }
+
+        @media (min-width: 1025px) {
+            .profile-image {
+                height: 500px;
+            }
+            
+            .discovery-image {
+                height: 400px;
+            }
+            
+            .profile-viewer-image {
+                height: 400px;
+            }
+        }
+
+        /* Dark mode styles from profile.html for consistency */
+        .dark body {
+            background-color: #000000;
+            color: #f3f4f6;
+        }
+        
+        .dark .bg-white {
+            background-color: #000000 !important;
+            color: #f3f4f6;
+        }
+        
+        .dark .text-gray-800 {
+            color: #f3f4f6 !important;
+        }
+        
+        .dark .bg-gray-100 {
+            background-color: #000000 !important;
+        }
+        
+        .dark .bg-gray-50 {
+            background-color: #000000 !important;
+        }
+        
+        .dark .text-gray-500 {
+            color: #9ca3af !important;
+        }
+        
+        .dark .text-gray-600 {
+            color: #9ca3af !important;
+        }
+        
+        .dark .text-gray-700 {
+            color: #d1d5db !important;
+        }
+        
+        .dark .border-gray-200 {
+            border-color: #374151 !important;
+        }
+        
+        .dark .notification-item.unread {
+            background-color: #374151 !important;
+        }
+        
+        .dark .chat-message.received {
+            background-color: #374151 !important;
+        }
+        
+        .dark #settingsModal .settings-option:hover {
+            background-color: #374151 !important;
+        }
+        
+        .dark .language-options {
+            background-color: #1f2937;
+            border-color: #374151;
+        }
+        
+        .dark .language-option:hover {
+            background-color: #374151;
+        }
+        
+        .dark .confirmation-dialog div {
+            background-color: #1f2937;
+            color: #f3f4f6;
+        }
+
+        .dark .text-gray-900 {
+            color: #f3f4f6 !important;
+        }
+
+        .dark .bg-gradient-to-r.from-indigo-100.via-white.to-pink-100 {
+            background-image: linear-gradient(to right, var(--tw-gradient-stops)) !important;
+            --tw-gradient-from: #312e81 var(--tw-gradient-from-position);
+            --tw-gradient-to: #831843 var(--tw-gradient-to-position);
+            --tw-gradient-stops: var(--tw-gradient-from), #111827 var(--tw-gradient-via-position), var(--tw-gradient-to);
+        }
+
+        /* Animation for burst effects */
+        @keyframes burstAnim {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(1.5);
+            }
+        }
+
+        /* Notification modal styling */
+        #notificationModal .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        html.dark #notificationModal .modal-content {
+            background: #1f2937;
+            color: #f3f4f6;
+        }
+
+        #notificationList .notification-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #notificationList .notification-item.unread {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+
+        html.dark #notificationList .notification-item {
+            border-color: #374151;
+        }
+
+        html.dark #notificationList .notification-item.unread {
+            background-color: #374151;
+        }
+
+        #notificationList .notification-item:hover {
+            background-color: #e5e5e5;
+        }
+
+        html.dark #notificationList .notification-item:hover {
+            background-color: #4b5563;
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100" data-current-type="{{ profile.dominant_type }}">
     <!-- Loading State -->
     <div class="loading" id="loading">
         <div class="loading-spinner"></div>
-        <p class="text-gray-800 text-center">Finding your matches...</p>
+        <p class="text-gray-100 text-center">Finding your matches...</p>
     </div>
 
     <!-- Header -->
@@ -181,18 +669,19 @@
             <div class="flex items-center space-x-2">
                 <i class="fas fa-heart text-pink-500 text-2xl"></i>
                 <h1 class="text-xl font-bold bg-gradient-to-r from-pink-400 to-blue-600 bg-clip-text text-transparent">
-                    Ninakkayi-ForYou
+                    നിനക്കായി
                 </h1>
             </div>
             <div class="flex items-center space-x-4">
                 <button id="searchToggle" class="text-transparent bg-gradient-to-r from-blue-500 to-pink-500 bg-clip-text hover:from-pink-500 hover:to-blue-500">
                     <i class="fas fa-search text-xl"></i>
                 </button>
+                <button id="notificationToggle" class="relative text-transparent bg-gradient-to-r from-blue-500 to-pink-500 bg-clip-text hover:from-pink-500 hover:to-blue-500">
+                    <i class="fas fa-bell text-xl"></i>
+                    <span id="notificationCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem]" style="display: none;">0</span>
+                </button>
                 <div id="searchBox" class="hidden md:block search-box-transition">
-                    <input type="text" id="searchInput" placeholder="Search by name or interests..." class="border border-gray-300 rounded-full px-4 py-1 focus:outline-none focus:ring-2 focus:ring-pink-500" />
-                </div>
-                <div class="w-8 h-8 rounded-full bg-pink-500 overflow-hidden">
-                    <img src="{{ profile.image }}" alt="Profile" class="w-full h-full object-cover">
+                    <input type="text" id="searchInput" placeholder="Search by name or interests..." class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-full px-4 py-1 focus:outline-none focus:ring-2 focus:ring-pink-500" />
                 </div>
             </div>
         </div>
@@ -202,137 +691,80 @@
     <main class="container mx-auto px-4 py-6 mt-16">
         <!-- Error Message -->
         {% if error %}
-        <div id="error-message" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <div id="error-message" class="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded relative mb-4" role="alert">
             <span id="error-text">{{ error }}</span>
         </div>
         {% else %}
-        <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <div id="error-message" class="hidden bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded relative mb-4" role="alert">
             <span id="error-text"></span>
         </div>
         {% endif %}
 
         <!-- Most Matched Suggestions Section -->
-        <div id="matches-section" class="mb-6">
+        <div id="matches-section" class="mb-8">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800">Most Matched Suggestions</h2>
-                <button id="see-all-matches" class="text-pink-500 text-sm font-medium">See All</button>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Most Matched Suggestions</h2>
+                <button id="refresh-matches" class="text-pink-500 text-sm font-medium mr-2">Refresh</button>
             </div>
-            <div id="matches-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {% if matches %}
-                    {% for match in matches %}
-                    <div class="bg-white rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="{{ match.id }}">
-                        <div class="match-percentage">{{ match.match_percentage }}%</div>
-                        <img src="{{ match.image }}" alt="Profile" class="w-full h-48 md:h-64 object-cover">
-                        <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-                            <div class="flex justify-between items-end">
-                                <div>
-                                    <h3 class="text-white font-bold">{{ match.full_name }}, {{ match.age|default('N/A') }}</h3>
-                                    <p class="text-gray-300 text-sm">{{ match.occupation }} • {{ match.distance }}</p>
-                                </div>
-                                <button class="bg-pink-500 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:bg-pink-600 transition like-button" data-user-id="{{ match.id }}">
-                                    <i class="fas fa-heart"></i>
-                                </button>
-                            </div>
-                        </div>
+            <div id="matches-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                <!-- Skeleton loaders for initial loading -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative">
+                    <div class="skeleton w-full h-64"></div>
+                    <div class="p-4">
+                        <div class="skeleton h-6 w-3/4 mb-2"></div>
+                        <div class="skeleton h-4 w-1/2"></div>
                     </div>
-                    {% endfor %}
-                {% else %}
-                    <p class="text-gray-600">No matches found. Try completing your quiz!</p>
-                {% endif %}
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative">
+                    <div class="skeleton w-full h-64"></div>
+                    <div class="p-4">
+                        <div class="skeleton h-6 w-3/4 mb-2"></div>
+                        <div class="skeleton h-4 w-1/2"></div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative">
+                    <div class="skeleton w-full h-64"></div>
+                    <div class="p-4">
+                        <div class="skeleton h-6 w-3/4 mb-2"></div>
+                        <div class="skeleton h-4 w-1/2"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Discovery Section -->
-        <div id="discovery-section" class="mb-6">
+        <!-- Discovery Section with new styling (Hidden for now) -->
+        <div id="discovery-section" class="mb-8" style="display: none;">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800">Discover People</h2>
-                <button id="see-all-discovery" class="text-pink-500 text-sm font-medium">See All</button>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Discover People</h2>
             </div>
-            <div id="discovery-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {% if discovery %}
-                    {% for match in discovery %}
-                    <div class="bg-white rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="{{ match.id }}">
-                        <img src="{{ match.image }}" alt="Profile" class="w-full h-48 md:h-64 object-cover">
-                        <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-                            <div class="flex justify-between items-end">
-                                <div>
-                                    <h3 class="text-white font-bold">{{ match.full_name }}, {{ match.age|default('N/A') }}</h3>
-                                    <p class="text-gray-300 text-sm">{{ match.distance }}</p>
-                                </div>
-                                <button class="bg-pink-500 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:bg-pink-600 transition like-button" data-user-id="{{ match.id }}">
-                                    <i class="fas fa-heart"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="absolute top-3 right-3 bg-white bg-opacity-80 rounded-full px-2 py-1 flex items-center">
-                            <i class="fas fa-star text-yellow-500 text-xs mr-1"></i>
-                            <span class="text-xs font-medium">{{ match.rating }}</span>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <p class="text-gray-600">No people to discover. Try completing your quiz!</p>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Nearby Section -->
-        <div id="nearby-section" class="mb-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800">Near You</h2>
-                <button id="see-all-nearby" class="text-pink-500 text-sm font-medium">See All</button>
-            </div>
-            <div id="nearby-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {% if nearby %}
-                    {% for match in nearby %}
-                    <div class="bg-white rounded-xl shadow-sm overflow-hidden flex nearby-card" data-user-id="{{ match.id }}">
-                        <div class="w-1/3">
-                            <img src="{{ match.image }}" alt="Profile" class="w-full h-full object-cover">
-                        </div>
-                        <div class="w-2/3 p-4 flex flex-col justify-between">
-                            <div>
-                                <h3 class="font-bold text-lg">{{ match.full_name }}, {{ match.age|default('N/A') }}</h3>
-                                <p class="text-gray-600 text-sm mb-2">{{ match.occupation }} • {{ match.distance }}</p>
-                                <div class="flex items-center mb-2">
-                                    <i class="fas fa-star text-yellow-500 text-xs mr-1"></i>
-                                    <span class="text-xs font-medium">{{ match.rating }}</span>
-                                </div>
-                                <p class="text-gray-700 text-sm line-clamp-2">{{ match.bio }}</p>
-                            </div>
-                            <div class="flex justify-between mt-3">
-                                <button class="text-gray-500 hover:text-pink-500 pass-button" data-user-id="{{ match.id }}">
-                                    <i class="fas fa-times-circle text-xl"></i>
-                                </button>
-                                <button class="text-blue-500 hover:text-blue-600 chat-button" data-user-id="{{ match.id }}">
-                                    <i class="fas fa-comment text-xl"></i>
-                                </button>
-                                <button class="text-pink-500 hover:text-pink-600 like-button" data-user-id="{{ match.id }}">
-                                    <i class="fas fa-heart text-xl"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <p class="text-gray-600">No nearby matches found. Try completing your quiz!</p>
-                {% endif %}
+            <div id="discovery-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <!-- Skeleton loaders for initial loading -->
+                <div class="discovery-profile">
+                    <div class="skeleton w-full h-72 rounded-xl"></div>
+                </div>
+                <div class="discovery-profile">
+                    <div class="skeleton w-full h-72 rounded-xl"></div>
+                </div>
+                <div class="discovery-profile">
+                    <div class="skeleton w-full h-72 rounded-xl"></div>
+                </div>
             </div>
         </div>
     </main>
 
     <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg z-10">
+    <nav class="bottom-nav fixed bottom-0 left-0 right-0 z-10">
         <div class="container mx-auto px-4">
             <div class="flex justify-around py-3">
-                <a href="{{ url_for('chat') }}" class="text-gray-500 hover:text-pink-500 flex flex-col items-center">
+                <a href="{{ url_for('chat') }}" class="text-gray-500 dark:text-gray-400 hover:text-pink-500 dark:hover:text-pink-400 flex flex-col items-center">
                     <i class="fas fa-comments text-xl"></i>
                     <span class="text-xs mt-1">Chat</span>
                 </a>
-                <a href="{{ url_for('explore') }}" class="text-pink-500 flex flex-col items-center">
-                    <i class="fas fa-compass text-xl"></i>
-                    <span class="text-xs mt-1">Explore</span>
+                <a href="{{ url_for('explore') }}" class="text-pink-500 dark:text-pink-400 flex flex-col items-center">
+                    <i class="fas fa-heart text-xl"></i>
+                    <span class="text-xs mt-1">Matches</span>
                 </a>
-                <a href="{{ url_for('profile') }}" class="text-gray-500 hover:text-pink-500 flex flex-col items-center">
+                <a href="{{ url_for('profile') }}" class="text-gray-500 dark:text-gray-400 hover:text-pink-500 dark:hover:text-pink-400 flex flex-col items-center">
                     <i class="fas fa-user text-xl"></i>
                     <span class="text-xs mt-1">Profile</span>
                 </a>
@@ -340,14 +772,127 @@
         </div>
     </nav>
 
+    <!-- Notification Modal -->
+    <div id="notificationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="modal-content bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Notifications</h2>
+                <button id="closeNotificationModal" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="notificationList" class="space-y-4 max-h-96 overflow-y-auto"></div>
+            <div class="flex justify-end mt-4">
+                <button id="clearNotifications" class="text-pink-500 hover:text-pink-600">Clear All</button>
+            </div>
+        </div>
+    </div>
+
+    {% if show_feedback_prompt %}
+    <div id="feedbackModal" class="popup text-gray-800 dark:text-gray-100">
+        <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
+            <i class="fas fa-heart text-pink-500 mr-2 animate-pulse"></i> Ninakkai grows with your feelings. Share one honest thought — big or small — and we’ll use it to make your experience even more real
+        </h3>
+        <textarea id="feedbackText" class="w-full p-2 border rounded mb-4 dark:bg-gray-800 dark:border-gray-600 focus:ring-2 focus:ring-pink-500 transition-all" placeholder="Suggestions and feedback..."></textarea>
+        <div class="flex justify-end space-x-2">
+            <button id="submitFeedback" class="px-4 py-2 bg-pink-500 text-white rounded flex items-center">
+                <i class="fas fa-paper-plane mr-2"></i> Submit
+            </button>
+            <button id="dontShowFeedback" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded flex items-center">
+                <i class="fas fa-times mr-2"></i> Don't show again
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if show_retake_prompt %}
+    <div id="retakeModal" class="popup text-gray-800 dark:text-gray-100">
+        <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
+            <i class="fas fa-sync-alt text-blue-500 mr-2 animate-spin"></i> Your answers shape the matches. Want to revisit and update?
+        </h3>
+        <div class="flex justify-end space-x-2">
+            <button id="retakeYes" class="px-4 py-2 bg-pink-500 text-white rounded flex items-center">
+                <i class="fas fa-check mr-2"></i> Yes
+            </button>
+            <button id="retakeNo" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded flex items-center">
+                <i class="fas fa-times mr-2"></i> No
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Like Prompt Modal for Male Users (First Like Attempt) -->
+    <div id="likePromptModal" class="popup text-gray-800 dark:text-gray-100" style="display: none;">
+        <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
+            <i class="fas fa-heart text-pink-500 mr-2 animate-pulse"></i> Every Like Matters
+        </h3>
+        <p class="mb-4 text-center">On Ninakkai, every like carries meaning. That’s why you receive 3 chances each day to send a genuine like — not endless swipes, but mindful choices. Take your time, notice the details, and let your likes truly connect.</p>
+        <div class="flex justify-center">
+            <button id="continueLike" class="px-4 py-2 bg-pink-500 text-white rounded flex items-center">
+                <i class="fas fa-check mr-2"></i> Got it
+            </button>
+        </div>
+    </div>
+
+    <!-- Retake Refresh Prompt Modal -->
+    <div id="retakeRefreshModal" class="popup text-gray-800 dark:text-gray-100" style="display: none;">
+        <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
+            <i class="fas fa-sync-alt text-blue-500 mr-2 animate-spin"></i> Quiz Updated!
+        </h3>
+        <p class="mb-4 text-center">You just resubmitted your quiz. Refresh for updated matches based on your new answers.</p>
+        <div class="flex justify-center space-x-2">
+            <button id="refreshMatchesNow" class="px-4 py-2 bg-blue-500 text-white rounded flex items-center">
+                <i class="fas fa-refresh mr-2"></i> Refresh Matches
+            </button>
+            <button id="refreshLater" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded flex items-center">
+                <i class="fas fa-times mr-2"></i> Later
+            </button>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const loading = document.getElementById('loading');
             const matchesSection = document.getElementById('matches-section');
             const discoverySection = document.getElementById('discovery-section');
-            const nearbySection = document.getElementById('nearby-section');
             const errorMessage = document.getElementById('error-message');
             const errorText = document.getElementById('error-text');
+            const mainHeader = document.getElementById('mainHeader');
+            const refreshMatchesBtn = document.getElementById('refresh-matches');
+            const likePromptModal = document.getElementById('likePromptModal');
+            const continueLikeBtn = document.getElementById('continueLike');
+            const retakeRefreshModal = document.getElementById('retakeRefreshModal');
+            const refreshMatchesNowBtn = document.getElementById('refreshMatchesNow');
+            const refreshLaterBtn = document.getElementById('refreshLater');
+            
+            // State for loading
+            let isLoading = false;
+            let pendingLikeButton = null;
+            let hasLoadedOnce = false;
+            
+            // Cache key
+            const CACHE_KEY = 'ninakkai_matches';
+            const CACHE_EXPIRY = 3600000; // 1 hour in ms
+            
+            // Dark mode persistence
+            if (localStorage.theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            
+            // Store liked users in localStorage to persist across page refreshes
+            let likedUsers = JSON.parse(localStorage.getItem('likedUsers') || '{}');
+
+            // User gender and show like prompt from template
+            const userGender = '{{ profile.gender }}';
+            let showLikePrompt = {{ profile.show_like_prompt | tojson }};
+
+            // Check for retake refresh flag
+            const refreshExplore = localStorage.getItem('refresh_explore') === 'true';
+            if (refreshExplore) {
+                localStorage.removeItem('refresh_explore');
+            }
 
             function showLoading() {
                 loading.style.display = 'flex';
@@ -365,7 +910,7 @@
 
             function showNotification(message) {
                 const notification = document.createElement('div');
-                notification.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-30';
+                notification.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 px-4 py-2 rounded-lg shadow-lg z-30';
                 notification.textContent = message;
                 document.body.appendChild(notification);
                 
@@ -375,9 +920,23 @@
                 }, 2000);
             }
 
+            function showPopup(message, duration = 3000) {
+                const popup = document.createElement('div');
+                popup.className = 'popup text-gray-800 dark:text-gray-100';
+                popup.innerHTML = `
+                    <h3 class="text-2xl font-bold mb-4 flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i> ${message}
+                    </h3>
+                `;
+                document.body.appendChild(popup);
+                setTimeout(() => {
+                    popup.remove();
+                }, duration);
+            }
+
             function showMatchPopup() {
                 const popup = document.createElement('div');
-                popup.className = 'popup';
+                popup.className = 'popup text-gray-800 dark:text-gray-100';
                 popup.textContent = 'Connection Successful!';
                 document.body.appendChild(popup);
                 setTimeout(() => {
@@ -385,82 +944,283 @@
                 }, 2000);
             }
 
-            // Like button functionality
-            document.querySelectorAll('.like-button').forEach(button => {
-                button.addEventListener('click', async function(e) {
-                    e.preventDefault();
-                    const userId = this.dataset.userId;
-                    showLoading();
-                    try {
-                        const response = await fetch('/like-user', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ matched_user_id: userId })
-                        });
-                        const result = await response.json();
-                        hideLoading();
-                        if (result.success) {
-                            this.innerHTML = '<i class="fas fa-check"></i>';
-                            this.classList.remove('bg-pink-500', 'hover:bg-pink-600', 'text-pink-500', 'hover:text-pink-600');
-                            this.classList.add('bg-green-500', 'hover:bg-green-600', 'text-white');
-                            showNotification('Liked! We\'ll let them know');
-                            if (result.is_match) {
-                                showMatchPopup();
-                                showNotification("It's a match! You can now chat.");
+            // Report modal
+            function showReportModal(userId) {
+                const modal = document.createElement('div');
+                modal.className = 'report-modal';
+                modal.innerHTML = `
+                    <div class="report-modal-content">
+                        <h3 class="text-lg font-bold mb-4">Why are you reporting this user?</h3>
+                        <div id="report-options">
+                            <label class="report-option" data-reason="inappropriate">Inappropriate content</label>
+                            <label class="report-option" data-reason="spam">Spam or fake profile</label>
+                            <label class="report-option" data-reason="harassment">Harassment or bullying</label>
+                            <label class="report-option" data-reason="other">Other</label>
+                        </div>
+                        <div class="flex justify-end mt-4 space-x-2">
+                            <button id="cancel-report" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
+                            <button id="submit-report" class="px-4 py-2 bg-red-500 text-white rounded" disabled>Submit Report</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                let selectedReason = null;
+                document.querySelectorAll('.report-option').forEach(option => {
+                    option.addEventListener('click', () => {
+                        document.querySelectorAll('.report-option').forEach(opt => opt.classList.remove('selected'));
+                        option.classList.add('selected');
+                        selectedReason = option.dataset.reason;
+                        document.getElementById('submit-report').disabled = false;
+                    });
+                });
+
+                document.getElementById('cancel-report').addEventListener('click', () => modal.remove());
+                document.getElementById('submit-report').addEventListener('click', async (e) => {
+                    if (selectedReason) {
+                        const button = e.currentTarget;
+                        showLoading();
+                        try {
+                            const response = await fetch('/report-user', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ reported_user_id: userId, reason: selectedReason })
+                            });
+                            const result = await response.json();
+                            hideLoading();
+                            if (result.success) {
+                                createReportBurst(button);
+                                showNotification('Report submitted successfully');
+                                setTimeout(() => {
+                                    modal.remove();
+                                    // Close viewer
+                                    const viewer = document.querySelector('.profile-viewer');
+                                    if (viewer) {
+                                        viewer.remove();
+                                        mainHeader.style.display = 'flex';
+                                        document.body.style.overflow = '';
+                                        history.back();
+                                    }
+                                    // Remove card with animation and refresh after
+                                    const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
+                                    if (card) {
+                                        card.style.opacity = '0';
+                                        card.style.transition = 'opacity 0.5s ease';
+                                        setTimeout(() => {
+                                            card.remove();
+                                            // Update cache
+                                            const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                                            if (cached) {
+                                                const match = cached.data.find(m => m.id === userId);
+                                                if (match) {
+                                                    match.passed = true;
+                                                }
+                                                localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                                            }
+                                            // Now refresh sections
+                                            loadMatches();
+                                            loadDiscovery([]);
+                                        }, 500);
+                                    } else {
+                                        // If no card, just refresh
+                                        const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                                        if (cached) {
+                                            const match = cached.data.find(m => m.id === userId);
+                                            if (match) {
+                                                match.passed = true;
+                                            }
+                                            localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                                        }
+                                        loadMatches();
+                                        loadDiscovery([]);
+                                    }
+                                }, 1000);
+                            } else {
+                                showError(result.error || 'Failed to submit report');
                             }
-                        } else {
-                            showError(result.error || 'Failed to like user');
+                        } catch (error) {
+                            hideLoading();
+                            showError('Network error while submitting report');
                         }
-                    } catch (error) {
-                        hideLoading();
-                        showError('Network error while liking user');
                     }
                 });
-            });
-
-            // Pass button functionality
-            document.querySelectorAll('.pass-button').forEach(button => {
-                button.addEventListener('click', async function(e) {
-                    e.preventDefault();
-                    const card = this.closest('.nearby-card');
-                    const userId = this.dataset.userId;
-                    showLoading();
-                    try {
-                        const response = await fetch('/pass-user', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ passed_user_id: userId })
-                        });
-                        const result = await response.json();
-                        hideLoading();
-                        if (result.success) {
-                            card.style.transform = 'translateX(-100%)';
-                            card.style.opacity = '0';
-                            setTimeout(() => card.remove(), 300);
-                            showNotification('Passed');
-                        } else {
-                            showError(result.error || 'Failed to pass user');
-                        }
-                    } catch (error) {
-                        hideLoading();
-                        showError('Network error while passing user');
+            }
+            
+            // Update like buttons based on stored liked status
+            function updateLikeButtons() {
+                document.querySelectorAll('.like-button').forEach(button => {
+                    const userId = button.dataset.userId;
+                    if (likedUsers[userId]) {
+                        button.classList.add('liked-button');
+                        button.classList.remove('bg-pink-500', 'hover:bg-pink-600');
+                        button.innerHTML = '<i class="fas fa-check"></i>';
+                        button.dataset.liked = 'true';
+                    } else {
+                        button.classList.remove('liked-button');
+                        button.classList.add('bg-pink-500', 'hover:bg-pink-600');
+                        button.innerHTML = '<i class="fas fa-heart"></i>';
+                        button.dataset.liked = 'false';
                     }
                 });
+            }
+
+            // Like button functionality with toggle
+            function attachLikeButtonListeners() {
+                document.querySelectorAll('.like-button:not([data-like-attached])').forEach(button => {
+                    button.addEventListener('click', async function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        const userId = this.dataset.userId;
+                        const isLiked = this.dataset.liked === 'true';
+                        const endpoint = isLiked ? '/unlike-user' : '/like-user';
+                        const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
+                        
+                        proceedLikeOrUnlike(this, endpoint, actionMessage, isLiked, userId);
+                    });
+                    button.setAttribute('data-like-attached', 'true');
+                });
+            }
+
+            async function proceedLikeOrUnlike(button, endpoint, actionMessage, isLiked, userId) {
+                showLoading();
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ matched_user_id: userId })
+                    });
+                    const result = await response.json();
+                    hideLoading();
+                    
+                    if (result.success) {
+                        if (isLiked) {
+                            delete likedUsers[userId];
+                        } else {
+                            likedUsers[userId] = true;
+                            createHeartBurst(button);
+                        }
+                        localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
+                        
+                        // Update UI
+                        if (isLiked) {
+                            button.classList.remove('liked-button');
+                            button.classList.add('bg-pink-500', 'hover:bg-pink-600');
+                            button.innerHTML = '<i class="fas fa-heart"></i>';
+                            button.dataset.liked = 'false';
+                        } else {
+                            button.classList.add('liked-button');
+                            button.classList.remove('bg-pink-500', 'hover:bg-pink-600');
+                            button.innerHTML = '<i class="fas fa-check"></i>';
+                            button.dataset.liked = 'true';
+                        }
+                        
+                        showNotification(actionMessage);
+                        
+                        if (!isLiked && result.is_match) {
+                            showMatchPopup();
+                            showNotification("It's a match! You can now chat.");
+                        }
+
+                        // Handle like limits for males
+                        if (!isLiked && result.likes_remaining !== undefined) {
+                            if (result.likes_remaining === 2) {
+                                showPopup('Only 2 likes left for today!');
+                            } else if (result.likes_remaining === 1) {
+                                showPopup('Only 1 like left for today!');
+                            } else if (result.likes_remaining === 0) {
+                                showPopup('No likes left for today! Come back tomorrow.');
+                                // After 3 likes, refresh sections to remove any remaining cards if needed
+                                setTimeout(() => {
+                                    loadMatches();
+                                    loadDiscovery([]);
+                                }, 2000);
+                            }
+                        }
+                        
+                        // Update cache
+                        const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                        if (cached) {
+                            const match = cached.data.find(m => m.id === userId);
+                            if (match) {
+                                match.liked = !isLiked;
+                            }
+                            localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                        }
+
+                        // For like, remove card; for unlike, keep it
+                        if (!isLiked) {
+                            // No need to filter cache since we updated the flag
+                            setTimeout(() => {
+                                const card = button.closest('.discovery-card');
+                                if (card) {
+                                    card.style.opacity = '0';
+                                    card.style.transition = 'opacity 0.5s ease';
+                                    setTimeout(() => {
+                                        card.remove();
+                                        loadMatches();
+                                        loadDiscovery([]);
+                                    }, 500);
+                                } else {
+                                    loadMatches();
+                                    loadDiscovery([]);
+                                }
+                            }, 150);
+                        } else {
+                            // For unlike, optionally refresh to add back, but skipping for simplicity
+                        }
+                    } else {
+                        if (result.error === 'Daily like limit exceeded') {
+                            showPopup('Your daily like limit has been exceeded!');
+                            // Refresh sections after limit exceeded
+                            setTimeout(() => {
+                                loadMatches();
+                                loadDiscovery([]);
+                            }, 2000);
+                        } else {
+                            showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
+                        }
+                    }
+                } catch (error) {
+                    hideLoading();
+                    showError(`Network error while ${isLiked ? 'unliking' : 'liking'} user`);
+                }
+            }
+
+            // Like prompt continue button
+            continueLikeBtn.addEventListener('click', async () => {
+                likePromptModal.style.display = 'none';
+                // Dismiss prompt on server
+                await fetch('/dismiss_like_prompt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                showLikePrompt = false;
             });
 
-            // Chat button functionality
-            document.querySelectorAll('.chat-button').forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const userId = this.dataset.userId;
-                    window.location.href = `/chat?with=${userId}`;
-                });
+            // Retake refresh modal handling
+            if (refreshExplore) {
+                retakeRefreshModal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            }
+            refreshMatchesNowBtn.addEventListener('click', () => {
+                retakeRefreshModal.style.display = 'none';
+                document.body.style.overflow = '';
+                loadMatches(true); // Force refresh
+                hasLoadedOnce = true;
+            });
+            refreshLaterBtn.addEventListener('click', () => {
+                retakeRefreshModal.style.display = 'none';
+                document.body.style.overflow = '';
+                if (!hasLoadedOnce) {
+                    loadMatches(false); // Normal load
+                    hasLoadedOnce = true;
+                }
             });
 
             // Header scroll effect
-            const header = document.getElementById('mainHeader');
             window.addEventListener('scroll', () => {
-                header.classList.toggle('scrolled-header', window.scrollY > 10);
+                mainHeader.classList.toggle('scrolled-header', window.scrollY > 10);
             });
 
             // Mobile search toggle
@@ -482,13 +1242,16 @@
                 showLoading();
                 matchesSection.classList.add('opacity-50');
                 discoverySection.classList.add('opacity-50');
-                nearbySection.classList.add('opacity-50');
 
                 try {
                     const response = await fetch(`/search-matches?q=${encodeURIComponent(query)}`);
                     const result = await response.json();
                     if (result.success) {
                         updateMatches(result.matches);
+                        // Refresh discovery with exclusion of search results
+                        loadDiscovery(result.matches.map(m => m.id));
+                        attachLikeButtonListeners();
+                        attachProfileClickListeners();
                     } else {
                         showError(result.error || 'Failed to search matches');
                     }
@@ -498,170 +1261,927 @@
                     hideLoading();
                     matchesSection.classList.remove('opacity-50');
                     discoverySection.classList.remove('opacity-50');
-                    nearbySection.classList.remove('opacity-50');
                 }
             });
 
-            // Update matches dynamically
+            function shuffle(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            // Update matches dynamically with progressive loading
             function updateMatches(matches) {
                 const matchesGrid = document.getElementById('matches-grid');
-                matchesGrid.innerHTML = matches.length ? matches.map(match => `
-                    <div class="bg-white rounded-xl shadow-sm overflow-hidden relative discovery-card" data-user-id="${match.id}">
-                        <div class="match-percentage">${match.match_percentage}%</div>
-                        <img src="${match.image}" alt="${match.full_name}" class="w-full h-48 md:h-64 object-cover">
-                        <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-                            <div class="flex justify-between items-end">
-                                <div>
-                                    <h3 class="text-white font-bold">${match.full_name}, ${match.age || 'N/A'}</h3>
-                                    <p class="text-gray-300 text-sm">${match.occupation} • ${match.distance}</p>
+                matchesGrid.innerHTML = '';
+                matches.sort((a, b) => b.match_percentage - a.match_percentage);
+                const topMatches = matches.slice(0, 3);
+                const unseen = topMatches.filter(m => !m.liked && !m.passed);
+                let displayMatches = unseen.length ? unseen : topMatches;
+                displayMatches.forEach((match, index) => {
+                    setTimeout(() => {
+                        const card = document.createElement('div');
+                        card.className = 'bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden relative discovery-card';
+                        card.dataset.userId = match.id;
+                        card.innerHTML = `
+                            <div class="match-percentage text-gray-800 dark:text-gray-100">${match.match_percentage}%</div>
+                            <img src="${match.image}" alt="${match.full_name}" class="profile-image">
+                            <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
+                                <div class="flex justify-between items-end">
+                                    <div>
+                                        <h3 class="text-gray-100 font-bold">${match.full_name}, ${match.age || 'N/A'}</h3>
+                                    </div>
                                 </div>
-                                <button class="bg-pink-500 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:bg-pink-600 transition like-button" data-user-id="${match.id}">
-                                    <i class="fas fa-heart"></i>
-                                </button>
                             </div>
-                        </div>
+                        `;
+                        matchesGrid.appendChild(card);
+                        attachLikeButtonListeners();
+                        attachProfileClickListeners();
+                    }, index * 200);  // 200ms delay between each card
+                });
+                if (!displayMatches.length) {
+                    matchesGrid.innerHTML = '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">We will notify you if any matches come for you. Stay on track!</p>';
+                }
+            }
+
+            // Update discovery dynamically with progressive loading (renamed from updateDiscovery)
+            function updateDiscoverySection(matches) {
+                const discoveryGrid = document.getElementById('discovery-grid');
+                discoveryGrid.innerHTML = '';
+                if (!matches.length) {
+                    discoveryGrid.innerHTML = '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">No people to discover. Try completing your quiz!</p>';
+                    return;
+                }
+                matches.forEach((match, index) => {
+                    setTimeout(() => {
+                        const card = document.createElement('div');
+                        card.className = 'discovery-profile discovery-card';
+                        card.dataset.userId = match.id;
+                        card.innerHTML = `
+                            <img src="${match.image}" alt="Profile" class="discovery-image">
+                            <div class="discovery-content">
+                                <div class="flex justify-between items-end">
+                                    <div>
+                                        <h3 class="text-gray-100 font-bold text-sm md:text-base">${match.full_name}, ${match.age || 'N/A'}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        discoveryGrid.appendChild(card);
+                        attachLikeButtonListeners();
+                        attachProfileClickListeners();
+                    }, index * 200);  // 200ms delay between each card
+                });
+            }
+            
+            // Function to load matches with caching
+            async function loadMatches(forceRefresh = false) {
+                if (isLoading) return;
+                
+                isLoading = true;
+                showLoading(); // Show loader on refresh
+                
+                const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                let data;
+                if (!forceRefresh && cached && Date.now() - cached.timestamp < CACHE_EXPIRY) {
+                    data = cached.data;
+                } else {
+                    try {
+                        const response = await fetch('/api/matches');
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            localStorage.setItem(CACHE_KEY, JSON.stringify({timestamp: Date.now(), data: result.matches}));
+                            data = result.matches;
+                        } else {
+                            showError(result.error || 'Failed to load matches');
+                            data = cached ? cached.data : [];
+                        }
+                    } catch (error) {
+                        showError('Network error while loading matches');
+                        data = cached ? cached.data : [];
+                    }
+                }
+                updateMatches(data);
+                // Load discovery with excluded IDs from matches
+                loadDiscovery(data.map(m => m.id));
+                isLoading = false;
+                hideLoading();
+            }
+
+            // New function to load random discovery, now accepting excluded user IDs
+            async function loadDiscovery(excluded = []) {
+                if (isLoading) return;
+                
+                isLoading = true;
+                const discoveryGrid = document.getElementById('discovery-grid');
+                // Show skeletons
+                discoveryGrid.innerHTML = `
+                    <div class="discovery-profile">
+                        <div class="skeleton w-full h-72 rounded-xl"></div>
                     </div>
-                `).join('') : '<p class="text-gray-600">No matches found for your search.</p>';
+                    <div class="discovery-profile">
+                        <div class="skeleton w-full h-72 rounded-xl"></div>
+                    </div>
+                    <div class="discovery-profile">
+                        <div class="skeleton w-full h-72 rounded-xl"></div>
+                    </div>
+                `;
+
+                try {
+                    const excludedParam = excluded.length ? `?excluded=${excluded.join(',')}` : '';
+                    const response = await fetch(`/api/discovery${excludedParam}`);
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        const shuffled = shuffle(result.matches);
+                        // Filter out excluded users first
+                        let filtered = shuffled.filter(m => !excluded.includes(m.id));
+                        // Removed fallback: if no non-excluded, keep filtered empty to show message
+                        const discover = filtered.slice(0, 3);
+                        const unseen = discover.filter(m => !m.liked && !m.passed);
+                        let displayMatches = unseen.length ? unseen : discover;
+                        updateDiscoverySection(displayMatches);
+                    } else {
+                        showError(result.error || 'Failed to load discovery');
+                        discoveryGrid.innerHTML = '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">No people to discover right now.</p>';
+                    }
+                } catch (error) {
+                    showError('Network error while loading discovery');
+                    discoveryGrid.innerHTML = '<p class="text-gray-600 dark:text-gray-100 col-span-full text-center">No people to discover right now.</p>';
+                } finally {
+                    isLoading = false;
+                }
             }
 
             // Profile viewer
-            document.querySelectorAll('.discovery-card').forEach(card => {
-                card.addEventListener('click', async function(e) {
-                    if (e.target.closest('button')) return;
-                    const userId = this.dataset.userId;
-                    
-                    showLoading();
-                    try {
-                        const response = await fetch(`/user-profile/${userId}`);
-                        const profile = await response.json();
+            function openProfileViewer(userId) {
+                showLoading();
+                document.body.style.overflow = 'hidden';
+                
+                fetch(`/user-profile/${userId}`)
+                    .then(response => response.json())
+                    .then(profile => {
                         hideLoading();
                         if (!profile.success) {
                             showError(profile.error || 'Failed to load profile');
+                            document.body.style.overflow = '';
                             return;
                         }
                         
+                        // Hide main header when viewing profile
+                        mainHeader.style.display = 'none';
+                        
+                        const currentType = document.body.dataset.currentType;
+                        const viewedType = profile.user.dominant_type;
+                        let tagline = '';
+                        let narration = '';
+                        if (currentType && viewedType) {
+                            // Direct lookup from current (viewer) to viewed
+                            const info = MATCH_NARRATIONS[currentType] ? MATCH_NARRATIONS[currentType][viewedType] : null;
+                            if (info) {
+                                narration = info.narration;
+                                tagline = info.tagline;
+                            }
+                        }
+
                         const profileViewer = document.createElement('div');
-                        profileViewer.className = 'fixed inset-0 bg-white z-20 flex flex-col overflow-y-auto';
+                        profileViewer.className = 'profile-viewer bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100';
+                        let additionalSections = '';
+                        if (profile.user.religion && profile.user.religion !== 'Private' && profile.user.religion !== 'Not specified') {
+                            additionalSections += `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Religion</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.religion}</p>
+                                </div>
+                            `;
+                        }
+                        if (profile.user.physical_traits && typeof profile.user.physical_traits === 'object' && !Array.isArray(profile.user.physical_traits) && Object.keys(profile.user.physical_traits).length > 0) {
+                            additionalSections += `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Physical Traits</h3>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${Object.entries(profile.user.physical_traits).map(([key, value]) => `
+                                            <span class="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100 px-3 py-1 rounded-full text-sm">${key}: ${value}</span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        if (profile.user.education_work && profile.user.education_work !== 'N/A') {
+                            additionalSections += `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Education/Work</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.education_work}</p>
+                                </div>
+                            `;
+                        }
+                        if (profile.user.summary && profile.user.summary !== 'N/A') {
+                            additionalSections += `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Self Summary</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.summary}</p>
+                                </div>
+                            `;
+                        }
+                        let passButtonHTML;
+                        if (profile.user.passed) {
+                            passButtonHTML = `<button class="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-400 text-white rounded-full px-6 py-4 flex-1 mr-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" disabled>
+                                <i class="fas fa-times mr-2"></i> Passed
+                            </button>`;
+                        } else {
+                            passButtonHTML = `<button class="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-600 hover:to-green-400 text-white rounded-full px-6 py-4 flex-1 mr-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out pass-button" data-user-id="${userId}">
+                                <i class="fas fa-times mr-2"></i> Pass
+                            </button>`;
+                        }
+                        let bottomLikeHTML;
+                        if (profile.user.passed) {
+                            bottomLikeHTML = `<button class="bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 to-pink-400 text-white rounded-full px-6 py-4 flex-1 ml-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" disabled>
+                                <i class="fas fa-heart mr-2"></i> Like
+                            </button>`;
+                        } else {
+                            bottomLikeHTML = `<button class="like-button ${profile.user.liked ? 'liked-button' : 'bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-600 to-pink-400'} text-white rounded-full px-6 py-4 flex-1 ml-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out" 
+                                            data-user-id="${userId}" 
+                                            data-liked="${profile.user.liked}">
+                                        <i class="fas ${profile.user.liked ? 'fa-check' : 'fa-heart'} mr-2"></i> ${profile.user.liked ? 'Liked' : 'Like'}
+                                    </button>`;
+                        }
+
+                        // Compatibility badge with color cues
+                        const match_percentage = profile.user.match_percentage;
+                        let colorClass = '';
+                        let colorEmoji = '';
+                        if (match_percentage >= 85) {
+                            colorClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                            colorEmoji = '🟢';
+                        } else if (match_percentage >= 75) {
+                            colorClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                            colorEmoji = '🟡';
+                        } else if (match_percentage >= 65) {
+                            colorClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+                            colorEmoji = '🔵';
+                        } else {
+                            colorClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+                            colorEmoji = '🔴';
+                        }
+
+                        let aboutSection = '';
+                        if (profile.user.bio && profile.user.bio !== 'No bio available' && profile.user.bio !== 'N/A') {
+                            aboutSection = `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">About</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.bio}</p>
+                                </div>
+                            `;
+                        }
+
+                        let photosSection = '';
+                        if (profile.user.photos && profile.user.photos.length > 0) {
+                            photosSection = `
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Photos</h3>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        ${profile.user.photos.map(photo => `<img src="${photo}" alt="User photo" class="photo-img rounded-lg object-cover h-40 w-full cursor-pointer" oncontextmenu="return false;">`).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }
+
                         profileViewer.innerHTML = `
                             <div class="relative">
-                                <img src="${profile.user.image}" alt="${profile.user.full_name}" class="w-full h-64 md:h-96 object-cover">
-                                <button class="absolute top-4 left-4 bg-white bg-opacity-80 rounded-full w-10 h-10 flex items-center justify-center close-profile">
-                                    <i class="fas fa-arrow-left text-gray-800"></i>
+                                <img src="${profile.user.image}" alt="${profile.user.full_name}" class="profile-viewer-image">
+                                <button class="absolute top-4 left-4 bg-white dark:bg-gray-800 bg-opacity-80 rounded-full w-10 h-10 flex items-center justify-center close-profile">
+                                    <i class="fas fa-arrow-left text-gray-800 dark:text-gray-100"></i>
                                 </button>
-                                <button class="absolute top-4 right-4 bg-white bg-opacity-80 rounded-full w-10 h-10 flex items-center justify-center">
-                                    <i class="fas fa-ellipsis-h text-gray-800"></i>
-                                </button>
-                                <div class="absolute bottom-4 left-4 bg-white bg-opacity-80 rounded-full px-3 py-1">
-                                    <span class="font-bold text-gray-800">${profile.user.match_percentage}% Match</span>
+                                <div class="absolute bottom-4 left-4 ${colorClass} rounded-full px-3 py-1">
+                                    <span class="font-bold text-black dark:text-white">${colorEmoji} 💞 ${match_percentage}% Compatible</span>
                                 </div>
                             </div>
-                            <div class="p-6">
+                            <div class="p-6 flex-1">
                                 <div class="flex justify-between items-start mb-4">
                                     <div>
-                                        <h2 class="text-2xl font-bold">${profile.user.full_name}, ${profile.user.age || 'N/A'}</h2>
-                                        <p class="text-gray-600">${profile.user.occupation} • ${profile.user.distance}</p>
+                                        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">${profile.user.full_name}, ${profile.user.age || 'N/A'}</h2>
                                     </div>
-                                    <button class="bg-pink-500 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-pink-600 transition like-button" data-user-id="${userId}">
-                                        <i class="fas fa-heart text-xl"></i>
-                                    </button>
+                                </div>
+                                ${tagline ? `
+                                <div class="mb-6">
+                                    <p class="text-gray-700 dark:text-gray-300 font-bold">${tagline}</p>
+                                    <p class="text-gray-700 dark:text-gray-300">${narration}</p>
+                                </div>
+                                ` : ''}
+                                ${aboutSection}
+                                <div class="mb-6">
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Personality Type</h3>
+                                    <p class="text-gray-700 dark:text-gray-300">${profile.user.dominant_type}</p>
                                 </div>
                                 <div class="mb-6">
-                                    <h3 class="text-lg font-bold mb-2">About</h3>
-                                    <p class="text-gray-700">${profile.user.bio}</p>
+                                    ${profile.user.personality_info ? `
+                                        ${profile.user.personality_info.title ? `<p class="text-gray-700 dark:text-gray-300"><strong>${toThirdPerson(profile.user.personality_info.title)}</strong></p>` : ''}
+                                        ${profile.user.personality_info.description && profile.user.personality_info.description !== 'Description not available.' ? `<p class="text-gray-700 dark:text-gray-300">${toThirdPerson(profile.user.personality_info.description)}</p>` : ''}
+                                        ${profile.user.personality_info.tagline ? `<p class="text-gray-700 dark:text-gray-300"><em>${toThirdPerson(profile.user.personality_info.tagline)}</em></p>` : ''}
+                                        ${profile.user.personality_info.strengths && profile.user.personality_info.strengths.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Strengths:</strong> ${profile.user.personality_info.strengths.join(', ')}</p>` : ''}
+                                        ${profile.user.personality_info.compatibility && profile.user.personality_info.compatibility.length > 0 ? `<p class="text-gray-700 dark:text-gray-300"><strong>Compatibility:</strong> ${profile.user.personality_info.compatibility.join(', ')}</p>` : ''}
+                                    ` : '<p class="text-gray-700 dark:text-gray-300">No personality information available</p>'}
                                 </div>
+                                ${profile.user.interests && profile.user.interests.length > 0 ? `
                                 <div class="mb-6">
-                                    <h3 class="text-lg font-bold mb-2">Personality Type</h3>
-                                    <p class="text-gray-700">Dominant: ${profile.user.personality.dominant_type} (${profile.user.personality.dominant_percentage}%)</p>
-                                    <p class="text-gray-700">Secondary: ${profile.user.personality.secondary_type} (${profile.user.personality.secondary_percentage}%)</p>
-                                </div>
-                                <div class="mb-6">
-                                    <h3 class="text-lg font-bold mb-2">Interests</h3>
+                                    <h3 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Interests</h3>
                                     <div class="flex flex-wrap gap-2">
-                                        ${profile.user.interests.length ? profile.user.interests.map(interest => `<span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">${interest}</span>`).join('') : '<span class="text-gray-600">No interests listed</span>'}
+                                        ${profile.user.interests.map(interest => `<span class="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100 px-3 py-1 rounded-full text-sm">${interest}</span>`).join('')}
                                     </div>
                                 </div>
-                                <div class="flex justify-between">
-                                    <button class="bg-gray-200 text-gray-800 rounded-full px-6 py-3 flex-1 mr-2 hover:bg-gray-300 transition pass-button" data-user-id="${userId}">
-                                        <i class="fas fa-times mr-2"></i> Pass
+                                ` : ''}
+                                ${additionalSections}
+                                ${photosSection}
+                                <div class="flex justify-between mt-8">
+                                    ${passButtonHTML}
+                                    <button class="bg-gradient-to-r from-red-400 to-red-600 hover:from-red-600 hover:to-red-400 text-white rounded-full px-6 py-4 flex-1 mx-2 shadow-lg hover:scale-105 transition-all duration-300 ease-in-out report-button" data-user-id="${userId}">
+                                        <i class="fas fa-flag mr-2"></i> Report
                                     </button>
-                                    <button class="bg-pink-500 text-white rounded-full px-6 py-3 flex-1 ml-2 hover:bg-pink-600 transition like-button" data-user-id="${userId}">
-                                        <i class="fas fa-heart mr-2"></i> Like
-                                    </button>
+                                    ${bottomLikeHTML}
                                 </div>
+                            </div>
+                            <div id="photoModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center" onclick="this.classList.add('hidden')">
+                                <img id="fullPhoto" src="" class="max-h-[90vh] max-w-[90vw] object-contain" oncontextmenu="return false;">
+                                <button class="absolute top-4 right-4 text-white text-3xl" onclick="document.getElementById('photoModal').classList.add('hidden')">&times;</button>
                             </div>
                         `;
                         
                         document.body.appendChild(profileViewer);
+                        window.history.pushState({profileOpen: true}, '');
                         
-                        profileViewer.querySelector('.close-profile').addEventListener('click', () => profileViewer.remove());
-                        profileViewer.querySelectorAll('.like-button').forEach(btn => {
-                            btn.addEventListener('click', async function() {
-                                showLoading();
-                                try {
-                                    const response = await fetch('/like-user', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ matched_user_id: userId })
-                                    });
-                                    const result = await response.json();
-                                    hideLoading();
-                                    if (result.success) {
-                                        this.innerHTML = '<i class="fas fa-check mr-2"></i> Liked';
-                                        this.classList.remove('bg-pink-500', 'hover:bg-pink-600');
-                                        this.classList.add('bg-green-500', 'hover:bg-green-600');
-                                        showNotification('Liked! We\'ll let them know');
-                                        if (result.is_match) {
-                                            showMatchPopup();
-                                            showNotification("It's a match! You can now chat.");
-                                        }
-                                        setTimeout(() => profileViewer.remove(), 1500);
-                                    } else {
-                                        showError(result.error || 'Failed to like user');
-                                    }
-                                } catch (error) {
-                                    hideLoading();
-                                    showError('Network error while liking user');
-                                }
+                        profileViewer.querySelector('.close-profile').addEventListener('click', () => {
+                            profileViewer.remove();
+                            mainHeader.style.display = 'flex';
+                            document.body.style.overflow = '';
+                            history.back();
+                        });
+
+                        // Attach report button listener
+                        profileViewer.querySelector('.report-button').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const userId = e.currentTarget.dataset.userId;
+                            showReportModal(userId);
+                        });
+                        
+                        // Attach event listeners to buttons in profile viewer
+                        attachLikeButtonListeners();
+
+                        // Attach photo click listeners
+                        profileViewer.querySelectorAll('.photo-img').forEach(img => {
+                            img.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                const modal = profileViewer.querySelector('#photoModal');
+                                const fullPhoto = profileViewer.querySelector('#fullPhoto');
+                                fullPhoto.src = img.src;
+                                modal.classList.remove('hidden');
                             });
+                            img.addEventListener('contextmenu', e => e.preventDefault());
                         });
-                        profileViewer.querySelector('.pass-button').addEventListener('click', async function() {
-                            showLoading();
-                            try {
-                                const response = await fetch('/pass-user', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ passed_user_id: userId })
-                                });
-                                const result = await response.json();
-                                hideLoading();
-                                if (result.success) {
-                                    profileViewer.remove();
-                                    showNotification('Passed');
-                                } else {
-                                    showError(result.error || 'Failed to pass user');
+
+                        // Show like prompt if male and not dismissed
+                        if (userGender === 'male' && showLikePrompt) {
+                            const bottomSection = profileViewer.querySelector('.flex.justify-between.mt-8');
+                            const observer = new IntersectionObserver((entries) => {
+                                if (entries[0].isIntersecting) {
+                                    likePromptModal.style.display = 'block';
+                                    observer.disconnect();
                                 }
-                            } catch (error) {
-                                hideLoading();
-                                showError('Network error while passing user');
-                            }
-                        });
-                    } catch (error) {
+                            }, { threshold: 0.5 });
+                            observer.observe(bottomSection);
+                        }
+                    })
+                    .catch(error => {
                         hideLoading();
                         showError('Network error while loading profile');
+                        document.body.style.overflow = '';
+                    });
+            }
+
+            // Handle back button to close profile
+            window.addEventListener('popstate', function(event) {
+                const profileViewer = document.querySelector('.profile-viewer');
+                if (profileViewer) {
+                    profileViewer.remove();
+                    mainHeader.style.display = 'flex';
+                    document.body.style.overflow = '';
+                } else if (document.getElementById('notificationModal').classList.contains('hidden') === false) {
+                    document.getElementById('notificationModal').classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+            });
+
+            function attachProfileViewerListeners(profileViewer, userId) {
+                profileViewer.querySelectorAll('.like-button').forEach(btn => {
+                    btn.addEventListener('click', async function(e) {
+                        e.stopPropagation();
+                        
+                        const isLiked = this.dataset.liked === 'true';
+                        const endpoint = isLiked ? '/unlike-user' : '/like-user';
+                        const actionMessage = isLiked ? 'Unliked' : 'Liked! We\'ll let them know';
+                        
+                        showLoading();
+                        try {
+                            const response = await fetch(endpoint, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ matched_user_id: userId })
+                            });
+                            const result = await response.json();
+                            hideLoading();
+                            
+                            if (result.success) {
+                                if (isLiked) {
+                                    delete likedUsers[userId];
+                                } else {
+                                    likedUsers[userId] = true;
+                                    createHeartBurst(this);
+                                }
+                                localStorage.setItem('likedUsers', JSON.stringify(likedUsers));
+                                
+                                // Update all like buttons for this user, including this one
+                                profileViewer.querySelectorAll('.like-button').forEach(b => {
+                                    if (isLiked) {
+                                        b.classList.remove('liked-button');
+                                        b.classList.add('bg-pink-500', 'hover:bg-pink-600');
+                                        b.innerHTML = '<i class="fas fa-heart mr-2"></i> Like'; // For bottom button
+                                        b.dataset.liked = 'false';
+                                    } else {
+                                        b.classList.add('liked-button');
+                                        b.classList.remove('bg-pink-500', 'hover:bg-pink-600');
+                                        b.innerHTML = '<i class="fas fa-check mr-2"></i> Liked';
+                                        b.dataset.liked = 'true';
+                                    }
+                                });
+                                
+                                // Update main page buttons as well
+                                updateLikeButtons();
+                                
+                                showNotification(actionMessage);
+                                
+                                if (!isLiked && result.is_match) {
+                                    showMatchPopup();
+                                    showNotification("It's a match! You can now chat.");
+                                }
+
+                                // Handle like limits for males
+                                if (!isLiked && result.likes_remaining !== undefined) {
+                                    if (result.likes_remaining === 2) {
+                                        showPopup('Only 2 likes left for today!');
+                                    } else if (result.likes_remaining === 1) {
+                                        showPopup('Only 1 like left for today!');
+                                    } else if (result.likes_remaining === 0) {
+                                        showPopup('No likes left for today! Come back tomorrow.');
+                                    }
+                                }
+                                
+                                // Update main cache
+                                const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                                if (cached) {
+                                    const match = cached.data.find(m => m.id === userId);
+                                    if (match) {
+                                        match.liked = !isLiked;
+                                    }
+                                    localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                                }
+
+                                // For like, close viewer and remove card instantly; for unlike, keep viewer open
+                                if (!isLiked) {
+                                    // Remove card instantly if it exists
+                                    const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
+                                    if (card) {
+                                        card.remove();
+                                    }
+                                    // Close viewer immediately
+                                    profileViewer.remove();
+                                    mainHeader.style.display = 'flex';
+                                    document.body.style.overflow = '';
+                                    history.back();
+                                    // Refresh sections immediately
+                                    loadMatches();
+                                    loadDiscovery([]);
+                                }
+                            } else {
+                                if (result.error === 'Daily like limit exceeded') {
+                                    showPopup('Your daily like limit has been exceeded!');
+                                    // Refresh sections after limit exceeded
+                                    setTimeout(() => {
+                                        loadMatches();
+                                        loadDiscovery([]);
+                                    }, 2000);
+                                } else {
+                                    showError(result.error || `Failed to ${isLiked ? 'unlike' : 'like'} user`);
+                                }
+                            }
+                        } catch (error) {
+                            hideLoading();
+                            showError(`Network error while ${isLiked ? 'unliking' : 'liking'} user`);
+                        }
+                    });
+                });
+                
+                const passButton = profileViewer.querySelector('.pass-button');
+                if (passButton) {
+                    passButton.addEventListener('click', async function() {
+                        showLoading();
+                        try {
+                            const response = await fetch('/pass-user', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ passed_user_id: userId })
+                            });
+                            const result = await response.json();
+                            hideLoading();
+                            
+                            if (result.success) {
+                                createPassBurst(this);
+                                showNotification('Passed');
+                                // Update cache
+                                const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+                                if (cached) {
+                                    const match = cached.data.find(m => m.id === userId);
+                                    if (match) {
+                                        match.passed = true;
+                                    }
+                                    localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+                                }
+                                // Remove card with animation and refresh after
+                                const card = document.querySelector(`.discovery-card[data-user-id="${userId}"]`);
+                                if (card) {
+                                    card.style.opacity = '0';
+                                    card.style.transition = 'opacity 0.5s ease';
+                                    setTimeout(() => {
+                                        card.remove();
+                                        profileViewer.remove();
+                                        mainHeader.style.display = 'flex';
+                                        document.body.style.overflow = '';
+                                        history.back();
+                                        // Now refresh
+                                        loadMatches();
+                                        loadDiscovery([]);
+                                    }, 500);
+                                } else {
+                                    profileViewer.remove();
+                                    mainHeader.style.display = 'flex';
+                                    document.body.style.overflow = '';
+                                    history.back();
+                                    loadMatches();
+                                    loadDiscovery([]);
+                                }
+                            } else {
+                                showError(result.error || 'Failed to pass user');
+                            }
+                        } catch (error) {
+                            hideLoading();
+                            showError('Network error while passing user');
+                        }
+                    });
+                }
+            }
+            
+            // Function to attach profile click listeners
+            function attachProfileClickListeners() {
+                document.querySelectorAll('.discovery-card:not([data-click-attached])').forEach(card => {
+                    card.addEventListener('click', function(e) {
+                        // Don't open profile if clicking on like button
+                        if (!e.target.closest('.like-button')) {
+                            const userId = this.dataset.userId;
+                            openProfileViewer(userId);
+                        }
+                    });
+                    card.setAttribute('data-click-attached', 'true');
+                });
+            }
+
+            // Initial load: Check if retake refresh, show modal first
+            if (refreshExplore) {
+                // Modal is shown via CSS display: block above
+                // Do not load yet, wait for user action
+            } else {
+                loadMatches(false);
+                hasLoadedOnce = true;
+            }
+
+            // Refresh button - ensure it's wired
+            if (refreshMatchesBtn) {
+                refreshMatchesBtn.addEventListener('click', () => {
+                    loadMatches(true);
+                });
+            }
+
+            // Feedback modal handling
+            const feedbackModal = document.getElementById('feedbackModal');
+            if (feedbackModal) {
+                feedbackModal.style.display = 'block';
+                document.getElementById('submitFeedback').addEventListener('click', async () => {
+                    const text = document.getElementById('feedbackText').value;
+                    await fetch('/submit_feedback', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({feedback: text})
+                    });
+                    feedbackModal.remove();
+                });
+                document.getElementById('dontShowFeedback').addEventListener('click', async () => {
+                    await fetch('/dismiss_feedback', {method: 'POST'});
+                    feedbackModal.remove();
+                });
+            }
+
+            // Retake modal handling
+            const retakeModal = document.getElementById('retakeModal');
+            if (retakeModal) {
+                retakeModal.style.display = 'block';
+                document.getElementById('retakeYes').addEventListener('click', () => {
+                    localStorage.setItem('refresh_explore', 'true');
+                    window.location.href = '/questions?retake=true';
+                });
+                document.getElementById('retakeNo').addEventListener('click', async () => {
+                    await fetch('/dismiss_retake', {method: 'POST'});
+                    retakeModal.remove();
+                });
+            }
+
+            // Match narrations data
+            const MATCH_NARRATIONS = {
+                '🌿 Nurturer': {
+                    '🌿 Nurturer': {tagline: '💞 Two hearts, one comfort.', narration: 'You both give more than you take. In this love, care never runs out — it simply circles back. Together, you create a world that feels safe, gentle, and endlessly kind.'},
+                    '👂 Listener': {tagline: '💞 Heard and held.', narration: 'You love to care, and they love to listen. Their calm presence makes your tenderness feel valued — it’s easy to be fully yourself here.'},
+                    '🛡️ Protector': {tagline: '🛡️ Wrapped in safety.', narration: 'Their quiet strength protects your gentle heart. You feel grounded and cherished — it’s love that feels steady, not rushed.'},
+                    '🌙 Dreamer': {tagline: '🌙 Roots & wings.', narration: 'You bring comfort, they bring imagination. Their wonder inspires you to dream, and your care helps their dreams feel safe to bloom.'},
+                    '💘 Romantic': {tagline: '🔥 Soft fire.', narration: 'Their passion excites you while your calm warmth soothes them. Together, love feels alive yet peaceful — heat without chaos.'},
+                    '🌟 Idealist': {tagline: '🌟 Gentle purpose.', narration: 'You care for the little things; they dream of the big picture. You bring heart to their ideals, and they give meaning to your care.'},
+                },
+                '👂 Listener': {
+                    '🌿 Nurturer': {tagline: '🌸 Safe to feel.', narration: 'You listen deeply, and their warmth feels like home. You give them peace, and they give you comfort — together, emotions flow freely.'},
+                    '👂 Listener': {tagline: '🌸 Silence that speaks.', narration: 'Two calm souls, fluent in unspoken language. You listen without judgment, love without noise, and create peace simply by being present.'},
+                    '🛡️ Protector': {tagline: '🕊 Safe silence.', narration: 'You listen, they protect. Their quiet strength comforts you, and your patience helps them open up.'},
+                    '🌙 Dreamer': {tagline: '🌙 Heard dreams.', narration: 'You listen to their ideas with curiosity and care. They feel seen, and you feel inspired — a soft, creative harmony.'},
+                    '💘 Romantic': {tagline: '💞 Heartfelt bond.', narration: 'You hold space for their emotions. Their fire brings warmth to your calm — together, love feels both alive and peaceful.'},
+                    '🌟 Idealist': {tagline: '🌟 Cause and care.', narration: 'You listen deeply to their ideals. Your attention gives their purpose strength and roots.'},
+                },
+                '🛡️ Protector': {
+                    '🌿 Nurturer': {tagline: '🌸 Gentle guard.', narration: 'You protect what you love, and their kindness softens your edges. Their warmth reminds you why you choose loyalty every day.'},
+                    '👂 Listener': {tagline: '💞 Strength in calm.', narration: 'You offer loyalty; they offer peace. Their empathy melts your guard, and your steadiness gives them safety.'},
+                    '🛡️ Protector': {tagline: '⚔️ Trust built strong.', narration: 'Loyalty meets loyalty. You both stand firm, shielding what matters most. Beneath the strength lies a quiet tenderness — a bond built on reliability and deep respect.'},
+                    '🌙 Dreamer': {tagline: '🌙 Anchor & wings.', narration: 'You ground their imagination. They remind you of wonder and possibility — a bond where safety meets adventure.'},
+                    '💘 Romantic': {tagline: '🔥 Safe passion.', narration: 'Their warmth ignites you. You love how they trust you to hold their fire — love here feels brave but never reckless.'},
+                    '🌟 Idealist': {tagline: '🌟 Guarding the dream.', narration: 'You stand by their purpose with quiet strength. You keep their hopes safe from storms, turning vision into reality.'},
+                },
+                '🌙 Dreamer': {
+                    '🌿 Nurturer': {tagline: '🌷 Soft anchor.', narration: 'You dream, they ground. Their steady affection makes your creativity feel supported — a balance of heart and vision.'},
+                    '👂 Listener': {tagline: '🎶 Safe imagination.', narration: 'You share your wild thoughts freely because they truly listen. Their empathy makes your mind feel understood.'},
+                    '🛡️ Protector': {tagline: '⚓ Trust to fly.', narration: 'You dream freely because they make you feel safe. Their loyalty turns your vision into something real.'},
+                    '🌙 Dreamer': {tagline: '☁️ Shared sky.', narration: 'You both see the world in colors others can’t. Together, dreams multiply — turning imagination into a soft, infinite space where hope feels like home.'},
+                    '💘 Romantic': {tagline: '🌙 Fire and fantasy.', narration: 'You bring imagination; they bring intensity. Love becomes art — passionate and beautifully expressive.'},
+                    '🌟 Idealist': {tagline: '🌟 Dream + purpose.', narration: 'You imagine; they believe. Their ideals give your dreams shape, and your wonder gives their mission soul.'},
+                },
+                '💘 Romantic': {
+                    '🌿 Nurturer': {tagline: '🌸 Held passion.', narration: 'You burn bright, and they hold that flame with care. Their tenderness teaches you that love doesn’t have to hurt to be deep.'},
+                    '👂 Listener': {tagline: '🌿 Heard desire.', narration: 'You express deeply, and they truly listen. Their understanding softens your intensity, turning love into connection.'},
+                    '🛡️ Protector': {tagline: '🛡️ Held desire.', narration: 'You love intensely, and they meet it with steadiness. Their calm presence turns your passion into lasting love.'},
+                    '🌙 Dreamer': {tagline: '🌙 Fire and fantasy.', narration: 'You bring heart, they bring imagination. Together, you create a love story that feels like poetry.'},
+                    '💘 Romantic': {tagline: '💫 Passion mirrored.', narration: 'Two hearts that burn bright, meeting flame to flame. Every glance feels electric — but it’s your mutual depth that keeps the fire beautiful, not destructive.'},
+                    '🌟 Idealist': {tagline: '🌟 Love with purpose.', narration: 'You love with heart; they love with meaning. Together, you make passion feel profound and purposeful.'},
+                },
+                '🌟 Idealist': {
+                    '🌿 Nurturer': {tagline: '🌿 Heart with purpose.', narration: 'You dream of making a difference, and they remind you to rest and feel. Their love makes your vision human and warm.'},
+                    '👂 Listener': {tagline: '💞 Purpose and peace.', narration: 'You have vision, and they have presence. Their understanding keeps your dreams from feeling lonely.'},
+                    '🛡️ Protector': {tagline: '🛡️ Vision in trust.', narration: 'You dream of a better world, and they make it feel possible. Their loyalty protects your ideals with heart.'},
+                    '🌙 Dreamer': {tagline: '🌙 Vision with heart.', narration: 'You see purpose; they see beauty. Their creativity lifts your principles into color and light.'},
+                    '💘 Romantic': {tagline: '🔥 Purpose with heart.', narration: 'You seek meaning, and they bring emotion. Together, ideals come alive through feeling.'},
+                    '🌟 Idealist': {tagline: '✨ Vision in sync.', narration: 'You both believe in something bigger — love with purpose, life with meaning. Together, ideals find balance and hope turns into action.'},
+                }
+            };
+
+            const TYPE_ORDER = {
+                '🛡️ Protector': 1,
+                '🌿 Nurturer': 2,
+                '💘 Romantic': 3,
+                '👂 Listener': 4,
+                '🌙 Dreamer': 5,
+                '🌟 Idealist': 6
+            };
+
+            function reversePerspective(text) {
+                return text
+                    .replace(/\bYou\b/g, 'TEMP_THEY_CAP')
+                    .replace(/\byou\b/g, 'temp_they')
+                    .replace(/\bYour\b/g, 'TEMP_THEIR_CAP')
+                    .replace(/\byour\b/g, 'temp_their')
+                    .replace(/\bThey\b/g, 'You')
+                    .replace(/\bthey\b/g, 'you')
+                    .replace(/\bTheir\b/g, 'Your')
+                    .replace(/\btheir\b/g, 'your')
+                    .replace(/\bTEMP_THEY_CAP\b/g, 'They')
+                    .replace(/\btemp_they\b/g, 'they')
+                    .replace(/\bTEMP_THEIR_CAP\b/g, 'Their')
+                    .replace(/\btemp_their\b/g, 'their');
+            }
+
+            function toThirdPerson(text) {
+                return text
+                    .replace(/\bYou\b/g, 'They')
+                    .replace(/\byou\b/g, 'they')
+                    .replace(/\bYour\b/g, 'Their')
+                    .replace(/\byour\b/g, 'their')
+                    .replace(/\bYours\b/g, 'Theirs')
+                    .replace(/\byours\b/g, 'theirs')
+                    .replace(/\bYourself\b/g, 'Themselves')
+                    .replace(/\byourself\b/g, 'themselves')
+                    .replace(/\bYou're\b/g, 'They\'re')
+                    .replace(/\byou're\b/g, 'they\'re');
+            }
+
+            // Navigation press effect
+            const navLinks = document.querySelectorAll('.bottom-nav a');
+            navLinks.forEach(link => {
+                link.addEventListener('pointerdown', function() {
+                    navLinks.forEach(l => {
+                        l.classList.remove('text-pink-500', 'dark:text-pink-400');
+                        l.classList.add('text-gray-500', 'dark:text-gray-400');
+                    });
+                    this.classList.remove('text-gray-500', 'dark:text-gray-400');
+                    this.classList.add('text-pink-500', 'dark:text-pink-400');
+                });
+            });
+
+            // Burst animation functions
+            function createHeartBurst(target) {
+                const rect = target.getBoundingClientRect();
+                const burst = document.createElement('div');
+                burst.style.position = 'fixed';
+                burst.style.left = `${rect.left + rect.width / 2}px`;
+                burst.style.top = `${rect.top + rect.height / 2}px`;
+                burst.style.pointerEvents = 'none';
+                burst.style.zIndex = '1002';
+                for (let i = 0; i < 8; i++) {
+                    const heart = document.createElement('i');
+                    heart.className = 'fas fa-heart text-pink-500';
+                    heart.style.position = 'absolute';
+                    heart.style.fontSize = `${Math.random() * 1 + 1}rem`;
+                    heart.style.left = '0';
+                    heart.style.top = '0';
+                    heart.style.transform = 'translate(-50%, -50%)';
+                    heart.style.animation = `burstAnim ${Math.random() * 0.5 + 0.5}s ease-out`;
+                    const angle = Math.random() * 2 * Math.PI;
+                    const distance = Math.random() * 50 + 30;
+                    heart.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+                    heart.style.setProperty('--dy', `${Math.sin(angle) * distance - 50}px`); // upward bias
+                    burst.appendChild(heart);
+                }
+                document.body.appendChild(burst);
+                setTimeout(() => burst.remove(), 1000);
+            }
+
+            function createPassBurst(target) {
+                const rect = target.getBoundingClientRect();
+                const burst = document.createElement('div');
+                burst.style.position = 'fixed';
+                burst.style.left = `${rect.left + rect.width / 2}px`;
+                burst.style.top = `${rect.top + rect.height / 2}px`;
+                burst.style.pointerEvents = 'none';
+                burst.style.zIndex = '1002';
+                for (let i = 0; i < 5; i++) {
+                    const cross = document.createElement('i');
+                    cross.className = 'fas fa-times text-red-500';
+                    cross.style.position = 'absolute';
+                    cross.style.fontSize = `${Math.random() * 1 + 1}rem`;
+                    cross.style.left = '0';
+                    cross.style.top = '0';
+                    cross.style.transform = 'translate(-50%, -50%)';
+                    cross.style.animation = `burstAnim ${Math.random() * 0.5 + 0.5}s ease-out`;
+                    const angle = Math.random() * 2 * Math.PI;
+                    const distance = Math.random() * 50 + 30;
+                    cross.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+                    cross.style.setProperty('--dy', `${Math.sin(angle) * distance}px`); // random direction
+                    burst.appendChild(cross);
+                }
+                document.body.appendChild(burst);
+                setTimeout(() => burst.remove(), 1000);
+            }
+
+            function createReportBurst(target) {
+                const rect = target.getBoundingClientRect();
+                const burst = document.createElement('div');
+                burst.style.position = 'fixed';
+                burst.style.left = `${rect.left + rect.width / 2}px`;
+                burst.style.top = `${rect.top + rect.height / 2}px`;
+                burst.style.pointerEvents = 'none';
+                burst.style.zIndex = '1002';
+                for (let i = 0; i < 5; i++) {
+                    const flag = document.createElement('i');
+                    flag.className = 'fas fa-flag text-orange-500';
+                    flag.style.position = 'absolute';
+                    flag.style.fontSize = `${Math.random() * 1 + 1}rem`;
+                    flag.style.left = '0';
+                    flag.style.top = '0';
+                    flag.style.transform = 'translate(-50%, -50%)';
+                    flag.style.animation = `burstAnim ${Math.random() * 0.5 + 0.5}s ease-out`;
+                    const angle = Math.random() * 2 * Math.PI;
+                    const distance = Math.random() * 50 + 30;
+                    flag.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+                    flag.style.setProperty('--dy', `${Math.sin(angle) * distance - 30}px`);
+                    burst.appendChild(flag);
+                }
+                document.body.appendChild(burst);
+                setTimeout(() => burst.remove(), 1000);
+            }
+
+            // Notification functions
+            function updateNotificationCount() {
+                fetch('/api/notification_count')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            const countSpan = document.getElementById('notificationCount');
+                            const count = data.count;
+                            countSpan.textContent = count;
+                            countSpan.style.display = count > 0 ? 'inline-block' : 'none';
+                        }
+                    })
+                    .catch(error => console.error('Error fetching notification count:', error));
+            }
+
+            function renderNotifications(notifs) {
+                const list = document.getElementById('notificationList');
+                list.innerHTML = '';
+                if (notifs.length === 0) {
+                    list.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400">No notifications</p>';
+                    return;
+                }
+                notifs.forEach(n => {
+                    const div = document.createElement('div');
+                    div.className = 'notification-item p-2 border-b border-gray-200 dark:border-gray-700 cursor-pointer ' + (n.read ? '' : 'unread bg-gray-100 dark:bg-gray-700');
+                    div.innerHTML = `
+                        <p class="text-gray-800 dark:text-gray-100">${n.message}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">${n.timestamp}</p>
+                    `;
+                    if (!n.read) {
+                        div.addEventListener('click', () => {
+                            fetch('/mark_notification_read', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({notif_id: n.id})
+                            }).then(res => res.json())
+                              .then(result => {
+                                  if (result.success) {
+                                      div.classList.remove('unread', 'bg-gray-100', 'dark:bg-gray-700');
+                                      updateNotificationCount();
+                                  }
+                              });
+                        });
                     }
+                    list.appendChild(div);
                 });
+            }
+
+            // Notification modal toggle
+            const notificationToggle = document.getElementById('notificationToggle');
+            const notificationModal = document.getElementById('notificationModal');
+            const closeNotificationModal = document.getElementById('closeNotificationModal');
+            const clearNotificationsBtn = document.getElementById('clearNotifications');
+
+            notificationToggle.addEventListener('click', () => {
+                notificationModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                fetch('/api/notifications')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            renderNotifications(data.notifications);
+                            updateNotificationCount();
+                        }
+                    })
+                    .catch(error => console.error('Error fetching notifications:', error));
+                history.pushState({notificationOpen: true}, '');
             });
 
-            // Initial loading state
-            showLoading();
-            window.addEventListener('load', hideLoading);
-
-            // See All buttons (placeholder)
-            document.querySelectorAll('#see-all-matches, #see-all-discovery, #see-all-nearby').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    showError('See All functionality coming soon!');
-                });
+            closeNotificationModal.addEventListener('click', () => {
+                notificationModal.classList.add('hidden');
+                document.body.style.overflow = '';
+                history.back();
             });
+
+            clearNotificationsBtn.addEventListener('click', () => {
+                fetch('/clear_notifications', {method: 'POST'})
+                    .then(res => res.json())
+                    .then(result => {
+                        if (result.success) {
+                            renderNotifications([]);
+                            updateNotificationCount();
+                        }
+                    })
+                    .catch(error => console.error('Error clearing notifications:', error));
+            });
+
+            // Initial notification count update
+            updateNotificationCount();
+
+            // Initial likes update
+            updateLikeButtons();
         });
     </script>
 </body>

@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FAQ - Ninakkai Dating App | Personality Matching Questions</title>
+  <meta name="description" content="Get answers to common questions about Ninakkai, the personality-based dating app. Learn about our compatibility quiz, matching algorithm, privacy, and how to find meaningful relationships.">
+  <meta name="keywords" content="dating app FAQ, personality quiz questions, online dating tips, Ninakkai help, matchmaking FAQ">
+  <meta name="robots" content="index, follow">
+  <meta property="og:title" content="Ninakkai FAQ: Everything About Personality-Based Dating">
+  <meta property="og:description" content="Explore FAQs on how Ninakkai uses personality types like Nurturer, Protector, and Dreamer to create compatible matches for real love.">
+  <meta property="og:url" content="https://www.ninakkai.com/faq">
+  <meta property="og:type" content="article">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <style>
+    :root {
+      --primary: #ff4d6d;
+      --bg-dark: rgba(0, 0, 0, 0.7);
+      --light: #fff;
+      --transition: 0.3s ease-in-out;
+      --shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      scroll-behavior: smooth;
+      background-color: #fdfdfd;
+    }
+
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: transparent;
+      z-index: 999;
+      transition: var(--transition);
+    }
+
+    header.sticky {
+      background: var(--bg-dark);
+      backdrop-filter: blur(10px);
+    }
+
+    .logo {
+      color: var(--light);
+      font-size: 1.5rem;
+      font-weight: bold;
+      z-index: 1002;
+    }
+
+    nav {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    nav a {
+      color: var(--light);
+      text-decoration: none;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .popup-container {
+      position: relative;
+    }
+
+    .popup {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: var(--light);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      display: none;
+      width: 200px;
+      z-index: 1000;
+    }
+
+    #about.popup {
+      width: 400px;
+    }
+
+    .popup.active {
+      display: block;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .join-btn {
+      background:linear-gradient(135deg, #76b6f5 0%, #ff5275 100%);
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 25px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .join-btn:hover {
+      background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
+    }
+
+    .main-content {
+      padding: 120px 20px 50px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .faq-section {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 30px;
+      animation: fadeInUp 1s ease;
+    }
+
+    .accordion-button {
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      cursor: pointer;
+      z-index: 1001;
+    }
+
+    .hamburger div {
+      width: 25px;
+      height: 3px;
+      background: white;
+      margin: 4px 0;
+      transition: var(--transition);
+    }
+
+    .hamburger.active div:nth-child(1) {
+      transform: rotate(45deg) translate(5px, 5px);
+    }
+
+    .hamburger.active div:nth-child(2) {
+      opacity: 0;
+    }
+
+    .hamburger.active div:nth-child(3) {
+      transform: rotate(-45deg) translate(5px, -5px);
+    }
+
+    .mobile-nav {
+      display: none;
+      flex-direction: column;
+      background: var(--bg-dark);
+      backdrop-filter: blur(10px);
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 280px;
+      height: 100vh;
+      padding: 80px 30px;
+      box-shadow: var(--shadow);
+      transform: translateX(100%);
+      transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      z-index: 1000;
+    }
+
+    .mobile-nav.active {
+      transform: translateX(0);
+      display: flex;
+    }
+
+    .mobile-nav a {
+      color: white;
+      margin-bottom: 20px;
+      text-decoration: none;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 100vw;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 998;
+      opacity: 0;
+      transition: opacity 0.4s ease-in-out;
+    }
+
+    .overlay.active {
+      display: block;
+      opacity: 1;
+    }
+
+    .mobile-popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.7);
+      background: white;
+      color: black;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      z-index: 1002;
+      max-width: 90%;
+      opacity: 0;
+      transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55), opacity 0.4s ease-in-out;
+    }
+
+    .mobile-popup.active {
+      display: block;
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+
+    .close-popup {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1.5rem;
+    }
+
+    footer {
+      background: #1a1a1a;
+      color: #ddd;
+      padding: 50px 20px;
+      text-align: center;
+    }
+
+    footer .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    footer h4 {
+      color: var(--primary);
+      margin-bottom: 15px;
+      font-size: 1.2rem;
+    }
+
+    footer .footer-columns {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+
+    footer .footer-column {
+      flex: 1 1 200px;
+      padding: 15px;
+      min-width: 180px;
+    }
+
+    footer a {
+      color: #bbb;
+      text-decoration: none;
+      display: block;
+      margin: 8px 0;
+      font-size: 0.9rem;
+      transition: var(--transition);
+    }
+
+    footer a:hover {
+      color: var(--primary);
+    }
+
+    footer .social-icons {
+      margin: 20px 0;
+    }
+
+    footer .social-icons a {
+      margin: 0 12px;
+      font-size: 1.5rem;
+      color: #bbb;
+      transition: var(--transition);
+    }
+
+    footer .social-icons a:hover {
+      color: var(--primary);
+    }
+
+    footer .newsletter {
+      margin: 20px 0;
+    }
+
+    footer .newsletter input {
+      padding: 10px;
+      border: none;
+      border-radius: 20px 0 0 20px;
+      width: 200px;
+      outline: none;
+    }
+
+    footer .newsletter button {
+      padding: 10px 20px;
+      border: none;
+      background: var(--primary);
+      color: white;
+      border-radius: 0 20px 20px 0;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    footer .newsletter button:hover {
+      background: #e0435f;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+      nav {
+        display: none;
+      }
+
+      .hamburger {
+        display: flex;
+      }
+
+      footer .footer-columns {
+        flex-direction: column;
+        text-align: left;
+      }
+
+      #about.popup {
+        width: 200px;
+      }
+    }
+
+    .animated-gradient {
+      background: linear-gradient(90deg, #ff4e50, #f9d423, #00c9ff, #76b852, #ff4e50);
+      background-size: 300% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientMove 3s linear infinite;
+      font-weight: bold;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 100% 50%; }
+    }
+  </style>
+</head>
+<body>
+
+  <header id="header">
+    <a href="index.html" class="logo" style="text-decoration: none;">
+    <span style="font-size: 2rem; background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; margin-right: 5px;">
+        നിനക്കായി-
+    </span>
+    <span style="font-size: 1.2rem; color: rgb(255, 255, 255); font-weight: 600;">
+        ForYou
+    </span>
+</a>
+
+    <nav>
+      <div class="popup-container">
+        <a onmouseenter="showPopup(event, 'about')" onclick="showPopup(event, 'about')">About</a>
+        <div class="popup" id="about">
+          <p>
+            <strong>About Us</strong><br>
+            We are a dating platform helping people find real connections.<br>
+            ✅ 100% original and verified profiles<br>
+            ✅ Safe, secure, and privacy-focused<br>
+            ✅ Built for meaningful relationships<br>
+            ✅ Smooth user experience with modern tech
+          </p>
+        </div>
+      </div>
+
+      <div class="popup-container">
+        <a onmouseenter="showPopup(event, 'pricing')" onclick="showPopup(event, 'pricing')">Pricing</a>
+        <div class="popup" id="pricing">
+          <p>
+            <strong>Pricing</strong><br>
+            Basic: Free Forever 🎉<br>
+            Pro: <span class="animated-gradient">Coming Soon...</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="popup-container">
+        <a onmouseenter="showPopup(event, 'contact')" onclick="showPopup(event, 'contact')">Contact</a>
+        <div class="popup" id="contact">
+          <p><strong>Contact</strong><br>Email: support@ninakkai.com</p>
+        </div>
+      </div>
+
+      <button class="join-btn" onclick="location.href='{{ url_for('auth') }}'">Join Us</button>
+    </nav>
+
+    <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
+      <div></div><div></div><div></div>
+    </div>
+    <div class="mobile-nav" id="mobileMenu">
+      <a onclick="showMobilePopup('about')">About</a>
+      <a onclick="showMobilePopup('pricing')">Pricing</a>
+      <a onclick="showMobilePopup('contact')">Contact</a>
+      <a href="{{ url_for('auth') }}" class="join-btn" style="margin-top: 20px;">Join Us</a>
+    </div>
+  </header>
+
+  <div class="overlay" id="overlay" onclick="closeMobilePopup()"></div>
+
+  <div class="mobile-popup" id="mobilePopup">
+    <span class="close-popup" onclick="closeMobilePopup()">×</span>
+    <div id="popupContent"></div>
+  </div>
+
+  <section class="main-content">
+    <h1 class="text-center mb-5" style="color: black; animation: fadeInDown 1s ease;">Frequently Asked Questions</h1>
+    <div class="faq-section">
+      <div class="accordion" id="faqAccordion">
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingOne">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+              How does the real-time face recognition work?
+            </button>
+          </h2>
+          <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              Our platform uses advanced AI to perform real-time face recognition during registration and interactions to verify gender and age, ensuring authentic profiles and matches.
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingTwo">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+              How do you prevent fraud and fake accounts?
+            </button>
+          </h2>
+          <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              We employ strict verification processes, including face recognition and manual reviews, to eliminate fake accounts and ensure only genuine users join for serious relationships.
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingThree">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+              Is my data private?
+            </button>
+          </h2>
+          <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              Yes, we prioritize privacy. All data is encrypted, and face recognition data is used solely for verification and not stored long-term.
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingFour">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+              How are matches made?
+            </button>
+          </h2>
+          <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              Matches are based on verified gender (men with women, women with men), age preferences, interests, and compatibility for serious relationships.
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingFive">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+              How do you ensure I connect with genuine users?
+            </button>
+          </h2>
+          <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              Our platform uses a combination of AI-driven face recognition, manual profile reviews, and ongoing monitoring to verify user identities and ensure only genuine users are active, fostering authentic connections.
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingSix">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix">
+              What happens if I encounter inappropriate behavior?
+            </button>
+          </h2>
+          <div id="collapseSix" class="accordion-collapse collapse" aria-labelledby="headingSix" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              We take user safety seriously. You can report inappropriate behavior directly through the platform, and our moderation team will review and take action, including suspending or banning accounts if necessary.
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingSeven">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSeven" aria-expanded="false" aria-controls="collapseSeven">
+              How can I delete my account?
+            </button>
+          </h2>
+          <div id="collapseSeven" class="accordion-collapse collapse" aria-labelledby="headingSeven" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              You can delete your account at any time through the profile settings page. All your data, including profile information and match history, will be permanently removed from our servers.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</section>
+
+  <footer>
+  <div class="footer-content">
+    <div class="footer-columns">
+
+      <!-- Company Info -->
+      <div class="footer-column">
+        <h4>Company</h4>
+        <a href="{{ url_for('terms') }}">Terms & Conditions</a>
+        <a href="{{ url_for('privacy') }}">Privacy Policy</a>
+        <a href="{{ url_for('faq') }}">FAQs</a>
+      </div>
+
+      <!-- Support -->
+      <div class="footer-column">
+        <h4>Support</h4>
+        <a href="mailto:support@ninakkai.com?subject=Help%20Center%20Request">Help Center</a>
+        <a href="mailto:support@ninakkai.com?subject=Contact%20Us">Contact Us</a>
+        </div>
+
+
+      <!-- Social Links -->
+      <div class="footer-column">
+        <h4>Stay Connected</h4>
+        <div class="social-icons">
+          <a href="#"><i class="fab fa-instagram"></i></a>
+          <a href="#"><i class="fab fa-facebook-f"></i></a>
+          <a href="#"><i class="fab fa-twitter"></i></a>
+        </div>
+      </div>
+
+      <!-- Logo Section -->
+      <div class="footer-column">
+        <h4>Powered By</h4>
+        <a href="{{ url_for('home') }}">
+          <img src="/static/images/ninakkayi-logo.webp" alt="Ninakkayi Logo" style="width:140px; margin-top:10px;">
+        </a>
+      </div>
+
+    </div>
+  </div>
+  <p>&copy; 2025 നിനക്കായി -ForYou. All Rights Reserved.</p>
+</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <script>
+    window.addEventListener('scroll', function () {
+      document.getElementById('header').classList.toggle('sticky', window.scrollY > 10);
+    });
+
+    function showPopup(event, id) {
+      closeAllPopups();
+      const popup = document.getElementById(id);
+      popup.classList.add('active');
+      
+      // Get the parent popup-container
+      const container = popup.parentElement;
+      
+      // Add mouseleave event to close popup when cursor leaves the container
+      container.addEventListener('mouseleave', function handler() {
+        closeAllPopups();
+        container.removeEventListener('mouseleave', handler);
+      });
+
+      // Add click event to close popup when clicking outside
+      document.addEventListener('click', function handler(e) {
+        if (!popup.contains(e.target) && !container.contains(e.target)) {
+          closeAllPopups();
+          document.removeEventListener('click', handler);
+        }
+      });
+    }
+
+    function closeAllPopups() {
+      document.querySelectorAll('.popup').forEach(p => p.classList.remove('active'));
+    }
+
+    function toggleMobileMenu() {
+      document.getElementById('mobileMenu').classList.toggle('active');
+      document.getElementById('hamburger').classList.toggle('active');
+      document.getElementById('overlay').classList.toggle('active');
+    }
+
+    function showMobilePopup(section) {
+      const data = {
+        about: "<strong>About Us</strong><br><br>We are a dating platform helping people find real connections.<br>✅ 100% original and verified profiles<br>✅ Safe, secure, and privacy-focused<br>✅ Built for meaningful relationships<br>✅ Smooth user experience with modern tech",
+        pricing: "<strong>Pricing</strong><br><br>Basic: Free Forever 🎉<br>Pro: <span class='animated-gradient'>Coming Soon...</span>",
+        contact: "<strong>Contact</strong><br><br>Email: support@example.com<br>Phone: +123456789"
+      };
+      document.getElementById('popupContent').innerHTML = data[section];
+      document.getElementById('mobilePopup').classList.add('active');
+      document.getElementById('overlay').classList.add('active');
+    }
+
+    function closeMobilePopup() {
+      document.getElementById('mobilePopup').classList.remove('active');
+      document.getElementById('overlay').classList.remove('active');
+    }
+  </script>
+</body>
+</html>

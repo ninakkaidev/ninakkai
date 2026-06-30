@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Terms of Service - Ninakkai Dating Platform</title>
+  <meta name="description" content="Review the terms of service for Ninakkai, the app for personality-driven dating. Understand user guidelines, matching rules, and community standards for safe, enjoyable connections.">
+  <meta name="keywords" content="dating app terms, online dating rules, Ninakkai terms, user agreement, matchmaking terms">
+  <meta name="robots" content="index, follow">
+  <meta property="og:title" content="Ninakkai Terms of Service: Guidelines for Meaningful Dating">
+  <meta property="og:description" content="Agree to our terms to use Ninakkai's personality quiz and matching features for finding compatible partners.">
+  <meta property="og:url" content="https://www.ninakkai.com/terms">
+  <meta property="og:type" content="article">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <style>
+    :root {
+      --primary: #ff4d6d;
+      --bg-dark: rgba(0, 0, 0, 0.7);
+      --light: #fff;
+      --transition: 0.3s ease-in-out;
+      --shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      scroll-behavior: smooth;
+      background-color: #fdfdfd;
+    }
+
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: transparent;
+      z-index: 999;
+      transition: var(--transition);
+    }
+
+    header.sticky {
+      background: var(--bg-dark);
+      backdrop-filter: blur(10px);
+    }
+
+    .logo {
+      color: var(--light);
+      font-size: 1.5rem;
+      font-weight: bold;
+      z-index: 1002;
+    }
+
+    nav {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    nav a {
+      color: var(--light);
+      text-decoration: none;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .popup-container {
+      position: relative;
+    }
+
+    .popup {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: var(--light);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      display: none;
+      width: 200px;
+      z-index: 1000;
+    }
+
+    #about.popup {
+      width: 400px;
+    }
+
+    .popup.active {
+      display: block;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .join-btn {
+      background:linear-gradient(135deg, #76b6f5 0%, #ff5275 100%);
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 25px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .join-btn:hover {
+      background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%);
+    }
+
+    .main-content {
+      padding: 120px 20px 50px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .terms-section {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 30px;
+      animation: fadeInUp 1s ease;
+    }
+
+    .terms-section h3 {
+      color: black;
+      margin-bottom: 20px;
+    }
+
+    .terms-section p {
+      margin-bottom: 15px;
+    }
+
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      cursor: pointer;
+      z-index: 1001;
+    }
+
+    .hamburger div {
+      width: 25px;
+      height: 3px;
+      background: white;
+      margin: 4px 0;
+      transition: var(--transition);
+    }
+
+    .hamburger.active div:nth-child(1) {
+      transform: rotate(45deg) translate(5px, 5px);
+    }
+
+    .hamburger.active div:nth-child(2) {
+      opacity: 0;
+    }
+
+    .hamburger.active div:nth-child(3) {
+      transform: rotate(-45deg) translate(5px, -5px);
+    }
+
+    .mobile-nav {
+      display: none;
+      flex-direction: column;
+      background: var(--bg-dark);
+      backdrop-filter: blur(10px);
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 280px;
+      height: 100vh;
+      padding: 80px 30px;
+      box-shadow: var(--shadow);
+      transform: translateX(100%);
+      transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      z-index: 1000;
+    }
+
+    .mobile-nav.active {
+      transform: translateX(0);
+      display: flex;
+    }
+
+    .mobile-nav a {
+      color: white;
+      margin-bottom: 20px;
+      text-decoration: none;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 100vw;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 998;
+      opacity: 0;
+      transition: opacity 0.4s ease-in-out;
+    }
+
+    .overlay.active {
+      display: block;
+      opacity: 1;
+    }
+
+    .mobile-popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.7);
+      background: white;
+      color: black;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      z-index: 1002;
+      max-width: 90%;
+      opacity: 0;
+      transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55), opacity 0.4s ease-in-out;
+    }
+
+    .mobile-popup.active {
+      display: block;
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+
+    .close-popup {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1.5rem;
+    }
+
+    footer {
+      background: #1a1a1a;
+      color: #ddd;
+      padding: 50px 20px;
+      text-align: center;
+    }
+
+    footer .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    footer h4 {
+      color: var(--primary);
+      margin-bottom: 15px;
+      font-size: 1.2rem;
+    }
+
+    footer .footer-columns {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+
+    footer .footer-column {
+      flex: 1 1 200px;
+      padding: 15px;
+      min-width: 180px;
+    }
+
+    footer a {
+      color: #bbb;
+      text-decoration: none;
+      display: block;
+      margin: 8px 0;
+      font-size: 0.9rem;
+      transition: var(--transition);
+    }
+
+    footer a:hover {
+      color: var(--primary);
+    }
+
+    footer .social-icons {
+      margin: 20px 0;
+    }
+
+    footer .social-icons a {
+      margin: 0 12px;
+      font-size: 1.5rem;
+      color: #bbb;
+      transition: var(--transition);
+    }
+
+    footer .social-icons a:hover {
+      color: var(--primary);
+    }
+
+    footer .newsletter {
+      margin: 20px 0;
+    }
+
+    footer .newsletter input {
+      padding: 10px;
+      border: none;
+      border-radius: 20px 0 0 20px;
+      width: 200px;
+      outline: none;
+    }
+
+    footer .newsletter button {
+      padding: 10px 20px;
+      border: none;
+      background: var(--primary);
+      color: white;
+      border-radius: 0 20px 20px 0;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    footer .newsletter button:hover {
+      background: #e0435f;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+      nav {
+        display: none;
+      }
+
+      .hamburger {
+        display: flex;
+      }
+
+      footer .footer-columns {
+        flex-direction: column;
+        text-align: left;
+      }
+
+      #about.popup {
+        width: 200px;
+      }
+    }
+
+    .animated-gradient {
+      background: linear-gradient(90deg, #ff4e50, #f9d423, #00c9ff, #76b852, #ff4e50);
+      background-size: 300% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientMove 3s linear infinite;
+      font-weight: bold;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 100% 50%; }
+    }
+  </style>
+</head>
+<body>
+
+  <header id="header">
+    <a href="{{ url_for('home') }}" class="logo" style="text-decoration: none;">
+<span style="font-size: 2rem; font-family: 'Noto Sans Malayalam', sans-serif; background: linear-gradient(135deg, #ff5275 0%, #76b6f5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; margin-right: 5px;">
+    നിനക്കായി-
+</span>
+
+    <span style="font-size: 1.2rem; color: rgb(0, 0, 0); font-weight: 600;">
+        ForYou
+    </span>
+</a>
+
+    <nav>
+      <div class="popup-container">
+        <a onmouseenter="showPopup(event, 'about')" onclick="showPopup(event, 'about')">About</a>
+        <div class="popup" id="about">
+          <p>
+            <strong>About Us</strong><br>
+            We are a dating platform helping people find real connections.<br>
+            ✅ 100% original and verified profiles<br>
+            ✅ Safe, secure, and privacy-focused<br>
+            ✅ Built for meaningful relationships<br>
+            ✅ Smooth user experience with modern tech
+          </p>
+        </div>
+      </div>
+
+      <div class="popup-container">
+        <a onmouseenter="showPopup(event, 'pricing')" onclick="showPopup(event, 'pricing')">Pricing</a>
+        <div class="popup" id="pricing">
+          <p>
+            <strong>Pricing</strong><br>
+            Basic: Free Forever 🎉<br>
+            Pro: <span class="animated-gradient">Coming Soon...</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="popup-container">
+        <a onmouseenter="showPopup(event, 'contact')" onclick="showPopup(event, 'contact')">Contact</a>
+        <div class="popup" id="contact">
+          <p><strong>Contact</strong><br>Email: support@ninakkai.com</p>
+        </div>
+      </div>
+
+      <button class="join-btn" onclick="location.href='{{ url_for('auth') }}'">Join Us</button>
+    </nav>
+
+    <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
+      <div></div><div></div><div></div>
+    </div>
+    <div class="mobile-nav" id="mobileMenu">
+      <a onclick="showMobilePopup('about')">About</a>
+      <a onclick="showMobilePopup('pricing')">Pricing</a>
+      <a onclick="showMobilePopup('contact')">Contact</a>
+      <a href="{{ url_for('auth') }}" class="join-btn" style="margin-top: 20px;">Join Us</a>
+    </div>
+  </header>
+
+  <div class="overlay" id="overlay" onclick="closeMobilePopup()"></div>
+
+  <div class="mobile-popup" id="mobilePopup">
+    <span class="close-popup" onclick="closeMobilePopup()">×</span>
+    <div id="popupContent"></div>
+  </div>
+
+  <section class="main-content">
+    <h1 class="text-center mb-5" style="color: black; animation: fadeInDown 1s ease;">Terms & Conditions</h1>
+    <div class="terms-section">
+      <h2>Terms and Conditions</h2>
+      
+      <p>Welcome to Ninakkai! By using our app, you agree to comply with and be bound by the following terms and conditions. Please read them carefully. If you do not agree to these terms, please do not use our app.</p>
+      
+      <h3>1. Eligibility</h3>
+      <p>You must be at least 18 years old to use this app. By registering, you confirm that you meet this requirement and that the information you provide is accurate and truthful.</p>
+      
+      <h3>2. Account Responsibility</h3>
+      <p>You are responsible for maintaining the confidentiality of your login credentials and for all activity that occurs under your account. If you suspect unauthorized use, contact us immediately.</p>
+      
+      <h3>3. User Conduct</h3>
+      <p>You agree not to:</p>
+      <ul>
+        <li>Post or transmit any content that is abusive, harassing, obscene, or illegal.</li>
+        <li>Impersonate another person or entity.</li>
+        <li>Use the app for commercial purposes without written permission.</li>
+        <li>Share content that violates someone else's rights, including privacy and intellectual property.</li>
+      </ul>
+      <p>We reserve the right to suspend or terminate your account for any violation of these terms.</p>
+      
+      <h3>4. Content Ownership</h3>
+      <p>You retain ownership of the content you post but grant us a worldwide, royalty-free license to use, display, and distribute your content within the app for the purpose of operating and improving our services.</p>
+      
+      <h3>5. Safety Disclaimer</h3>
+      <p>Ninakkai is not responsible for the actions of users online or offline. Please use caution and follow safety guidelines when interacting with others. We do not conduct criminal background checks on users.</p>
+      
+      <h3>6. Subscription and Payments</h3>
+      <p>Some features may require a paid subscription. All payments are non-refundable unless otherwise stated. We reserve the right to change pricing or features at any time.</p>
+      
+      <h3>7. Modifications to the App</h3>
+      <p>We may update or modify the app at any time without notice. Your continued use of the app after changes means you accept those changes.</p>
+      
+      <h3>8. Termination</h3>
+      <p>We may suspend or terminate your account at any time, with or without notice, for any reason, including violation of these Terms.</p>
+      
+      <h3>9. Privacy</h3>
+      <p>Please refer to our Privacy Policy to understand how we collect, use, and protect your personal information.</p>
+      
+      <h3>10. Limitation of Liability</h3>
+      <p>We are not liable for any indirect, incidental, special, or consequential damages arising from your use of the app.</p>
+      
+      <h3>11. Governing Law</h3>
+      <p>These Terms are governed by the laws of India. Any disputes shall be resolved in the court.</p>
+      
+      <h3>12. Updates to Terms</h3>
+      <p>We may revise these Terms from time to time. We will notify users of any significant changes. Continued use after changes indicates acceptance of the new terms.</p>
+      
+      <h3>Closing Note</h3>
+      <p>We may use your information to improve your experience by introducing new features and updates in the future. Your data helps us create a safer, more enjoyable platform for everyone.</p>
+      
+      <p>Thank you for using Ninakkai!</p>
+    </div>
+  </section>
+
+  <footer>
+  <div class="footer-content">
+    <div class="footer-columns">
+
+      <!-- Company Info -->
+      <div class="footer-column">
+        <h4>Company</h4>
+        <a href="{{ url_for('terms') }}">Terms & Conditions</a>
+        <a href="{{ url_for('privacy') }}">Privacy Policy</a>
+        <a href="{{ url_for('faq') }}">FAQs</a>
+      </div>
+
+      <!-- Support -->
+      <div class="footer-column">
+        <h4>Support</h4>
+        <a href="mailto:support@ninakkai.com?subject=Help%20Center%20Request">Help Center</a>
+        <a href="mailto:support@ninakkai.com?subject=Contact%20Us">Contact Us</a>
+        </div>
+
+      <!-- Social Links -->
+      <div class="footer-column">
+        <h4>Stay Connected</h4>
+        <div class="social-icons">
+          <a href="#"><i class="fab fa-instagram"></i></a>
+          <a href="#"><i class="fab fa-facebook-f"></i></a>
+          <a href="#"><i class="fab fa-twitter"></i></a>
+        </div>
+      </div>
+
+      <!-- Logo Section -->
+      <div class="footer-column">
+        <h4>Powered By</h4>
+        <a href="{{ url_for('home') }}">
+          <img src="/static/images/ninakkayi-logo.webp" alt="Ninakkayi Logo" style="width:140px; margin-top:10px;">
+        </a>
+      </div>
+
+    </div>
+  </div>
+  <p>&copy; 2025 നിനക്കായി -ForYou. All Rights Reserved.</p>
+</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <script>
+    window.addEventListener('scroll', function () {
+      document.getElementById('header').classList.toggle('sticky', window.scrollY > 10);
+    });
+
+    function showPopup(event, id) {
+      closeAllPopups();
+      const popup = document.getElementById(id);
+      popup.classList.add('active');
+      
+      // Get the parent popup-container
+      const container = popup.parentElement;
+      
+      // Add mouseleave event to close popup when cursor leaves the container
+      container.addEventListener('mouseleave', function handler() {
+        closeAllPopups();
+        container.removeEventListener('mouseleave', handler);
+      });
+
+      // Add click event to close popup when clicking outside
+      document.addEventListener('click', function handler(e) {
+        if (!popup.contains(e.target) && !container.contains(e.target)) {
+          closeAllPopups();
+          document.removeEventListener('click', handler);
+        }
+      });
+    }
+
+    function closeAllPopups() {
+      document.querySelectorAll('.popup').forEach(p => p.classList.remove('active'));
+    }
+
+    function toggleMobileMenu() {
+      document.getElementById('mobileMenu').classList.toggle('active');
+      document.getElementById('hamburger').classList.toggle('active');
+      document.getElementById('overlay').classList.toggle('active');
+    }
+
+    function showMobilePopup(section) {
+      const data = {
+        about: "<strong>About Us</strong><br><br>We are a dating platform helping people find real connections.<br>✅ 100% original and verified profiles<br>✅ Safe, secure, and privacy-focused<br>✅ Built for meaningful relationships<br>✅ Smooth user experience with modern tech",
+        pricing: "<strong>Pricing</strong><br><br>Basic: Free Forever 🎉<br>Pro: <span class='animated-gradient'>Coming Soon...</span>",
+        contact: "<strong>Contact</strong><br><br>Email: support@example.com<br>Phone: +123456789"
+      };
+      document.getElementById('popupContent').innerHTML = data[section];
+      document.getElementById('mobilePopup').classList.add('active');
+      document.getElementById('overlay').classList.add('active');
+    }
+
+    function closeMobilePopup() {
+      document.getElementById('mobilePopup').classList.remove('active');
+      document.getElementById('overlay').classList.remove('active');
+    }
+  </script>
+</body>
+</html>

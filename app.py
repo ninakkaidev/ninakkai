@@ -1,4 +1,7 @@
-from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory, jsonify
+import eventlet
+eventlet.monkey_patch(thread=False)  # Disable thread patching to avoid Werkzeug local issues
+
+from flask import Flask, request, make_response, session, render_template, redirect, url_for, send_from_directory, jsonify, Response
 from flask_cors import CORS
 from pymongo import MongoClient
 from typing import Dict, Any, Optional, List
@@ -15,6 +18,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+import pytz
+import json
+import http.client
+import requests
+import time
+import random
 
 # Configure Cloudinary with explicit credentials and enhanced logging
 def configure_cloudinary():
@@ -25,7 +34,6 @@ def configure_cloudinary():
             api_secret='FfJnI44v31rzfPvp7-K9lnI5BDM',
             secure=True
         )
-        # Verify configuration by checking required fields
         config = cloudinary.config()
         if not (config.cloud_name and config.api_key and config.api_secret):
             raise Exception("Cloudinary configuration incomplete: missing cloud_name, api_key, or api_secret")
@@ -48,7 +56,7 @@ app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secure-fixed-secret-ke
 app.permanent_session_lifetime = timedelta(days=1)
 app.config.update(
     SESSION_COOKIE_SAMESITE='Lax',
-    SESSION_COOKIE_SECURE=False,  # Set to False for local development
+    SESSION_COOKIE_SECURE=False,  # Set to True in production with HTTPS
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_NAME='for_you_session',
     SESSION_COOKIE_PATH='/',
@@ -58,26 +66,135 @@ app.config.update(
 # Initialize Cloudinary
 configure_cloudinary()
 
+# Personality compatibility matrix (updated with new high scores and symmetry)
+COMPATIBILITY_MATRIX = {
+    'Prot': {'Prot': 70, 'Nurt': 85, 'Rom': 65, 'List': 82, 'Dream': 60, 'Ideal': 72},
+    'Nurt': {'Prot': 85, 'Nurt': 75, 'Rom': 87, 'List': 92, 'Dream': 78, 'Ideal': 82},
+    'Rom': {'Prot': 65, 'Nurt': 87, 'Rom': 80, 'List': 88, 'Dream': 90, 'Ideal': 75},
+    'List': {'Prot': 82, 'Nurt': 92, 'Rom': 88, 'List': 85, 'Dream': 77, 'Ideal': 80},
+    'Dream': {'Prot': 60, 'Nurt': 78, 'Rom': 90, 'List': 77, 'Dream': 75, 'Ideal': 92},
+    'Ideal': {'Prot': 72, 'Nurt': 82, 'Rom': 75, 'List': 80, 'Dream': 92, 'Ideal': 78},
+}
+
+# Type mapping from emoji to short name
+TYPE_MAP = {
+    '🛡️ Protector': 'Prot',
+    '🌿 Nurturer': 'Nurt',
+    '💘 Romantic': 'Rom',
+    '👂 Listener': 'List',
+    '🌙 Dreamer': 'Dream',
+    '🌟 Idealist': 'Ideal'
+}
+
+# Reverse mapping
+REVERSE_TYPE_MAP = {v: k for k, v in TYPE_MAP.items()}
+
+# Function to get top 2 compatible types based on the matrix (excluding self)
+def get_top_compatibles(dominant_type: str) -> List[str]:
+    if not dominant_type:
+        return []
+    short = TYPE_MAP.get(dominant_type)
+    if not short:
+        return []
+    scores = COMPATIBILITY_MATRIX.get(short, {})
+    # Sort by percentage descending, exclude self
+    sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    top_shorts = [s for s, p in sorted_scores if s != short][:2]
+    # Reverse map to full names
+    full_names = [REVERSE_TYPE_MAP.get(s) for s in top_shorts if REVERSE_TYPE_MAP.get(s)]
+    return full_names
+
+# Personalities dictionary (updated compatibility lists based on top percentages from matrix)
+PERSONALITIES = {
+    '🌿 Nurturer': {
+        'dominant_type': '🌿 Nurturer',
+        'title': '“You are a Nurturer.”',
+        'description': 'You\'re gentle, loyal, and always ready to hold space for someone you love. You build relationships with quiet strength and warmth.',
+        'tagline': '“Soft-hearted, deep-rooted.”',
+        'strengths': ['Gentle', 'Loyal', 'Empathetic'],
+        'compatibility': get_top_compatibles('🌿 Nurturer'),  # Dynamic: ['👂 Listener', '💘 Romantic']
+        'color': '#4CAF50'  # Green
+    },
+    '🛡️ Protector': {
+        'dominant_type': '🛡️ Protector',
+        'title': '“You are a Protector.”',
+        'description': 'You\'re grounded, trustworthy, and always ready to stand up for the people you care about. Love means loyalty — and showing up when it matters.',
+        'tagline': '“Safe. Steady. Yours.”',
+        'strengths': ['Grounded', 'Trustworthy', 'Loyal'],
+        'compatibility': get_top_compatibles('🛡️ Protector'),  # Dynamic: ['🌿 Nurturer', '👂 Listener']
+        'color': '#2196F3'  # Blue
+    },
+    '🌙 Dreamer': {
+        'dominant_type': '🌙 Dreamer',
+        'title': '“You are a Dreamer.”',
+        'description': 'You feel deeply and love boldly. You seek the kind of connection that feels written in the stars. You crave the kind of love that makes your soul glow.',
+        'tagline': '“Romance is your religion.”',
+        'strengths': ['Deep', 'Bold', 'Soulful'],
+        'compatibility': get_top_compatibles('🌙 Dreamer'),  # Dynamic: ['🌟 Idealist', '💘 Romantic']
+        'color': '#9C27B0'  # Purple
+    },
+    '👂 Listener': {
+        'dominant_type': '👂 Listener',
+        'title': '“You are a Listener.”',
+        'description': 'Calm and thoughtful, you hear more than what\'s said. You bring comfort in silence and meaning in presence. You understand that real love sometimes just means being there.',
+        'tagline': '“Still waters, true heart.”',
+        'strengths': ['Calm', 'Thoughtful', 'Present'],
+        'compatibility': get_top_compatibles('👂 Listener'),  # Dynamic: ['🌿 Nurturer', '💘 Romantic']
+        'color': '#03A9F4'  # Light Blue
+    },
+    '💘 Romantic': {
+        'dominant_type': '💘 Romantic',
+        'title': '“You are a Romantic.”',
+        'description': 'You lead with your heart, express love freely, and long for emotional electricity. You don\'t just fall in love — you dive in.',
+        'tagline': '“Loving loudly. Feeling deeply.”',
+        'strengths': ['Heart-led', 'Expressive', 'Expressive'],
+        'compatibility': get_top_compatibles('💘 Romantic'),  # Dynamic: ['👂 Listener', '🌿 Nurturer']
+        'color': '#E91E63'  # Pink
+    },
+    '🌟 Idealist': {
+        'dominant_type': '🌟 Idealist',
+        'title': '“You are an Idealist.”',
+        'description': 'You believe love should feel right — clear, mutual, and beautifully real. You wait for the one who understands your soul.',
+        'tagline': '“Only real love will do.”',
+        'strengths': ['Believer', 'Clear', 'Soul-seeking'],
+        'compatibility': get_top_compatibles('🌟 Idealist'),  # Dynamic: ['🌿 Nurturer', '👂 Listener']
+        'color': '#FFEB3B'  # Yellow
+    },
+}
+
+# Question types configuration
+QUESTION_TYPES = {
+    'req1': ["👂 Listener", "💘 Romantic", "🌙 Dreamer", "🛡️ Protector"],
+    'req2': ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "💘 Romantic"],
+    'req3': ["🌿 Nurturer", "🛡️ Protector", "👂 Listener", "💘 Romantic"],
+    'req4': ["👂 Listener", "💘 Romantic", "🛡️ Protector", "🌙 Dreamer"],
+    'req5': ["🌿 Nurturer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"],
+    'req6': ["🌿 Nurturer", "💘 Romantic", "🌟 Idealist", "🌙 Dreamer"],
+    'req7': ["🌙 Dreamer", "💘 Romantic", "🌿 Nurturer", "🛡️ Protector"],
+    'req8': ["🌙 Dreamer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"],
+    'req9': ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "🌟 Idealist"],
+    'req10': ["🛡️ Protector", "👂 Listener", "🌟 Idealist", "🌿 Nurturer"],
+}
+
 class MongoService:
     def __init__(self):
-        self.uri = os.getenv('MONGODB_URI', "mongodb+srv://ninakkaiforyou:9t2GADiJUf8xFhDZ@cluster0.fdoiudh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-        self.client = MongoClient(self.uri)
-        try:
-            self.client.admin.command('ping')
-            logger.info("MongoDB connection successful")
-        except Exception as e:
-            logger.error(f"MongoDB connection failed: {str(e)}")
+        self.uri = os.getenv('MONGODB_URI', "mongodb+srv://infoqiooo:Gjresr7SikhBmM5U@cluster0.hyzcpcz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+        self.client = MongoClient(self.uri, tlsAllowInvalidCertificates=True)
         self.db = self.client['ninakkai']
         self.users = self.db['users']
         self.quiz_results = self.db['quiz_results']
         self.likes = self.db['likes']
         self.passes = self.db['passes']
+        self.notifications = self.db['notifications']
+        self.reports = self.db['reports']
 
     def check_rate_limit(self, key: str, max_attempts: int, period: timedelta = timedelta(hours=1)) -> bool:
         now = datetime.now(timezone.utc)
         limit = self.db['rate_limits'].find_one({'key': key})
         if limit:
-            if now - limit['last_reset'] > period:
+            last_reset = limit['last_reset']
+            last_reset = pytz.UTC.localize(last_reset) if last_reset.tzinfo is None else last_reset
+            if now - last_reset > period:
                 self.db['rate_limits'].update_one(
                     {'key': key},
                     {'$set': {'attempts': 0, 'last_reset': now}}
@@ -103,8 +220,11 @@ class MongoService:
     def reset_rate_limit(self, key: str):
         self.db['rate_limits'].update_one(
             {'key': key},
-            {'$set': {'attempts': 0}}
+            {'$set': {'attempts': 0, 'last_reset': datetime.now(timezone.utc)}}
         )
+
+    def has_liked_any(self, user_id: str) -> bool:
+        return self.likes.count_documents({'user_id': user_id}) > 0
 
     def create_user(self, email: str, password: str, full_name: str, age: int = None, gender: str = None, image: str = None, occupation: str = None, bio: str = None, interests: List[str] = None) -> Dict[str, Any]:
         try:
@@ -116,9 +236,9 @@ class MongoService:
             verification_token = secrets.token_urlsafe(32)
             default_image = 'https://randomuser.me/api/portraits/women/44.jpg'
             if gender == 'male':
-                default_image = 'https://i.ibb.co/4RbtYQBM/luthfi-alfarizi-jl-Jp-DBK17-Hw-unsplash.jpg'
+                default_image = 'https://ik.imagekit.io/vo0ffucpi/653324ed-3b9c-48b1-b9b2-d1d8b16931ff.jpg'
             elif gender == 'female':
-                default_image = 'https://i.ibb.co/Ld65xcCC/luthfi-alfarizi-y-XAGGb-Vuh-EY-unsplash.jpg'
+                default_image = 'https://ik.imagekit.io/vo0ffucpi/8e2b61f2-44cc-43cd-bc55-e5ebcaae9130.jpg'
             user_data = {
                 'email': email,
                 'password': hashed_password,
@@ -131,10 +251,26 @@ class MongoService:
                 'interests': interests or [],
                 'photos': [],
                 'location': '',
+                'blocked_users': [],
                 'profile_complete': False,
                 'email_verified': False,
+                'age_verified': False,
                 'verification_token': verification_token,
-                'created_at': datetime.now(timezone.utc)
+                'created_at': datetime.now(timezone.utc),
+                'religion': None,
+                'religion_importance': 'skip',
+                'religion_public': False,
+                'physical_public': False,
+                'physical_importance': 'skip',
+                'physical_preferences': [],
+                'physical_traits': [],
+                'filter_settings': [],
+                'profile_data': [],
+                'feedback_prompt_dismissed': False,
+                'retake_prompt_dismissed': False,
+                'like_prompt_dismissed': False,  # Added for persistent prompt dismissal
+                'feedback': None,
+                'feedback_date': None,
             }
             result = self.users.insert_one(user_data)
             return {
@@ -213,7 +349,6 @@ class MongoService:
                 }
             user['id'] = str(user['_id'])
             del user['_id']
-            del user['password']
             return {
                 'success': True,
                 'user': user
@@ -269,6 +404,19 @@ class MongoService:
             logger.error(f"Update password error: {str(e)}")
             return {'success': False, 'error': str(e)}
 
+    def get_user_prompt_status(self, user_id: str) -> Dict[str, bool]:
+        user = self.get_user_by_id(user_id)
+        if not user:
+            return {'show_feedback_prompt': False, 'show_retake_prompt': False}
+        now = datetime.now(timezone.utc)
+        created_at = user['created_at']
+        if created_at.tzinfo is None:
+            created_at = pytz.UTC.localize(created_at)
+        days_since = (now - created_at).days
+        show_feedback = days_since >= 14 and not user.get('feedback_prompt_dismissed', False)
+        show_retake = days_since >= 14 and user.get('feedback_prompt_dismissed', False) and not user.get('retake_prompt_dismissed', False)
+        return {'show_feedback_prompt': show_feedback, 'show_retake_prompt': show_retake}
+
     def save_quiz_results(self, user_id: str, quiz_data: Dict[str, Any]) -> Dict[str, Any]:
         try:
             scores = self._calculate_scores(quiz_data['answers'])
@@ -278,22 +426,123 @@ class MongoService:
                 'scores': scores,
                 'completed_at': datetime.now(timezone.utc)
             }
-            result = self.quiz_results.insert_one(quiz_result)
+            quiz_result_id = self.quiz_results.insert_one(quiz_result)
+
+            # Parse optional from answers and update
+            update_data = {}
+            for ans in quiz_data['answers']:
+                if 'section' in ans:
+                    if ans['section'] == 'religion_importance':
+                        importance_map = {
+                            0: 'not_important',
+                            1: 'somewhat_important',
+                            2: 'very_important',
+                            3: 'skip'
+                        }
+                        update_data['religion_importance'] = importance_map.get(ans.get('index'), 'skip')
+                    elif ans['section'] == 'religion':
+                        update_data['religion'] = ans.get('value')
+                    elif ans['section'] == 'physical_importance':
+                        importance_map = {
+                            0: 'very_important',
+                            1: 'somewhat_important',
+                            2: 'not_important',
+                            3: 'skip'
+                        }
+                        update_data['physical_importance'] = importance_map.get(ans.get('index'), 'skip')
+                    elif ans['section'] == 'physical_traits_preferred':
+                        update_data['physical_preferences'] = ans.get('responses', [])
+                    elif ans['section'] == 'physical_traits_own':
+                        update_data['physical_traits'] = ans.get('responses', [])
+                    elif ans['section'] == 'profile_setup':
+                        update_data['profile_data'] = ans.get('responses', [])
+                    elif ans['section'] == 'filter_settings':
+                        update_data['filter_settings'] = ans.get('toggles', [])
+
+            if update_data:
+                self.update_user(user_id, update_data)
+
             self.users.update_one(
                 {'_id': ObjectId(user_id)},
                 {'$set': {'profile_complete': True}}
             )
             return {
                 'success': True,
-                'result_id': str(result.inserted_id),
+                'result_id': str(quiz_result_id.inserted_id),
                 'scores': scores
             }
         except Exception as e:
             return {'success': False, 'error': str(e)}
 
+    def _calculate_scores(self, answers: List[Dict]) -> Dict[str, Any]:
+        type_counts = {}
+        mandatory_answers = [a for a in answers if 'question_id' in a and a['question_id'].startswith('req')]
+        for answer in mandatory_answers:
+            if 'type' in answer:
+                answer_type = answer['type']
+                type_counts[answer_type] = type_counts.get(answer_type, 0) + 1
+        if not type_counts:
+            return {'dominant_type': None, 'dominant_percentage': 0}
+        # Resolve tie if any
+        max_count = max(type_counts.values())
+        tied_types = [t for t, cnt in type_counts.items() if cnt == max_count]
+        if len(tied_types) > 1:
+            q2_answer = next((ans for ans in answers if ans.get('question_id') == 'req2'), None)
+            if q2_answer:
+                ranked_types = self._parse_ranked_types(q2_answer)
+                dominant_type = self._resolve_tie_with_ranking(tied_types, ranked_types)
+            else:
+                dominant_type = tied_types[0]
+        else:
+            dominant_type = max(type_counts, key=type_counts.get)
+        # Resolve Keeper Seeker
+        ks_answers = [a for a in answers if 'question_id' in a and a['question_id'].startswith('ks')]
+        keeper_count = sum(1 for a in ks_answers if a.get('keeperSeeker') == 'Keeper')
+        seeker_count = len(ks_answers) - keeper_count
+        if keeper_count > seeker_count:
+            keeper_seeker = "Keeper"
+        elif seeker_count > keeper_count:
+            keeper_seeker = "Seeker"
+        else:
+            keeper_seeker = None
+        # Total for percentages
+        total = sum(type_counts.values())
+        dominant_score = type_counts.get(dominant_type, 0)
+        dominant_percentage = int((dominant_score / total) * 100) if total > 0 else 0
+        profile = {
+            'dominant_type': dominant_type,
+            'dominant_score': dominant_score,
+            'dominant_percentage': dominant_percentage,
+            'type_counts': type_counts
+        }
+        if keeper_seeker:
+            profile['keeper_seeker_type'] = keeper_seeker
+        return profile
+
+    def _parse_ranked_types(self, ranked_answer: Dict[str, Any]) -> List[str]:
+        ranking = ranked_answer.get('ranking', [])
+        if not ranking:
+            return []
+        # Sort by rank ascending (1 is highest)
+        sorted_ranking = sorted(ranking, key=lambda r: r['rank'])
+        item_to_type = {
+            "Trust": "🛡️ Protector",
+            "Emotional connection": "🌿 Nurturer",
+            "Shared goals": "👂 Listener",
+            "Physical intimacy": "💘 Romantic"
+        }
+        # Actually, since types are associated with answers indices
+        return [QUESTION_TYPES['req2'][r['index']] for r in sorted_ranking]
+
+    def _resolve_tie_with_ranking(self, tied_types: List[str], ranked_types: List[str]) -> str:
+        for type_ in ranked_types:
+            if type_ in tied_types:
+                return type_
+        return tied_types[0]
+
     def get_quiz_results(self, user_id: str) -> Optional[Dict[str, Any]]:
         try:
-            result = self.quiz_results.find_one({'user_id': user_id}, sort=[('completed_at', -1)])
+            result = self.quiz_results.find_one({'user_id': user_id})
             if result:
                 result['id'] = str(result['_id'])
                 del result['_id']
@@ -303,108 +552,509 @@ class MongoService:
             logger.error(f"Get quiz results error: {str(e)}")
             return None
 
+    def delete_quiz_results(self, user_id: str) -> Dict[str, Any]:
+        try:
+            result = self.quiz_results.delete_many({'user_id': user_id})
+            return {'success': True, 'deleted_count': result.deleted_count}
+        except Exception as e:
+            logger.error(f"Delete quiz results error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
     def find_matches(self, user_id: str) -> List[Dict[str, Any]]:
         try:
+            current_user = self.get_user_by_id(user_id)
+            if not current_user:
+                return []
+                
             user_quiz = self.get_quiz_results(user_id)
             if not user_quiz:
                 return []
+                
             user_scores = user_quiz['scores']
             dominant_type = user_scores['dominant_type']
-            all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
+            
+            # Get user preferences - consolidated filters
+            religion_importance = current_user.get('religion_importance', 'skip')
+            user_religion = current_user.get('religion')
+            filter_settings = current_user.get('filter_settings', [])
+            show_only_same_religion = any(t['value'] for t in filter_settings if t['label'] == 'Show only same religion matches')
+            show_only_preferred_physical = any(t['value'] for t in filter_settings if t['label'] == 'Show only preferred physical traits')
+            emotional_strict = any(t['value'] for t in filter_settings if t['label'] == 'Show only high emotional compatibility matches')
+            physical_importance = current_user.get('physical_importance', 'skip')
+            physical_preferences = current_user.get('physical_preferences', [])
+            user_ks = user_scores.get('keeper_seeker_type')
+            
+            # Get all users who have completed the quiz and are of opposite gender
+            all_users = list(self.quiz_results.find({'user_id': {'$ne': user_id}}))
             matches = []
+            
+            # Track seen user IDs to prevent duplicates
+            seen_user_ids = set()
+            
             for other_user in all_users:
                 other_scores = other_user['scores']
-                match_percentage = self._calculate_match_percentage(user_scores, other_scores)
-                if other_scores['dominant_type'] == dominant_type or other_scores.get('secondary_type') == dominant_type:
-                    user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
-                    if user_data:
-                        matches.append({
-                            'id': str(user_data['_id']),
-                            'full_name': user_data['full_name'],
-                            'age': user_data.get('age'),
-                            'gender': user_data.get('gender'),
-                            'image': user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-                            'occupation': user_data.get('occupation', 'N/A'),
-                            'bio': user_data.get('bio', 'No bio available'),
-                            'interests': user_data.get('interests', []),
-                            'distance': 'N/A',
-                            'rating': '4.5',
-                            'dominant_type': other_scores['dominant_type'],
-                            'match_percentage': match_percentage
-                        })
-            return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:10]
+                other_user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
+                
+                if not other_user_data or other_user_data['gender'] == current_user['gender']:
+                    continue
+                
+                # Skip if we've already processed this user
+                if other_user['user_id'] in seen_user_ids:
+                    continue
+                seen_user_ids.add(other_user['user_id'])
+                
+                # Skip if already liked or passed
+                if self.has_liked_user(user_id, other_user['user_id']) or self.has_passed_user(user_id, other_user['user_id']):
+                    continue
+                
+                # FIXED: Keeper/Seeker matching logic
+                other_ks = other_scores.get('keeper_seeker_type')
+                # Only apply Keeper/Seeker filter if both users have a defined type
+                if user_ks and other_ks:
+                    # Keepers should only match with Keepers, Seekers with Seekers
+                    if user_ks != other_ks:
+                        continue  # Skip if types don't match
+                # If one user doesn't have a type, allow the match (backward compatibility)
+                
+                # Step 2: Emotional compatibility - BASE MATCH PERCENTAGE ONLY FROM MATRIX
+                match_calc = self._calculate_match_percentage(user_scores, other_scores)
+                base_percentage = match_calc['base']
+                
+                # Step 3: Religion preferences - FILTER ONLY, NO BONUS
+                if religion_importance == 'very_important' and user_religion:
+                    other_religion = other_user_data.get('religion')
+                    is_same_religion = other_religion == user_religion
+                    if not is_same_religion:
+                        continue
+                if show_only_same_religion and user_religion:
+                    other_religion = other_user_data.get('religion')
+                    if other_religion != user_religion:
+                        continue
+                
+                # Step 4: Physical preferences - FILTER ONLY, NO BONUS
+                if physical_importance == 'very_important' and physical_preferences:
+                    other_physical = other_user_data.get('physical_traits', [])
+                    physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
+                    if physical_match_score < 1.0:
+                        continue
+                if show_only_preferred_physical and physical_preferences:
+                    other_physical = other_user_data.get('physical_traits', [])
+                    physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
+                    if physical_match_score < 1.0:
+                        continue
+                
+                # Step 5: Emotional strict filter
+                if emotional_strict and base_percentage < 80:
+                    continue
+                
+                # Final match percentage is just base (capped at 92 implicitly by matrix)
+                match_percentage = base_percentage
+                
+                matches.append({
+                    'id': str(other_user_data['_id']),
+                    'full_name': other_user_data['full_name'],
+                    'age': other_user_data.get('age'),
+                    'gender': other_user_data.get('gender'),
+                    'image': other_user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+                    'occupation': other_user_data.get('occupation', 'N/A'),
+                    'bio': other_user_data.get('bio', 'No bio available'),
+                    'interests': other_user_data.get('interests', []),
+                    'distance': 'N/A',
+                    'dominant_type': other_scores['dominant_type'],
+                    'match_percentage': match_percentage,
+                    'keeper_seeker': other_scores.get('keeper_seeker_type', 'Unknown'),
+                    'liked': self.has_liked_user(user_id, str(other_user_data['_id'])),
+                    'passed': self.has_passed_user(user_id, str(other_user_data['_id']))
+                })
+            
+            return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:20]
         except Exception as e:
             logger.error(f"Find matches error: {str(e)}")
             return []
 
-    def _calculate_match_percentage(self, user_scores: Dict[str, Any], other_scores: Dict[str, Any]) -> int:
+    def get_potential_matches(self, user_id: str) -> List[Dict[str, Any]]:
         try:
-            dominant_match = 50 if user_scores['dominant_type'] == other_scores['dominant_type'] else 20
-            secondary_match = 30 if user_scores.get('secondary_type') == other_scores.get('secondary_type') and user_scores.get('secondary_type') else 10
-            return min(dominant_match + secondary_match, 100)
+            current_user = self.get_user_by_id(user_id)
+            if not current_user:
+                return []
+                
+            user_quiz = self.get_quiz_results(user_id)
+            if not user_quiz:
+                return []
+                
+            user_scores = user_quiz['scores']
+            dominant_type = user_scores['dominant_type']
+            
+            # Get user preferences - consolidated filters
+            religion_importance = current_user.get('religion_importance', 'skip')
+            user_religion = current_user.get('religion')
+            filter_settings = current_user.get('filter_settings', [])
+            show_only_same_religion = any(t['value'] for t in filter_settings if t['label'] == 'Show only same religion matches')
+            show_only_preferred_physical = any(t['value'] for t in filter_settings if t['label'] == 'Show only preferred physical traits')
+            emotional_strict = any(t['value'] for t in filter_settings if t['label'] == 'Show only high emotional compatibility matches')
+            physical_importance = current_user.get('physical_importance', 'skip')
+            physical_preferences = current_user.get('physical_preferences', [])
+            user_ks = user_scores.get('keeper_seeker_type')
+            
+            # Get all users who have completed the quiz and are of opposite gender
+            all_users = list(self.quiz_results.find({'user_id': {'$ne': user_id}}))
+            matches = []
+            
+            # Track seen user IDs to prevent duplicates
+            seen_user_ids = set()
+            
+            for other_user in all_users:
+                other_scores = other_user['scores']
+                other_user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
+                
+                if not other_user_data or other_user_data['gender'] == current_user['gender']:
+                    continue
+                
+                # Skip if we've already processed this user
+                if other_user['user_id'] in seen_user_ids:
+                    continue
+                seen_user_ids.add(other_user['user_id'])
+                
+                # Skip if already liked or passed
+                if self.has_liked_user(user_id, other_user['user_id']) or self.has_passed_user(user_id, other_user['user_id']):
+                    continue
+                
+                # FIXED: Keeper/Seeker matching logic
+                other_ks = other_scores.get('keeper_seeker_type')
+                # Only apply Keeper/Seeker filter if both users have a defined type
+                if user_ks and other_ks:
+                    # Keepers should only match with Keepers, Seekers with Seekers
+                    if user_ks != other_ks:
+                        continue  # Skip if types don't match
+                # If one user doesn't have a type, allow the match (backward compatibility)
+                
+                # Step 2: Emotional compatibility - BASE MATCH PERCENTAGE ONLY FROM MATRIX
+                match_calc = self._calculate_match_percentage(user_scores, other_scores)
+                base_percentage = match_calc['base']
+                
+                # Step 3: Religion preferences - FILTER ONLY, NO BONUS
+                if religion_importance == 'very_important' and user_religion:
+                    other_religion = other_user_data.get('religion')
+                    is_same_religion = other_religion == user_religion
+                    if not is_same_religion:
+                        continue
+                if show_only_same_religion and user_religion:
+                    other_religion = other_user_data.get('religion')
+                    if other_religion != user_religion:
+                        continue
+                
+                # Step 4: Physical preferences - FILTER ONLY, NO BONUS
+                if physical_importance == 'very_important' and physical_preferences:
+                    other_physical = other_user_data.get('physical_traits', [])
+                    physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
+                    if physical_match_score < 1.0:
+                        continue
+                if show_only_preferred_physical and physical_preferences:
+                    other_physical = other_user_data.get('physical_traits', [])
+                    physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
+                    if physical_match_score < 1.0:
+                        continue
+                
+                # Step 5: Emotional strict filter
+                if emotional_strict and base_percentage < 80:
+                    continue
+                
+                # Final match percentage is just base (capped at 92 implicitly by matrix)
+                match_percentage = base_percentage
+                
+                matches.append({
+                    'id': str(other_user_data['_id']),
+                    'full_name': other_user_data['full_name'],
+                    'age': other_user_data.get('age'),
+                    'gender': other_user_data.get('gender'),
+                    'image': other_user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+                    'occupation': other_user_data.get('occupation', 'N/A'),
+                    'bio': other_user_data.get('bio', 'No bio available'),
+                    'interests': other_user_data.get('interests', []),
+                    'distance': 'N/A',
+                    'dominant_type': other_scores['dominant_type'],
+                    'match_percentage': match_percentage,
+                    'keeper_seeker': other_scores.get('keeper_seeker_type', 'Unknown'),
+                    'liked': self.has_liked_user(user_id, str(other_user_data['_id'])),
+                    'passed': self.has_passed_user(user_id, str(other_user_data['_id']))
+                })
+            
+            return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:20]
+        except Exception as e:
+            logger.error(f"Get potential matches error: {str(e)}")
+            return []
+
+    def get_random_potential(self, user_id: str, excluded: List[str] = []) -> List[Dict[str, Any]]:
+        try:
+            current_user = self.get_user_by_id(user_id)
+            if not current_user:
+                return []
+                
+            user_quiz = self.get_quiz_results(user_id)
+            if not user_quiz:
+                return []
+                
+            user_scores = user_quiz['scores']
+            
+            # Get user preferences - consolidated filters (same as potential matches)
+            religion_importance = current_user.get('religion_importance', 'skip')
+            user_religion = current_user.get('religion')
+            filter_settings = current_user.get('filter_settings', [])
+            show_only_same_religion = any(t['value'] for t in filter_settings if t['label'] == 'Show only same religion matches')
+            show_only_preferred_physical = any(t['value'] for t in filter_settings if t['label'] == 'Show only preferred physical traits')
+            emotional_strict = any(t['value'] for t in filter_settings if t['label'] == 'Show only high emotional compatibility matches')
+            physical_importance = current_user.get('physical_importance', 'skip')
+            physical_preferences = current_user.get('physical_preferences', [])
+            user_ks = user_scores.get('keeper_seeker_type')
+            
+            # Get all users who have completed the quiz and are of opposite gender
+            all_users = list(self.quiz_results.find({'user_id': {'$ne': user_id}}))
+            candidates = []
+            
+            # Track seen user IDs to prevent duplicates
+            seen_user_ids = set()
+            
+            for other_user in all_users:
+                other_scores = other_user['scores']
+                other_user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
+                
+                if not other_user_data or other_user_data['gender'] == current_user['gender']:
+                    continue
+                
+                # Skip if we've already processed this user
+                if other_user['user_id'] in seen_user_ids:
+                    continue
+                seen_user_ids.add(other_user['user_id'])
+                
+                # Skip excluded users
+                if other_user['user_id'] in excluded:
+                    continue
+                
+                # Skip if already liked or passed
+                if self.has_liked_user(user_id, other_user['user_id']) or self.has_passed_user(user_id, other_user['user_id']):
+                    continue
+                
+                # FIXED: Keeper/Seeker matching logic
+                other_ks = other_scores.get('keeper_seeker_type')
+                # Only apply Keeper/Seeker filter if both users have a defined type
+                if user_ks and other_ks:
+                    # Keepers should only match with Keepers, Seekers with Seekers
+                    if user_ks != other_ks:
+                        continue  # Skip if types don't match
+                # If one user doesn't have a type, allow the match (backward compatibility)
+                
+                # Calculate match percentage (still use for consistency, but ignore for sorting)
+                match_calc = self._calculate_match_percentage(user_scores, other_scores)
+                base_percentage = match_calc['base']
+                
+                # Step 3: Religion preferences (same filters)
+                if religion_importance == 'very_important' and user_religion:
+                    other_religion = other_user_data.get('religion')
+                    is_same_religion = other_religion == user_religion
+                    if not is_same_religion:
+                        continue
+                if show_only_same_religion and user_religion:
+                    other_religion = other_user_data.get('religion')
+                    if other_religion != user_religion:
+                        continue
+                
+                # Step 4: Physical preferences (same filters)
+                if physical_importance == 'very_important' and physical_preferences:
+                    other_physical = other_user_data.get('physical_traits', [])
+                    physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
+                    if physical_match_score < 1.0:
+                        continue
+                if show_only_preferred_physical and physical_preferences:
+                    other_physical = other_user_data.get('physical_traits', [])
+                    physical_match_score = self._calculate_physical_match(physical_preferences, other_physical)
+                    if physical_match_score < 1.0:
+                        continue
+                
+                # Step 5: Emotional strict filter (same as potential: 80)
+                if emotional_strict and base_percentage < 80:
+                    continue
+                
+                # Final match percentage is just base (capped at 92 implicitly by matrix)
+                match_percentage = base_percentage
+                
+                candidates.append({
+                    'id': str(other_user_data['_id']),
+                    'full_name': other_user_data['full_name'],
+                    'age': other_user_data.get('age'),
+                    'gender': other_user_data.get('gender'),
+                    'image': other_user_data.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+                    'occupation': other_user_data.get('occupation', 'N/A'),
+                    'bio': other_user_data.get('bio', 'No bio available'),
+                    'interests': other_user_data.get('interests', []),
+                    'distance': 'N/A',
+                    'dominant_type': other_scores['dominant_type'],
+                    'match_percentage': match_percentage,
+                    'keeper_seeker': other_scores.get('keeper_seeker_type', 'Unknown'),
+                    'liked': self.has_liked_user(user_id, str(other_user_data['_id'])),
+                    'passed': self.has_passed_user(user_id, str(other_user_data['_id']))
+                })
+            
+            # Sort by match_percentage descending (same as potential_matches)
+            candidates.sort(key=lambda x: x['match_percentage'], reverse=True)
+            return candidates[:20]
+        except Exception as e:
+            logger.error(f"Get random potential error: {str(e)}")
+            return []
+
+    def _calculate_match_percentage(self, user_scores: Dict[str, Any], other_scores: Dict[str, Any]) -> Dict[str, int]:
+        try:
+            user_dom = user_scores['dominant_type']
+            other_dom = other_scores['dominant_type']
+            user_dom_short = TYPE_MAP.get(user_dom)
+            other_dom_short = TYPE_MAP.get(other_dom)
+            
+            if not user_dom_short or not other_dom_short:
+                return {'base': 50, 'percentage': 50}
+            
+            # Get base compatibility from matrix - NO BONUSES
+            base_percentage = COMPATIBILITY_MATRIX.get(user_dom_short, {}).get(other_dom_short, 50)
+            
+            # Calculate percentage (base only, capped at 92 implicitly)
+            percentage = base_percentage
+            
+            return {
+                'base': base_percentage,
+                'percentage': percentage
+            }
         except Exception as e:
             logger.error(f"Calculate match percentage error: {str(e)}")
-            return 50
+            return {'base': 50, 'percentage': 50}
 
     def is_matched(self, user1: str, user2: str) -> bool:
         try:
-            like1 = self.likes.find_one({'user_id': user1, 'matched_user_id': user2})
-            like2 = self.likes.find_one({'user_id': user2, 'matched_user_id': user1})
-            return bool(like1 and like2)
+            like1 = [str(l['matched_user_id']) for l in self.likes.find({'user_id': user1})]
+            like2 = [str(l['matched_user_id']) for l in self.likes.find({'user_id': user2})]
+            return user2 in like1 and user1 in like2
         except Exception as e:
             logger.error(f"Is matched error: {str(e)}")
             return False
 
     def get_matched_users(self, user_id: str) -> List[str]:
         try:
-            likers = [str(l['user_id']) for l in self.likes.find({'matched_user_id': user_id})]
-            my_likes = self.likes.find({'user_id': user_id, 'matched_user_id': {'$in': likers}})
-            matches = [str(l['matched_user_id']) for l in my_likes]
-            return matches
+            likers = [l['user_id'] for l in self.likes.find({'matched_user_id': user_id})]
+            my_likes = [l['matched_user_id'] for l in self.likes.find({'user_id': user_id, 'matched_user_id': {'$in': likers}})]
+            return [str(m) for m in my_likes]
         except Exception as e:
             logger.error(f"Get matched users error: {str(e)}")
             return []
 
     def like_user(self, user_id: str, matched_user_id: str) -> Dict[str, Any]:
         try:
-            like_data = {
+            if self.has_liked_user(user_id, matched_user_id):
+                return {'success': False, 'error': 'Already liked'}
+            logger.info(f"Processing like from user {user_id} to {matched_user_id}")
+            current_user = self.get_user_by_id(user_id)
+            if current_user['gender'] == 'male':
+                rate_key = f"daily_likes_{user_id}"
+                if not self.check_rate_limit(rate_key, 3, timedelta(days=1)):
+                    return {'success': False, 'error': 'Daily like limit exceeded'}
+            like = {
                 'user_id': user_id,
                 'matched_user_id': matched_user_id,
                 'timestamp': datetime.now(timezone.utc)
             }
-            result = self.likes.insert_one(like_data)
+            result = self.likes.insert_one(like)
+            if current_user['gender'] == 'male':
+                self.inc_rate_limit(rate_key)
+                limit_doc = self.db['rate_limits'].find_one({'key': rate_key})
+                attempts = limit_doc['attempts']
+                likes_remaining = 3 - attempts
+            else:
+                likes_remaining = None
+            liker = self.get_user_by_id(user_id)
+            liked = self.get_user_by_id(matched_user_id)
+            self.add_notification(matched_user_id, f"{liker['full_name']} liked your profile", 'like', user_id)
             is_match = self.is_matched(user_id, matched_user_id)
-            return {'success': True, 'like_id': str(result.inserted_id), 'is_match': is_match}
+            if is_match:
+                self.add_notification(user_id, f"You matched with {liked['full_name']}", 'match', matched_user_id)
+                self.add_notification(matched_user_id, f"You matched with {liker['full_name']}", 'match', user_id)
+            logger.info(f"Like successful, like_id: {str(result.inserted_id)}, is_match: {is_match}")
+            response = {'success': True, 'like_id': str(result.inserted_id), 'is_match': is_match}
+            if likes_remaining is not None:
+                response['likes_remaining'] = likes_remaining
+            return response
         except Exception as e:
             logger.error(f"Like user error: {str(e)}")
             return {'success': False, 'error': str(e)}
 
     def pass_user(self, user_id: str, passed_user_id: str) -> Dict[str, Any]:
         try:
+            logger.info(f"Processing pass from user {user_id} to {passed_user_id}")
             pass_data = {
                 'user_id': user_id,
                 'passed_user_id': passed_user_id,
                 'timestamp': datetime.now(timezone.utc)
             }
             result = self.passes.insert_one(pass_data)
+            logger.info(f"Pass successful, pass_id: {str(result.inserted_id)}")
             return {'success': True, 'pass_id': str(result.inserted_id)}
         except Exception as e:
             logger.error(f"Pass user error: {str(e)}")
             return {'success': False, 'error': str(e)}
 
+    def report_user(self, reporter_id: str, reported_id: str, reason: str) -> Dict[str, Any]:
+        try:
+            report_data = {
+                'reporter_id': reporter_id,
+                'reported_id': reported_id,
+                'reason': reason,
+                'timestamp': datetime.now(timezone.utc),
+                'status': 'pending'
+            }
+            result = self.reports.insert_one(report_data)
+            logger.info(f"Report submitted: reporter {reporter_id}, reported {reported_id}, reason {reason}")
+            return {'success': True, 'report_id': str(result.inserted_id)}
+        except Exception as e:
+            logger.error(f"Report user error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
+    def is_liked(self, user_id: str, matched_user_id: str) -> bool:
+        return self.has_liked_user(user_id, matched_user_id)
+
     def search_matches(self, query: str, user_id: str) -> List[Dict[str, Any]]:
         try:
             query = query.lower().strip()
             matches = []
-            all_users = self.quiz_results.find({'user_id': {'$ne': user_id}})
+            all_users = list(self.quiz_results.find({'user_id': {'$ne': user_id}}))
             user_quiz = self.get_quiz_results(user_id)
             if not user_quiz:
                 return []
             user_scores = user_quiz['scores']
+            
+            # Track seen user IDs to prevent duplicates
+            seen_user_ids = set()
+            
             for other_user in all_users:
                 user_data = self.users.find_one({'_id': ObjectId(other_user['user_id'])})
-                if user_data and (query in user_data['full_name'].lower() or any(query in interest.lower() for interest in user_data.get('interests', []))):
-                    match_percentage = self._calculate_match_percentage(user_scores, other_user['scores'])
+                if (user_data and user_data['gender'] != self.get_user_by_id(user_id)['gender'] and 
+                    (query in user_data['full_name'].lower() or 
+                     any(query in interest.lower() for interest in user_data.get('interests', [])))):
+                    
+                    # Skip if we've already processed this user
+                    if other_user['user_id'] in seen_user_ids:
+                        continue
+                    seen_user_ids.add(other_user['user_id'])
+                    
+                    # FIXED: Keeper/Seeker matching logic
+                    user_ks = user_scores.get('keeper_seeker_type')
+                    other_ks = other_user['scores'].get('keeper_seeker_type')
+                    # Only apply Keeper/Seeker filter if both users have a defined type
+                    if user_ks and other_ks:
+                        # Keepers should only match with Keepers, Seekers with Seekers
+                        if user_ks != other_ks:
+                            continue  # Skip if types don't match
+                    # If one user doesn't have a type, allow the match (backward compatibility)
+                    
+                    # UPDATED: Use new calculation with no bonuses
+                    match_calc = self._calculate_match_percentage(user_scores, other_user['scores'])
+                    base_percentage = match_calc['base']
+                    match_percentage = base_percentage
+                    
                     matches.append({
                         'id': str(user_data['_id']),
                         'full_name': user_data['full_name'],
@@ -415,111 +1065,15 @@ class MongoService:
                         'bio': user_data.get('bio', 'No bio available'),
                         'interests': user_data.get('interests', []),
                         'distance': 'N/A',
-                        'rating': '4.5',
                         'dominant_type': other_user['scores']['dominant_type'],
-                        'match_percentage': match_percentage
+                        'match_percentage': match_percentage,
+                        'liked': self.has_liked_user(user_id, str(user_data['_id'])),
+                        'passed': self.has_passed_user(user_id, str(user_data['_id']))
                     })
             return sorted(matches, key=lambda x: x['match_percentage'], reverse=True)[:10]
         except Exception as e:
             logger.error(f"Search matches error: {str(e)}")
             return []
-
-    def _calculate_scores(self, answers: List[Dict[str, Any]]) -> Dict[str, Any]:
-        type_counts = {}
-        mandatory_answers = answers[:10]
-        for answer in mandatory_answers:
-            answer_type = answer['type']
-            type_counts[answer_type] = type_counts.get(answer_type, 0) + 1
-        if len(set(type_counts.values())) < len(type_counts):
-            q2_answer = answers[1]
-            ranked_types = self._parse_ranked_types(q2_answer['answer'])
-            tied_types = [t for t, cnt in type_counts.items() if cnt == max(type_counts.values())]
-            dominant_type = self._resolve_tie_with_ranking(tied_types, ranked_types)
-        else:
-            dominant_type = max(type_counts, key=type_counts.get)
-        keeper_seeker = self._determine_keeper_seeker(answers[10:13] if len(answers) > 10 else None)
-        optional_answers = answers[13:] if len(answers) > 13 else []
-        optional_boosts = self._calculate_optional_boosts(dominant_type, optional_answers)
-        total_mandatory = sum(type_counts.values())
-        dominant_score = type_counts.get(dominant_type, 0)
-        dominant_percentage = int((dominant_score / total_mandatory) * 100)
-        secondary_type = None
-        secondary_score = 0
-        secondary_percentage = 0
-        if len(type_counts) > 1:
-            temp_counts = type_counts.copy()
-            temp_counts.pop(dominant_type)
-            secondary_type = max(temp_counts, key=temp_counts.get)
-            secondary_score = temp_counts[secondary_type]
-            secondary_percentage = int((secondary_score / total_mandatory) * 100)
-        profile = {
-            'dominant_type': dominant_type,
-            'dominant_score': dominant_score,
-            'dominant_percentage': dominant_percentage,
-            'secondary_type': secondary_type,
-            'secondary_score': secondary_score,
-            'secondary_percentage': secondary_percentage,
-            'optional_traits_boost': optional_boosts,
-            'type_counts': type_counts
-        }
-        if keeper_seeker:
-            profile['keeper_seeker_type'] = keeper_seeker
-        return profile
-
-    def _parse_ranked_types(self, ranked_answer: str) -> List[str]:
-        if not ranked_answer.startswith("Ranked:"):
-            return []
-        parts = [p.strip() for p in ranked_answer.split("Ranked:")[1].split(",")]
-        ordered_items = []
-        for part in parts:
-            item = part.split(".", 1)[1].strip() if "." in part else part.strip()
-            ordered_items.append(item)
-        item_to_type = {
-            "Trust": "🛡️ Protector",
-            "Emotional connection": "🌿 Nurturer",
-            "Shared goals": "👂 Listener",
-            "Physical intimacy": "💘 Romantic"
-        }
-        return [item_to_type.get(item, "") for item in ordered_items if item in item_to_type]
-
-    def _resolve_tie_with_ranking(self, tied_types: List[str], ranked_types: List[str]) -> str:
-        for type_ in ranked_types:
-            if type_ in tied_types:
-                return type_
-        return tied_types[0]
-
-    def _determine_keeper_seeker(self, answers: List[Dict[str, Any]]) -> Optional[str]:
-        if not answers or len(answers) < 3:
-            return None
-        keeper_seeker_map = {
-            "A": "Keeper",
-            "B": "Seeker",
-            "C": "Keeper",
-            "D": "Seeker"
-        }
-        keeper_count = 0
-        seeker_count = 0
-        for answer in answers:
-            classification = keeper_seeker_map.get(answer['answer'][0], None)
-            if classification == "Keeper":
-                keeper_count += 1
-            elif classification == "Seeker":
-                seeker_count += 1
-        if keeper_count >= 2:
-            return "Keeper"
-        elif seeker_count >= 2:
-            return "Seeker"
-        return None
-
-    def _calculate_optional_boosts(self, dominant_type: str, optional_answers: List[Dict[str, Any]]) -> Dict[str, int]:
-        boosts = {}
-        for answer in optional_answers:
-            answer_type = answer['type']
-            if answer_type == dominant_type:
-                boosts[dominant_type] = boosts.get(dominant_type, 0) + 1
-            elif answer_type in boosts:
-                boosts[answer_type] += 1
-        return boosts
 
     def get_liked_users(self, user_id: str) -> List[Dict[str, Any]]:
         try:
@@ -531,7 +1085,7 @@ class MongoService:
                     liked_users.append({
                         'id': user['id'],
                         'full_name': user['full_name'],
-                        'image': user['image'],
+                        'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
                         'occupation': user.get('occupation', 'N/A')
                     })
             return liked_users
@@ -541,10 +1095,10 @@ class MongoService:
 
     def get_pending_likers(self, user_id: str) -> List[Dict[str, Any]]:
         try:
-            likers = self.likes.find({'matched_user_id': user_id})
-            liker_ids = [str(l['user_id']) for l in likers]
+            likers = [str(l['user_id']) for l in self.likes.find({'matched_user_id': user_id})]
             my_likes = [str(l['matched_user_id']) for l in self.likes.find({'user_id': user_id})]
-            pending_ids = [pid for pid in liker_ids if pid not in my_likes]
+            passed = [str(p['passed_user_id']) for p in self.passes.find({'user_id': user_id})]
+            pending_ids = [pid for pid in likers if pid not in my_likes and pid not in passed]
             pending_users = []
             for pid in pending_ids:
                 user = self.get_user_by_id(pid)
@@ -552,7 +1106,7 @@ class MongoService:
                     pending_users.append({
                         'id': user['id'],
                         'full_name': user['full_name'],
-                        'image': user['image'],
+                        'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
                         'occupation': user.get('occupation', 'N/A')
                     })
             return pending_users
@@ -560,10 +1114,143 @@ class MongoService:
             logger.error(f"Get pending likers error: {str(e)}")
             return []
 
+    def delete_account(self, user_id: str) -> Dict[str, Any]:
+        try:
+            self.users.delete_one({'_id': ObjectId(user_id)})
+            self.likes.delete_many({'$or': [{'user_id': user_id}, {'matched_user_id': user_id}]})
+            self.passes.delete_many({'$or': [{'user_id': user_id}, {'passed_user_id': user_id}]})
+            self.quiz_results.delete_many({'user_id': user_id})
+            self.notifications.delete_many({'user_id': user_id})
+            self.reports.delete_many({'$or': [{'reporter_id': user_id}, {'reported_id': user_id}]})
+            return {'success': True}
+        except Exception as e:
+            logger.error(f"Delete account error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
+    def has_liked_user(self, user_id: str, matched_user_id: str) -> bool:
+        try:
+            like = self.likes.find_one({'user_id': user_id, 'matched_user_id': matched_user_id})
+            return bool(like)
+        except Exception as e:
+            logger.error(f"Has liked user error: {str(e)}")
+            return False
+
+    def has_passed_user(self, user_id: str, passed_user_id: str) -> bool:
+        try:
+            passed = self.passes.find_one({'user_id': user_id, 'passed_user_id': passed_user_id})
+            return bool(passed)
+        except Exception as e:
+            logger.error(f"Has passed user error: {str(e)}")
+            return False
+
+    def unlike_user(self, user_id: str, matched_user_id: str) -> Dict[str, Any]:
+        try:
+            result = self.likes.delete_one({'user_id': user_id, 'matched_user_id': matched_user_id})
+            is_match = self.is_matched(user_id, matched_user_id)
+            return {'success': result.deleted_count > 0, 'is_match': is_match}
+        except Exception as e:
+            logger.error(f"Unlike user error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
+    def block_user(self, user_id: str, blocked_user_id: str) -> Dict[str, Any]:
+        try:
+            result = self.users.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$addToSet': {'blocked_users': blocked_user_id}}
+            )
+            return {'success': result.modified_count > 0}
+        except Exception as e:
+            logger.error(f"Block user error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
+    def add_notification(self, user_id: str, message: str, type: str = 'general', related_id: str = None) -> Dict[str, Any]:
+        try:
+            notif = {
+                'user_id': user_id,
+                'message': message,
+                'type': type,
+                'related_id': related_id,
+                'read': False,
+                'timestamp': datetime.now(timezone.utc)
+            }
+            result = self.notifications.insert_one(notif)
+            return {'success': True, 'notif_id': str(result.inserted_id)}
+        except Exception as e:
+            logger.error(f"Add notification error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
+    def get_notifications(self, user_id: str) -> List[Dict[str, Any]]:
+        try:
+            notifs = list(self.notifications.find({'user_id': user_id}).sort('timestamp', -1))
+            for n in notifs:
+                n['id'] = str(n['_id'])
+                del n['_id']
+                if n['timestamp'].tzinfo is None:
+                    n['timestamp'] = pytz.UTC.localize(n['timestamp'])
+                n['timestamp'] = n['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+            return notifs
+        except Exception as e:
+            logger.error(f"Get notifications error: {str(e)}")
+            return []
+
+    def get_unread_notification_count(self, user_id: str) -> int:
+        try:
+            return self.notifications.count_documents({'user_id': user_id, 'read': False})
+        except Exception as e:
+            logger.error(f"Get unread notification count error: {str(e)}")
+            return 0
+
+    def mark_notification_read(self, notif_id: str, user_id: str) -> Dict[str, Any]:
+        try:
+            result = self.notifications.update_one(
+                {'_id': ObjectId(notif_id), 'user_id': user_id},
+                {'$set': {'read': True}}
+            )
+            return {'success': result.modified_count > 0}
+        except Exception as e:
+            logger.error(f"Mark notification read error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
+    def clear_notifications(self, user_id: str) -> Dict[str, Any]:
+        try:
+            result = self.notifications.delete_many({'user_id': user_id})
+            return {'success': True, 'deleted_count': result.deleted_count}
+        except Exception as e:
+            logger.error(f"Clear notifications error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
+    def _calculate_physical_match(self, preferences: List, traits: List) -> float:
+        if not preferences or not traits:
+            return 1.0  # Full match if no preferences
+        
+        match_score = 0
+        total_comparisons = 0
+        
+        pref_dict = {p['label']: p['value'] for p in preferences if p['value'] != 'No Preference'}
+        trait_dict = {t['label']: t['value'] for t in traits}
+        
+        for label, pref_val in pref_dict.items():
+            total_comparisons += 1
+            if label in trait_dict:
+                trait_val = trait_dict[label]
+                if 'height' in label.lower():
+                    try:
+                        p = int(pref_val)
+                        t = int(trait_val)
+                        if t >= p:  # If preferred height is 170cm, show matches 170cm or higher
+                            match_score += 1
+                    except:
+                        pass
+                elif pref_val == trait_val:
+                    match_score += 1
+        
+        return match_score / total_comparisons if total_comparisons > 0 else 1.0
+
+
 class ChatService:
     def __init__(self):
         self.uri = "mongodb+srv://infoqiooo:Gjresr7SikhBmM5U@cluster0.hyzcpcz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-        self.client = MongoClient(self.uri)
+        self.client = MongoClient(self.uri, tlsAllowInvalidCertificates=True)
         try:
             self.client.admin.command('ping')
             logger.info("Chat MongoDB connection successful")
@@ -571,9 +1258,15 @@ class ChatService:
             logger.error(f"Chat MongoDB connection failed: {str(e)}")
         self.db = self.client['chat_db']
         self.messages = self.db['messages']
+        self.typing = self.db['typing']
+        self.typing.create_index("timestamp", expireAfterSeconds=10)
 
-    def send_message(self, sender_id: str, receiver_id: str, message: str) -> Dict[str, Any]:
+    def send_message(self, sender_id: str, receiver_id: str, message: str, replied_to: str = None) -> Dict[str, Any]:
         try:
+            sender = mongo_service.get_user_by_id(sender_id)
+            receiver = mongo_service.get_user_by_id(receiver_id)
+            if receiver_id in sender.get('blocked_users', []) or sender_id in receiver.get('blocked_users', []):
+                return {'success': False, 'error': 'Blocked'}
             msg_data = {
                 'sender_id': sender_id,
                 'receiver_id': receiver_id,
@@ -581,31 +1274,50 @@ class ChatService:
                 'timestamp': datetime.now(timezone.utc),
                 'read': False
             }
+            if replied_to:
+                replied_msg = self.messages.find_one({'_id': ObjectId(replied_to)})
+                if replied_msg:
+                    msg_data['replied_to'] = replied_to
+                    msg_data['replied_text'] = replied_msg['message']
             result = self.messages.insert_one(msg_data)
-            return {'success': True, 'message_id': str(result.inserted_id)}
+            msg_data['id'] = str(result.inserted_id)
+            del msg_data['_id']
+            msg_data['timestamp'] = msg_data['timestamp'].isoformat()
+            return {'success': True, 'message_id': msg_data['id']}
         except Exception as e:
             logger.error(f"Send message error: {str(e)}")
             return {'success': False, 'error': str(e)}
 
-    def get_messages(self, user1: str, user2: str) -> List[Dict[str, Any]]:
+    def get_messages(self, user1: str, user2: str):
         try:
+            user1_data = mongo_service.get_user_by_id(user1)
+            user2_data = mongo_service.get_user_by_id(user2)
+            if user2 in user1_data.get('blocked_users', []) or user1 in user2_data.get('blocked_users', []):
+                return {'success': False, 'error': 'Blocked'}
             query = {'$or': [
                 {'sender_id': user1, 'receiver_id': user2},
                 {'sender_id': user2, 'receiver_id': user1}
             ]}
             msgs = list(self.messages.find(query).sort('timestamp', 1))
-            self.messages.update_many(
+            updated = self.messages.update_many(
                 {'receiver_id': user1, 'sender_id': user2, 'read': False},
                 {'$set': {'read': True}}
             )
             for msg in msgs:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
+                if 'replied_to' in msg:
+                    replied = self.messages.find_one({'_id': ObjectId(msg['replied_to'])})
+                    if replied:
+                        msg['replied_text'] = replied['message']
+                if msg['timestamp'].tzinfo is None:
+                    msg['timestamp'] = pytz.UTC.localize(msg['timestamp'])
                 msg['timestamp'] = msg['timestamp'].isoformat()
-            return msgs
+            is_typing = self.is_typing(user2, user1)
+            return {'success': True, 'messages': msgs, 'is_typing': is_typing}
         except Exception as e:
             logger.error(f"Get messages error: {str(e)}")
-            return []
+            return {'success': False, 'error': str(e)}
 
     def get_last_message(self, user1: str, user2: str) -> Optional[Dict[str, Any]]:
         try:
@@ -617,7 +1329,8 @@ class ChatService:
             if msg:
                 msg['id'] = str(msg['_id'])
                 del msg['_id']
-                msg['timestamp'] = msg['timestamp']
+                if msg['timestamp'].tzinfo is None:
+                    msg['timestamp'] = pytz.UTC.localize(msg['timestamp'])
                 return msg
             return None
         except Exception as e:
@@ -631,15 +1344,53 @@ class ChatService:
             logger.error(f"Get unread count error: {str(e)}")
             return 0
 
+    def get_unread_count_per_user(self, user_id: str, sender_id: str) -> int:
+        try:
+            return self.messages.count_documents({'receiver_id': user_id, 'sender_id': sender_id, 'read': False})
+        except Exception as e:
+            logger.error(f"Get unread per user error: {str(e)}")
+            return 0
+
+    def delete_message(self, message_id: str, sender_id: str, receiver_id: str) -> Dict[str, Any]:
+        try:
+            result = self.messages.delete_one({'_id': ObjectId(message_id)})
+            return {'success': result.deleted_count > 0}
+        except Exception as e:
+            logger.error(f"Delete message error: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
+    def start_typing(self, from_id: str, to_id: str):
+        try:
+            self.typing.update_one(
+                {'from_id': from_id, 'to_id': to_id},
+                {'$set': {'timestamp': datetime.now(timezone.utc)}},
+                upsert=True
+            )
+        except Exception as e:
+            logger.error(f"Start typing error: {str(e)}")
+
+    def stop_typing(self, from_id: str, to_id: str):
+        try:
+            self.typing.delete_one({'from_id': from_id, 'to_id': to_id})
+        except Exception as e:
+            logger.error(f"Stop typing error: {str(e)}")
+
+    def is_typing(self, from_id: str, to_id: str) -> bool:
+        try:
+            return bool(self.typing.find_one({'from_id': from_id, 'to_id': to_id}))
+        except Exception as e:
+            logger.error(f"Is typing error: {str(e)}")
+            return False
+
 mongo_service = MongoService()
 chat_service = ChatService()
 
 def send_verification_email(email: str, verification_token: str) -> Dict[str, Any]:
     try:
         smtp_server = 'smtp.gmail.com'
-        smtp_port = 587
+        smtp_port = '587'
         smtp_user = 'ninakkaiforyou@gmail.com'
-        smtp_password = os.environ.get('SMTP_PASSWORD', 'porz cqqt bumr wdgj')
+        smtp_password = os.environ.get('SMTP_PASSWORD', 'qccu mskg hdsc xykj')
         verification_url = f"https://www.ninakkai.com/verify-email?token={verification_token}"
         msg = MIMEMultipart()
         msg['From'] = smtp_user
@@ -652,7 +1403,7 @@ def send_verification_email(email: str, verification_token: str) -> Dict[str, An
 
         {verification_url}
 
-        If you did not sign up for this account, please ignore this email.
+        If you did not sign up, please ignore this email.
 
         Best regards,
         The Ninakkai Team
@@ -666,7 +1417,7 @@ def send_verification_email(email: str, verification_token: str) -> Dict[str, An
         return {'success': True}
     except Exception as e:
         logger.error(f"Failed to send verification email to {email}: {str(e)}")
-        return {'success': False, 'error': str(e)}
+        return {'success':False, 'error': str(e)}
 
 def send_reset_email(email: str, reset_token: str) -> Dict[str, Any]:
     try:
@@ -710,11 +1461,14 @@ def log_response(response):
 @app.before_request
 def log_session_info():
     logger.debug(f"Before request - Route: {request.path}, Session: {session}, Cookies: {request.cookies}, Secret Key: {app.secret_key[:4]}...")
+    for key in list(session.keys()):
+        if isinstance(session[key], datetime) and session[key].tzinfo is None:
+            session[key] = pytz.UTC.localize(session[key])
+            session.modified = True
 
-@app.route('/')
+@app.route('/', endpoint='home')
 def index():
     logger.debug(f"Session in index: {session}")
-    logger.debug(f"Incoming cookies: {request.cookies}")
     if 'user_id' in session:
         quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
         return redirect(url_for('explore') if quiz_completed else url_for('questions'))
@@ -722,7 +1476,19 @@ def index():
         return render_template('index.html')
     except Exception as e:
         logger.error(f"Error rendering index.html: {str(e)}")
-        return render_template('error.html', error='Template not found'), 404
+        return 'Template not found', 404
+
+@app.route('/faq')
+def faq():
+    return render_template('faq.html')
+
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
 
 @app.route('/favicon.ico')
 def favicon():
@@ -730,12 +1496,18 @@ def favicon():
         return send_from_directory(app.static_folder, 'favicon.ico', mimetype='image/vnd.microsoft.icon')
     except Exception as e:
         logger.error(f"Error serving favicon.ico: {str(e)}")
-        return render_template('error.html', error='Favicon not found'), 404
+        return 'Favicon not found', 404
+    
+@app.route('/robots.txt')
+def robots():
+    return send_from_directory(app.static_folder, 'robots.txt')
+
+@app.route('/sitemap.xml')
+def sitemap():
+    return send_from_directory(app.static_folder, 'sitemap.xml')
 
 @app.route('/auth', methods=['GET', 'POST'])
 def auth():
-    logger.debug(f"Session in auth: {session}")
-    logger.debug(f"Incoming cookies: {request.cookies}")
     error = None
     success = None
     verification_sent = False
@@ -774,7 +1546,7 @@ def auth():
                                 verification_sent = True
                                 error = 'Please verify your email before logging in'
                             else:
-                                error = result.get('error', 'Login failed. Please try again.')
+                                error = result.get('error', 'Login failed')
                         else:
                             mongo_service.reset_rate_limit(rate_key)
                             session.permanent = True
@@ -782,88 +1554,106 @@ def auth():
                             session['user_id'] = result['user']['id']
                             session.modified = True
                             logger.debug(f"Session set after login: {session}")
+                            user = result['user']
+                            if not user.get('age_verified', False):
+                                return redirect(url_for('age_verification'))
                             return redirect(url_for('questions'))
                     except Exception as e:
                         logger.error(f"Login error: {str(e)}")
                         mongo_service.inc_rate_limit(rate_key)
                         error = 'An error occurred during login. Please try again.'
         elif form_type == 'signup':
-            data = {
-                'email': request.form.get('email'),
-                'password': request.form.get('password'),
-                'full_name': request.form.get('full_name'),
-                'age': request.form.get('age', type=int),
-                'gender': request.form.get('gender'),
-                'occupation': request.form.get('occupation', ''),
-                'bio': request.form.get('bio', ''),
-                'interests': request.form.get('interests', '').split(',') if request.form.get('interests') else []
-            }
-            if not all([data['email'], data['password'], data['full_name']]):
-                error = 'Please fill all required fields'
-            elif not re.match(r"[^@]+@[^@]+\.[^@]+", data['email']):
-                error = 'Please enter a valid email address'
-            elif len(data['password']) < 8:
-                error = 'Password must be at least 8 characters'
-            elif data['password'] != request.form.get('confirm_password'):
-                error = 'Passwords do not match'
-            elif data['age'] is None or data['age'] < 18:
-                error = 'You must be at least 18 years old'
+            ip = request.remote_addr
+            rate_key = f"signup_{ip}"
+            if not mongo_service.check_rate_limit(rate_key, 3):
+                error = 'Too many signup attempts. Please try again later.'
             else:
-                try:
-                    existing_user = mongo_service.get_user_by_email(data['email'])
-                    if existing_user:
-                        error = 'Email already registered'
-                    else:
-                        result = mongo_service.create_user(
-                            data['email'], data['password'], data['full_name'], data['age'], data['gender'],
-                            data.get('image'), data['occupation'], data['bio'], data['interests']
-                        )
-                        if not result['success']:
-                            error = result.get('error', 'Failed to create user')
+                data = {
+                    'email': request.form.get('email'),
+                    'password': request.form.get('password'),
+                    'full_name': request.form.get('full_name'),
+                    'age': request.form.get('age', type=int),
+                    'gender': request.form.get('gender'),
+                    'occupation': request.form.get('occupation', ''),
+                    'bio': request.form.get('bio', ''),
+                    'interests': request.form.get('interests', '').split(',') if request.form.get('interests') else []
+                }
+                agree_terms = request.form.get('agree_terms')
+                agree_privacy = request.form.get('agree_privacy')
+                if not agree_terms or not agree_privacy:
+                    error = 'You must agree to the terms and conditions and privacy policy'
+                elif not all([data['email'], data['password'], data['full_name']]):
+                    error = 'Please fill all required fields'
+                elif not re.match(r"[^@]+@[^@]+\.[^@]+", data['email']):
+                    error = 'Please enter a valid email address'
+                elif len(data['password']) < 8:
+                    error = 'Password must be at least 8 characters'
+                elif data['password'] != request.form.get('confirm_password'):
+                    error = 'Passwords do not match'
+                elif data['age'] is None or data['age'] < 18:
+                    error = 'You must be at least 18 years old'
+                else:
+                    try:
+                        existing_user = mongo_service.get_user_by_email(data['email'])
+                        if existing_user:
+                            error = 'Email already registered'
                         else:
-                            email_result = send_verification_email(data['email'], result['user']['verification_token'])
-                            if not email_result['success']:
-                                error = 'Failed to send verification email'
+                            result = mongo_service.create_user(
+                                data['email'], data['password'], data['full_name'], data['age'], data['gender'],
+                                data.get('image'), data['occupation'], data['bio'], data['interests']
+                            )
+                            if not result['success']:
+                                error = result.get('error', 'Failed to create user')
                             else:
-                                session.permanent = True
-                                session['email'] = data['email']
-                                session['user_id'] = result['user']['id']
-                                session['verification_pending'] = True
-                                session.modified = True
-                                verification_sent = True
-                                success = 'Verification email sent! Please check your inbox.'
-                except Exception as e:
-                    logger.error(f"Signup error: {str(e)}")
-                    error = 'An error occurred during signup. Please try again.'
+                                email_result = send_verification_email(data['email'], result['user']['verification_token'])
+                                if not email_result['success']:
+                                    error = 'Failed to send verification email'
+                                else:
+                                    session.permanent = True
+                                    session['email'] = data['email']
+                                    session['user_id'] = result['user']['id']
+                                    session['verification_pending'] = True
+                                    session.modified = True
+                                    verification_sent = True
+                                    success = 'Verification email sent! Please check your inbox.'
+                    except Exception as e:
+                        logger.error(f"Signup error: {str(e)}")
+                        mongo_service.inc_rate_limit(rate_key)
+                        error = 'An error occurred during signup. Please try again.'
         elif form_type == 'resend_verification':
-            try:
+            ip = request.remote_addr
+            rate_key = f"resend_{ip}"
+            if not mongo_service.check_rate_limit(rate_key, 3):
+                error = 'Too many resend requests. Please try again later.'
+            else:
                 email = request.form.get('email') or session.get('email')
                 if not email:
                     error = 'No email provided'
                 else:
-                    user = mongo_service.get_user_by_email(email)
-                    if not user:
-                        error = 'User not found'
-                    elif user.get('email_verified', False):
-                        error = 'Email already verified'
-                    else:
-                        verification_token = user.get('verification_token')
-                        if not verification_token:
-                            verification_token = secrets.token_urlsafe(32)
-                            mongo_service.update_user(user['id'], {'verification_token': verification_token})
-                        email_result = send_verification_email(email, verification_token)
-                        if not email_result['success']:
-                            error = 'Failed to send verification email'
+                    try:
+                        user = mongo_service.get_user_by_email(email)
+                        if not user:
+                            error = 'User not found'
+                        elif user.get('email_verified', False):
+                            error = 'Email already verified'
                         else:
-                            session.permanent = True
-                            session['email'] = email
-                            session['verification_pending'] = True
-                            session.modified = True
-                            verification_sent = True
-                            success = 'Verification email resent successfully!'
-            except Exception as e:
-                logger.error(f"Resend verification error: {str(e)}")
-                error = 'An unexpected error occurred'
+                            verification_token = user.get('verification_token')
+                            if not verification_token:
+                                verification_token = secrets.token_urlsafe(32)
+                                mongo_service.update_user(user['id'], {'verification_token': verification_token})
+                            email_result = send_verification_email(email, verification_token)
+                            if not email_result['success']:
+                                error = 'Failed to send verification email'
+                            else:
+                                session.permanent = True
+                                session['email'] = email
+                                session['verification_pending'] = True
+                                session.modified = True
+                                verification_sent = True
+                                success = 'Verification email resent successfully!'
+                    except Exception as e:
+                        logger.error(f"Resend verification error: {str(e)}")
+                        error = 'An unexpected error occurred'
         elif form_type == 'forgot_password':
             ip = request.remote_addr
             rate_key = f"forgot_{ip}"
@@ -909,7 +1699,7 @@ def auth():
 
 @app.route('/verify-email')
 def verify_email_endpoint():
-    logger.debug(f"Session in verify-email: {session}")
+    logger.debug(f"Verify email session: {session}")
     token = request.args.get('token')
     if not token:
         return redirect(url_for('auth', error='Invalid verification link'))
@@ -923,12 +1713,139 @@ def verify_email_endpoint():
         session['verification_pending'] = False
         session.modified = True
         logger.debug(f"Session set after email verification: {session}")
-        resp = make_response(redirect(url_for('questions')))
+        user = mongo_service.get_user_by_id(result['user_id'])
+        target = 'age_verification' if not user.get('age_verified', False) else 'questions'
+        resp = make_response(redirect(url_for(target)))
         resp.set_cookie('email_verified', '1', max_age=60, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
         return resp
     except Exception as e:
         logger.error(f"Verification error: {str(e)}")
         return redirect(url_for('auth', error='An unexpected error occurred during verification.'))
+
+@app.route('/age-verification', methods=['GET', 'POST'])
+def age_verification():
+    if request.method == 'GET':
+        if 'user_id' not in session:
+            return redirect(url_for('auth'))
+        user = mongo_service.get_user_by_id(session['user_id'])
+        if user.get('age_verified', False):
+            quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
+            return redirect(url_for('explore') if quiz_completed else url_for('questions'))
+        return render_template('age_verification.html')
+
+    if request.method == 'POST':
+        # For POST, always return JSON – no redirects
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'error': 'Session expired. Please log in again.', 'redirect': url_for('auth')}), 401
+        
+        user = mongo_service.get_user_by_id(session['user_id'])
+        if user.get('age_verified', False):
+            quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
+            redirect_to = url_for('explore') if quiz_completed else url_for('questions')
+            return jsonify({'success': True, 'already_verified': True, 'redirect': redirect_to}), 200
+
+        file = request.files.get('image')
+        if not file:
+            return jsonify({'success': False, 'error': 'No image provided'}), 400
+
+        try:
+            api_url = "https://sure-myrilla-mhdashikofficial-61e061ec.koyeb.app/predict"
+            api_key = "74303dce-713f-4b91-829e-7e0a6c76a25c"
+            headers = {"x-api-key": api_key}
+            file.seek(0)  # Reset file pointer if needed
+            file_bytes = file.read()
+            files = {'file': ('image.jpg', file_bytes, 'image/jpeg')}
+            retries = 0
+            max_retries = 10
+            while retries < max_retries:
+                resp = requests.post(api_url, files=files, headers=headers, timeout=30)
+                if resp.status_code == 200:
+                    break
+                elif resp.status_code == 503:
+                    retries += 1
+                    wait_time = 5 * retries
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    logger.error(f"API response error: status {resp.status_code}, body: {resp.text}")
+                    return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
+            if retries == max_retries:
+                return jsonify({'success': False, 'error': 'Service unavailable after retries. Try again later.'}), 503
+
+            data = resp.json()
+            logger.info(f"API response data: {data}")  # Log for debugging
+            results = data.get('results', [])
+            if not results:
+                return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 400
+            prediction = results[0]
+            if 'age' not in prediction:
+                logger.error(f"Invalid API response - missing age: {prediction}")
+                return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
+            age_group = prediction['age']
+            if not isinstance(age_group, str) or not age_group.startswith('(') or not age_group.endswith(')'):
+                logger.error(f"Unexpected age group format: {age_group}")
+                return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
+            # Parse age, handle potential formats more robustly
+            try:
+                inner = age_group[1:-1]  # Remove parentheses
+                age_lower, age_upper = map(int, inner.split('-'))
+            except ValueError as ve:
+                logger.error(f"Age parsing error: {ve}, age_group: {age_group}")
+                return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
+            if 'gender' not in prediction:
+                logger.error(f"Missing gender in prediction: {prediction}")
+                return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
+            
+            raw_detected_gender = str(prediction['gender']).strip().lower()
+            normalized_gender = raw_detected_gender
+            
+            if raw_detected_gender in ['woman', 'women', 'f', 'female', 'girl']:
+                normalized_gender = 'female'
+            elif raw_detected_gender in ['man', 'men', 'm', 'male', 'boy']:
+                normalized_gender = 'male'
+                
+            if normalized_gender != user.get('gender', '').lower():
+                return jsonify({'success': False, 'error': 'gender_mismatch', 'detected_gender': raw_detected_gender}), 403
+            if age_lower < 18:
+                return jsonify({'success': False, 'error': 'You must be at least 18 years old. If you think this is a mistake, contact help@ninakkai.com'}), 403
+            update = mongo_service.update_user(session['user_id'], {'age_verified': True})
+            if not update['success']:
+                logger.error("Failed to update age_verified in DB")
+                return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
+            return jsonify({'success': True, 'redirect': url_for('questions')}), 200
+        except requests.exceptions.RequestException as re:
+            logger.error(f"API request exception: {re}")
+            return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
+        except json.JSONDecodeError as jde:
+            logger.error(f"JSON decode error from API: {jde}, response: {resp.text if 'resp' in locals() else 'No response'}")
+            return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
+        except Exception as e:
+            logger.error(f"Unexpected age verification error: {str(e)}")
+            return jsonify({'success': False, 'error': 'Align your face correctly and visibly under light and try again.'}), 500
+
+@app.route('/update_gender', methods=['POST'])
+def update_gender():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json() 
+    new_gender = data.get('new_gender')
+    if new_gender not in ['male', 'female']:
+        return jsonify({'success': False, 'error': 'Invalid gender'}), 400
+    user = mongo_service.get_user_by_id(session['user_id'])
+    if user['gender'] == new_gender:
+        return jsonify({'success': False, 'error': 'Same gender'}), 400
+    # Update gender and set age_verified True
+    update_data = {'gender': new_gender, 'age_verified': True}
+    old_gender = user['gender']
+    old_default = 'https://ik.imagekit.io/vo0ffucpi/653324ed-3b9c-48b1-b9b2-d1d8b16931ff.jpg' if old_gender == 'male' else 'https://ik.imagekit.io/vo0ffucpi/8e2b61f2-44cc-43cd-bc55-e5ebcaae9130.jpg'
+    new_default = 'https://ik.imagekit.io/vo0ffucpi/653324ed-3b9c-48b1-b9b2-d1d8b16931ff.jpg' if new_gender == 'male' else 'https://ik.imagekit.io/vo0ffucpi/8e2b61f2-44cc-43cd-bc55-e5ebcaae9130.jpg'
+    if user.get('image') == old_default:
+        update_data['image'] = new_default
+    update_result = mongo_service.update_user(session['user_id'], update_data)
+    if update_result['success']:
+        return jsonify({'success': True, 'redirect': url_for('questions')}), 200
+    else:
+        return jsonify({'success': False, 'error': 'Failed to update'}), 500
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password_endpoint(token):
@@ -958,11 +1875,117 @@ def reset_password_endpoint(token):
         else:
             return render_template('reset_password.html', token=token, error='Failed to update password')
 
+@app.route('/change_password', methods=['POST'])
+def change_password():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+    if not current_password or not new_password:
+        return jsonify({'success': False, 'error': 'Missing passwords'}), 400
+    user = mongo_service.get_user_by_id(session['user_id'])
+    if not check_password_hash(user['password'], current_password):
+        return jsonify({'success': False, 'error': 'Incorrect current password'}), 400
+    if len(new_password) < 8:
+        return jsonify({'success': False, 'error': 'New password must be at least 8 characters'}), 400
+    result = mongo_service.update_password(session['user_id'], new_password)
+    return jsonify(result)
+
+@app.route('/delete_account', methods=['POST'])
+def delete_account():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    result = mongo_service.delete_account(session['user_id'])
+    if result['success']:
+        session.clear()
+    return jsonify(result)
+
+@app.route('/mark_notification_read', methods=['POST'])
+def mark_notification_read():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    notif_id = data.get('notif_id')
+    if not notif_id:
+        return jsonify({'success': False, 'error': 'No notification ID provided'}), 400
+    result = mongo_service.mark_notification_read(notif_id, session['user_id'])
+    return jsonify(result)
+
+@app.route('/clear_notifications', methods=['POST'])
+def clear_notifications():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    result = mongo_service.clear_notifications(session['user_id'])
+    return jsonify(result)
+
+@app.route('/api/notifications', methods=['GET'])
+def api_notifications():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    notifications = mongo_service.get_notifications(session['user_id'])
+    return jsonify({'success': True, 'notifications': notifications})
+
+@app.route('/api/notification_count', methods=['GET'])
+def api_notification_count():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    count = mongo_service.get_unread_notification_count(session['user_id'])
+    return jsonify({'success': True, 'count': count})
+
+@app.route('/report-user', methods=['POST'])
+def report_user_endpoint():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    reported_user_id = data.get('reported_user_id')
+    reason = data.get('reason')
+    if not reported_user_id or not reason:
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+    result = mongo_service.report_user(session['user_id'], reported_user_id, reason)
+    if result['success']:
+        mongo_service.pass_user(session['user_id'], reported_user_id)
+    return jsonify(result)
+
+@app.route('/submit_feedback', methods=['POST'])
+def submit_feedback():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    feedback = data.get('feedback')
+    update_data = {'feedback_prompt_dismissed': True}
+    if feedback:
+        update_data['feedback'] = feedback
+        update_data['feedback_date'] = datetime.now(timezone.utc)
+    mongo_service.update_user(session['user_id'], update_data)
+    return jsonify({'success': True})
+
+@app.route('/dismiss_feedback', methods=['POST'])
+def dismiss_feedback():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    mongo_service.update_user(session['user_id'], {'feedback_prompt_dismissed': True})
+    return jsonify({'success': True})
+
+@app.route('/dismiss_retake', methods=['POST'])
+def dismiss_retake():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    mongo_service.update_user(session['user_id'], {'retake_prompt_dismissed': True})
+    return jsonify({'success': True})
+
+@app.route('/dismiss_like_prompt', methods=['POST'])
+def dismiss_like_prompt():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    result = mongo_service.update_user(session['user_id'], {'like_prompt_dismissed': True})
+    return jsonify(result)
+
 @app.route('/explore')
 def explore():
     logger.debug(f"Session in explore: {session}")
     if 'user_id' not in session:
-        logger.debug("No user_id in session for /explore")
+        logger.debug("No user in session for /explore")
         return redirect(url_for('auth', error='Please log in to access the explore page'))
     
     try:
@@ -971,67 +1994,121 @@ def explore():
             session.clear()
             return redirect(url_for('auth', error='User not found. Please log in again.'))
         
+        if not user.get('age_verified', False):
+            return redirect(url_for('age_verification'))
+        
         quiz_result = mongo_service.get_quiz_results(session['user_id'])
         if not quiz_result:
             return redirect(url_for('questions', error='Please complete the quiz to access the explore page'))
         
-        matches = mongo_service.find_matches(session['user_id'])
-        
         profile = {
             'id': user['id'],
             'full_name': user['full_name'],
-            'email': user['email'],
-            'age': user.get('age'),
-            'gender': user.get('gender'),
             'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
             'occupation': user.get('occupation', 'N/A'),
             'bio': user.get('bio', 'No bio available'),
             'interests': user.get('interests', []),
+            'distance': 'N/A',
             'dominant_type': quiz_result['scores']['dominant_type'],
-            'dominant_percentage': quiz_result['scores']['dominant_percentage'],
-            'secondary_type': quiz_result['scores']['secondary_type'],
-            'secondary_percentage': quiz_result['scores']['secondary_percentage']
+            'match_percentage': 50,
+            'gender': user['gender'],
+            'show_like_prompt': user['gender'] == 'male' and not user.get('like_prompt_dismissed', False)
         }
         
-        discovery = matches
-        nearby = matches
+        prompt_status = mongo_service.get_user_prompt_status(session['user_id'])
         
-        return render_template('explore.html', profile=profile, matches=matches, discovery=discovery, nearby=nearby, error=None)
+        # Render with empty data, load asynchronously
+        resp = make_response(render_template('explore.html', profile=profile, matches=[], discovery=[], error=None, **prompt_status))
+        resp.headers['Cache-Control'] = 'public, max-age=300'  # Cache the page for 5 mins
+        return resp
     except Exception as e:
         logger.error(f"Explore error: {str(e)}")
-        return render_template('explore.html', profile={}, matches=[], discovery=[], nearby=[], error='An error occurred while loading the explore page. Please try again.')
+        return render_template('explore.html', profile={'show_like_prompt': False, 'gender': '', 'dominant_type': ''}, matches=[], discovery=[], error='An error occurred while loading the explore page. Please try again.')
+
+@app.route('/api/matches', methods=['GET'])
+def api_matches():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    try:
+        matches = mongo_service.get_potential_matches(session['user_id'])
+        return jsonify({
+            'success': True, 
+            'matches': matches
+        }), 200
+    except Exception as e:
+        logger.error(f"API matches error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to fetch matches'}), 500
+
+@app.route('/api/discovery', methods=['GET'])
+def api_discovery():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    try:
+        excluded_str = request.args.get('excluded', '')
+        excluded = [id.strip() for id in excluded_str.split(',') if id.strip()]
+        matches = mongo_service.get_random_potential(session['user_id'], excluded)
+        return jsonify({
+            'success': True, 
+            'matches': matches
+        }), 200
+    except Exception as e:
+        logger.error(f"API discovery error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to fetch discovery'}), 500
 
 @app.route('/like-user', methods=['POST'])
 def like_user():
+    logger.info(f"Like-user route called with session: {session}")
     if 'user_id' not in session:
+        logger.warning("Unauthorized access to /like-user")
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     try:
         data = request.get_json()
         matched_user_id = data.get('matched_user_id')
+        logger.info(f"Received like request for user_id: {session['user_id']}, matched_user_id: {matched_user_id}")
         if not matched_user_id:
-            return jsonify({'success': False, 'error': 'No user ID provided'}), 400
+            logger.warning("No matched_user_id provided in /like-user")
+            return jsonify({'success': False, 'error': 'No matched user ID provided'}), 400
         result = mongo_service.like_user(session['user_id'], matched_user_id)
         if result['success']:
+            logger.info(f"Like successful for for user_id: {session['user_id']}, matched_user_id: {matched_user_id}")
             return jsonify(result), 200
         else:
+            logger.error(f"Like failed for {result.get('error', 'Unknown error')}")
             return jsonify({'success': False, 'error': result.get('error', 'Failed to like user')}), 500
     except Exception as e:
         logger.error(f"Like user endpoint error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/unlike-user', methods=['POST'])
+def unlike_user_endpoint():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    matched_user_id = data.get('matched_user_id')
+    if not matched_user_id:
+        return jsonify({'success': False, 'error': 'No user ID provided'}), 400
+    result = mongo_service.unlike_user(session['user_id'], matched_user_id)
+    return jsonify(result)
+
 @app.route('/pass-user', methods=['POST'])
 def pass_user():
+    logger.info(f"Pass-user route called with session: {session}")
     if 'user_id' not in session:
+        logger.warning("Unauthorized access to /pass-user")
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     try:
         data = request.get_json()
         passed_user_id = data.get('passed_user_id')
+        logger.info(f"Received pass request for user_id: {session['user_id']}, passed_user_id: {passed_user_id}")
         if not passed_user_id:
+            logger.warning("No passed_user_id provided in /pass-user")
             return jsonify({'success': False, 'error': 'No user ID provided'}), 400
         result = mongo_service.pass_user(session['user_id'], passed_user_id)
         if result['success']:
+            logger.info(f"Pass successful for user_id: {session['user_id']}, passed_user_id: {passed_user_id}")
             return jsonify({'success': True}), 200
         else:
+            logger.error(f"Pass failed: {result.get('error', 'Unknown error')}")
             return jsonify({'success': False, 'error': result.get('error', 'Failed to pass user')}), 500
     except Exception as e:
         logger.error(f"Pass user endpoint error: {str(e)}")
@@ -1056,28 +2133,57 @@ def user_profile(user_id):
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
     try:
-        user = mongo_service.get_user_by_id(user_id)
-        if not user:
+        viewee_user = mongo_service.get_user_by_id(user_id)
+        if not viewee_user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
-        quiz_result = mongo_service.get_quiz_results(user_id)
+        viewee_quiz = mongo_service.get_quiz_results(user_id)
+        viewer_user = mongo_service.get_user_by_id(session['user_id'])
+        viewer_quiz = mongo_service.get_quiz_results(session['user_id'])
+        match_percentage = 50
+        if viewer_quiz and viewee_quiz:
+            # UPDATED: Use new calculation with no bonuses
+            match_calc = mongo_service._calculate_match_percentage(viewer_quiz['scores'], viewee_quiz['scores'])
+            base_percentage = match_calc['base']
+            match_percentage = base_percentage
+
+        dominant_type = viewee_quiz['scores']['dominant_type'] if viewee_quiz else 'N/A'
+        personality_info = PERSONALITIES.get(dominant_type, {
+            'dominant_type': dominant_type,
+            'title': f'This person is a {dominant_type.replace(" ", "")}.',
+            'description': 'Description not available.',
+            'tagline': '',
+            'strengths': [],
+            'compatibility': get_top_compatibles(dominant_type),
+            'color': '#000000'
+        })
         profile = {
-            'id': user['id'],
-            'full_name': user['full_name'],
-            'age': user.get('age'),
-            'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
-            'occupation': user.get('occupation', 'N/A'),
-            'bio': user.get('bio', 'No bio available'),
-            'interests': user.get('interests', []),
+            'id': viewee_user['id'],
+            'full_name': viewee_user['full_name'],
+            'age': viewee_user.get('age'),
+            'gender': viewee_user.get('gender'),
+            'image': viewee_user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
+            'occupation': viewee_user.get('occupation', 'N/A'),
+            'bio': viewee_user.get('bio', 'No bio available'),
+            'interests': viewee_user.get('interests', []),
             'distance': 'N/A',
-            'rating': '4.5',
-            'match_percentage': 50,
+            'dominant_type': dominant_type,
+            'match_percentage': match_percentage,
+            'liked': mongo_service.has_liked_user(session['user_id'], user_id),
+            'passed': mongo_service.has_passed_user(session['user_id'], user_id),
             'personality': {
-                'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
-                'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0,
-                'secondary_type': quiz_result['scores']['secondary_type'] if quiz_result else 'N/A',
-                'secondary_percentage': quiz_result['scores']['secondary_percentage'] if quiz_result else 0
-            }
+                'dominant_type': viewee_quiz['scores']['dominant_type'] if viewee_quiz else 'N/A',
+                'dominant_percentage': viewee_quiz['scores']['dominant_percentage'] if viewee_quiz else 0
+            },
+            'personality_info': personality_info,
+            'keeper_seeker': viewee_quiz['scores'].get('keeper_seeker_type', 'Unknown') if viewee_quiz else 'Unknown',
+            'religion': viewee_user.get('religion', 'Not specified') if viewee_user.get('religion_public', False) else 'Private',
+            'physical_traits': {t['label']: t['value'] for t in viewee_user.get('physical_traits', [])} if viewee_user.get('physical_public', False) else 'Private',  # Added conditional visibility
+            'education_work': next((p['value'] for p in viewee_user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
+            'summary': next((p['value'] for p in viewee_user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), 'N/A'),
+            'photos': viewee_user.get('photos', [])
         }
+        # Collect interests from profile_data
+        profile['profile_interests'] = [p['value'] for p in viewee_user.get('profile_data', []) if p['label'] == 'Interests (select all that apply)']
         return jsonify({'success': True, 'user': profile}), 200
     except Exception as e:
         logger.error(f"User profile endpoint error: {str(e)}")
@@ -1087,8 +2193,11 @@ def user_profile(user_id):
 def chat():
     logger.debug(f"Session in chat: {session}")
     if 'user_id' not in session:
-        logger.debug("No user_id in session for /chat")
-        return redirect(url_for('auth'))
+        logger.debug("No user in session for /chat")
+        return redirect(url_for('auth', error='Please log in to access the chat page'))
+    user = mongo_service.get_user_by_id(session['user_id'])
+    if not user.get('age_verified', False):
+        return redirect(url_for('age_verification'))
     try:
         current_user_id = session['user_id']
         user = mongo_service.get_user_by_id(current_user_id)
@@ -1096,8 +2205,8 @@ def chat():
             session.clear()
             return redirect(url_for('auth', error='User not found. Please log in again.'))
         
-        quiz_result = mongo_service.get_quiz_results(current_user_id)
-        if not quiz_result:
+        quiz_completed = mongo_service.get_quiz_results(current_user_id)
+        if not quiz_completed:
             return redirect(url_for('questions', error='Please complete the quiz to access the chat page'))
         
         profile = {
@@ -1110,36 +2219,48 @@ def chat():
             'occupation': user.get('occupation', 'N/A'),
             'bio': user.get('bio', 'No bio available'),
             'interests': user.get('interests', []),
-            'dominant_type': quiz_result['scores']['dominant_type'],
-            'dominant_percentage': quiz_result['scores']['dominant_percentage'],
-            'secondary_type': quiz_result['scores']['secondary_type'],
-            'secondary_percentage': quiz_result['scores']['secondary_percentage']
+            'dominant_type': quiz_completed['scores']['dominant_type'],
+            'dominant_percentage': quiz_completed['scores']['dominant_percentage']
         }
         
+        # Render with empty conversations for lazy loading
+        return render_template('chat.html', profile=profile, conversations=[], unread_count=0, current_user_id=current_user_id)
+    except Exception as e:
+        logger.error(f"Chat error: {str(e)}")
+        return render_template('chat.html', profile={'image': 'https://randomuser.me/api/portraits/women/44.jpg'}, conversations=[], unread_count=0, error=str(e), current_user_id='')
+
+@app.route('/api/conversations', methods=['GET'])
+def api_conversations():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    try:
+        current_user_id = session['user_id']
         matched_user_ids = mongo_service.get_matched_users(current_user_id)
         unread_count = chat_service.get_unread_count(current_user_id)
         conversations = []
+        
         for match_id in matched_user_ids:
             user = mongo_service.get_user_by_id(match_id)
             if user:
                 last_msg = chat_service.get_last_message(current_user_id, match_id)
+                unread = chat_service.get_unread_count_per_user(current_user_id, match_id)
                 conv = {
                     'id': user['id'],
                     'full_name': user['full_name'],
                     'image': user.get('image', 'https://randomuser.me/api/portraits/women/44.jpg'),
                     'last_message': last_msg['message'] if last_msg else 'Start chatting!',
-                    'time': last_msg['timestamp'].strftime('%H:%M') if last_msg else '',
-                    'sort_time': last_msg['timestamp'] if last_msg else datetime.min
+                    'time': last_msg['timestamp'].isoformat() if last_msg else '',
+                    'sort_time': last_msg['timestamp'] if last_msg else datetime.min.replace(tzinfo=timezone.utc),
+                    'unread': unread
                 }
                 conversations.append(conv)
         conversations.sort(key=lambda c: c['sort_time'], reverse=True)
-        
-        return render_template('chat.html', profile=profile, conversations=conversations, unread_count=unread_count)
+        return jsonify({'success': True, 'conversations': conversations, 'unread_count': unread_count}), 200
     except Exception as e:
-        logger.error(f"Chat error: {str(e)}")
-        return render_template('chat.html', profile={'image': 'https://randomuser.me/api/portraits/women/44.jpg'}, conversations=[], unread_count=0, error=str(e))
+        logger.error(f"API conversations error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to fetch conversations'}), 500
 
-@app.route('/messages/<other_user_id>', methods=['GET'])
+@app.route("/messages/<other_user_id>", methods=['GET'])
 def get_messages(other_user_id):
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
@@ -1147,8 +2268,8 @@ def get_messages(other_user_id):
     if not mongo_service.is_matched(current_user_id, other_user_id):
         return jsonify({'success': False, 'error': 'Not matched'}), 403
     try:
-        messages = chat_service.get_messages(current_user_id, other_user_id)
-        return jsonify({'success': True, 'messages': messages}), 200
+        result = chat_service.get_messages(current_user_id, other_user_id)
+        return jsonify(result), 200 if result['success'] else 400
     except Exception as e:
         logger.error(f"Get messages endpoint error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1161,19 +2282,64 @@ def send_message():
         data = request.get_json()
         to_user_id = data.get('to_user_id')
         message = data.get('message')
+        replied_to = data.get('replied_to')
         if not to_user_id or not message:
             return jsonify({'success': False, 'error': 'Missing parameters'}), 400
         current_user_id = session['user_id']
         if not mongo_service.is_matched(current_user_id, to_user_id):
             return jsonify({'success': False, 'error': 'Not matched'}), 403
-        result = chat_service.send_message(current_user_id, to_user_id, message)
+        result = chat_service.send_message(current_user_id, to_user_id, message, replied_to)
         if result['success']:
-            return jsonify({'success': True}), 200
+            return jsonify(result), 200
         else:
             return jsonify({'success': False, 'error': result.get('error', 'Failed to send message')}), 500
     except Exception as e:
         logger.error(f"Send message endpoint error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/delete_message', methods=['POST'])
+def delete_message_endpoint():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    message_id = data.get('message_id')
+    if not message_id:
+        return jsonify({'success': False, 'error': 'No message ID provided'}), 400
+    try:
+        msg = chat_service.messages.find_one({'_id': ObjectId(message_id)})
+        if msg and msg['sender_id'] == session['user_id']:
+            result = chat_service.delete_message(message_id, msg['sender_id'], msg['receiver_id'])
+            return jsonify(result)
+        else:
+            return jsonify({'success': False, 'error': 'Not authorized or not found'})
+    except Exception as e:
+        logger.error(f"Delete message error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/block_user', methods=['POST'])
+def block_user_endpoint():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    blocked_user_id = data.get('blocked_user_id')
+    if not blocked_user_id:
+        return jsonify({'success': False, 'error': 'No user ID provided'}), 400
+    result = mongo_service.block_user(session['user_id'], blocked_user_id)
+    return jsonify(result)
+
+@app.route('/start_typing/<to_id>', methods=['POST'])
+def start_typing(to_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    chat_service.start_typing(session['user_id'], to_id)
+    return jsonify({'success': True})
+
+@app.route('/stop_typing/<to_id>', methods=['POST'])
+def stop_typing(to_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    chat_service.stop_typing(session['user_id'], to_id)
+    return jsonify({'success': True})
 
 @app.route('/profile')
 def profile():
@@ -1181,11 +2347,35 @@ def profile():
     if 'user_id' not in session:
         logger.debug("No user_id in session for /profile")
         return redirect(url_for('auth'))
+    user = mongo_service.get_user_by_id(session['user_id'])
+    if not user.get('age_verified', False):
+        return redirect(url_for('age_verification'))
     try:
         user = mongo_service.get_user_by_id(session['user_id'])
         if not user:
-            return render_template('profile.html', profile={}, pending_likers=[])
+            return render_template('profile.html', profile={}, pending_likers=[], notifications=[])
         quiz_result = mongo_service.get_quiz_results(session['user_id'])
+        # Define personalities dict
+        dominant_type = quiz_result['scores']['dominant_type'] if quiz_result else 'N/A'
+        personality = PERSONALITIES.get(dominant_type, {
+            'dominant_type': dominant_type,
+            'title': f'You are a {dominant_type.replace(" ", "")}.',
+            'description': 'Description not available.',
+            'tagline': '',
+            'strengths': [],
+            'compatibility': get_top_compatibles(dominant_type),
+            'color': '#000000'
+        })
+        # Format personality_info as HTML with classes
+        personality_info = f"""
+        <span class="primary-personality">
+        <strong>{personality['title']}</strong><br>
+        {personality['description']}<br>
+        <em>{personality['tagline']}</em><br>
+        <strong>Strengths:</strong> {', '.join(personality['strengths'])}<br>
+        <strong>Compatibility:</strong> {', '.join(personality['compatibility'])}
+        </span>
+        """
         profile = {
             'id': user['id'],
             'email': user['email'],
@@ -1199,27 +2389,49 @@ def profile():
             'photos': user.get('photos', []),
             'location': user.get('location', ''),
             'quiz_completed': bool(quiz_result),
-            'dominant_type': quiz_result['scores']['dominant_type'] if quiz_result else 'N/A',
-            'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0
+            'dominant_type': dominant_type,
+            'dominant_percentage': quiz_result['scores']['dominant_percentage'] if quiz_result else 0,
+            'personality_info': personality_info,
+            'keeper_seeker': quiz_result['scores'].get('keeper_seeker_type', 'N/A') if quiz_result else 'N/A',
+            'religion': user.get('religion', 'N/A'),
+            'religion_importance': user.get('religion_importance', 'skip'),
+            'religion_public': user.get('religion_public', False),  # Added for toggle
+            'physical_traits': {t['label']: t['value'] for t in user.get('physical_traits', [])},
+            'physical_importance': user.get('physical_importance', 'skip'),
+            'physical_public': user.get('physical_public', False),  # Added for toggle
+            'education_work': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'Education / Work'), 'N/A'),
+            'summary': next((p['value'] for p in user.get('profile_data', []) if p['label'] == 'One-line self-summary (optional)'), 'N/A')
         }
+        # Collect interests from profile_data
+        profile['profile_interests'] = [p['value'] for p in user.get('profile_data', []) if p['label'] == 'Interests (select all that apply)']
         pending_likers = mongo_service.get_pending_likers(session['user_id'])
-        return render_template('profile.html', profile=profile, pending_likers=pending_likers)
+        notifications = mongo_service.get_notifications(session['user_id'])
+        return render_template('profile.html', profile=profile, pending_likers=pending_likers, notifications=notifications)
     except Exception as e:
         logger.error(f"Profile error: {str(e)}")
-        return render_template('profile.html', profile={}, pending_likers=[])
+        return render_template('profile.html', profile={}, pending_likers=[], notifications=[])
 
 @app.route('/questions', methods=['GET'])
 def questions():
     logger.debug(f"Session in questions: {session}")
-    logger.debug(f"Incoming cookies: {request.cookies}")
     if 'user_id' not in session:
         logger.debug("No user_id in session for /questions")
         return redirect(url_for('auth'))
+    user = mongo_service.get_user_by_id(session['user_id'])
+    if not user.get('age_verified', False):
+        return redirect(url_for('age_verification'))
+    retake = request.args.get('retake') == 'true'
+    if retake:
+        mongo_service.delete_quiz_results(session['user_id'])
     quiz_completed = bool(mongo_service.get_quiz_results(session['user_id']))
     if quiz_completed:
         return redirect(url_for('explore'))
-    logger.debug(f"Rendering questions.html for user_id: {session['user_id']}")
-    return render_template('questions.html')
+    logger.debug(f"Rendering questions.html for user {session['user_id']}")
+    resp = make_response(render_template('questions.html'))
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
 
 @app.route('/submit-quiz', methods=['POST'])
 def submit_quiz():
@@ -1232,98 +2444,54 @@ def submit_quiz():
         data = request.get_json()
         answers = data.get('answers', [])
         if not answers:
-            return jsonify({'success': False, 'error': 'No answers provided'}), 400
+            return jsonify({'error': 'No answers provided'}), 400
         
-        processed_answers = []
-        required_questions = [
-            {
-                'answers': ["Safe and calm inside", "Excited and full of butterflies", "Like I've found someone truly rare", "Scared of being too vulnerable"],
-                'types': ["👂 Listener", "💘 Romantic", "🌙 Dreamer", "🛡️ Protector"]
-            },
-            {
-                'answers': ["Trust", "Emotional connection", "Shared goals", "Physical intimacy"],
-                'types': ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "💘 Romantic"],
-                'isRankQuestion': True
-            },
-            {
-                'answers': ["Someone silently sitting with me through pain", "Someone helping me fix the situation", "Someone saying exactly the right words", "Someone holding me tight without speaking"],
-                'types': ["🌿 Nurturer", "🛡️ Protector", "👂 Listener", "💘 Romantic"]
-            },
-            {
-                'answers': ["Try to stay calm and really listen", "Express your emotions openly", "Try to solve it quickly and move on", "Take it personally and overthink it"],
-                'types': ["👂 Listener", "💘 Romantic", "🛡️ Protector", "🌙 Dreamer"]
-            },
-            {
-                'answers': ["Kind and soft", "Strong and independent", "Perfect and without flaws", "Honest and growing"],
-                'types': ["🌿 Nurturer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
-            },
-            {
-                'answers': ["Peace and emotional safety", "Excitement and mystery", "Growth and learning together", "Feeling truly known and accepted"],
-                'types': ["🌿 Nurturer", "💘 Romantic", "🌟 Idealist", "🌙 Dreamer"]
-            },
-            {
-                'answers': ["Deep, late-night emotional conversations", "Intense physical closeness and passion", "When someone notices the little things", "Solving life's problems together"],
-                'types': ["🌙 Dreamer", "💘 Romantic", "🌿 Nurturer", "🛡️ Protector"]
-            },
-            {
-                'answers': ["Cry or let it out", "Get silent and withdraw", "Keep busy to avoid it", "Talk it out with someone trusted"],
-                'types': ["🌙 Dreamer", "🛡️ Protector", "🌟 Idealist", "👂 Listener"]
-            },
-            {
-                'answers': ["Freedom to spend and still save together", "Clear roles — one earns, one manages", "Always discuss big spending decisions", "Having separate money but shared goals"],
-                'types': ["🛡️ Protector", "🌿 Nurturer", "👂 Listener", "🌟 Idealist"]
-            }
-        ]
-        optional_questions = [
-            {
-                'answers': ["I need space to process alone", "I want to talk it through together", "I focus on practical solutions", "I lean on my partner for comfort"],
-                'types': ["🛡️ Protector", "👂 Listener", "🌟 Idealist", "🌿 Nurturer"]
-            },
-            {
-                'answers': ["Dream big and figure it out later", "Set clear goals and timelines", "Go with the flow and see what happens", "Discuss every step together"],
-                'types': ["🌙 Dreamer", "🛡️ Protector", "💘 Romantic", "👂 Listener"]
-            }
-        ]
+        # Add types to answers for emotional questions
+        for ans in answers:
+            qid = ans.get('question_id')
+            if qid in QUESTION_TYPES:
+                if 'index' in ans:
+                    ans['type'] = QUESTION_TYPES[qid][ans['index']]
+                elif 'ranking' in ans:
+                    if ans['ranking']:
+                        top_rank = min(ans['ranking'], key=lambda r: r['rank'])
+                        top_idx = top_rank['index']
+                        ans['type'] = QUESTION_TYPES[qid][top_idx]
         
-        all_questions = required_questions + optional_questions
-        for answer_data in answers:
-            question_idx = answer_data.get('question')
-            if question_idx >= len(all_questions):
-                continue
-            question = all_questions[question_idx]
-            if question.get('isRankQuestion'):
-                ranking = answer_data.get('ranking', [])
-                ranked_answer = "Ranked: " + ", ".join(f"{r['rank']}. {question['answers'][r['index']]}" for r in ranking)
-                processed_answers.append({
-                    'type': question['types'][ranking[0]['index']] if ranking else question['types'][0],
-                    'answer': ranked_answer
-                })
-            else:
-                answer_idx = answer_data.get('answer')
-                if answer_idx is not None and 0 <= answer_idx < len(question['answers']):
-                    processed_answers.append({
-                        'type': question['types'][answer_idx],
-                        'answer': question['answers'][answer_idx]
-                    })
-
-        quiz_data = {'answers': processed_answers}
+        quiz_data = {'answers': answers}
         result = mongo_service.save_quiz_results(session['user_id'], quiz_data)
         if result['success']:
-            return jsonify({'success': True}), 200
+            return jsonify(result), 200
         else:
             return jsonify({'success': False, 'error': result.get('error', 'Failed to save quiz results')}), 500
     except Exception as e:
         logger.error(f"Submit quiz error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/logout')
+@app.route('/personality_results', methods=['GET'])
+def personality_results():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    quiz_result = mongo_service.get_quiz_results(session['user_id'])
+    if not quiz_result:
+        return jsonify({'success': False, 'error': 'No quiz results found'}), 404
+    dominant_type = quiz_result['scores']['dominant_type']
+    personality_info = PERSONALITIES.get(dominant_type, {
+        'dominant_type': dominant_type,
+        'title': f'You are a {dominant_type.replace(" ", "")}.',
+        'description': 'Description not available.',
+        'tagline': '',
+        'strengths': [],
+        'compatibility': get_top_compatibles(dominant_type),
+        'color': '#000000'
+    })
+    return jsonify({'success': True, 'personality_info': personality_info})
+
+@app.route('/logout', methods=['POST'])
 def logout():
     logger.debug(f"Session in logout: {session}")
     session.clear()
-    resp = make_response(redirect(url_for('index')))
-    resp.set_cookie('for_you_session', '', expires=0, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
-    resp.set_cookie('email_verified', '', expires=0, path='/', secure=app.config['SESSION_COOKIE_SECURE'], httponly=True, samesite='Lax')
-    return resp
+    return jsonify({'success': True})
 
 @app.route('/upload_profile_picture', methods=['POST'])
 def upload_profile_picture():
@@ -1331,7 +2499,7 @@ def upload_profile_picture():
     if 'user_id' not in session:
         logger.warning("Unauthorized access to upload_profile_picture")
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-    file = request.files.get('file')
+    file = request.files.get('image')
     if not file:
         logger.warning("No file provided in upload_profile_picture")
         return jsonify({'success': False, 'error': 'No file provided'}), 400
@@ -1381,6 +2549,10 @@ def upload_photo():
         photos = user.get('photos', []) + [url]
         update_result = mongo_service.update_user(session['user_id'], {'photos': photos})
         if update_result['success']:
+            # Notify matched users
+            matches = mongo_service.get_matched_users(session['user_id'])
+            for match_id in matches:
+                mongo_service.add_notification(match_id, f"{user['full_name']} uploaded a new picture", 'new_photo', session['user_id'])
             logger.info("User photos updated successfully in database")
             return jsonify({'success': True, 'url': url}), 200
         else:
@@ -1422,6 +2594,20 @@ def update_profile():
         update_data['location'] = data['location']
     if 'interests' in data:
         update_data['interests'] = data['interests']
+    if 'religion_public' in data:
+        update_data['religion_public'] = data['religion_public']
+    if 'physical_public' in data:
+        update_data['physical_public'] = data['physical_public']
+    if 'religion' in data:
+        update_data['religion'] = data['religion']
+    if 'religion_importance' in data:
+        update_data['religion_importance'] = data['religion_importance']
+    if 'physical_importance' in data:
+        update_data['physical_importance'] = data['physical_importance']
+    if 'physical_traits' in data:
+        traits_dict = data['physical_traits']
+        traits_list = [{'label': k, 'value': v} for k, v in traits_dict.items()]
+        update_data['physical_traits'] = traits_list
     if update_data:
         result = mongo_service.update_user(session['user_id'], update_data)
         return jsonify(result)

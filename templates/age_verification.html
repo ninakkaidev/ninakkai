@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Age Verification - Ninakkai</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background-image: url("{{ url_for('static', filename='images/ihnatsi-yfull-XOGSjSKQIPE-unsplash.jpg') }}");
+            background-position: center bottom;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            position: relative;
+            z-index: 1;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .welcome-text {
+            color: white;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        .error-message {
+            color: #ff4d6d;
+            margin-bottom: 1rem;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .success-message {
+            color: #4CAF50;
+            margin-bottom: 1rem;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .toggle-buttons {
+            display: flex;
+            margin-bottom: 0;
+            background: rgba(255, 255, 255, 0.014);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 5px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            background: rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+        }
+
+        .form-container {
+            background: rgba(255, 255, 255, 0.045);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+            transition: all 0.3s ease;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            margin-top: 0;
+        }
+
+        .form-container.active {
+            max-height: 1000px;
+            opacity: 1;
+            margin-top: 2rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .form {
+            display: none;
+        }
+
+        .form.active {
+            display: block;
+        }
+
+        .signup-steps {
+            display: flex;
+            width: 100%;
+            transition: transform 0.5s ease;
+            flex-direction: column;
+        }
+
+        .signup-step {
+            width: 100%;
+            padding: 0;
+            display: none;
+        }
+
+        .signup-step.active {
+            display: block;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            gap: 10px;
+        }
+
+        @media (min-width: 769px) {
+            .step-indicator {
+                display: none;
+            }
+        }
+
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .step-dot.active {
+            background: white;
+            transform: scale(1.2);
+        }
+
+        .form-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1.5rem;
+        }
+
+        @media (min-width: 769px) {
+            .form-nav {
+                display: flex;
+            }
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form h2 {
+            color: white;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 15px;
+            outline: none;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+
+        .input-group input::placeholder, .input-group select option:first-child {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .input-group select option {
+            color: #333;
+        }
+
+        .input-group input:focus {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .password-strength {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            margin-top: 5px;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            background: #ff4d6d;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 30px;
+            background: linear-gradient(45deg, #4e54c8, #8f94fb);
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .submit-btn:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.2);
+            margin: 0 10px;
+        }
+
+        .social-login {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 1rem;
+        }
+
+        .social-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .social-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .google-btn {
+            color: #4285F4;
+        }
+
+        .apple-btn {
+            color: #000;
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .switch-form {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-block;
+            transition: color 0.3s ease;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .switch-form:hover {
+            color: white;
+            text-decoration: underline;
+        }
+
+        .forgot-link {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-block;
+            margin-top: 10px;
+            transition: color 0.3s ease;
+        }
+
+        .forgot-link:hover {
+            color: white;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1.5rem;
+                width: 100%;
+            }
+            
+            .form-container {
+                padding: 1.5rem;
+            }
+            
+            .form-container.active {
+                margin-top: 1.5rem;
+            }
+            
+            .toggle-btn {
+                padding: 10px;
+                font-size: 14px;
+            }
+            
+            .welcome-text {
+                font-size: 1.3rem;
+            }
+            
+            .signup-step {
+                padding: 0 5px;
+            }
+        }
+
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            z-index: 1000;
+            padding: 5px 10px;
+            background-color: rgba(0, 0, 0, 0.585);
+            border-radius: 5px;
+            background: linear-gradient(90deg, #ff0000, #0000ff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: linear-gradient(90deg, #0000ff, #ff0000);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            opacity: 0.8;
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4e54c8;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .verification-section {
+            display: none;
+            text-align: center;
+            color: white;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .verification-section.active {
+            display: block;
+        }
+        
+        .verification-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #4CAF50;
+        }
+        
+        .verification-instructions {
+            margin: 1rem 0;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            text-align: left;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .verification-instructions ol {
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+
+        .verification-instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .resend-link {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-block;
+            margin-top: 10px;
+            transition: color 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .resend-link:hover {
+            color: white;
+            text-decoration: underline;
+        }
+
+        .verification-success {
+            text-align: center;
+            color: white;
+            margin-bottom: 1.5rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .verification-success-icon {
+            font-size: 3rem;
+            color: #4CAF50;
+            margin-bottom: 1rem;
+        }
+
+        .verification-success h2 {
+            margin-bottom: 1rem;
+        }
+
+        .verification-success p {
+            margin-bottom: 1.5rem;
+        }
+
+        .continue-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 30px;
+            background: linear-gradient(45deg, #4e54c8, #8f94fb);
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .continue-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Specific styles for age verification */
+        #video {
+            width: 100%;
+            max-width: 320px;
+            height: auto;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            margin-bottom: 1rem;
+            transform: scaleX(-1); /* Mirror the video for selfie-like view */
+        }
+
+        #face-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1); /* Mirror the overlay to match video */
+            pointer-events: none;
+        }
+
+        #video-container {
+            position: relative;
+            display: inline-block;
+            max-width: 320px;
+            margin-bottom: 1rem;
+        }
+
+        #canvas {
+            display: none;
+        }
+
+        #message {
+            color: #ff4d6d;
+            margin-top: 10px;
+        }
+
+        .age-verification-container {
+            background: rgba(255, 255, 255, 0.045);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .age-verification-text {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 1.5rem;
+            font-size: 14px;
+        }
+
+        .instructions {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 1.5rem;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+        }
+
+        .example-image {
+            width: 100%;
+            max-width: 200px;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .example-caption {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 480px) {
+            #video {
+                max-width: 100%;
+            }
+        }
+
+        #preview {
+            width: 100%;
+            max-width: 320px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            margin-bottom: 1rem;
+        }
+
+        #preview-text {
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        #retake, #verify {
+            padding: 15px;
+            border: none;
+            border-radius: 30px;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+        }
+
+        #retake {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        #retake:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        #verify {
+            background: linear-gradient(45deg, #4e54c8, #8f94fb);
+        }
+
+        #verify:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="welcome-text">Age Verification</div>
+        <div class="age-verification-container">
+            <p class="age-verification-text">We don't show this picture in your profile or store them in our server so don't worry.</p>
+            <div id="instruction-slide">
+                <div class="instructions">
+                    <strong>Instructions:</strong>
+                    <ul>
+                        <li>Position your face in the center of the frame. A green box will appear when your face is detected.</li>
+                        <li>Ensure good lighting and remove glasses, hats, or anything covering your face.</li>
+                        <li>Look directly at the camera and keep your expression neutral.</li>
+                        <li>The "Take Photo" button will enable only when a face is detected.</li>
+                    </ul>
+                </div>
+                <img src="https://i.ibb.co/209FLrxR/Chat-GPT-Image-Sep-14-2025-11-36-52-AM.png" alt="Example of a good photo" class="example-image">
+                <p class="example-caption">Example of a good photo</p>
+                <button id="next-to-capture" class="submit-btn">Next</button>
+            </div>
+            <div id="capture-slide" style="display: none;">
+                <div id="video-container">
+                    <video id="video" autoplay playsinline></video>
+                    <canvas id="face-overlay"></canvas>
+                </div>
+                <button id="capture" class="submit-btn" disabled>Take Photo</button>
+            </div>
+            <canvas id="canvas"></canvas>
+            <div id="preview-container" style="display: none;">
+                <p id="preview-text">Make sure this picture is clear and sharp and your face is visible for verification.</p>
+                <img id="preview" />
+                <button id="retake">Retake</button>
+                <button id="verify">Verify</button>
+            </div>
+            <div id="message" class="error-message"></div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading" class="loading">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const overlay = document.getElementById('face-overlay');
+        const canvas = document.getElementById('canvas');
+        const capture = document.getElementById('capture');
+        const retake = document.getElementById('retake');
+        const verify = document.getElementById('verify');
+        const message = document.getElementById('message');
+        const loading = document.getElementById('loading');
+        const preview = document.getElementById('preview');
+        const nextToCapture = document.getElementById('next-to-capture');
+        const instructionSlide = document.getElementById('instruction-slide');
+        const captureSlide = document.getElementById('capture-slide');
+        let currentPreviewURL = null; // Track current preview URL
+        let detectionInterval = null;
+        let faceDetected = false;
+        let stream = null; // To hold the media stream
+
+        // Load face-api models on page load
+        Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/gh/vladmandic/face-api/model/'),
+        ]).then(async () => {
+            await tf.setBackend('cpu');
+            await tf.ready();
+            console.log('Face detection models loaded successfully, backend:', tf.getBackend());
+        }).catch(err => {
+            console.error('Error loading face detection models:', err);
+            message.textContent = 'Error loading face detection models: ' + err;
+        });
+
+        // Function to start video stream
+        async function startVideo() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                video.srcObject = stream;
+                video.addEventListener('loadedmetadata', () => {
+                    overlay.width = video.videoWidth;
+                    overlay.height = video.videoHeight;
+                    startDetection();
+                });
+            } catch (err) {
+                console.error('Error accessing webcam:', err);
+                message.textContent = 'Error accessing webcam: ' + err;
+            }
+        }
+
+        // Function to start face detection
+        function startDetection() {
+            detectionInterval = setInterval(async () => {
+                if (video.paused || video.ended) return;
+                try {
+                    const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }));
+                    const ctx = overlay.getContext('2d');
+                    ctx.clearRect(0, 0, overlay.width, overlay.height);
+                    faceDetected = detections.length > 0;
+                    capture.disabled = !faceDetected;
+
+                    if (faceDetected) {
+                        detections.forEach(detection => {
+                            const { x, y, width, height } = detection.box;
+                            ctx.strokeStyle = '#00FF00';
+                            ctx.lineWidth = 2;
+                            ctx.strokeRect(x, y, width, height);
+                        });
+                    }
+                } catch (err) {
+                    console.error('Detection error:', err);
+                }
+            }, 100);
+        }
+
+        // Next button to proceed to capture slide
+        nextToCapture.addEventListener('click', () => {
+            instructionSlide.style.display = 'none';
+            captureSlide.style.display = 'block';
+            startVideo(); // Start video and detection only after next
+        });
+
+        capture.addEventListener('click', () => {
+            if (!faceDetected) return; // Double-check
+            clearInterval(detectionInterval); // Stop detection
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.save();
+            ctx.scale(-1, 1);  // Flip horizontally to match the mirrored video
+            ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+            ctx.restore();
+
+            canvas.toBlob(blob => {
+                // Revoke old URL if exists
+                if (currentPreviewURL) {
+                    URL.revokeObjectURL(currentPreviewURL);
+                }
+                currentPreviewURL = URL.createObjectURL(blob);
+                preview.src = currentPreviewURL;
+                document.getElementById('preview-container').style.display = 'block';
+                captureSlide.style.display = 'none';
+                window.currentBlob = blob;
+            }, 'image/jpeg');
+        });
+
+        retake.addEventListener('click', () => {
+            document.getElementById('preview-container').style.display = 'none';
+            captureSlide.style.display = 'block';
+            message.textContent = '';
+            // Revoke and clear preview
+            if (currentPreviewURL) {
+                URL.revokeObjectURL(currentPreviewURL);
+                currentPreviewURL = null;
+            }
+            preview.src = '';
+            startDetection(); // Restart detection
+        });
+
+        // Function to send photo with retry logic for Koyeb sleep
+        async function sendPhoto(blob) {
+            const formData = new FormData();
+            formData.append('image', blob, 'photo.jpg');
+            let retries = 0;
+            const maxRetries = 10;
+            const sleepPagePhrase = 'Your service is almost ready!'; // Key phrase to detect Koyeb sleep page
+
+            while (retries < maxRetries) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+                    const res = await fetch('/age-verification', {
+                        method: 'POST',
+                        body: formData,
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timeoutId);
+
+                    const text = await res.text();
+
+                    // Check if it's the Koyeb sleep page
+                    if (text.includes(sleepPagePhrase)) {
+                        retries++;
+                        if (retries < maxRetries) {
+                            // Exponential backoff: wait 5s * retries
+                            const waitTime = 5000 * retries;
+                            await new Promise(resolve => setTimeout(resolve, waitTime));
+                            continue; // Retry
+                        } else {
+                            throw new Error('Maximum retries reached. Service may be unavailable.');
+                        }
+                    }
+
+                    // If not sleep page, try to parse as JSON
+                    const data = JSON.parse(text);
+                    return data;
+
+                } catch (error) {
+                    // Handle any errors, including timeout (AbortError)
+                    console.error('Send photo error:', error);
+                    retries++;
+                    if (retries < maxRetries) {
+                        await new Promise(resolve => setTimeout(resolve, 5000));
+                        continue;
+                    }
+                    throw new Error('Failed to process response after retries.');
+                }
+            }
+        }
+
+        verify.addEventListener('click', async () => {
+            loading.classList.add('active');
+            verify.disabled = true;
+            retake.disabled = true;
+            message.textContent = ''; // Clear previous messages
+
+            try {
+                const data = await sendPhoto(window.currentBlob);
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else if (data.success) {
+                    window.location.href = '/questions';  // Fallback for success without redirect
+                } else if (data.error === 'gender_mismatch') {
+                    const confirmUpdate = confirm(`Detected gender is ${data.detected_gender}, but registered as opposite. Do you want to update your gender to ${data.detected_gender}?`);
+                    if (confirmUpdate) {
+                        const updateRes = await fetch('/update_gender', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({new_gender: data.detected_gender})
+                        });
+                        const updateData = await updateRes.json();
+                        if (updateData.success) {
+                            window.location.href = updateData.redirect || '/questions';
+                        } else {
+                            message.textContent = updateData.error || 'Failed to update gender.';
+                        }
+                    } else {
+                        message.textContent = 'Detected gender does not match registered gender. Try again or contact help@ninakkai.com';
+                    }
+                } else {
+                    message.textContent = data.error || 'Verification failed.';
+                }
+            } catch (err) {
+                message.textContent = 'Error: ' + err.message;
+            } finally {
+                // Hide loader and re-enable buttons
+                loading.classList.remove('active');
+                verify.disabled = false;
+                retake.disabled = false;
+            }
+        });
+
+        // Cleanup on unload
+        window.addEventListener('beforeunload', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>
